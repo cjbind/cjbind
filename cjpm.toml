@@ -1,0 +1,20 @@
+[dependencies]
+
+[script-dependencies]
+glob = { git = "https://github.com/Zxilly/glob-cj.git", branch = "master" }
+
+[ffi.c]
+clang = { path = "./lib" }
+
+[package]
+  cjc-version = "0.57.3"
+  compile-option = ""
+  description = "A simple C binding generator for Cangjie"
+  link-option = ""
+  name = "cjbind"
+  output-type = "executable"
+  override-compile-option = ""
+  src-dir = ""
+  target-dir = ""
+  version = "1.0.0"
+  package-configuration = {}
