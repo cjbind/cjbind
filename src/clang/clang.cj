@@ -12,6 +12,10 @@ func cxstringToString(x: CXString): String {
     }
 }
 
+// workaround cfunc capture limit
+// thus we can only work as single thread
+var CursorVisitCallback: ?(Cursor) -> Unit = None
+
 public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     let x: CXCursor
 
@@ -168,7 +172,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     }
 
     public func toString(): String {
-        return ""
+        return "Cursor ${this.spelling()}"
     }
 
     public func hashCode(): Int64 {
@@ -177,11 +181,28 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func visit(visitor: (Cursor) -> Unit) {
+        CursorVisitCallback = visitor
+        unsafe {
+            let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = 
+            {
+                cxcs, _, data => 
+                    CursorVisitCallback.getOrThrow()(Cursor(cxcs))
+                    return CXChildVisit_Continue
+            }
+
+            clang_visitChildren(x, cb, CPointer<Unit>())
+        }
+        CursorVisitCallback = None
+    }
+
+    // cjlint-ignore -start !G.OPR.01 eq
     public operator func ==(that: Cursor): Bool {
         unsafe {
             return clang_equalCursors(x, that.x) != 0
         }
     }
+    // cjlint-ignore -end eq
 }
 
 public class Type <: Equatable<Type> {
@@ -355,11 +376,13 @@ public class Diagnostic <: ToString {
         this.x = x
     }
 
+    // cjlint-ignore -start !G.NAM.04 name
     ~init() {
         unsafe {
             clang_disposeDiagnostic(x)
         }
     }
+    // cjlint-ignore -end name
 
     public func toString(): String {
         unsafe {
