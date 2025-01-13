@@ -1,3 +1,5 @@
 target/
+build-script-cache/
+.devbrain/
 .cache/
 .vscode/
