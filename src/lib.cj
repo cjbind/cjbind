@@ -3,7 +3,16 @@ package cjbind
 import cjbind.ir.CjbindContext
 import cjbind.options.CjbindOptions
 import cjbind.clang
+import cjbind.ir
 import std.collection.*
+
+func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ir.ItemId) {
+    if (!cursor.isBuiltin()) {
+        return
+    }
+
+
+}
 
 func parse(context: CjbindContext) {
     var error: ?String = None
@@ -27,6 +36,13 @@ func parse(context: CjbindContext) {
     }
 
     let cursor = context.translation_unit.cursor()
+
+    let root = context.root_module
+    context.with_module(root) {
+        ctx => cursor.visit() {
+            child => parseOne(ctx, child, None)
+        }
+    }
 }
 
 func generate(opts: CjbindOptions): String {

@@ -96,4 +96,12 @@ public class CjbindContext {
         this.target_info = target_info
     }
 
+    public func with_module(module_id: ModuleId, cb: (CjbindContext) -> Unit): Unit {
+        let prev_module = this.current_module
+        this.current_module = module_id
+
+        cb(this)
+
+        this.current_module = prev_module
+    }
 }
