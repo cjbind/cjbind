@@ -1,7 +1,8 @@
 package cjbind.result
 
 
-// cjlint-ingore -start !G.OTH.03 url
+// cjlint-ignore -start !G.OTH.03 license
+
 // https://gitcode.com/OpenCangjieCommunity/result4cj/blob/develop/LICENSE
 // Copyright (c) [Year] [name of copyright holder]
 // [Software Name] is licensed under Mulan PSL v2.
@@ -52,7 +53,7 @@ package cjbind.result
 // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.  
 // See the Mulan PSL v2 for more details.  
 
-// cjlint-ingore -end url
+// cjlint-ignore -end license
 
 const Generics_E_Is_Not_Impl_ToString_Interface = "<E> is not impl ToString interface"
 

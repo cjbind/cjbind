@@ -2,9 +2,15 @@ package cjbind.ir
 
 import std.collection.HashSet
 
-import cjbind.clang.SourceLocation
+import cjbind.clang
+import cjbind.result.Result
 
 public type ItemSet = HashSet<ItemId>
+
+public enum ParseError {
+    Recurse |
+    Continue
+}
 
 public class Item {
     let id: ItemId
@@ -14,7 +20,7 @@ public class Item {
     let comment: ?String
     let parent_id: ItemId
     let kind: ItemKind
-    let location: ?SourceLocation
+    let location: ?clang.SourceLocation
 
     init(
         id: ItemId,
@@ -35,5 +41,19 @@ public class Item {
         this.comment = comment
         this.kind = kind
         this.location = location
+    }
+
+    public func parse(
+        cursor: clang.Cursor,
+        parent_id: ?ItemId,
+        ctx: CjbindContext
+    ): Result<ItemId, ParseError> {
+        if (!cursor.isValid()) {
+            return Result.Err(ParseError.Continue)
+        }
+
+        let comment = cursor.rawComment()
+        let current_module = ctx.current_module
+        let relevent_parent_id = parent_id ?? current_module
     }
 }
