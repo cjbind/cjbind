@@ -17,7 +17,7 @@ func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ir.ItemId) {
 func parse(context: CjbindContext) {
     var error: ?String = None
 
-    for (d in context.translation_unit.diags()) {
+    for (d in context.translationUnit.diags()) {
         let msg = d.toString()
         let isError = d.severity() >= clang.CXDiagnostic_Error
 
@@ -35,10 +35,10 @@ func parse(context: CjbindContext) {
         throw Exception(e)
     }
 
-    let cursor = context.translation_unit.cursor()
+    let cursor = context.translationUnit.cursor()
 
-    let root = context.root_module
-    context.with_module(root) {
+    let root = context.rootModule
+    context.withModule(root) {
         ctx => cursor.visit() {
             child => parseOne(ctx, child, None)
         }

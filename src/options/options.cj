@@ -4,13 +4,13 @@ import std.collection.*
 
 public class CjbindOptions {
     public let headers: ArrayList<String> = ArrayList()
-    public let clang_args: ArrayList<String> = ArrayList()
+    public let clangArgs: ArrayList<String> = ArrayList()
 
     init() {}
 
     init(headers: ArrayList<String>, clang_args: ArrayList<String>) {
-        this.headers.appendAll(headers)
-        this.clang_args.appendAll(clang_args)
+        this.headers.add(all: headers)
+        this.clangArgs.add(all: clang_args)
     }
 }
 
@@ -22,22 +22,22 @@ public class CjbindOptionsBuilder {
     }
 
     public func header(str: String): CjbindOptionsBuilder {
-        opts.headers.append(str)
+        opts.headers.add(str)
         return this
     }
 
     public func headers(strs: Array<String>): CjbindOptionsBuilder {
-        opts.headers.appendAll(strs)
+        opts.headers.add(all: strs)
         return this
     }
 
     public func clangArg(str: String): CjbindOptionsBuilder {
-        opts.clang_args.append(str)
+        opts.clangArgs.add(str)
         return this
     }
 
     public func clangArgs(strs: Array<String>): CjbindOptionsBuilder {
-        opts.clang_args.appendAll(strs)
+        opts.clangArgs.add(all: strs)
         return this
     }
 

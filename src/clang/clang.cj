@@ -171,6 +171,35 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func linkage(): CXLinkageKind {
+        unsafe {
+            return clang_getCursorLinkage(x)
+        }
+    }
+
+    public func visibility(): CXVisibilityKind {
+        unsafe {
+            return clang_getCursorVisibility(x)
+        }
+    }
+
+    public func isInlinedFunction(): Bool {
+        unsafe {
+            clang_Cursor_isFunctionInlined(x) != 0
+        }
+    }
+
+    public func fallibleSemanticParent(): ?Cursor {
+        let pp = unsafe {
+            Cursor(clang_getCursorSemanticParent(x))
+        }
+
+        if (pp == this || !pp.isValid()) {
+            return None
+        }
+        return Some(pp)
+    }
+
     public func toString(): String {
         return "Cursor ${this.spelling()}"
     }
@@ -193,7 +222,6 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
             clang_visitChildren(x, cb, CPointer<Unit>())
         }
-        CursorVisitCallback = None
     }
 
     // cjlint-ignore -start !G.OPR.01 eq
@@ -209,6 +237,76 @@ public class Type <: Equatable<Type> {
     let x: CXType
     init(x: CXType) {
         this.x = x
+    }
+
+    public func declaration(): Cursor {
+        unsafe {
+            return Cursor(clang_getTypeDeclaration(x))
+        }
+    }
+
+    public func kind(): CXTypeKind {
+        return this.x.kind
+    }
+
+    public func canonicalType(): Type {
+        unsafe {
+            return Type(clang_getCanonicalType(x))
+        }
+    }
+
+    public func isNonDeductibleAutoType(): Bool {
+        return this.canonicalType() == this
+    }
+
+    public func size(ptrSize: UIntNative): UIntNative {
+        let val = this.clangSizeOf(ptrSize)
+        if (val < 0) {
+            return 0
+        } else {
+            return UIntNative(val)
+        }
+    }
+
+    public func clangSizeOf(ptrSize: UIntNative): Int64 {
+        let k = this.kind() 
+        if (k == CXType_RValueReference || k == CXType_LValueReference) {
+            return Int64(ptrSize)
+        }
+
+        if (k == CXType_Auto) {
+            if(this.isNonDeductibleAutoType()) {
+                return -6
+            }
+        }
+
+        unsafe {
+            return clang_Type_getSizeOf(x)
+        }
+    }
+
+    public func align(ptrSize: UIntNative): UIntNative {
+        let val = this.clangAlignOf(ptrSize)
+        if (val < 0) {
+            return 0
+        } else {
+            return UIntNative(val)
+        }
+    }
+
+    public func clangAlignOf(ptrSize: UIntNative): Int64 {
+        let k = this.kind()
+        if (k == CXType_RValueReference || k == CXType_LValueReference) {
+            return Int64(ptrSize)
+        }
+
+        if (k == CXType_Auto) {
+            return -6
+        }
+
+        unsafe {
+            return clang_Type_getAlignOf(x)
+        }
     }
 
     // cjlint-ignore -start !G.OPR.01 eq

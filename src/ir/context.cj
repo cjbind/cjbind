@@ -45,42 +45,41 @@ public class CjbindContext {
     public let types: HashMap<TypeKey, TypeId> = HashMap()
     public let modules: HashMap<clang.Cursor, ModuleId> = HashMap()
 
-    public let root_module: ModuleId
-    public var current_module: ModuleId
+    public let rootModule: ModuleId
+    public var currentModule: ModuleId
 
-    public let semantic_parents: HashMap<clang.Cursor, ItemId> = HashMap()
+    public let semanticParents: HashMap<clang.Cursor, ItemId> = HashMap()
 
-    public let currently_parsed_types: ArrayList<PartialType> = ArrayList()
+    public let currentlyParsedTypes: ArrayList<PartialType> = ArrayList()
 
     public let includes: HashMap<String, (String, UIntNative)> = HashMap()
     public let deps: HashSet<String>
 
-    public var collected_typerefs: Bool = false
-    public var in_codegen: Bool = false
+    public var collectedTyperefs: Bool = false
+    public var inCodegen: Bool = false
 
-    public let translation_unit: clang.TranslationUnit
-    public let target_info: clang.TargetInfo
+    public let translationUnit: clang.TranslationUnit
+    public let targetInfo: clang.TargetInfo
 
-    public let codegen_items: Option<ItemSet> = None
+    public let codegenItems: Option<ItemSet> = None
 
-    public var need_bitfield_allocation: ArrayList<ItemId> = ArrayList()
+    public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
-    public var enum_typedef_combos: ?HashSet<ItemId> = None
+    public var enumTypedefCombos: ?HashSet<ItemId> = None
 
     public init(options: CjbindOptions) {
         let index = clang.Index(false, true)
 
-        let parse_options = clang.CXTranslationUnit_DetailedPreprocessingRecord
 
-        let translation_unit = clang.TranslationUnit(
+        this.translationUnit = clang.TranslationUnit(
             index,
             "",
-            options.clang_args.toArray().toArray(),
-            parse_options
+            options.clangArgs.toArray(),
+            clang.CXTranslationUnit_DetailedPreprocessingRecord
         )
 
-        let target_info = clang.TargetInfo(translation_unit)
-        let root_module = Item(
+        this.targetInfo = clang.TargetInfo(translationUnit)
+        let rootModuleItem = Item(
             0,
             None,
             0,
@@ -88,20 +87,24 @@ public class CjbindContext {
             None
         )
 
-        this.items = ArrayList<?Item>([root_module])
+        this.items = ArrayList<?Item>([rootModuleItem])
         this.deps = HashSet(options.headers)
-        this.root_module = 0
-        this.current_module = 0
-        this.translation_unit = translation_unit
-        this.target_info = target_info
+        this.rootModule = 0
+        this.currentModule = 0
     }
 
-    public func with_module(module_id: ModuleId, cb: (CjbindContext) -> Unit): Unit {
-        let prev_module = this.current_module
-        this.current_module = module_id
+    public func withModule(module_id: ModuleId, cb: (CjbindContext) -> Unit): Unit {
+        let prev_module = this.currentModule
+        this.currentModule = module_id
 
         cb(this)
 
-        this.current_module = prev_module
+        this.currentModule = prev_module
+    }
+
+    public func nextItemId(): ItemId {
+        let ret = UIntNative(this.items.size)
+        this.items.add(None)
+        return ret
     }
 }
