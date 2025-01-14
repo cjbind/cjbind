@@ -79,14 +79,14 @@ func searchClang(): Option<String> {
             case _ => throw Exception("Unsupported OS")
         })
 
-    let files = ArrayList<String>("${DLL_PREFIX}clang${DLL_SUFFIX}")
+    let files = ArrayList<String>(["${DLL_PREFIX}clang${DLL_SUFFIX}"])
 
     match (OS) {
         case "Linux" =>
-            files.append("libclang-*.so")
-            files.append("libclang.so.*")
-            files.append("libclang-*.so.*")
-        case "Windows" => files.append("libclang.dll")
+            files.add("libclang-*.so")
+            files.add("libclang.so.*")
+            files.add("libclang-*.so.*")
+        case "Windows" => files.add("libclang.dll")
         case _ => ()
     }
 
@@ -126,15 +126,15 @@ func searchClang(): Option<String> {
     if (OS == "macOS") {
         if (let Some(base) <- xcodeSelect()) {
             let pb = Path(base)
-            dirs.prepend(pb.join("Toolchains/XcodeDefault.xctoolchain/usr/lib").toString())
+            dirs.add(pb.join("Toolchains/XcodeDefault.xctoolchain/usr/lib").toString(), at: 0)
         }
     }
 
     if (let Some(base) <- runLLVMConfig()) {
         let pb = Path(base)
-        dirs.prepend(pb.join("bin").toString())
-        dirs.prepend(pb.join("lib").toString())
-        dirs.prepend(pb.join("lib64").toString())
+        dirs.add(pb.join("bin").toString(), at: 0)
+        dirs.add(pb.join("lib").toString(), at: 0)
+        dirs.add(pb.join("lib64").toString(), at: 0)
     }
 
     for (d in dirs) {
