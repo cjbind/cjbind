@@ -7,37 +7,32 @@ import cjbind.result.Result
 
 public type ItemSet = HashSet<ItemId>
 
-public enum ParseError {
-    Recurse |
-    Continue
-}
-
 public class Item {
     let id: ItemId
-    let local_id: ItemId
-    let next_child_local_id: ItemId
-    let canonical_name: String
+    let localId: ItemId
+    let nextChildLocalId: ItemId
+    let canonicalName: String
     let comment: ?String
-    let parent_id: ItemId
+    let parentId: ItemId
     let kind: ItemKind
     let location: ?clang.SourceLocation
 
     init(
         id: ItemId,
         comment: ?String,
-        parent_id: ItemId,
+        parentId: ItemId,
         kind: ItemKind,
-        location: ?SourceLocation
+        location: ?clang.SourceLocation
     ) {
-        if (id != parent_id) {
+        if (id != parentId) {
             throw Exception("id != parent_id")
         }
 
         this.id = id
-        this.local_id = 0
-        this.next_child_local_id = 1
-        this.canonical_name = ""
-        this.parent_id = parent_id
+        this.localId = 0
+        this.nextChildLocalId = 1
+        this.canonicalName = ""
+        this.parentId = parentId
         this.comment = comment
         this.kind = kind
         this.location = location
@@ -45,7 +40,7 @@ public class Item {
 
     public func parse(
         cursor: clang.Cursor,
-        parent_id: ?ItemId,
+        parentId: ?ItemId,
         ctx: CjbindContext
     ): Result<ItemId, ParseError> {
         if (!cursor.isValid()) {
@@ -53,7 +48,40 @@ public class Item {
         }
 
         let comment = cursor.rawComment()
-        let current_module = ctx.current_module
-        let relevent_parent_id = parent_id ?? current_module
+        let currentModule = ctx.currentModule
+        let releventParentId = parentId ?? currentModule
+        
+        throw Exception("TODO")
+    }
+
+    public static func newOpaqueType(
+        withId: ItemId,
+        ty: clang.Type,
+        ctx: CjbindContext,
+    ) {
+        let location = ty.declaration().location()
+        let ty = 
+    }
+
+    public static func fromTy(
+        ty: clang.Type,
+        location: clang.Cursor,
+        parentId: ?ItemId,
+        ctx: CjbindContext
+    ): Result<TypeId, ParseError> {
+        let _id = ctx.nextItemId()
+        return Item.fromTyWithId(_id, ty, location, parentId, ctx)
+    }
+
+    public static func fromTyWithId(
+        id: ItemId,
+        ty: clang.Type,
+        location: clang.Cursor,
+        parentId: ?ItemId,
+        ctx: CjbindContext
+    ): Result<TypeId, ParseError> {
+        if (let Some(par) <- ty.declaration().fallibleSemanticParent()) {
+            return 
+        }
     }
 }
