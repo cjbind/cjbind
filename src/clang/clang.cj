@@ -226,6 +226,17 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         return None
     }
 
+    public func typedefType(): ?Type {
+        let inner = unsafe {
+            Type(clang_getTypedefDeclUnderlyingType(x))
+        }
+        if (inner.isValid()) {
+            return Some(inner)
+        } else {
+            return None
+        }
+    }
+
     public func toString(): String {
         return "Cursor ${this.spelling()}"
     }
