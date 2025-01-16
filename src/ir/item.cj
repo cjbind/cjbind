@@ -1,7 +1,6 @@
 package cjbind.ir
 
-import std.collection.HashSet
-
+import std.collection.{HashSet, contains}
 import cjbind.clang
 import cjbind.result.Result
 
@@ -38,6 +37,13 @@ public class Item {
         this.location = location
     }
 
+    public func asModule(): Option<Module> {
+        match (this.kind) {
+            case ItemKind.KindModule(module) => Some(module)
+            case _ => None
+        }
+    }
+
     public func parse(
         cursor: clang.Cursor,
         parentId: ?ItemId,
@@ -50,17 +56,106 @@ public class Item {
         let comment = cursor.rawComment()
         let currentModule = ctx.currentModule
         let releventParentId = parentId ?? currentModule
-        
+
+        match (Function.parse(cursor, ctx)) {
+            case Ok(ParseResult.New(item, decl)) =>
+                let nid = ctx.nextItemId()
+
+                ctx.addItem(
+                    Item(
+                        nid,
+                        comment,
+                        releventParentId,
+                        ItemKind.KindFunction(item),
+                        Some(cursor.location())
+                    ),
+                    decl,
+                    Some(cursor)
+                )
+
+                return Ok(id)
+            case Ok(ParseResult.AlreadyResolved(nid)) => return Ok(id)
+            case Err(ParseError.Recurse) => return Err(ParseError.Recurse)
+            case Err(ParseError.Continue) => ()
+        }
+
         throw Exception("TODO")
     }
 
     public static func newOpaqueType(
         withId: ItemId,
         ty: clang.Type,
-        ctx: CjbindContext,
-    ) {
-        let location = ty.declaration().location()
-        let ty = 
+        ctx: CjbindContext
+    ): TypeId {
+        let loc = ty.declaration().location()
+        let tyOwn = Opaque.fromClangTy(ty, ctx)
+        let ki = ItemKind.KindType(tyOwn)
+        let parent = ctx.rootModule
+        ctx.addItem(
+            Item(withId, None, parent, ki, loc),
+            None,
+            None
+        )
+        return withId
+    }
+
+    public static func fromTyOrRef(
+        ty: clang.Type,
+        location: clang.Cursor,
+        parentId: ?ItemId,
+        ctx: CjbindContext
+    ): TypeId {
+        let nid = ctx.nextItemId()
+        return Item.fromTyOrRefWithId(nid, ty, location, parentId, ctx)
+    }
+
+    public static func fromTyOrRefWithId(
+        potentialId: ItemId,
+        ty: clang.Type,
+        location: clang.Cursor,
+        parentId: ?ItemId,
+        ctx: CjbindContext
+    ): TypeId {
+        if (ctx.collectedTyperefs) {
+            return Item
+                .fromTyWithId(
+                    potentialId,
+                    ty,
+                    location,
+                    parentId,
+                    ctx
+                )
+                .unwrapOrElse {
+                    _ => Item.newOpaqueType(potentialId, ty, ctx)
+                }
+        }
+
+        if (let Some(tty) <- ctx.builtinOrResolvedTy(
+            potentialId,
+            parentId,
+            ty,
+            Some(location)
+        )) {
+            return tty
+        }
+
+        let isConst = ty.isConst()
+        let _kind = TypeKind.UnresolvedTypeRef(ty, location, parentId)
+        let pid = parentId ?? ctx.rootModule
+
+        ctx.addItem(
+            Item(
+                potentialId,
+                None,
+                pid,
+                ItemKind.KindType(Type(None, None, _kind, isConst)),
+                None
+            ),
+            None,
+            None
+        )
+
+        return potentialId
     }
 
     public static func fromTy(
@@ -69,10 +164,11 @@ public class Item {
         parentId: ?ItemId,
         ctx: CjbindContext
     ): Result<TypeId, ParseError> {
-        let _id = ctx.nextItemId()
-        return Item.fromTyWithId(_id, ty, location, parentId, ctx)
+        let nid = ctx.nextItemId()
+        return Item.fromTyWithId(nid, ty, location, parentId, ctx)
     }
 
+    // cjlint-ignore -start !G.FUN.01
     public static func fromTyWithId(
         id: ItemId,
         ty: clang.Type,
@@ -81,7 +177,141 @@ public class Item {
         ctx: CjbindContext
     ): Result<TypeId, ParseError> {
         if (let Some(par) <- ty.declaration().fallibleSemanticParent()) {
-            return 
+            return Ok(Item.newOpaqueType(id, ty, ctx))
         }
+
+        let decl: clang.Cursor = {
+            =>
+            let canDef = ty.canonicalType().declaration().definition()
+            match (canDef) {
+                case Some(v) => return v
+                case None => ty.declaration()
+            }
+        }()
+
+        let comment: ?String = {
+            =>
+            if (let Some(v) <- location.rawComment()) {
+                return v
+            }
+            if (let Some(v) <- decl.rawComment()) {
+                return v
+            }
+            if (let Some(v) <- location.rawComment()) {
+                return v
+            }
+            return None<String>
+        }()
+
+        if (let Some(rty) <- ctx.builtinOrResolvedTy(id, parentId, ty, location)) {
+            return Ok(rty)
+        }
+
+        var validDecl = decl.kind() != clang.CXCursor_NoDeclFound
+        let nxtDecl = if (validDecl) {
+            decl.canonical()
+        } else {
+            decl
+        }
+
+        if (validDecl) {
+            var dup: Option<TypeId> = None
+            for (t in ctx.currentlyParsedTypes) {
+                if (t.decl == nxtDecl) {
+                    dup = Some(t.id)
+                    break
+                }
+            }
+
+            if (let Some(v) <- dup) {
+                return Ok(v)
+            }
+        }
+
+        let currentModule = ctx.currentModule
+
+        if (validDecl) {
+            ctx.beginParsing(PartialType(nxtDecl, id))
+        }
+
+        let result = Type.fromClangTy(id, ty, location, parentId, ctx)
+        let relevantParentId = parentId ?? currentModule
+
+        let ret: Result<TypeId, ParseError> = match (result) {
+            case Ok(ParseResult.AlreadyResolved(ty)) => Ok(ty)
+            case Ok(ParseResult.New(titem, tdecl)) =>
+                ctx.addItem(
+                    Item(
+                        id,
+                        comment,
+                        relevantParentId,
+                        ItemKind.KindType(titem),
+                        Some(location.location())
+                    ),
+                    tdecl,
+                    Some(location)
+                )
+                Ok(id)
+            case Err(ParseError.Continue) => Err(ParseError.Continue)
+            case Err(ParseError.Recurse) =>
+                let result2 = Box(Result<TypeId, ParseError>.Err(ParseError.Recurse))
+                if (validDecl) {
+                    let finished = ctx.finishParsing()
+                    if (finished.decl != nxtDecl) {
+                        throw Exception("finished.decl != nxtDecl")
+                    }
+                }
+
+                location.visit {
+                    cur => visitChild(cur, id, ty, parentId, ctx, result2)
+                }
+
+                if (validDecl) {
+                    ctx.beginParsing(PartialType(nxtDecl, id))
+                }
+
+                if (let Err(ParseError.Recurse) <- result2.value) {
+                    throw Exception("unreachable")
+                } else {
+                    result2.value
+                }
+        }
+
+        if (validDecl) {
+            let pty = ctx.finishParsing()
+            if (!(pty.decl == nxtDecl)) {
+                throw Exception("pty.decl != nxtDecl")
+            }
+        }
+
+        return ret
+    }
+    // cjlint-ignore -end
+}
+
+// cjlint-ignore -start !G.FUN.01
+func visitChild(
+    cur: clang.Cursor,
+    id: ItemId,
+    ty: clang.Type,
+    parentId: ?ItemId,
+    ctx: CjbindContext,
+    result: Box<Result<TypeId, ParseError>>
+): clang.CXChildVisitResult {
+    if (result.value.isOk()) {
+        return clang.CXChildVisit_Break
+    }
+
+    result.value = Item.fromTyWithId(id, ty, cur, parentId, ctx)
+
+    return match (result.value) {
+        case Ok(_) => clang.CXChildVisit_Break
+        case Err(ParseError.Recurse) =>
+            cur.visit {
+                c => visitChild(c, id, ty, parentId, ctx, result)
+            }
+            clang.CXChildVisit_Continue
+        case Err(ParseError.Continue) => clang.CXChildVisit_Continue
     }
 }
+// cjlint-ignore -end
