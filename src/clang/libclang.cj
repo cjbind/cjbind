@@ -5307,7 +5307,7 @@ foreign func clang_getIBOutletCollectionType(arg0: CXCursor): CXType
  * A value of this enumeration type should be returned by each
  * \c CXCursorVisitor to indicate how clang_visitChildren() proceed.
  */
-type CXChildVisitResult = Int32
+public type CXChildVisitResult = Int32
 
 /**
    * Terminates the cursor traversal.

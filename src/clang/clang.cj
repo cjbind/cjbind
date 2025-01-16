@@ -1,5 +1,7 @@
 package cjbind.clang
 
+import cjbind.result.Result
+
 func cxstringToString(x: CXString): String {
     if (x.data.isNull()) {
         return ""
@@ -14,7 +16,7 @@ func cxstringToString(x: CXString): String {
 
 // workaround cfunc capture limit
 // thus we can only work as single thread
-var CursorVisitCallback: ?(Cursor) -> Unit = None
+var CursorVisitCallback: ?(Cursor) -> CXChildVisitResult = None
 
 public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     let x: CXCursor
@@ -200,6 +202,30 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         return Some(pp)
     }
 
+    public func numArgs(): Result<UInt32, Unit> {
+        unsafe {
+            let w = clang_Cursor_getNumArguments(x)
+            if (w == -1) {
+                return Result<UInt32, Unit>.Err(())
+            } else {
+                return Result<UInt32, Unit>.Ok(UInt32(w))
+            }
+        }
+    }
+
+    public func args(): ?Array<Cursor> {
+        let numArgs = this.numArgs().ok()
+        if (let Some(n) <- numArgs) {
+            return Array<Cursor>(Int64(n)) {
+                i => unsafe {
+                    let arg = clang_Cursor_getArgument(x, UInt32(i))
+                    return Cursor(arg)
+                }
+            }
+        }
+        return None
+    }
+
     public func toString(): String {
         return "Cursor ${this.spelling()}"
     }
@@ -210,14 +236,20 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
-    public func visit(visitor: (Cursor) -> Unit) {
+    public func visitContinue(visitor: (Cursor) -> Unit) {
+        this.visit {
+            c => 
+                visitor(c)
+                return CXChildVisit_Continue
+        }
+    }
+
+    public func visit(visitor: (Cursor) -> CXChildVisitResult) {
         CursorVisitCallback = visitor
         unsafe {
-            let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = 
-            {
-                cxcs, _, data => 
-                    CursorVisitCallback.getOrThrow()(Cursor(cxcs))
-                    return CXChildVisit_Continue
+            let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = {
+                cxcs, _, data =>
+                return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
             }
 
             clang_visitChildren(x, cb, CPointer<Unit>())
@@ -255,6 +287,63 @@ public class Type <: Equatable<Type> {
         }
     }
 
+    public func isVariadic(): Bool {
+        unsafe {
+            return clang_isFunctionTypeVariadic(x) != 0
+        }
+    }
+
+    public func retType(): ?Type {
+        unsafe {
+            let ret = Type(clang_getResultType(x))
+            if (ret.isValid()) {
+                return Some(ret)
+            } else {
+                return None
+            }
+        }
+    }
+
+    public func isValid(): Bool {
+        return this.x.kind != CXType_Invalid
+    }
+
+    public func elemType(): ?Type {
+        unsafe {
+            let cur = Type(clang_getElementType(x))
+            if (cur.isValid()) {
+                return Some(cur)
+            } else {
+                return None
+            }
+        }
+    }
+
+    public func isConst(): Bool {
+        unsafe {
+            return clang_isConstQualifiedType(x) != 0
+        }
+    }
+
+    public func spelling(): String {
+        unsafe {
+            return cxstringToString(clang_getTypeSpelling(x))
+        }
+    }
+
+    public func fallibleLayoutArgs(ptrSize: UIntNative): Result<(Int64, Int64), Int64> {
+        let size = this.clangSizeOf(ptrSize)
+        if (size < 0) {
+            return Result.Err(size)
+        }
+
+        let align = this.clangAlignOf(ptrSize)
+        if (align < 0) {
+            return Result.Err(align)
+        }
+        return Result.Ok((size, align))
+    }
+
     public func isNonDeductibleAutoType(): Bool {
         return this.canonicalType() == this
     }
@@ -269,13 +358,13 @@ public class Type <: Equatable<Type> {
     }
 
     public func clangSizeOf(ptrSize: UIntNative): Int64 {
-        let k = this.kind() 
+        let k = this.kind()
         if (k == CXType_RValueReference || k == CXType_LValueReference) {
             return Int64(ptrSize)
         }
 
         if (k == CXType_Auto) {
-            if(this.isNonDeductibleAutoType()) {
+            if (this.isNonDeductibleAutoType()) {
                 return -6
             }
         }
@@ -307,6 +396,60 @@ public class Type <: Equatable<Type> {
         unsafe {
             return clang_Type_getAlignOf(x)
         }
+    }
+
+    public func args(): ?Array<Type> {
+        let numArgs = this.numArgs().ok()
+        match (numArgs) {
+            case Some(n) => return Array<Type>(Int64(n)) {
+                i => unsafe {
+                    let arg = clang_getArgType(x, UInt32(i))
+                    return Type(arg)
+                }
+            }
+            case None => return None
+        }
+    }
+
+    public func numArgs(): Result<UInt32, Unit> {
+        unsafe {
+            let w = clang_getNumArgTypes(x)
+            if (w == -1) {
+                Err(())
+            } else {
+                Ok(UInt32(w))
+            }
+        }
+    }
+
+    public func caninicalDeclaration(location: ?Cursor): ?CanonicalTypeDeclaration {
+        let decl = this.declaration()
+        let canonical = decl.canonical()
+        if (canonical.isValid() && canonical.kind() != CXCursor_NoDeclFound) {
+            return CanonicalTypeDeclaration(this, canonical)
+        } else {
+            return None
+        }
+    }
+
+    public func callConv(): CXCallingConv {
+        unsafe {
+            return clang_getFunctionTypeCallingConv(x)
+        }
+    }
+
+    public func pointeeType(): ?Type {
+        let k = this.kind()
+        if (k == CXType_Pointer || k == CXType_RValueReference || k == CXType_LValueReference || k == CXType_MemberPointer || k == CXType_BlockPointer) {
+            unsafe {
+                let p = Type(clang_getPointeeType(x))
+                if (!p.isValid()) {
+                    throw Exception("clang_getPointeeType failed")
+                }
+                return Some(p)
+            }
+        }
+        return None
     }
 
     // cjlint-ignore -start !G.OPR.01 eq
@@ -406,7 +549,7 @@ public class TranslationUnit {
                 let ptr = c_args + i
                 ptr.write(s)
             }
-            
+
             this.x = clang_parseTranslationUnit(
                 ix.x,
                 fname,
@@ -426,8 +569,8 @@ public class TranslationUnit {
     public func diags(): Array<Diagnostic> {
         unsafe {
             let cnt = clang_getNumDiagnostics(x)
-            return Array<Diagnostic>(Int64(cnt)) { i =>
-                return Diagnostic(clang_getDiagnostic(this.x, UInt32(i)))
+            return Array<Diagnostic>(Int64(cnt)) {
+                i => return Diagnostic(clang_getDiagnostic(this.x, UInt32(i)))
             }
         }
     }
@@ -493,5 +636,18 @@ public class Diagnostic <: ToString {
         unsafe {
             return clang_getDiagnosticSeverity(x)
         }
+    }
+}
+
+public class CanonicalTypeDeclaration {
+    public let ty: Type
+    public let cursor: Cursor
+
+    public init(
+        ty: Type,
+        cursor: Cursor
+    ) {
+        this.ty = ty
+        this.cursor = cursor
     }
 }
