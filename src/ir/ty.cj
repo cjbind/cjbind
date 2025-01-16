@@ -163,7 +163,15 @@ public class Type {
                 case Err(e) => return Err(e)
             }
         } else if (tyKind == clang.CXType_Typedef) {
-
+            let inner = cursor.typedefType().getOrThrow()
+            let innerId = Item.fromTyOrRef(inner, location, None, ctx)
+            if (innerId == potentialId) {
+                TypeKind.TypeKindOpaque
+            } else {
+                TypeKind.TypeKindAlias(innerId)
+            }
+        } else {
+            
         }
         
 
