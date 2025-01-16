@@ -39,7 +39,7 @@ func parse(context: CjbindContext) {
 
     let root = context.rootModule
     context.withModule(root) {
-        ctx => cursor.visit() {
+        ctx => cursor.visitContinue {
             child => parseOne(ctx, child, None)
         }
     }
