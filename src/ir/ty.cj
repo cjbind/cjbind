@@ -42,6 +42,36 @@ public class Type {
         }
     }
 
+    public func safeCanonicalType(ctx: CjbindContext): ?Type {
+        match (this.kind) {
+            case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).safeCanonicalType(ctx)
+            case TypeKind.TypeKindAlias(inner) => ctx.resolveType(inner).safeCanonicalType(ctx)
+            case TypeKind.UnresolvedTypeRef(_, _, _) => None
+            case _ => Some(this)
+        }
+    }
+
+    public func isFloat(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindFloat(_) => true
+            case _ => false
+        }
+    }
+
+    public func isBool(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindInt(IntKindBool) => true
+            case _ => false
+        }
+    }
+
+    public func isInteger(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindInt(_) => true
+            case _ => false
+        }
+    }
+
     // cjlint-ignore -start !G.FUN.01
     public static func fromClangTy(
         potentialId: ItemId,
@@ -59,11 +89,11 @@ public class Type {
         if (let Some(tty) <- alreadyResolved) {
             return Result.Ok(ParseResult.AlreadyResolved(tty))
         }
-        
+
         let layout = ty.fallibleLayout(ctx).ok()
         let cursor = ty.declaration()
         let isAnonymous = cursor.isAnonymous()
-        let name: ?String = if (isAnonymous) {
+        var name: ?String = if (isAnonymous) {
             None
         } else {
             let sp = cursor.spelling()
@@ -77,7 +107,8 @@ public class Type {
         let canonicalTy = ty.canonicalType()
         let tyKind = ty.kind()
 
-        if (tyKind == clang.CXType_Unexposed && ty != canonicalTy && canonicalTy.kind() != clang.CXType_Invalid && ty.retType().isNone()) {
+        if (tyKind == clang.CXType_Unexposed && ty != canonicalTy && canonicalTy.kind() != clang.CXType_Invalid &&
+            ty.retType().isNone()) {
             return Type.fromClangTy(
                 potentialId,
                 canonicalTy,
@@ -90,7 +121,7 @@ public class Type {
         let tkind = if (tyKind == clang.CXType_Unexposed || tyKind == clang.CXType_Invalid) {
             if (ty.retType().isSome()) {
                 let sigR = FunctionSig.fromTy(ty, location, ctx)
-                match(sigR) {
+                match (sigR) {
                     case Ok(v) => TypeKind.TypeKindFunction(v)
                     case Err(e) => return Err(e)
                 }
@@ -140,23 +171,26 @@ public class Type {
             let inner = Item.fromTyOrRef(pointee, location, None, ctx)
             TypeKind.TypeKindPointer(inner)
         } else if (tyKind == clang.CXType_VariableArray) {
-            let inner = Item.fromTy(
-                ty.elemType().getOrThrow(),
-                location,
-                None,
-                ctx
-            ).expect("Not able to resolve array element")
+            let inner = Item
+                .fromTy(
+                    ty.elemType().getOrThrow(),
+                    location,
+                    None,
+                    ctx
+                )
+                .expect("Not able to resolve array element")
             TypeKind.TypeKindPointer(inner)
         } else if (tyKind == clang.CXType_IncompleteArray) {
-            let inner = Item.fromTy(
-                ty.elemType().getOrThrow(),
-                location,
-                None,
-                ctx
-            ).expect("Not able to resolve array element")
+            let inner = Item
+                .fromTy(
+                    ty.elemType().getOrThrow(),
+                    location,
+                    None,
+                    ctx
+                )
+                .expect("Not able to resolve array element")
             TypeKind.TypeKindArray(inner, 0)
-        } else if (tyKind == clang.CXType_FunctionProto || 
-            tyKind == clang.CXType_FunctionNoProto) {
+        } else if (tyKind == clang.CXType_FunctionProto || tyKind == clang.CXType_FunctionNoProto) {
             let sig = FunctionSig.fromTy(ty, location, ctx)
             match (sig) {
                 case Ok(v) => TypeKind.TypeKindFunction(v)
@@ -170,30 +204,106 @@ public class Type {
             } else {
                 TypeKind.TypeKindAlias(innerId)
             }
-        } else {
-            
-        }
-        
+        } else if (tyKind == clang.CXType_Enum) {
+            let enum_ = Enum.fromTy(ty, ctx).expect("Not an enum?")
 
-        throw Exception()
+            if (!isAnonymous) {
+                let prettyName = ty.spelling()
+                if (clang.isValidIdentifier(prettyName)) {
+                    name = Some(prettyName)
+                }
+            }
+
+            TypeKind.TypeKindEnum(enum_)
+        } else if (tyKind == clang.CXType_Record) {
+            let complex = CompInfo.fromTy(potentialId, ty, location, ctx).expect("Not a complex")
+            if (!isAnonymous) {
+                let prettyName = ty.spelling()
+                if (clang.isValidIdentifier(prettyName)) {
+                    name = Some(prettyName)
+                }
+            }
+
+            TypeKind.TypeKindComp(complex)
+        } else if (tyKind == clang.CXType_Vector) {
+            let innerr = Item.fromTy(
+                ty.elemType().getOrThrow(),
+                location,
+                None,
+                ctx
+            )
+            let inner = match (innerr) {
+                case Ok(v) => v
+                case Err(e) => return Err(e)
+            }
+
+            TypeKind.TypeKindVector(inner, ty.numElements().getOrThrow())
+        } else if (tyKind == clang.CXType_ConstantArray) {
+            let inner = Item
+                .fromTy(
+                    ty.elemType().getOrThrow(),
+                    location,
+                    None,
+                    ctx
+                )
+                .expect("Not able to resolve array element")
+
+            TypeKind.TypeKindArray(inner, ty.numElements().getOrThrow())
+        } else if (tyKind == clang.CXType_Atomic) {
+            return Type.fromClangTy(
+                potentialId,
+                ty.atomicValueType(),
+                location,
+                parentId,
+                ctx
+            )
+        } else if (tyKind == clang.CXType_Elaborated) {
+            return Type.fromClangTy(
+                potentialId,
+                ty.named(),
+                location,
+                parentId,
+                ctx
+            )
+        } else if (tyKind == clang.CXType_Dependent) {
+            return Err(ParseError.Continue)
+        } else {
+            // unsupported
+            return Err(ParseError.Continue)
+        }
+
+        name = name.filter {
+            n => !n.isEmpty()
+        }
+
+        let isConst = ty.isConst() || (ty.kind() == clang.CXType_ConstantArray && (ty
+            .elemType()
+            .flatMap {
+                ele => ele.isConst()
+            }
+            .getOrDefault {=> false}))
+
+        let tty = Type(name, layout, tkind, isConst)
+
+        return Result.Ok(ParseResult.New(tty, Some(cursor.canonical())))
     }
     // cjlint-ignore -end
 }
 
 public enum TypeKind {
-    TypeKindVoid |
-    TypeKindNullPtr |
-    TypeKindComp(CompInfo) |
-    TypeKindOpaque |
-    TypeKindInt(TypeKindIntKind) |
-    TypeKindFloat(TypeKindFloatKind) |
-    TypeKindComplex(TypeKindFloatKind) |
-    TypeKindAlias(TypeId) |
-    TypeKindVector(TypeId, UIntNative) |
-    TypeKindArray(TypeId, UIntNative) |
-    TypeKindFunction(FunctionSig) |
-    TypeKindEnum(TypeKindEnumKind) |
-    TypeKindPointer(TypeId) |
-    UnresolvedTypeRef(clang.Type, clang.Cursor, ?ItemId) |
-    ResolvedTypeRef(TypeId)
+    TypeKindVoid
+    | TypeKindNullPtr
+    | TypeKindComp(CompInfo)
+    | TypeKindOpaque
+    | TypeKindInt(TypeKindIntKind)
+    | TypeKindFloat(TypeKindFloatKind)
+    | TypeKindComplex(TypeKindFloatKind)
+    | TypeKindAlias(TypeId)
+    | TypeKindVector(TypeId, UIntNative)
+    | TypeKindArray(TypeId, UIntNative)
+    | TypeKindFunction(FunctionSig)
+    | TypeKindEnum(Enum)
+    | TypeKindPointer(TypeId)
+    | UnresolvedTypeRef(clang.Type, clang.Cursor, ?ItemId)
+    | ResolvedTypeRef(TypeId)
 }

@@ -391,4 +391,19 @@ public class CjbindContext {
             case None => throw Exception("finish parsing without begin")
         }
     }
+
+    public func resolveItemFallible(id: ItemId): ?Item {
+        match (this.items.get(Int64(id))) {
+            case Some(v) => v
+            case None => None
+        }
+    }
+
+    public func resolveItem(itemId: ItemId): Item {
+        this.resolveItemFallible(itemId).getOrThrow()
+    }
+
+    public func resolveType(typeId: TypeId): Type {
+        this.resolveItem(typeId).kind.expectType()
+    }
 }

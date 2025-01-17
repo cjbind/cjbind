@@ -12,3 +12,14 @@ extend clang.Type {
         }
     }
 }
+
+extend clang.Cursor {
+    public func offsetOfField(): Result<UIntNative, LayoutError> {
+        let offset = this.offsetOfFieldRaw()
+        if (offset < 0) {
+            return Result.Err(LayoutError.from(Int32(offset)))
+        } else {
+            return Result.Ok(UIntNative(offset))
+        }
+    }
+}

@@ -191,6 +191,10 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func semanticParent(): Cursor {
+        this.fallibleSemanticParent().getOrThrow()
+    }
+
     public func fallibleSemanticParent(): ?Cursor {
         let pp = unsafe {
             Cursor(clang_getCursorSemanticParent(x))
@@ -237,6 +241,73 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func enumType(): ?Type {
+        unsafe {
+            let t = Type(clang_getEnumDeclIntegerType(x))
+            if (t.isValid()) {
+                return Some(t)
+            } else {
+                return None
+            }
+        }
+    }
+
+    public func enumValBoolean(): ?Bool {
+        unsafe {
+            if (this.kind() == CXCursor_EnumConstantDecl) {
+                let v = clang_getEnumConstantDeclValue(x) != 0
+                return Some(v)
+            } else {
+                return None
+            }
+        }
+    }
+
+    public func enumValSigned(): ?Int64 {
+        unsafe {
+            if (this.kind() == CXCursor_EnumConstantDecl) {
+                let v = clang_getEnumConstantDeclValue(x)
+                return Some(Int64(v))
+            } else {
+                None
+            }
+        }
+    }
+
+    public func enumValUnsigned(): ?UInt64 {
+        unsafe {
+            if (this.kind() == CXCursor_EnumConstantDecl) {
+                let v = clang_getEnumConstantDeclValue(x)
+                return Some(UInt64(v))
+            } else {
+                None
+            }
+        }
+    }
+
+    public func bitWidth(): ?UInt32 {
+        unsafe {
+            let w = clang_getFieldDeclBitWidth(x)
+            if (w == -1) {
+                None
+            } else {
+                Some(UInt32(w))
+            }
+        }
+    }
+
+    public func isBitField(): Bool {
+        unsafe {
+            return clang_Cursor_isBitField(x) != 0
+        }
+    }
+
+    public func offsetOfFieldRaw(): Int64 {
+        unsafe {
+            return clang_Cursor_getOffsetOfField(x)
+        }
+    }
+
     public func toString(): String {
         return "Cursor ${this.spelling()}"
     }
@@ -249,9 +320,9 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
     public func visitContinue(visitor: (Cursor) -> Unit) {
         this.visit {
-            c => 
-                visitor(c)
-                return CXChildVisit_Continue
+            c =>
+            visitor(c)
+            return CXChildVisit_Continue
         }
     }
 
@@ -259,8 +330,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         CursorVisitCallback = visitor
         unsafe {
             let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = {
-                cxcs, _, data =>
-                return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
+                cxcs, _, data => return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
             }
 
             clang_visitChildren(x, cb, CPointer<Unit>())
@@ -433,6 +503,17 @@ public class Type <: Equatable<Type> {
         }
     }
 
+    public func numElements(): ?UIntNative {
+        let num = unsafe {
+            clang_getNumElements(x)
+        }
+        if (num != -1) {
+            return UIntNative(num)
+        } else {
+            return None
+        }
+    }
+
     public func caninicalDeclaration(location: ?Cursor): ?CanonicalTypeDeclaration {
         let decl = this.declaration()
         let canonical = decl.canonical()
@@ -451,7 +532,8 @@ public class Type <: Equatable<Type> {
 
     public func pointeeType(): ?Type {
         let k = this.kind()
-        if (k == CXType_Pointer || k == CXType_RValueReference || k == CXType_LValueReference || k == CXType_MemberPointer || k == CXType_BlockPointer) {
+        if (k == CXType_Pointer || k == CXType_RValueReference || k == CXType_LValueReference || k ==
+            CXType_MemberPointer || k == CXType_BlockPointer) {
             unsafe {
                 let p = Type(clang_getPointeeType(x))
                 if (!p.isValid()) {
@@ -461,6 +543,18 @@ public class Type <: Equatable<Type> {
             }
         }
         return None
+    }
+
+    public func named(): Type {
+        unsafe {
+            return Type(clang_Type_getNamedType(x))
+        }
+    }
+
+    public func atomicValueType(): Type {
+        unsafe {
+            return Type(clang_Type_getValueType(x))
+        }
     }
 
     // cjlint-ignore -start !G.OPR.01 eq
@@ -661,4 +755,24 @@ public class CanonicalTypeDeclaration {
         this.ty = ty
         this.cursor = cursor
     }
+}
+
+public func isValidIdentifier(name: String): Bool {
+    let runes = name.toRuneArray()
+    if (runes.isEmpty()) {
+        return false
+    }
+    let it = runes.iterator()
+    let first = it.next().getOrThrow()
+    if (!first.isAsciiLetter() && first != r'_') {
+        return false
+    }
+
+    for (r in it) {
+        if (!r.isAsciiNumberOrLetter() && r != r'_') {
+            return false
+        }
+    }
+
+    return true
 }
