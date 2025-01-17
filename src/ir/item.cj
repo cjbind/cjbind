@@ -44,7 +44,7 @@ public class Item {
         }
     }
 
-    public func parse(
+    public static func parse(
         cursor: clang.Cursor,
         parentId: ?ItemId,
         ctx: CjbindContext
@@ -73,11 +73,17 @@ public class Item {
                     Some(cursor)
                 )
 
-                return Ok(id)
-            case Ok(ParseResult.AlreadyResolved(nid)) => return Ok(id)
+                return Ok(nid)
+            case Ok(ParseResult.AlreadyResolved(nid)) => return Ok(nid)
             case Err(ParseError.Recurse) => return Err(ParseError.Recurse)
             case Err(ParseError.Continue) => ()
         }
+
+        match (Var.parse(cursor, ctx)) {
+            
+        }
+
+
 
         throw Exception("TODO")
     }
