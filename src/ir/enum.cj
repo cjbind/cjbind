@@ -70,13 +70,6 @@ public class Enum {
             }
             .getOrDefault {=> true}
 
-        let sp = ty.spelling()
-        let typeName: ?String = if (sp.isEmpty()) {
-            None
-        } else {
-            Some(sp)
-        }
-
         let definition = declaration.definition().getOrDefault{=>declaration}
         definition.visit {
             cursor => 

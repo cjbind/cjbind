@@ -146,7 +146,7 @@ func argsFromTyAndCursor(
             case None => cursor.curType()
         }
 
-        result.add((name, Item.fromTyOrRef(ty, ncursor, None, ctx)))
+        result.add((name, Item.fromTyOrRef(nty, ncursor, None, ctx)))
     }
 
     return result

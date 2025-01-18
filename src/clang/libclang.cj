@@ -44,7 +44,7 @@ public const CXError_ASTReadError: CXErrorCode = 4
 /**
  * Retrieve the character data associated with the given string.
  */
-foreign func clang_getCString(string: CXString): CString
+foreign func clang_getCString(string: CXString): CPointer<UInt8>
 
 /**
  * Free the given string.
@@ -75,7 +75,7 @@ foreign func clang_VirtualFileOverlay_create(options: UInt32): CPointer<CXVirtua
  * The virtual path must be canonicalized (not contain "."/"..").
  * \returns 0 for success, non-zero to indicate an error.
  */
-foreign func clang_VirtualFileOverlay_addFileMapping(arg0: CPointer<CXVirtualFileOverlayImpl>, virtualPath: CString, realPath: CString): CXErrorCode
+foreign func clang_VirtualFileOverlay_addFileMapping(arg0: CPointer<CXVirtualFileOverlayImpl>, virtualPath: CPointer<UInt8>, realPath: CPointer<UInt8>): CXErrorCode
 
 /**
  * Set the case sensitivity for the \c CXVirtualFileOverlay object.
@@ -94,7 +94,7 @@ foreign func clang_VirtualFileOverlay_setCaseSensitivity(arg0: CPointer<CXVirtua
  * \param out_buffer_size pointer to receive the buffer size.
  * \returns 0 for success, non-zero to indicate an error.
  */
-foreign func clang_VirtualFileOverlay_writeToBuffer(arg0: CPointer<CXVirtualFileOverlayImpl>, options: UInt32, out_buffer_ptr: CPointer<CString>, out_buffer_size: CPointer<UInt32>): CXErrorCode
+foreign func clang_VirtualFileOverlay_writeToBuffer(arg0: CPointer<CXVirtualFileOverlayImpl>, options: UInt32, out_buffer_ptr: CPointer<CPointer<UInt8>>, out_buffer_size: CPointer<UInt32>): CXErrorCode
 
 /**
  * free memory allocated by libclang, such as the buffer returned by
@@ -121,13 +121,13 @@ foreign func clang_ModuleMapDescriptor_create(options: UInt32): CPointer<CXModul
  * Sets the framework module name that the module.modulemap describes.
  * \returns 0 for success, non-zero to indicate an error.
  */
-foreign func clang_ModuleMapDescriptor_setFrameworkModuleName(arg0: CPointer<CXModuleMapDescriptorImpl>, name: CString): CXErrorCode
+foreign func clang_ModuleMapDescriptor_setFrameworkModuleName(arg0: CPointer<CXModuleMapDescriptorImpl>, name: CPointer<UInt8>): CXErrorCode
 
 /**
  * Sets the umbrella header name that the module.modulemap describes.
  * \returns 0 for success, non-zero to indicate an error.
  */
-foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg0: CPointer<CXModuleMapDescriptorImpl>, name: CString): CXErrorCode
+foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg0: CPointer<CXModuleMapDescriptorImpl>, name: CPointer<UInt8>): CXErrorCode
 
 /**
  * Write out the \c CXModuleMapDescriptor object to a char buffer.
@@ -138,7 +138,7 @@ foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg0: CPointer<CXModule
  * \param out_buffer_size pointer to receive the buffer size.
  * \returns 0 for success, non-zero to indicate an error.
  */
-foreign func clang_ModuleMapDescriptor_writeToBuffer(arg0: CPointer<CXModuleMapDescriptorImpl>, options: UInt32, out_buffer_ptr: CPointer<CString>, out_buffer_size: CPointer<UInt32>): CXErrorCode
+foreign func clang_ModuleMapDescriptor_writeToBuffer(arg0: CPointer<CXModuleMapDescriptorImpl>, options: UInt32, out_buffer_ptr: CPointer<CPointer<UInt8>>, out_buffer_size: CPointer<UInt32>): CXErrorCode
 
 /**
  * Dispose a \c CXModuleMapDescriptor object.
@@ -471,7 +471,7 @@ public const CXLoadDiag_InvalidFile: CXLoadDiag_Error = 3
  * \returns A loaded CXDiagnosticSet if successful, and NULL otherwise.  These
  * diagnostics should be released using clang_disposeDiagnosticSet().
  */
-foreign func clang_loadDiagnostics(file: CString, error: CPointer<CXLoadDiag_Error>, errorString: CPointer<CXString>): CPointer<Unit>
+foreign func clang_loadDiagnostics(file: CPointer<UInt8>, error: CPointer<CXLoadDiag_Error>, errorString: CPointer<CXString>): CPointer<Unit>
 
 /**
  * Release a CXDiagnosticSet and all of its contained diagnostics.
@@ -973,7 +973,7 @@ foreign func clang_CXIndex_getGlobalOptions(arg0: CPointer<Unit>): UInt32
  * files for certain libclang invocations. A null value (default) implies that
  * libclang invocations are not logged..
  */
-foreign func clang_CXIndex_setInvocationEmissionPathOption(arg0: CPointer<Unit>, Path: CString): Unit
+foreign func clang_CXIndex_setInvocationEmissionPathOption(arg0: CPointer<Unit>, Path: CPointer<UInt8>): Unit
 
 /**
  * Determine whether the given header is guarded against
@@ -992,7 +992,7 @@ foreign func clang_isFileMultipleIncludeGuarded(tu: CPointer<CXTranslationUnitIm
  * \returns the file handle for the named file in the translation unit \p tu,
  * or a NULL file handle if the file was not a part of this translation unit.
  */
-foreign func clang_getFile(tu: CPointer<CXTranslationUnitImpl>, file_name: CString): CPointer<Unit>
+foreign func clang_getFile(tu: CPointer<CXTranslationUnitImpl>, file_name: CPointer<UInt8>): CPointer<Unit>
 
 /**
  * Retrieve the buffer associated with the given file.
@@ -1006,7 +1006,7 @@ foreign func clang_getFile(tu: CPointer<CXTranslationUnitImpl>, file_name: CStri
  * \returns a pointer to the buffer in memory that holds the contents of
  * \p file, or a NULL pointer when the file is not loaded.
  */
-foreign func clang_getFileContents(tu: CPointer<CXTranslationUnitImpl>, file: CPointer<Unit>, size: CPointer<UInt64>): CString
+foreign func clang_getFileContents(tu: CPointer<CXTranslationUnitImpl>, file: CPointer<Unit>, size: CPointer<UInt64>): CPointer<UInt8>
 
 /**
  * Retrieves the source location associated with a given file/line/column
@@ -1107,7 +1107,7 @@ foreign func clang_getTranslationUnitSpelling(CTUnit: CPointer<CXTranslationUnit
  * CXUnsavedFile) are copied when necessary, so the client only needs to
  * guarantee their validity until the call to this function returns.
  */
-foreign func clang_createTranslationUnitFromSourceFile(CIdx: CPointer<Unit>, source_filename: CString, num_clang_command_line_args: Int32, clang_command_line_args: CPointer<CString>, num_unsaved_files: UInt32, unsaved_files: CPointer<CXUnsavedFile>): CPointer<CXTranslationUnitImpl>
+foreign func clang_createTranslationUnitFromSourceFile(CIdx: CPointer<Unit>, source_filename: CPointer<UInt8>, num_clang_command_line_args: Int32, clang_command_line_args: CPointer<CPointer<UInt8>>, num_unsaved_files: UInt32, unsaved_files: CPointer<CXUnsavedFile>): CPointer<CXTranslationUnitImpl>
 
 /**
  * Same as \c clang_createTranslationUnit2, but returns
@@ -1115,7 +1115,7 @@ foreign func clang_createTranslationUnitFromSourceFile(CIdx: CPointer<Unit>, sou
  * routine returns a \c NULL \c CXTranslationUnit, without further detailed
  * error codes.
  */
-foreign func clang_createTranslationUnit(CIdx: CPointer<Unit>, ast_filename: CString): CPointer<CXTranslationUnitImpl>
+foreign func clang_createTranslationUnit(CIdx: CPointer<Unit>, ast_filename: CPointer<UInt8>): CPointer<CXTranslationUnitImpl>
 
 /**
  * Create a translation unit from an AST file (\c -emit-ast).
@@ -1125,7 +1125,7 @@ foreign func clang_createTranslationUnit(CIdx: CPointer<Unit>, ast_filename: CSt
  *
  * \returns Zero on success, otherwise returns an error code.
  */
-foreign func clang_createTranslationUnit2(CIdx: CPointer<Unit>, ast_filename: CString, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
+foreign func clang_createTranslationUnit2(CIdx: CPointer<Unit>, ast_filename: CPointer<UInt8>, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
 
 /**
  * Flags that control the creation of translation units.
@@ -1349,14 +1349,14 @@ foreign func clang_parseTranslationUnit(CIdx: CPointer<Unit>, source_filename: C
  *
  * \returns Zero on success, otherwise returns an error code.
  */
-foreign func clang_parseTranslationUnit2(CIdx: CPointer<Unit>, source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
+foreign func clang_parseTranslationUnit2(CIdx: CPointer<Unit>, source_filename: CPointer<UInt8>, command_line_args: CPointer<CPointer<UInt8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
 
 /**
  * Same as clang_parseTranslationUnit2 but requires a full command line
  * for \c command_line_args including argv[0]. This is useful if the standard
  * library paths are relative to the binary.
  */
-foreign func clang_parseTranslationUnit2FullArgv(CIdx: CPointer<Unit>, source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
+foreign func clang_parseTranslationUnit2FullArgv(CIdx: CPointer<Unit>, source_filename: CPointer<UInt8>, command_line_args: CPointer<CPointer<UInt8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
 
 /**
  * Flags that control how translation units are saved.
@@ -1441,7 +1441,7 @@ public const CXSaveError_InvalidTU: CXSaveError = 3
  * enumeration. Zero (CXSaveError_None) indicates that the translation unit was
  * saved successfully, while a non-zero value indicates that a problem occurred.
  */
-foreign func clang_saveTranslationUnit(TU: CPointer<CXTranslationUnitImpl>, FileName: CString, options: UInt32): Int32
+foreign func clang_saveTranslationUnit(TU: CPointer<CXTranslationUnitImpl>, FileName: CPointer<UInt8>, options: UInt32): Int32
 
 /**
  * Suspend a translation unit in order to free memory associated with it.
@@ -1455,7 +1455,7 @@ foreign func clang_suspendTranslationUnit(arg0: CPointer<CXTranslationUnitImpl>)
 /**
  * Destroy the specified CXTranslationUnit object.
  */
-foreign func clang_disposeTranslationUnit(arg0: CPointer<CXTranslationUnitImpl>): Unit
+foreign func clang_disposeTranslationUnit(arg0: CPointer<Unit>): Unit
 
 /**
  * Flags that control the reparsing of translation units.
@@ -1569,7 +1569,7 @@ public const CXTUResourceUsage_Last: CXTUResourceUsageKind = 14
  * Returns the human-readable null-terminated C string that represents
  *  the name of the memory category.  This string should never be freed.
  */
-foreign func clang_getTUResourceUsageName(kind: CXTUResourceUsageKind): CString
+foreign func clang_getTUResourceUsageName(kind: CXTUResourceUsageKind): CPointer<UInt8>
 
 /**
  * Return the memory usage of a translation unit.  This object
@@ -4360,7 +4360,7 @@ public const CXType_HLSLAttributedResource: CXTypeKind = 180
 /**
  * Describes the calling convention of a function type
  */
-type CXCallingConv = Int32
+public type CXCallingConv = Int32
 
 public const CXCallingConv_Default: CXCallingConv = 0
 
@@ -5039,7 +5039,7 @@ foreign func clang_Type_getSizeOf(T: CXType): Int64
  * If the field's name S is not found,
  *   CXTypeLayoutError_InvalidFieldName is returned.
  */
-foreign func clang_Type_getOffsetOf(T: CXType, S: CString): Int64
+foreign func clang_Type_getOffsetOf(T: CXType, S: CPointer<UInt8>): Int64
 
 /**
  * Return the type that was modified by this attributed type.
@@ -5370,35 +5370,35 @@ foreign func clang_getCursorUSR(arg0: CXCursor): CXString
 /**
  * Construct a USR for a specified Objective-C class.
  */
-foreign func clang_constructUSR_ObjCClass(class_name: CString): CXString
+foreign func clang_constructUSR_ObjCClass(class_name: CPointer<UInt8>): CXString
 
 /**
  * Construct a USR for a specified Objective-C category.
  */
-foreign func clang_constructUSR_ObjCCategory(class_name: CString, category_name: CString): CXString
+foreign func clang_constructUSR_ObjCCategory(class_name: CPointer<UInt8>, category_name: CPointer<UInt8>): CXString
 
 /**
  * Construct a USR for a specified Objective-C protocol.
  */
-foreign func clang_constructUSR_ObjCProtocol(protocol_name: CString): CXString
+foreign func clang_constructUSR_ObjCProtocol(protocol_name: CPointer<UInt8>): CXString
 
 /**
  * Construct a USR for a specified Objective-C instance variable and
  *   the USR for its containing class.
  */
-foreign func clang_constructUSR_ObjCIvar(name: CString, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCIvar(name: CPointer<UInt8>, classUSR: CXString): CXString
 
 /**
  * Construct a USR for a specified Objective-C method and
  *   the USR for its containing class.
  */
-foreign func clang_constructUSR_ObjCMethod(name: CString, isInstanceMethod: UInt32, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCMethod(name: CPointer<UInt8>, isInstanceMethod: UInt32, classUSR: CXString): CXString
 
 /**
  * Construct a USR for a specified Objective-C property and the USR
  *  for its containing class.
  */
-foreign func clang_constructUSR_ObjCProperty(property: CString, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCProperty(property: CPointer<UInt8>, classUSR: CXString): CXString
 
 /**
  * Retrieve a name for the entity referenced by this cursor.
@@ -6155,7 +6155,7 @@ foreign func clang_getTokenKind(arg0: CXToken): CXTokenKind
  * The spelling of a token is the textual representation of that token, e.g.,
  * the text of an identifier or keyword.
  */
-foreign func clang_getTokenSpelling(arg0: CPointer<CXTranslationUnitImpl>, arg1: CXToken): CXString
+foreign func clang_getTokenSpelling(arg0: CPointer<Unit>, arg1: CXToken): CXString
 
 /**
  * Retrieve the source location of the given token.
@@ -6165,7 +6165,7 @@ foreign func clang_getTokenLocation(arg0: CPointer<CXTranslationUnitImpl>, arg1:
 /**
  * Retrieve a source range that covers the given token.
  */
-foreign func clang_getTokenExtent(arg0: CPointer<CXTranslationUnitImpl>, arg1: CXToken): CXSourceRange
+foreign func clang_getTokenExtent(arg0: CPointer<Unit>, arg1: CXToken): CXSourceRange
 
 /**
  * Tokenize the source code described by the given range into raw
@@ -6184,7 +6184,7 @@ foreign func clang_getTokenExtent(arg0: CPointer<CXTranslationUnitImpl>, arg1: C
  * array.
  *
  */
-foreign func clang_tokenize(TU: CPointer<CXTranslationUnitImpl>, Range: CXSourceRange, Tokens: CPointer<CPointer<CXToken>>, NumTokens: CPointer<UInt32>): Unit
+foreign func clang_tokenize(TU: CPointer<Unit>, Range: CXSourceRange, Tokens: CPointer<CPointer<CXToken>>, NumTokens: CPointer<UInt32>): Unit
 
 /**
  * Annotate the given set of tokens by providing cursors for each token
@@ -6233,7 +6233,7 @@ foreign func clang_disposeTokens(TU: CPointer<CXTranslationUnitImpl>, Tokens: CP
  */
 foreign func clang_getCursorKindSpelling(Kind: CXCursorKind): CXString
 
-foreign func clang_getDefinitionSpellingAndExtent(arg0: CXCursor, startBuf: CPointer<CString>, endBuf: CPointer<CString>, startLine: CPointer<UInt32>, startColumn: CPointer<UInt32>, endLine: CPointer<UInt32>, endColumn: CPointer<UInt32>): Unit
+foreign func clang_getDefinitionSpellingAndExtent(arg0: CXCursor, startBuf: CPointer<CPointer<UInt8>>, endBuf: CPointer<CPointer<UInt8>>, startLine: CPointer<UInt32>, startColumn: CPointer<UInt32>, endLine: CPointer<UInt32>, endColumn: CPointer<UInt32>): Unit
 
 foreign func clang_enableStackTraces(): Unit
 
@@ -6878,7 +6878,7 @@ foreign func clang_defaultCodeCompleteOptions(): UInt32
  * freed with \c clang_disposeCodeCompleteResults(). If code
  * completion fails, returns NULL.
  */
-foreign func clang_codeCompleteAt(TU: CPointer<CXTranslationUnitImpl>, complete_filename: CString, complete_line: UInt32, complete_column: UInt32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32): CPointer<CXCodeCompleteResults>
+foreign func clang_codeCompleteAt(TU: CPointer<CXTranslationUnitImpl>, complete_filename: CPointer<UInt8>, complete_line: UInt32, complete_column: UInt32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32): CPointer<CXCodeCompleteResults>
 
 /**
  * Sort the code-completion results in case-insensitive alphabetical
@@ -7052,7 +7052,7 @@ foreign func clang_EvalResult_getAsDouble(E: CPointer<Unit>): Float64
  * instead call clang_EvalResult_dispose on the CXEvalResult returned
  * by clang_Cursor_Evaluate.
  */
-foreign func clang_EvalResult_getAsStr(E: CPointer<Unit>): CString
+foreign func clang_EvalResult_getAsStr(E: CPointer<Unit>): CPointer<UInt8>
 
 /**
  * Disposes the created Eval memory.
@@ -7067,7 +7067,7 @@ foreign func clang_EvalResult_dispose(E: CPointer<Unit>): Unit
  * \returns the requested remapping. This remapping must be freed
  * via a call to \c clang_remap_dispose(). Can return NULL if an error occurred.
  */
-foreign func clang_getRemappings(path: CString): CPointer<Unit>
+foreign func clang_getRemappings(path: CPointer<UInt8>): CPointer<Unit>
 
 /**
  * Retrieve a remapping.
@@ -7079,7 +7079,7 @@ foreign func clang_getRemappings(path: CString): CPointer<Unit>
  * \returns the requested remapping. This remapping must be freed
  * via a call to \c clang_remap_dispose(). Can return NULL if an error occurred.
  */
-foreign func clang_getRemappingsFromFileList(filePaths: CPointer<CString>, numFiles: UInt32): CPointer<Unit>
+foreign func clang_getRemappingsFromFileList(filePaths: CPointer<CPointer<UInt8>>, numFiles: UInt32): CPointer<Unit>
 
 /**
  * Determine the number of remappings.
@@ -7439,14 +7439,14 @@ public const CXIndexOpt_SkipParsedBodiesInSession: CXIndexOptFlags = 16
  *
  * The rest of the parameters are the same as #clang_parseTranslationUnit.
  */
-foreign func clang_indexSourceFile(arg0: CPointer<Unit>, client_data: CPointer<Unit>, index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32, source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>, TU_options: UInt32): Int32
+foreign func clang_indexSourceFile(arg0: CPointer<Unit>, client_data: CPointer<Unit>, index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32, source_filename: CPointer<UInt8>, command_line_args: CPointer<CPointer<UInt8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>, TU_options: UInt32): Int32
 
 /**
  * Same as clang_indexSourceFile but requires a full command line
  * for \c command_line_args including argv[0]. This is useful if the standard
  * library paths are relative to the binary.
  */
-foreign func clang_indexSourceFileFullArgv(arg0: CPointer<Unit>, client_data: CPointer<Unit>, index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32, source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>, TU_options: UInt32): Int32
+foreign func clang_indexSourceFileFullArgv(arg0: CPointer<Unit>, client_data: CPointer<Unit>, index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32, source_filename: CPointer<UInt8>, command_line_args: CPointer<CPointer<UInt8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>, TU_options: UInt32): Int32
 
 /**
  * Index the given translation unit via callbacks implemented through
@@ -8199,7 +8199,7 @@ foreign func clang_disposeAPISet(api: CPointer<CXAPISetImpl>): Unit
  * the symbol being queried or a null string if it can not be found in the
  * APISet.
  */
-foreign func clang_getSymbolGraphForUSR(usr: CString, api: CPointer<CXAPISetImpl>): CXString
+foreign func clang_getSymbolGraphForUSR(usr: CPointer<UInt8>, api: CPointer<CXAPISetImpl>): CXString
 
 /**
  * Generate a single symbol symbol graph for the declaration at the given
@@ -8316,11 +8316,11 @@ struct CXUnsavedFile {
    *
    * This file must already exist in the file system.
    */
-    var Filename: CString = CString(CPointer<UInt8>())
+    var Filename: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
     /**
    * A buffer containing the unsaved contents of this file.
    */
-    var Contents: CString = CString(CPointer<UInt8>())
+    var Contents: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
     /**
    * The length of the unsaved contents of this buffer.
    */
@@ -8407,12 +8407,12 @@ struct CXIndexOptions {
    * Libclang does not create the directory at the specified path in the file
    * system. Therefore it must exist, or storing PCH files will fail.
    */
-    var PreambleStoragePath: CString = CString(CPointer<UInt8>())
+    var PreambleStoragePath: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
     /**
    * Specifies a path which will contain log files for certain libclang
    * invocations. A null value implies that libclang invocations are not logged.
    */
-    var InvocationEmissionPath: CString = CString(CPointer<UInt8>())
+    var InvocationEmissionPath: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
 }
 
 @C
@@ -8516,7 +8516,7 @@ struct _CXChildVisitResult {
  * Describes a single preprocessing token.
  */
 @C
-struct CXToken {
+public struct CXToken {
     var int_data: VArray<UInt32, $4> = VArray<UInt32, $4>(repeat: 0)
     var ptr_data: CPointer<Unit> = CPointer()
 }
@@ -8595,7 +8595,7 @@ struct CXIdxIncludedFileInfo {
     /**
    * Filename as written in the \#include/\#import directive.
    */
-    var filename: CString = CString(CPointer<UInt8>())
+    var filename: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
     /**
    * The actual file that the \#include/\#import directive resolved to.
    */
@@ -8645,8 +8645,8 @@ struct CXIdxEntityInfo {
     var kind: CXIdxEntityKind = 0
     var templateKind: CXIdxEntityCXXTemplateKind = 0
     var lang: CXIdxEntityLanguage = 0
-    var name: CString = CString(CPointer<UInt8>())
-    var USR: CString = CString(CPointer<UInt8>())
+    var name: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
+    var USR: CPointer<UInt8> = CPointer<UInt8>(CPointer<UInt8>())
     var cursor: CXCursor = CXCursor()
     var attributes: CPointer<CPointer<CXIdxAttrInfo>> = CPointer()
     var numAttributes: UInt32 = 0
@@ -8840,5 +8840,6 @@ type CXFile = CPointer<Unit>
 type CXIndex = CPointer<Unit>
 type CXTranslationUnit = CPointer<Unit>
 type CXDiagnostic = CPointer<Unit>
+type CXEvalResult = CPointer<Unit>
 
 // cjlint-ignore -end cjbind

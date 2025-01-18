@@ -6,9 +6,9 @@ public class CjbindOptions {
     public let headers: ArrayList<String> = ArrayList()
     public let clangArgs: ArrayList<String> = ArrayList()
 
-    init() {}
+    public init() {}
 
-    init(headers: ArrayList<String>, clang_args: ArrayList<String>) {
+    public init(headers: ArrayList<String>, clang_args: ArrayList<String>) {
         this.headers.add(all: headers)
         this.clangArgs.add(all: clang_args)
     }
