@@ -191,7 +191,7 @@ public class CjbindContext {
         this.addItemToModule(item)
         let id = item.id
 
-        if (items.get(Int64(id)).isSome()) {
+        if (items[Int64(id)].isSome()) {
             throw Exception("Inserted type twice?")
         }
 
