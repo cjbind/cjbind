@@ -1,17 +1,25 @@
 package cjbind
 
+import std.collection.*
+
 import cjbind.ir.CjbindContext
 import cjbind.options.CjbindOptions
 import cjbind.clang
-import cjbind.ir
-import std.collection.*
+import cjbind.ir.*
 
-func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ir.ItemId) {
-    if (!cursor.isBuiltin()) {
+func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ItemId): Unit {
+    if (cursor.isBuiltin()) {
         return
     }
 
-
+    match (Item.parse(cursor, parent, ctx)) {
+        case Ok(_) => ()
+        case Err(ParseError.Continue) => ()
+        case Err(ParseError.Recurse) => 
+            cursor.visitContinue {
+                child => parseOne(ctx, child, parent)
+            }
+    }
 }
 
 func parse(context: CjbindContext) {
@@ -45,7 +53,15 @@ func parse(context: CjbindContext) {
     }
 }
 
-func generate(opts: CjbindOptions): String {
+public func generate(opts: CjbindOptions): String {
+    let headerOpts = ArrayList<String>()
+    for (h in opts.headers) {
+        headerOpts.add("-include")
+        headerOpts.add(h)
+    }
+
+    opts.clangArgs.add(all: headerOpts)
+
     let ctx = CjbindContext(opts)
 
     parse(ctx)

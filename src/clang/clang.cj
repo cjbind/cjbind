@@ -8,7 +8,9 @@ func cxstringToString(x: CXString): String {
     }
 
     unsafe {
-        let str = clang_getCString(x).toString()
+        let strPtr = clang_getCString(x)
+        let str = CString(strPtr).toString()
+
         clang_disposeString(x)
         return str
     }
@@ -308,6 +310,21 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func evalutate(): EvalResult {
+        return EvalResult(this)
+    }
+
+    public func getIncludedFileName(): ?String {
+        unsafe {
+            let file = clang_getIncludedFile(x)
+            if (file.isNull()) {
+                return None
+            } else {
+                return cxstringToString(clang_getFileName(file))
+            }
+        }
+    }
+
     public func toString(): String {
         return "Cursor ${this.spelling()}"
     }
@@ -330,7 +347,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         CursorVisitCallback = visitor
         unsafe {
             let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = {
-                cxcs, _, data => return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
+                cxcs, _, _ => return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
             }
 
             clang_visitChildren(x, cb, CPointer<Unit>())
@@ -514,7 +531,7 @@ public class Type <: Equatable<Type> {
         }
     }
 
-    public func caninicalDeclaration(location: ?Cursor): ?CanonicalTypeDeclaration {
+    public func canonicalDeclaration(_: ?Cursor): ?CanonicalTypeDeclaration {
         let decl = this.declaration()
         let canonical = decl.canonical()
         if (canonical.isValid() && canonical.kind() != CXCursor_NoDeclFound) {
@@ -633,6 +650,12 @@ public class Index {
             this.x = clang_createIndex(pch_c, diag_c)
         }
     }
+
+    ~init() {
+        unsafe {
+            clang_disposeIndex(x)
+        }
+    }
 }
 
 public class TranslationUnit {
@@ -683,6 +706,16 @@ public class TranslationUnit {
     public func cursor(): Cursor {
         unsafe {
             return Cursor(clang_getTranslationUnitCursor(x))
+        }
+    }
+
+    public func isNull(): Bool {
+        return this.x.isNull()
+    }
+
+    ~init() {
+        unsafe {
+            clang_disposeTranslationUnit(x)
         }
     }
 }
@@ -754,6 +787,161 @@ public class CanonicalTypeDeclaration {
     ) {
         this.ty = ty
         this.cursor = cursor
+    }
+}
+
+public class RawTokens <: Iterable<ClangToken> {
+    public let cursor: Cursor
+    public let tu: CXTranslationUnit
+    public let tokens: CPointer<CXToken>
+    public let tokenCount: UInt32
+
+    public init(cursor: Cursor) {
+        var tokens = CPointer<CXToken>()
+        var tokenCount = UInt32(0)
+        let range = cursor.extent()
+        unsafe {
+            let tu = clang_Cursor_getTranslationUnit(cursor.x)
+            clang_tokenize(
+                tu,
+                range,
+                inout tokens,
+                inout tokenCount,
+            )
+
+            this.cursor = cursor
+            this.tu = tu
+            this.tokens = tokens
+            this.tokenCount = tokenCount
+        }
+    }
+
+    public func iterator(): ClangTokenIterator {
+        return ClangTokenIterator(this)
+    }
+}
+
+public class ClangToken {
+    let _spelling: CXString
+    let extent: CXSourceRange
+    public let kind: CXTokenKind
+
+    init(
+        spelling: CXString,
+        kind: CXTokenKind,
+        range: CXSourceRange
+    ) {
+        this._spelling = spelling
+        this.extent = range
+        this.kind = kind
+    }
+    
+    public func spelling(): String {
+        unsafe {
+            return cxstringToString(_spelling)
+        }
+    }
+}
+
+public class ClangTokenIterator <: Iterator<ClangToken> {
+    public let rt: RawTokens
+    var cur: Int64 = 0
+
+    public init(rt: RawTokens) {
+        this.rt = rt
+    }
+
+    public func next(): Option<ClangToken> {
+        if (this.cur >= Int64(rt.tokenCount)) {
+            return None
+        }
+
+        unsafe {
+            let ptr = rt.tokens + Int64(cur)
+            let data = ptr.read()
+
+            let kind = clang_getTokenKind(data)
+            let spell = clang_getTokenSpelling(rt.tu, data)
+            let extent = clang_getTokenExtent(rt.tu, data)
+
+            this.cur += 1
+
+            return ClangToken(spell, kind, extent)
+        }
+    }
+}
+
+public class EvalResult {
+    let x: CXEvalResult
+    let ty: Type
+
+    public init(cursor: Cursor) {
+        unsafe {
+            this.x = clang_Cursor_Evaluate(cursor.x)
+            this.ty = cursor.curType().canonicalType()
+        }
+    }
+
+    public func kind(): CXEvalResultKind {
+        unsafe {
+            return clang_EvalResult_getKind(x)
+        }
+    }
+
+    public func asDouble(): ?Float64 {
+        if (this.kind() == CXEval_Float) {
+            unsafe {
+                return clang_EvalResult_getAsDouble(x)
+            }
+        } else {
+            return None
+        }
+    }
+
+    public func asInt(): ?Int64 {
+        if (this.kind() != CXEval_Int) {
+            return None
+        }
+
+        unsafe {
+            if (clang_EvalResult_isUnsignedInt(x) != 0) {
+                let v = clang_EvalResult_getAsUnsigned(x)
+                return Some(Int64(v))
+            }
+
+            let v = clang_EvalResult_getAsLongLong(x)
+            return Some(v)
+        }
+    }
+
+    public func asLiteralString(): ?String {
+        if (this.kind() != CXEval_StrLiteral) {
+            return None
+        }
+
+        var charTyO = this.ty.pointeeType()
+        if (charTyO.isNone()) {
+            charTyO = this.ty.elemType()
+        }
+        if (charTyO.isNone()) {
+            return None
+        }
+        let charTy = charTyO.getOrThrow()
+        let k = charTy.kind()
+        if (k == CXType_Char_S || 
+        k == CXType_SChar ||
+        k == CXType_Char_U ||
+        k == CXType_UChar
+        ) {
+            unsafe {
+                let ret = clang_EvalResult_getAsStr(x)
+                let s = CString(ret)
+
+                return Some(s.toString())
+            }
+        }
+
+        return None
     }
 }
 
