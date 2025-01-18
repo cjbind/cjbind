@@ -3,8 +3,8 @@
 [script-dependencies]
 glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.0" }
 
-# [ffi.c]
-# clang = { path = "D:/Tool/mingw64/bin" }
+[ffi.c]
+clang = { path = "D:/Tool/mingw64/bin" }
 
 [package]
   cjc-version = "0.58.3"
