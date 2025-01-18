@@ -129,11 +129,9 @@ public class CjbindContext {
             this.needBitfieldAllocation.add(id)
         }
 
-        let old = this.items.get(Int64(id))
-        match (old) {
-            case Some(_) => 
-                throw Exception("Item with id ${id} already exists")
-            case None => ()
+
+        if (this.items[Int64(id)].isSome()) {
+            throw Exception("Item with id ${id} already exists, WTF case")
         }
 
         this.items[Int64(id)] = item
