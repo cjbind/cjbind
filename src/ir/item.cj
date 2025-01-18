@@ -250,7 +250,9 @@ public class Item {
         ctx: CjbindContext
     ): Result<TypeId, ParseError> {
         if (let Some(par) <- ty.declaration().fallibleSemanticParent()) {
-            return Ok(Item.newOpaqueType(id, ty, ctx))
+            if (FunctionKind.fromCursor(par).isSome()) {
+                return Ok(Item.newOpaqueType(id, ty, ctx))
+            }
         }
 
         let decl: clang.Cursor = {
