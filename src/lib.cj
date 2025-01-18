@@ -55,11 +55,12 @@ func parse(context: CjbindContext) {
 
 public func generate(opts: CjbindOptions): String {
     let headerOpts = ArrayList<String>()
-    for (h in opts.headers) {
-        headerOpts.add("-include")
+    for ((i, h) in opts.headers.iterator().enumerate()) {
+        if (i != opts.headers.size - 1) {
+            headerOpts.add("-include")
+        }
         headerOpts.add(h)
     }
-
     opts.clangArgs.add(all: headerOpts)
 
     let ctx = CjbindContext(opts)
