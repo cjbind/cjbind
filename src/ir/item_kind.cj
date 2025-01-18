@@ -50,4 +50,19 @@ public enum ItemKind {
     public func isVar(): Bool {
         this.asVar().isSome()
     }
+
+    public func asModule(): ?Module {
+        match (this) {
+            case KindModule(v) => v
+            case _ => None
+        }
+    }
+
+    public func expectModule(): Module {
+        this.asModule().getOrThrow()
+    }
+
+    public func isModule(): Bool {
+        this.asModule().isSome()
+    }
 }

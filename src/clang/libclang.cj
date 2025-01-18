@@ -1349,7 +1349,7 @@ foreign func clang_parseTranslationUnit(CIdx: CPointer<Unit>, source_filename: C
  *
  * \returns Zero on success, otherwise returns an error code.
  */
-foreign func clang_parseTranslationUnit2(CIdx: CPointer<Unit>, source_filename: CPointer<UInt8>, command_line_args: CPointer<CPointer<UInt8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CPointer<CXTranslationUnitImpl>>): CXErrorCode
+foreign func clang_parseTranslationUnit2(CIdx: CPointer<Unit>, source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CXTranslationUnit>): CXErrorCode
 
 /**
  * Same as clang_parseTranslationUnit2 but requires a full command line

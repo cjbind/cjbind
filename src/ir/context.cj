@@ -1,18 +1,18 @@
 package cjbind.ir
 
 import std.collection.*
-
 import cjbind.clang
 import cjbind.options.CjbindOptions
 
 public type ItemId = UIntNative
 
 public type TypeId = ItemId
+
 public type ModuleId = ItemId
 
 public enum TypeKey <: Hashable & Equatable<TypeKey> {
-    Usr(String) |
-    Declaration(clang.Cursor)
+    Usr(String)
+    | Declaration(clang.Cursor)
 
     public func hashCode(): Int64 {
         match (this) {
@@ -34,7 +34,7 @@ public class PartialType <: Equatable<PartialType> {
     public let decl: clang.Cursor
     public let id: ItemId
 
-    init( decl: clang.Cursor, id: ItemId) {
+    init(decl: clang.Cursor, id: ItemId) {
         this.decl = decl
         this.id = id
     }
@@ -107,6 +107,7 @@ public class CjbindContext {
 
     public func nextItemId(): ItemId {
         let ret = UIntNative(this.items.size)
+        println("generate ${ret}")
         this.items.add(None)
         return ret
     }
@@ -128,11 +129,14 @@ public class CjbindContext {
             this.needBitfieldAllocation.add(id)
         }
 
-        if (items.get(Int64(id)).isSome()) {
-            throw Exception("Item with id ${id} already exists")
+        let old = this.items.get(Int64(id))
+        match (old) {
+            case Some(_) => 
+                throw Exception("Item with id ${id} already exists")
+            case None => ()
         }
 
-        items[Int64(id)] = item
+        this.items[Int64(id)] = item
 
         if (!isType) {
             return
@@ -146,7 +150,7 @@ public class CjbindContext {
 
             let key = if (isUnnamed) {
                 TypeKey.Declaration(candecl)
-            } else if(let Some(usr) <- candecl.usr()) {
+            } else if (let Some(usr) <- candecl.usr()) {
                 TypeKey.Usr(usr)
             } else {
                 TypeKey.Declaration(candecl)
@@ -165,20 +169,12 @@ public class CjbindContext {
             }
         }
 
-        this.items[Int64(this.currentModule)]
-            .getOrThrow()
-            .asModule()
-            .getOrThrow()
-            .children
-            .add(item.id)
+        this.items[Int64(this.currentModule)].getOrThrow().asModule().getOrThrow().children.add(item.id)
         return
     }
 
-    public func getResolvedType(
-        decl: clang.CanonicalTypeDeclaration
-    ): ?TypeId {
-        let ret1 = this.types
-            .get(TypeKey.Declaration(decl.cursor))
+    public func getResolvedType(decl: clang.CanonicalTypeDeclaration): ?TypeId {
+        let ret1 = this.types.get(TypeKey.Declaration(decl.cursor))
 
         if (let Some(ret) <- ret1) {
             return ret
@@ -219,7 +215,7 @@ public class CjbindContext {
         let item = Item(
             withId,
             None,
-            parentId.getOrDefault() { => this.currentModule},
+            parentId.getOrDefault() {=> this.currentModule},
             ItemKind.KindType(ity),
             Some(location)
         )
@@ -239,107 +235,109 @@ public class CjbindContext {
 
     // cjlint-ignore -start !G.FUN.01
     public func buildBuiltinTy(ty: clang.Type): ?TypeId {
-        let typeKindDef: ?TypeKind = {=>
-                let k = ty.kind()
-                
-                if (k == clang.CXType_NullPtr) {
-                    return TypeKind.TypeKindNullPtr
-                }
-                if (k == clang.CXType_Void) {
-                    return TypeKind.TypeKindVoid
-                }
-                if (k == clang.CXType_Bool) {
-                    return TypeKind.TypeKindInt(IntKindBool)
-                }
-                if (k == clang.CXType_Int) {
-                    return TypeKind.TypeKindInt(IntKindInt)
-                }
-                if (k == clang.CXType_UInt) {
-                    return TypeKind.TypeKindInt(IntKindUInt)
-                }
-                if (k == clang.CXType_Char_S) {
-                    return TypeKind.TypeKindInt(IntKindChar(true))
-                }
-                if (k == clang.CXType_Char_U) {
-                    return TypeKind.TypeKindInt(IntKindChar(false))
-                }
-                if (k == clang.CXType_SChar) {
-                    return TypeKind.TypeKindInt(IntKindSChar)
-                }
-                if (k == clang.CXType_UChar) {
-                    return TypeKind.TypeKindInt(IntKindUChar)
-                }
-                if (k == clang.CXType_Short) {
-                    return TypeKind.TypeKindInt(IntKindShort)
-                }
-                if (k == clang.CXType_UShort) {
-                    return TypeKind.TypeKindInt(IntKindUShort)
-                }
-                if (k == clang.CXType_WChar) {
-                    return TypeKind.TypeKindInt(IntKindWChar)
-                }
-                if (k == clang.CXType_Char16) {
-                    return TypeKind.TypeKindInt(IntKindU16)
-                }
-                if (k == clang.CXType_Char32) {
-                    return TypeKind.TypeKindInt(IntKindU32)
-                }
-                if (k == clang.CXType_Long) {
-                    return TypeKind.TypeKindInt(IntKindLong)
-                }
-                if (k == clang.CXType_ULong) {
-                    return TypeKind.TypeKindInt(IntKindULong)
-                }
-                if (k == clang.CXType_LongLong) {
-                    return TypeKind.TypeKindInt(IntKindLongLong)
-                }
-                if (k == clang.CXType_ULongLong) {
-                    return TypeKind.TypeKindInt(IntKindULongLong)
-                }
-                if (k == clang.CXType_Int128) {
-                    return TypeKind.TypeKindInt(IntKindI128)
-                }
-                if (k == clang.CXType_UInt128) {
-                    return TypeKind.TypeKindInt(IntKindU128)
-                }
-                if (k == clang.CXType_Float16 || k == clang.CXType_Half) {
-                    return TypeKind.TypeKindFloat(FloatKindFloat16)
-                }
-                if (k == clang.CXType_Float) {
-                    return TypeKind.TypeKindFloat(FloatKindFloat)
-                }
-                if (k == clang.CXType_Double) {
-                    return TypeKind.TypeKindFloat(FloatKindDouble)
-                }
-                if (k == clang.CXType_LongDouble) {
-                    return TypeKind.TypeKindFloat(FloatKindLongDouble)
-                }
-                if (k == clang.CXType_Float128) {
-                    return TypeKind.TypeKindFloat(FloatKindFloat128)
-                }
-                if (k == clang.CXType_Complex) {
-                    let ft = ty.elemType().getOrThrow().kind()
-                    let floatKind = { => 
-                        if (ft == clang.CXType_Float16 || ft == clang.CXType_Half) {
-                            return FloatKindFloat16
-                        }
-                        if (ft == clang.CXType_Float) {
-                            return FloatKindFloat
-                        }
-                        if (ft == clang.CXType_Double) {
-                            return FloatKindDouble
-                        }
-                        if (ft == clang.CXType_LongDouble) {
-                            return FloatKindLongDouble
-                        }
-                        if (ft == clang.CXType_Float128) {
-                            return FloatKindFloat128
-                        }
-                        throw Exception("unknown float type ${ft}")
-                    }()
-                    return TypeKind.TypeKindComplex(floatKind)
-                }
-                return None<TypeKind>
+        let typeKindDef: ?TypeKind = {
+            =>
+            let k = ty.kind()
+
+            if (k == clang.CXType_NullPtr) {
+                return TypeKind.TypeKindNullPtr
+            }
+            if (k == clang.CXType_Void) {
+                return TypeKind.TypeKindVoid
+            }
+            if (k == clang.CXType_Bool) {
+                return TypeKind.TypeKindInt(IntKindBool)
+            }
+            if (k == clang.CXType_Int) {
+                return TypeKind.TypeKindInt(IntKindInt)
+            }
+            if (k == clang.CXType_UInt) {
+                return TypeKind.TypeKindInt(IntKindUInt)
+            }
+            if (k == clang.CXType_Char_S) {
+                return TypeKind.TypeKindInt(IntKindChar(true))
+            }
+            if (k == clang.CXType_Char_U) {
+                return TypeKind.TypeKindInt(IntKindChar(false))
+            }
+            if (k == clang.CXType_SChar) {
+                return TypeKind.TypeKindInt(IntKindSChar)
+            }
+            if (k == clang.CXType_UChar) {
+                return TypeKind.TypeKindInt(IntKindUChar)
+            }
+            if (k == clang.CXType_Short) {
+                return TypeKind.TypeKindInt(IntKindShort)
+            }
+            if (k == clang.CXType_UShort) {
+                return TypeKind.TypeKindInt(IntKindUShort)
+            }
+            if (k == clang.CXType_WChar) {
+                return TypeKind.TypeKindInt(IntKindWChar)
+            }
+            if (k == clang.CXType_Char16) {
+                return TypeKind.TypeKindInt(IntKindU16)
+            }
+            if (k == clang.CXType_Char32) {
+                return TypeKind.TypeKindInt(IntKindU32)
+            }
+            if (k == clang.CXType_Long) {
+                return TypeKind.TypeKindInt(IntKindLong)
+            }
+            if (k == clang.CXType_ULong) {
+                return TypeKind.TypeKindInt(IntKindULong)
+            }
+            if (k == clang.CXType_LongLong) {
+                return TypeKind.TypeKindInt(IntKindLongLong)
+            }
+            if (k == clang.CXType_ULongLong) {
+                return TypeKind.TypeKindInt(IntKindULongLong)
+            }
+            if (k == clang.CXType_Int128) {
+                return TypeKind.TypeKindInt(IntKindI128)
+            }
+            if (k == clang.CXType_UInt128) {
+                return TypeKind.TypeKindInt(IntKindU128)
+            }
+            if (k == clang.CXType_Float16 || k == clang.CXType_Half) {
+                return TypeKind.TypeKindFloat(FloatKindFloat16)
+            }
+            if (k == clang.CXType_Float) {
+                return TypeKind.TypeKindFloat(FloatKindFloat)
+            }
+            if (k == clang.CXType_Double) {
+                return TypeKind.TypeKindFloat(FloatKindDouble)
+            }
+            if (k == clang.CXType_LongDouble) {
+                return TypeKind.TypeKindFloat(FloatKindLongDouble)
+            }
+            if (k == clang.CXType_Float128) {
+                return TypeKind.TypeKindFloat(FloatKindFloat128)
+            }
+            if (k == clang.CXType_Complex) {
+                let ft = ty.elemType().getOrThrow().kind()
+                let floatKind = {
+                    =>
+                    if (ft == clang.CXType_Float16 || ft == clang.CXType_Half) {
+                        return FloatKindFloat16
+                    }
+                    if (ft == clang.CXType_Float) {
+                        return FloatKindFloat
+                    }
+                    if (ft == clang.CXType_Double) {
+                        return FloatKindDouble
+                    }
+                    if (ft == clang.CXType_LongDouble) {
+                        return FloatKindLongDouble
+                    }
+                    if (ft == clang.CXType_Float128) {
+                        return FloatKindFloat128
+                    }
+                    throw Exception("unknown float type ${ft}")
+                }()
+                return TypeKind.TypeKindComplex(floatKind)
+            }
+            return None<TypeKind>
         }()
         let typeKind = typeKindDef ?? return None
         let spelling = ty.spelling()
@@ -347,7 +345,7 @@ public class CjbindContext {
         let layout = ty.fallibleLayout(this).ok()
         let location = ty.declaration().location()
         let ity = Type(Some(spelling), layout, typeKind, isConst)
-        
+
         let nid = this.nextItemId()
         let item = Item(
             nid,
@@ -360,7 +358,7 @@ public class CjbindContext {
         this.addBuiltinItem(item)
         return nid
     }
-    
+
     // cjlint-ignore -end
 
     public func builtinOrResolvedTy(
@@ -419,9 +417,7 @@ public class CjbindContext {
         this.semanticParents.add(def, parentId)
     }
 
-    public func knownSemanticParent(
-        def: clang.Cursor
-    ): ?ItemId {
+    public func knownSemanticParent(def: clang.Cursor): ?ItemId {
         return this.semanticParents.get(def)
     }
 

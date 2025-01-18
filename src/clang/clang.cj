@@ -678,19 +678,26 @@ public class TranslationUnit {
                 ptr.write(s)
             }
 
-            this.x = clang_parseTranslationUnit(
+            let unsaved = CPointer<CXUnsavedFile>()
+
+            var tu = CXTranslationUnit()
+
+            let code = clang_parseTranslationUnit2(
                 ix.x,
                 fname,
                 c_args,
                 Int32(cmdArgs.size),
-                CPointer<CXUnsavedFile>(),
+                unsaved,
                 0,
-                UInt32(options)
+                UInt32(options),
+                inout tu
             )
 
-            if (this.x.isNull()) {
-                throw Exception("parse failed")
+            if (tu.isNull()) {
+                throw Exception("parse failed ${code}")
             }
+
+            this.x = tu
         }
     }
 

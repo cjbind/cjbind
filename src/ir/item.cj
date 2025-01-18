@@ -23,8 +23,8 @@ public class Item {
         kind: ItemKind,
         location: ?clang.SourceLocation
     ) {
-        if (id != parentId) {
-            throw Exception("id != parent_id")
+        if (!(id != parentId || kind.isModule())) {
+            throw Exception("item error")
         }
 
         this.id = id
