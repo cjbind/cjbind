@@ -74,7 +74,6 @@ public class CjbindContext {
     public init(options: CjbindOptions) {
         let index = clang.Index(false, true)
 
-
         this.translationUnit = clang.TranslationUnit(
             index,
             "",
@@ -370,7 +369,7 @@ public class CjbindContext {
         ty: clang.Type,
         location: ?clang.Cursor
     ): ?TypeId {
-        if (let Some(decl) <- ty.caninicalDeclaration(location)) {
+        if (let Some(decl) <- ty.canonicalDeclaration(location)) {
             if (let Some(tid) <- this.getResolvedType(decl)) {
                 return Some(this.buildTyWrapper(withId, tid, parentId, ty))
             }
@@ -405,5 +404,28 @@ public class CjbindContext {
 
     public func resolveType(typeId: TypeId): Type {
         this.resolveItem(typeId).kind.expectType()
+    }
+
+    public func safeResolveType(typeId: TypeId): ?Type {
+        this.resolveItemFallible(typeId).flatMap {
+            t => t.kind.expectType()
+        }
+    }
+
+    public func addSemanticParent(
+        def: clang.Cursor,
+        parentId: ItemId
+    ) {
+        this.semanticParents.add(def, parentId)
+    }
+
+    public func knownSemanticParent(
+        def: clang.Cursor
+    ): ?ItemId {
+        return this.semanticParents.get(def)
+    }
+
+    public func addDep(dep: String) {
+        this.deps.add(dep)
     }
 }

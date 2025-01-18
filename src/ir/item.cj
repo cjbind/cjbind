@@ -44,6 +44,7 @@ public class Item {
         }
     }
 
+    // cjlint-ignore -start !G.FUN.01
     public static func parse(
         cursor: clang.Cursor,
         parentId: ?ItemId,
@@ -54,8 +55,7 @@ public class Item {
         }
 
         let comment = cursor.rawComment()
-        let currentModule = ctx.currentModule
-        let releventParentId = parentId ?? currentModule
+        let relevantParentId = parentId ?? ctx.currentModule
 
         match (Function.parse(cursor, ctx)) {
             case Ok(ParseResult.New(item, decl)) =>
@@ -65,7 +65,7 @@ public class Item {
                     Item(
                         nid,
                         comment,
-                        releventParentId,
+                        relevantParentId,
                         ItemKind.KindFunction(item),
                         Some(cursor.location())
                     ),
@@ -80,13 +80,80 @@ public class Item {
         }
 
         match (Var.parse(cursor, ctx)) {
-            
+            case Ok(ParseResult.New(item, decl)) =>
+                let nid = ctx.nextItemId()
+
+                ctx.addItem(
+                    Item(
+                        nid,
+                        comment,
+                        relevantParentId,
+                        ItemKind.KindVar(item),
+                        Some(cursor.location())
+                    ),
+                    decl,
+                    Some(cursor)
+                )
+
+                return Ok(nid)
+            case Ok(ParseResult.AlreadyResolved(nid)) => return Ok(nid)
+            case Err(ParseError.Recurse) => return Err(ParseError.Recurse)
+            case Err(ParseError.Continue) => ()
         }
 
+        // handling types
+        
+        let definition = cursor.definition()
+        let applicaleCursor = definition ?? cursor
 
+        let tyRelevantParentId = match (definition) {
+            case Some(def) => 
+                if (def != cursor) {
+                    ctx.addSemanticParent(def, relevantParentId)
+                    return Result.Ok(Item.fromTyOrRef(
+                        applicaleCursor.curType(),
+                        cursor,
+                        parentId,
+                        ctx
+                    ))
+                }
+                var p = ctx.knownSemanticParent(def)
+                if (p.isNone()) {
+                    p = parentId
+                }
+                p.getOrDefault { => ctx.currentModule}
+            case None => relevantParentId
+        }
 
-        throw Exception("TODO")
+        match (Item.fromTy(
+            applicaleCursor.curType(),
+            applicaleCursor,
+            Some(tyRelevantParentId),
+            ctx
+        )) {
+            case Ok(tty) => return Ok(tty)
+            case Err(ParseError.Recurse) => return Err(ParseError.Recurse)
+            case Err(ParseError.Continue) => ()
+        }
+
+        let k = cursor.kind()
+
+        if (k == clang.CXCursor_LinkageSpec || k == clang.CXCursor_UnexposedDecl) {
+            return Err(ParseError.Recurse)
+        } else if (k == clang.CXCursor_InclusionDirective) {
+            let file = cursor.getIncludedFileName()
+            match (file) {
+                case None => () // we can do nothing with this
+                case Some(includedFile) => 
+                    ctx.addDep(includedFile)
+            }
+            return Err(ParseError.Continue)
+        } else {
+            // we don't care about these
+            return Err(ParseError.Continue)
+        }
     }
+    // cjlint-ignore -end
 
     public static func newOpaqueType(
         withId: ItemId,
@@ -234,14 +301,12 @@ public class Item {
             }
         }
 
-        let currentModule = ctx.currentModule
-
         if (validDecl) {
             ctx.beginParsing(PartialType(nxtDecl, id))
         }
 
         let result = Type.fromClangTy(id, ty, location, parentId, ctx)
-        let relevantParentId = parentId ?? currentModule
+        let relevantParentId = parentId ?? ctx.currentModule
 
         let ret: Result<TypeId, ParseError> = match (result) {
             case Ok(ParseResult.AlreadyResolved(ty)) => Ok(ty)
