@@ -156,11 +156,11 @@ func copyIfMissing(src: String) {
 }
 
 func stagePreBuild(): Int64 {
-    match (searchClang()) {
-        case Some(clang) => copyIfMissing(clang)
+    // match (searchClang()) {
+    //     case Some(clang) => copyIfMissing(clang)
 
-        case None => throw Exception("Clang not found")
-    }
+    //     case None => throw Exception("Clang not found")
+    // }
 
     return 0
 }

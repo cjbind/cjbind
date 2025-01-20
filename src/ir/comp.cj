@@ -79,12 +79,12 @@ public class CompInfo {
             }
             .getOrDefault({=> false})
 
-        let maybeAnonymoudsStructField: Box<?(TypeId, clang.Type, ?UIntNative)> = Box(None)
+        let maybeAnonymousStructField: Box<?(TypeId, clang.Type, ?UIntNative)> = Box(None)
         cursor
             .value
             .visit {
                 cur =>
-                if (let Some((ty, clangTy, offset)) <- maybeAnonymoudsStructField.value) {
+                if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
                     if (cur.kind() == clang.CXCursor_TypedefDecl && cur.typedefType().getOrThrow().canonicalType() ==
                         clangTy) {
                     // do nothing
@@ -96,7 +96,7 @@ public class CompInfo {
 
                 let k = cur.kind()
                 if (k == clang.CXCursor_FieldDecl) {
-                    if (let Some((ty, clangTy, offset)) <- maybeAnonymoudsStructField.value) {
+                    if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
                         let used: Box<Bool> = Box(false)
                         cur.visit {
                             child =>
@@ -175,7 +175,7 @@ public class CompInfo {
                         if (cur.isAnonymous() && cur.kind() != clang.CXCursor_EnumDecl) {
                             let ty = cur.curType()
                             let offset = cur.offsetOfField().ok()
-                            maybeAnonymoudsStructField.value = Some((inner, ty, offset))
+                            maybeAnonymousStructField.value = Some((inner, ty, offset))
                         }
                     }
                 } else if (k == clang.CXCursor_PackedAttr) {
@@ -187,7 +187,7 @@ public class CompInfo {
                 return clang.CXChildVisit_Continue
             }
 
-        if (let Some((ty, _, offset)) <- maybeAnonymoudsStructField.value) {
+        if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
             let field = RawField(None, ty, None,None, offset)
             ci.fields.appendRawField(field)
         }

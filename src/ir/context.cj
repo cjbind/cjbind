@@ -107,7 +107,6 @@ public class CjbindContext {
 
     public func nextItemId(): ItemId {
         let ret = UIntNative(this.items.size)
-        println("generate ${ret}")
         this.items.add(None)
         return ret
     }
@@ -421,5 +420,6 @@ public class CjbindContext {
 
     public func addDep(dep: String) {
         this.deps.add(dep)
+        
     }
 }

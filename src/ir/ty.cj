@@ -276,14 +276,14 @@ public class Type {
             n => !n.isEmpty()
         }
 
-        let isConst = ty.isConst() || (ty.kind() == clang.CXType_ConstantArray && (ty
+        let isConst2 = ty.isConst() || (ty.kind() == clang.CXType_ConstantArray && (ty
             .elemType()
             .flatMap {
                 ele => ele.isConst()
             }
             .getOrDefault {=> false}))
 
-        let tty = Type(name, layout, tkind, isConst)
+        let tty = Type(name, layout, tkind, isConst2)
 
         return Result.Ok(ParseResult.New(tty, Some(cursor.canonical())))
     }

@@ -1,5 +1,7 @@
 package cjbind.clang
 
+import std.collection.HashMap
+
 import cjbind.result.Result
 
 func cxstringToString(x: CXString): String {
@@ -18,7 +20,14 @@ func cxstringToString(x: CXString): String {
 
 // workaround cfunc capture limit
 // thus we can only work as single thread
-var CursorVisitCallback: ?(Cursor) -> CXChildVisitResult = None
+var CursorVisitCallback: HashMap<Int64, ?(Cursor) -> CXChildVisitResult> = HashMap<Int64, ?(Cursor) -> CXChildVisitResult>()
+var CurrentCallbackId = 0
+
+func getNextCallbackId(): Int64 {
+    let id = CurrentCallbackId
+    CurrentCallbackId += 1
+    return id
+}
 
 public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     let x: CXCursor
@@ -344,14 +353,27 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     }
 
     public func visit(visitor: (Cursor) -> CXChildVisitResult) {
-        CursorVisitCallback = visitor
+        let cbId = getNextCallbackId()
+        CursorVisitCallback.add(cbId, visitor)
+
         unsafe {
             let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = {
-                cxcs, _, _ => return CursorVisitCallback.getOrThrow()(Cursor(cxcs))
+                cxcs, _, cbIdData => 
+                    let id = CPointer<Int64>(cbIdData).read()
+
+                    let cb = CursorVisitCallback[id].getOrThrow()
+                    cb(Cursor(cxcs))
             }
 
-            clang_visitChildren(x, cb, CPointer<Unit>())
+            let cbIdData = LibC.malloc<Int64>(count: 1)
+            cbIdData.write(cbId)
+
+            clang_visitChildren(x, cb, CPointer<Unit>(cbIdData))
+
+            LibC.free<Int64>(cbIdData)
         }
+
+        CursorVisitCallback.remove(cbId)
     }
 
     // cjlint-ignore -start !G.OPR.01 eq

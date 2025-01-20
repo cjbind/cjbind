@@ -1,6 +1,6 @@
 package cjbind.ir
 
-public enum ItemKind {
+public enum ItemKind <: ToString {
     KindModule(Module) |
     KindType(Type) |
     KindFunction(Function) |
@@ -64,5 +64,14 @@ public enum ItemKind {
 
     public func isModule(): Bool {
         this.asModule().isSome()
+    }
+
+    public func toString(): String {
+        match (this) {
+            case KindModule(v) => "KindModule"
+            case KindType(v) => "KindType"
+            case KindFunction(v) => "KindFunction"
+            case KindVar(v) => "KindVar"
+        }
     }
 }

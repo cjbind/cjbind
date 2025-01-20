@@ -7,14 +7,14 @@ import cjbind.result.Result
 public type ItemSet = HashSet<ItemId>
 
 public class Item {
-    let id: ItemId
-    let localId: ItemId
-    let nextChildLocalId: ItemId
-    let canonicalName: String
-    let comment: ?String
-    let parentId: ItemId
-    let kind: ItemKind
-    let location: ?clang.SourceLocation
+    public let id: ItemId
+    public let localId: ItemId
+    public let nextChildLocalId: ItemId
+    public let canonicalName: String
+    public let comment: ?String
+    public let parentId: ItemId
+    public let kind: ItemKind
+    public let location: ?clang.SourceLocation
 
     init(
         id: ItemId,

@@ -67,5 +67,14 @@ public func generate(opts: CjbindOptions): String {
 
     parse(ctx)
 
+    for (i in ctx.items) {
+        match (i) {
+            case Some(v) => 
+                println("${v.canonicalName} ${v.id} ${v.parentId} ${v.kind}")
+            
+            case None => println("None")
+        }
+    }
+
     return ""
 }
