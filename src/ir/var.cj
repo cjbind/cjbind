@@ -26,6 +26,7 @@ public class Var <: ClangSubItemParser<Var> {
         this.isConst = isConst
     }
 
+    // cjlint-ignore -start !G.FUN.01
     public static func parse(cursor: clang.Cursor, ctx: CjbindContext): Result<ParseResult<Var>, ParseError> {
         let k = cursor.kind()
         if (k == clang.CXCursor_MacroDefinition) {
@@ -97,6 +98,7 @@ public class Var <: ClangSubItemParser<Var> {
             return Err(ParseError.Continue)
         }
     }
+    // cjlint-ignore -end
 }
 
 public enum VarType {

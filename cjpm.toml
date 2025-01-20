@@ -4,13 +4,13 @@
 glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.0" }
 
 [ffi.c]
-clang = { path = "D:/Tool/mingw64/bin" }
+clang = { path = "./lib" }
 
 [package]
   cjc-version = "0.58.3"
-  compile-option = ""
+  compile-option = "--static-std --static-libs"
   description = "A simple C binding generator for Cangjie"
-  link-option = "-lclang"
+  link-option = ""
   name = "cjbind"
   output-type = "executable"
   override-compile-option = ""
