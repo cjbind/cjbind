@@ -188,13 +188,97 @@ public class CompInfo {
             }
 
         if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
-            let field = RawField(None, ty, None,None, offset)
+            let field = RawField(None, ty, None, None, offset)
             ci.fields.appendRawField(field)
         }
 
         Result.Ok(ci)
     }
     // cjlint-ignore -end
+
+    func hasFields(): Bool {
+        match (this.fields) {
+            case CompFields.CompFieldsError => false
+            case CompFields.CompFieldsAfter(v) => !v.fields.isEmpty()
+            case CompFields.CompFieldsBefore(v) => !v.isEmpty()
+        }
+    }
+
+    func eachKnownFieldLayout(
+        ctx: CjbindContext,
+        cb: (Layout) -> Unit
+    ) {
+        match (this.fields) {
+            case CompFields.CompFieldsError => ()
+            case CompFields.CompFieldsAfter(v) => for (field in v.fields) {
+                if (let Some(layout) <- field.getLayout(ctx)) {
+                    cb(layout)
+                }
+            }
+            case CompFields.CompFieldsBefore(rawFields) => for (field in rawFields) {
+                let fieldTy = ctx.resolveType(field.ty)
+                if (let Some(layout) <- fieldTy.getLayout(ctx)) {
+                    cb(layout)
+                }
+            }
+        }
+    }
+
+    public func getLayout(ctx: CjbindContext): ?Layout {
+        match (this.kind) {
+            case CompKindStruct => return None
+            case _ => ()
+        }
+
+        if (this.isForwardDeclaration) {
+            return None
+        }
+
+        if (!this.hasFields()) {
+            return None
+        }
+
+        let maxSize = Box(Int32(0))
+        let maxAlign = Box(Int32(1))
+
+        this.eachKnownFieldLayout(ctx) {
+            layout =>
+            maxSize.value = max(maxSize.value, layout.size)
+            maxAlign.value = max(maxAlign.value, layout.align)
+        }
+
+        return Some(Layout(maxSize.value, maxAlign.value))
+    }
+
+    public func isPacked(
+        ctx: CjbindContext,
+        layout: ?Layout
+    ): Bool {
+        if (this.packedAttr) {
+            return true
+        }
+
+        if (let Some(parentLayout) <- layout) {
+            let packed = Box(false)
+            this.eachKnownFieldLayout(ctx) {
+                layout => packed.value = packed.value || layout.align > parentLayout.align
+            }
+
+            if (packed.value) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    public func computeBitfieldUnits(
+        ctx: CjbindContext,
+        layout: ?Layout
+    ) {
+        let packed = this.isPacked(ctx, layout)
+        this.fields.computeBitfieldUnits(ctx, packed)
+    }
 }
 
 public open class FieldData {
@@ -265,6 +349,13 @@ public class BitfieldUnit {
 public enum Field {
     DataMember(FieldData)
     | Bitfields(BitfieldUnit)
+
+    public func getLayout(ctx: CjbindContext): ?Layout {
+        match (this) {
+            case DataMember(data) => ctx.resolveType(data.ty).getLayout(ctx)
+            case Bitfields(u) => Some(u.layout)
+        }
+    }
 }
 
 public struct CompFieldsAfterValue {
@@ -291,4 +382,23 @@ public enum CompFields {
             case _ => throw Exception("fields computed")
         }
     }
+
+    func computeBitfieldUnits(ctx: CjbindContext, packed: Bool) {
+        let raws = match (this) {
+            case CompFields.CompFieldsBefore(v) => v
+            case _ => throw Exception("fields computed")
+        }
+
+        let result = 
+    }
+}
+
+func rawFieldsToFieldsAndBitfieldUnits(
+    ctx: CjbindContext,
+    rawFields: Iterable<RawField>,
+    packed: Bool
+): Result<(ArrayList<Field>, Bool), Unit> {
+    
+
+    throw Exception("TODO")
 }
