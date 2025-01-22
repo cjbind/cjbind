@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.collection.ArrayList
+import std.collection.{ArrayList, collectArrayList}
 import cjbind.clang
 import cjbind.result.Result
 
@@ -389,16 +389,72 @@ public enum CompFields {
             case _ => throw Exception("fields computed")
         }
 
-        let result = 
+        throw Exception("TODO")
     }
 }
 
 func rawFieldsToFieldsAndBitfieldUnits(
     ctx: CjbindContext,
-    rawFields: Iterable<RawField>,
+    rawFields: ArrayList<RawField>,
     packed: Bool
 ): Result<(ArrayList<Field>, Bool), Unit> {
-    
+    let fields = ArrayList<Field>()
+    let bitfieldUnitCount = Box(0)
+
+    var idx = 0
+
+    func takeFields(bt: Bool): ArrayList<RawField> {
+        let ret = ArrayList<RawField>()
+
+        while (idx < rawFields.size) {
+            let cur = rawFields[idx]
+            if ((bt && cur.bitfieldWidth.isSome()) || (!bt && cur.bitfieldWidth.isNone())) {
+                ret.add(cur)
+                idx += 1
+            } else {
+                break
+            }
+        }
+
+        return ret
+    }
+
+    while (true) {
+        let nonBitFields = takeFields(false)
+        let mappedNonBitFields = nonBitFields.iterator().map {
+            it => Field.DataMember(it)
+        } |> collectArrayList
+        fields.add(all: mappedNonBitFields)
+
+        if (idx == rawFields.size) {
+            break
+        }
+
+        throw Exception("TODO")
+    }
 
     throw Exception("TODO")
+}
+
+func bitfieldsToAllocationUnits(
+    ctx: CjbindContext,
+    bitfieldUnitCount: Box<Int64>,
+    field: ArrayList<Field>,
+    rawBitFields: ArrayList<Field>,
+    packed: Bool
+): Result<Unit, Unit> {
+    func fillAllocationUnit(
+        fields: ArrayList<Field>,
+        bitfieldUnitCount: Box<Int64>,
+        unitSizeInBits: Int64,
+        unitAlignInBits: Int64,
+        bitfields: ArrayList<Bitfield>,
+        packed: Bool
+    ) {
+        bitfieldUnitCount.value += 1
+        
+    }
+
+    throw Exception("TODO")
+
 }
