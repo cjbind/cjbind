@@ -1,5 +1,11 @@
 package cjbind.codegen
 
+import std.ast.*
+
+import cjbind.ir.*
+import cjbind.options.CjbindOptions
+import cjbind.result.Result
+
 public struct CodegenSerializeError {
     public let msg: String
     public let loc: String
@@ -16,4 +22,10 @@ public struct CodegenSerializeError {
 public enum CodegenError {
     Serialize(CodegenSerializeError) |
     Io(String)
+}
+
+public func codegen(
+    context: CjbindContext
+): Result<(Tokens, CjbindOptions), CodegenError> {
+    
 }
