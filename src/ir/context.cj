@@ -1,6 +1,8 @@
 package cjbind.ir
 
+import std.ast.Tokens
 import std.collection.*
+import cjbind.result.Result
 import cjbind.clang
 import cjbind.options.CjbindOptions
 
@@ -127,7 +129,6 @@ public class CjbindContext {
         if (isType && item.kind.expectType().isComp()) {
             this.needBitfieldAllocation.add(id)
         }
-
 
         if (this.items[Int64(id)].isSome()) {
             throw Exception("Item with id ${id} already exists, WTF case")
@@ -420,6 +421,94 @@ public class CjbindContext {
 
     public func addDep(dep: String) {
         this.deps.add(dep)
+    }
+
+    public func getItems(): Iterator<(ItemId, Item)> {
+        this.items.iterator().enumerate().filterMap {
+            v => 
+                let idx = v[0]
+                let it = v[1]
+                let ret: Option<(ItemId, Item)> = match (it) {
+                    case Some(v) => (UIntNative(idx), v)
+                    case None => None
+                }
+                ret
+        }
+    }
+
+    func collectTyperefs(): ArrayList<(ItemId, clang.Type, clang.Cursor, ?ItemId)> {
+        if (!this.collectedTyperefs) {
+            this.collectedTyperefs = true
+        } else {
+            throw Exception("already collected")
+        }
+
+        let typerefs = ArrayList<(ItemId, clang.Type, clang.Cursor, ?ItemId)>()
+
+        for ((id, item) in this.getItems()) {
+            let kind = item.kind
+            let ty = match(kind.asType()) {
+                case Some(t) => t
+                case None => continue
+            }
+
+            if (let TypeKind.UnresolvedTypeRef(ty, loc, parentId) <- ty.kind) {
+                typerefs.add((id, ty, loc, parentId))
+            }
+        }
+
+        return typerefs
+    }
+
+    func resolveTypeRefs() {
+        let typerefs = this.collectTyperefs()
+
+        for ((id, ty, loc, parentId) in typerefs) {
+            let resolved = Item.fromTy(ty, loc, parentId, this)
+                .unwrapOrElse { 
+                    _ => 
+                    eprintln("Could not resolve type reference, falling back to opaque blob")
+                    Item.newOpaqueType(this.nextItemId(), ty, this)
+                }
+
+            let item = this.items[Int64(id)].getOrThrow()
+            item.kind.expectType().kind = TypeKind.ResolvedTypeRef(resolved)
+        }
+
+    }
+
+    func withLoanedItem<T>(id: ItemId, f: (CjbindContext, Item) -> T): T {
+        let item = this.items[Int64(id)].getOrThrow()
+        this.items[Int64(id)] = None
+
+        let result = f(this, item)
+
+        this.items[Int64(id)] = item
+
+        return result
+    }
+
+    func computeBitfieldUnits() {
+        let needBitfieldAllocation = this.needBitfieldAllocation
+        this.needBitfieldAllocation = ArrayList()
+
+        for (id in needBitfieldAllocation) {
+            this.withLoanedItem(id) {
+                ctx, item =>
+                    let ty = item.kind.asType().getOrThrow()
+                    let layout = ty.getLayout(ctx)
+                    ty.asComp().getOrThrow().computeBitfieldUnits(ctx, layout)
+            }
+        }
+    }
+
+    public func gen<E>(cb: (CjbindContext) -> Result<(Tokens, CjbindOptions), E>): Result<(Tokens, CjbindOptions), E> {
+        this.inCodegen = true
+
+        this.resolveTypeRefs()
+        this.computeBitfieldUnits()
         
+
+        throw Exception("gen not impl")
     }
 }

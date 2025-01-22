@@ -13,7 +13,7 @@ public class Item {
     public let canonicalName: String
     public let comment: ?String
     public let parentId: ItemId
-    public let kind: ItemKind
+    public var kind: ItemKind
     public let location: ?clang.SourceLocation
 
     init(

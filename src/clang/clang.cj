@@ -1,6 +1,6 @@
 package cjbind.clang
 
-import std.collection.HashMap
+import std.collection.{HashMap, ArrayList}
 
 import cjbind.result.Result
 
@@ -692,12 +692,16 @@ public class TranslationUnit {
         unsafe {
             let fname = LibC.mallocCString(file)
 
+            let releaser = ArrayList<() -> Unit>()
+
             let c_args = LibC.malloc<CString>(count: cmdArgs.size)
+            releaser.add({=> LibC.free(c_args)})
 
             for (i in 0..cmdArgs.size) {
                 let s = LibC.mallocCString(cmdArgs[i])
                 let ptr = c_args + i
                 ptr.write(s)
+                releaser.add({=> LibC.free(s)})
             }
 
             let unsaved = CPointer<CXUnsavedFile>()
@@ -720,6 +724,10 @@ public class TranslationUnit {
             }
 
             this.x = tu
+
+            for(v in releaser) {
+                v()
+            }
         }
     }
 

@@ -5,8 +5,8 @@ import cjbind.result.Result
 
 public class Type {
     public let name: ?String
-    public let layout: ?Layout
-    public let kind: TypeKind
+    let layout: ?Layout
+    public var kind: TypeKind
     public let isConst: Bool
 
     public init(
@@ -288,6 +288,32 @@ public class Type {
         return Result.Ok(ParseResult.New(tty, Some(cursor.canonical())))
     }
     // cjlint-ignore -end
+
+    public func getLayout(ctx: CjbindContext): ?Layout {
+        match (this.layout) {
+            case Some(v) => return v
+            case _ => ()
+        }
+
+        return match (this.kind) {
+            case TypeKind.TypeKindComp(ci) => ci.getLayout(ctx)
+            case TypeKind.TypeKindArray(inner, _) =>
+                let innerLayout = ctx.resolveType(inner).getLayout(ctx)
+                match (innerLayout) {
+                    case Some(v) => Some(Layout(0, v.align))
+                    case None => None
+                }
+            case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
+            case _ => None
+        }
+    }
+
+    public func asComp(): ?CompInfo {
+        match (this.kind) {
+            case TypeKind.TypeKindComp(ci) => ci
+            case _ => None
+        }
+    }
 }
 
 public enum TypeKind {
