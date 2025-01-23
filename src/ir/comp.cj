@@ -11,7 +11,7 @@ public enum CompKind {
 
 public class CompInfo {
     public let kind: CompKind
-    public let fields: CompFields = CompFieldsBefore(ArrayList())
+    public var fields: CompFields = CompFieldsBefore(ArrayList())
     public let innerTypes: ArrayList<TypeId> = ArrayList()
 
     public var isForwardDeclaration: Bool = false
@@ -188,8 +188,8 @@ public class CompInfo {
             }
 
         if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
-            let field = RawField(None, ty, None, None, offset)
-            ci.fields.appendRawField(field)
+            let tf = RawField(None, ty, None, None, offset)
+            ci.fields.appendRawField(tf)
         }
 
         Result.Ok(ci)
@@ -277,12 +277,18 @@ public class CompInfo {
         layout: ?Layout
     ) {
         let packed = this.isPacked(ctx, layout)
-        this.fields.computeBitfieldUnits(ctx, packed)
+        this.fields = this.fields.computeBitfieldUnits(ctx, packed)
+    }
+
+    public func deanonymizeFields(
+        ctx: CjbindContext
+    ) {
+        this.fields.deanonymizeFields(ctx)
     }
 }
 
 public open class FieldData {
-    public let name: ?String
+    public var name: ?String
     public let ty: TypeId
     public let comment: ?String
     public let bitfieldWidth: ?UInt32
@@ -383,13 +389,49 @@ public enum CompFields {
         }
     }
 
-    func computeBitfieldUnits(ctx: CjbindContext, packed: Bool) {
+    func computeBitfieldUnits(ctx: CjbindContext, packed: Bool): CompFields {
         let raws = match (this) {
             case CompFields.CompFieldsBefore(v) => v
             case _ => throw Exception("fields computed")
         }
 
-        throw Exception("TODO")
+        let result = rawFieldsToFieldsAndBitfieldUnits(
+            ctx, raws, packed
+        )
+
+        match (result) {
+            case Ok((fields, hasBitfieldUnits)) =>
+                return CompFields.CompFieldsAfter(
+                    CompFieldsAfterValue(
+                        fields.toArray(), hasBitfieldUnits
+                    ))
+            case Err(err) => return CompFieldsError
+        }
+    }
+
+    func deanonymizeFields(_: CjbindContext) {
+        let fields = match (this) {
+            case CompFields.CompFieldsAfter(v) => v.fields
+            case CompFields.CompFieldsError => return
+            case CompFields.CompFieldsBefore(_) => throw Exception("fields not computed")
+        }
+
+        var anonFieldCounter = 0
+
+        for (field in fields) {
+            match (field) {
+                case Field.DataMember(data) => 
+                    if (data.name.isSome()) {
+                        continue
+                    }
+
+                    anonFieldCounter++
+                    data.name = Some(
+                        "__cjbind_anon_${anonFieldCounter}"
+                    )
+                case _ => ()
+            }
+        }
     }
 }
 
@@ -420,41 +462,147 @@ func rawFieldsToFieldsAndBitfieldUnits(
     }
 
     while (true) {
-        let nonBitFields = takeFields(false)
-        let mappedNonBitFields = nonBitFields.iterator().map {
+        let nonBitfields = takeFields(false)
+        let mappedNonBitfields = nonBitfields.iterator().map {
             it => Field.DataMember(it)
         } |> collectArrayList
-        fields.add(all: mappedNonBitFields)
+        fields.add(all: mappedNonBitfields)
 
         if (idx == rawFields.size) {
             break
         }
 
-        throw Exception("TODO")
+        let bitfields = takeFields(true)
+        if (bitfields.isEmpty()) {
+            break
+        }
+
+        bitfieldsToAllocationUnits(
+            ctx,
+            bitfieldUnitCount,
+            fields,
+            bitfields,
+            packed
+        )
     }
 
-    throw Exception("TODO")
+    if (idx != rawFields.size) {
+        throw Exception("some items not resolved in rawFields")
+    }
+
+    return Result.Ok((fields, bitfieldUnitCount.value != 0))
 }
 
+func bytesFromBitsPow2(n: UInt32): UInt32 {
+    if (n == 0) {
+        return 0
+    }
+
+    if (n <= 8) {
+        return 1
+    }
+
+    var v = 16u32
+    while (v < n) {
+        v *= 2
+    }
+    return v / 8
+}
+
+func alignTo(size: UInt32, align: UInt32): UInt32 {
+    if (align == 0) {
+        return size
+    }
+
+    let rem = size % align
+    if (rem == 0) {
+        return size
+    }
+
+    return size + align - rem
+}
+
+// cjlint-ignore -start !G.FUN.01
 func bitfieldsToAllocationUnits(
     ctx: CjbindContext,
     bitfieldUnitCount: Box<Int64>,
-    field: ArrayList<Field>,
-    rawBitFields: ArrayList<Field>,
+    fields: ArrayList<Field>,
+    rawBitFields: ArrayList<RawField>,
     packed: Bool
 ): Result<Unit, Unit> {
     func fillAllocationUnit(
-        fields: ArrayList<Field>,
+        fields2: ArrayList<Field>,
         bitfieldUnitCount: Box<Int64>,
-        unitSizeInBits: Int64,
-        unitAlignInBits: Int64,
+        unitSizeInBits: UInt32,
+        unitAlignInBits: UInt32,
         bitfields: ArrayList<Bitfield>,
         packed: Bool
     ) {
         bitfieldUnitCount.value += 1
-        
+        let align = if (packed) {
+            1u32
+        } else {
+            bytesFromBitsPow2(unitAlignInBits)
+        }
+        let size = alignTo(unitSizeInBits, 8) / 8
+        let layout = Layout(Int32(size), Int32(align))
+        let tf = Field.Bitfields(
+            BitfieldUnit(
+                UIntNative(bitfieldUnitCount.value),
+                layout,
+                bitfields.toArray()
+            )
+        )
+        fields2.add(tf)
     }
 
-    throw Exception("TODO")
+    var maxAlign = 0u32
+    var unfilledBitsInUnit = 0u32
+    var unitSizeInBits = 0u32
+    var unitAlign = 0u32
+    let bitfieldsInUnit = ArrayList<Bitfield>()
 
+    for (bitfield in rawBitFields) {
+        let bitfieldWidth = bitfield.bitfieldWidth.getOrThrow()
+        let bitfieldLayout = match (ctx.resolveType(bitfield.ty).getLayout(ctx)) {
+            case Some(v) => v
+            case None => return Result.Err(())
+        }
+        let bitfieldSize = UInt32(bitfieldLayout.size)
+        let bitfieldAlign = UInt32(bitfieldLayout.align)
+
+        var offset = unitSizeInBits
+        if (!packed) {
+            let cond = (offset != 0) && ((bitfieldWidth == 0) || (((offset % (bitfieldAlign * 8)) + bitfieldWidth) > (bitfieldSize *
+                8)))
+            if (cond) {
+                offset = alignTo(offset, bitfieldAlign * 8)
+            }
+        }
+
+        if (bitfield.name.isSome()) {
+            maxAlign = max(maxAlign, bitfieldAlign)
+            unitAlign = max(unitAlign, bitfieldWidth)
+        }
+
+        bitfieldsInUnit.add(Bitfield(UIntNative(offset), bitfield))
+        unitSizeInBits = offset + bitfieldWidth
+
+        let dataSize = alignTo(unitSizeInBits, bitfieldAlign * 8)
+        unfilledBitsInUnit = dataSize - unitSizeInBits
+    }
+
+    if (unitSizeInBits != 0) {
+        fillAllocationUnit(
+            fields,
+            bitfieldUnitCount,
+            unitSizeInBits,
+            unitAlign,
+            bitfieldsInUnit,
+            packed
+        )
+    }
+
+    return Result.Ok(())
 }
+// cjlint-ignore -end
