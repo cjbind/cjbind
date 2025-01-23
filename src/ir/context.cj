@@ -424,8 +424,12 @@ public class CjbindContext {
     }
 
     public func getItems(): Iterator<(ItemId, Item)> {
-        this.items.iterator().enumerate().filterMap {
-            v => 
+        this
+            .items
+            .iterator()
+            .enumerate()
+            .filterMap {
+                v =>
                 let idx = v[0]
                 let it = v[1]
                 let ret: Option<(ItemId, Item)> = match (it) {
@@ -433,7 +437,7 @@ public class CjbindContext {
                     case None => None
                 }
                 ret
-        }
+            }
     }
 
     func collectTyperefs(): ArrayList<(ItemId, clang.Type, clang.Cursor, ?ItemId)> {
@@ -447,7 +451,7 @@ public class CjbindContext {
 
         for ((id, item) in this.getItems()) {
             let kind = item.kind
-            let ty = match(kind.asType()) {
+            let ty = match (kind.asType()) {
                 case Some(t) => t
                 case None => continue
             }
@@ -464,9 +468,10 @@ public class CjbindContext {
         let typerefs = this.collectTyperefs()
 
         for ((id, ty, loc, parentId) in typerefs) {
-            let resolved = Item.fromTy(ty, loc, parentId, this)
-                .unwrapOrElse { 
-                    _ => 
+            let resolved = Item
+                .fromTy(ty, loc, parentId, this)
+                .unwrapOrElse {
+                    _ =>
                     eprintln("Could not resolve type reference, falling back to opaque blob")
                     Item.newOpaqueType(this.nextItemId(), ty, this)
                 }
@@ -474,7 +479,6 @@ public class CjbindContext {
             let item = this.items[Int64(id)].getOrThrow()
             item.kind.expectType().kind = TypeKind.ResolvedTypeRef(resolved)
         }
-
     }
 
     func withLoanedItem<T>(id: ItemId, f: (CjbindContext, Item) -> T): T {
@@ -489,17 +493,61 @@ public class CjbindContext {
     }
 
     func computeBitfieldUnits() {
-        let needBitfieldAllocation = this.needBitfieldAllocation
+        let tnba = this.needBitfieldAllocation
         this.needBitfieldAllocation = ArrayList()
 
-        for (id in needBitfieldAllocation) {
+        for (id in tnba) {
             this.withLoanedItem(id) {
                 ctx, item =>
-                    let ty = item.kind.asType().getOrThrow()
-                    let layout = ty.getLayout(ctx)
-                    ty.asComp().getOrThrow().computeBitfieldUnits(ctx, layout)
+                let ty = item.kind.asType().getOrThrow()
+                let layout = ty.getLayout(ctx)
+                ty.asComp().getOrThrow().computeBitfieldUnits(ctx, layout)
             }
         }
+    }
+
+    func deanonymizeFields() {
+        let compItemIds = this
+            .getItems()
+            .filterMap {
+                v =>
+                let id = v[0]
+                let item = v[1]
+
+                let cond = item.kind.asType()?.isComp()
+                let ret: ?ItemId = match (cond) {
+                    case Some(v) =>
+                        if (v) {
+                            return Some(id)
+                        } else {
+                            return None<ItemId>
+                        }
+                    case None => None<ItemId>
+                }
+                return ret
+            } |> collectArrayList
+
+        for (id in compItemIds) {
+            this.withLoanedItem(id) {
+                ctx, item =>
+                    item.kind
+                        .asType()
+                        .getOrThrow()
+                        .asComp()
+                        .getOrThrow()
+                        .deanonymizeFields(ctx)
+            }
+        }
+    }
+
+    func computeCodegenItems() {
+        let roots = this.getItems().map {
+            it => it[0]
+        } |> collectArray
+        roots.reverse()
+
+        
+
     }
 
     public func gen<E>(cb: (CjbindContext) -> Result<(Tokens, CjbindOptions), E>): Result<(Tokens, CjbindOptions), E> {
@@ -507,7 +555,9 @@ public class CjbindContext {
 
         this.resolveTypeRefs()
         this.computeBitfieldUnits()
-        
+        this.deanonymizeFields()
+
+        this.computeCodegenItems()
 
         throw Exception("gen not impl")
     }
