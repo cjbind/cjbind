@@ -2,7 +2,6 @@ package cjbind.ir
 
 import std.ast.Tokens
 import std.collection.*
-
 import cjbind.result.Result
 import cjbind.clang
 import cjbind.options.CjbindOptions
@@ -542,22 +541,14 @@ public class CjbindContext {
 
         for (id in compItemIds) {
             this.withLoanedItem(id) {
-                ctx, item =>
-                    item.kind
-                        .asType()
-                        .getOrThrow()
-                        .asComp()
-                        .getOrThrow()
-                        .deanonymizeFields(ctx)
+                ctx, item => item.kind.asType().getOrThrow().asComp().getOrThrow().deanonymizeFields(ctx)
             }
         }
     }
 
     func isStdintType(name: String): Bool {
         match (name) {
-            case "int8_t" | "uint8_t" | "int16_t" | "uint16_t" | "int32_t" |
-            "uint32_t" | "int64_t" | "uint64_t" | "uintptr_t" |
-            "intptr_t" | "ptrdiff_t" | "size_t" | "ssize_t" => true
+            case "int8_t" | "uint8_t" | "int16_t" | "uint16_t" | "int32_t" | "uint32_t" | "int64_t" | "uint64_t" | "uintptr_t" | "intptr_t" | "ptrdiff_t" | "size_t" | "ssize_t" => true
             case _ => false
         }
     }
@@ -572,6 +563,47 @@ public class CjbindContext {
         this.codegenItems = Some(ItemSet(found))
     }
 
+    // cjlint-ignore -start !G.FUN.01
+    func computeEnumTypedefCombos() {
+        let data = HashSet<ItemId>()
+
+        for (item in this.getItems()) {
+            if (let ItemKind.KindModule(module) <- item[1].kind) {
+                let namesOfTypedefs = HashSet<String>()
+
+                for (childId in module.children) {
+                    if (let Some(ItemKind.KindType(ty)) <- this.items[Int64(childId)].flatMap {it => it.kind}) {
+                        if (let (Some(name), TypeKind.TypeKindAlias(typeId)) <- (ty.name, ty.kind)) {
+                            if (typeId
+                                .intoResolver()
+                                .throughTypeRefs()
+                                .throughTypeAliases()
+                                .resolve(this)
+                                .kind
+                                .expectType()
+                                .isInt()) {
+                                namesOfTypedefs.add(name)
+                            }
+                        }
+                    }
+                }
+
+                for (childId in module.children) {
+                    if (let Some(ItemKind.KindType(ty)) <- this.items[Int64(childId)].flatMap {it => it.kind}) {
+                        if (let (Some(name), true) <- (ty.name, ty.isEnum())) {
+                            if (namesOfTypedefs.contains(name)) {
+                                data.add(childId)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        this.enumTypedefCombos = Some(data)
+    }
+    // cjlint-ignore -end
+
     public func gen<E>(cb: (CjbindContext) -> Result<(Tokens, CjbindOptions), E>): Result<(Tokens, CjbindOptions), E> {
         this.inCodegen = true
 
@@ -581,6 +613,62 @@ public class CjbindContext {
 
         this.computeCodegenItems()
 
-        throw Exception("gen not impl")
+        this.computeEnumTypedefCombos()
+
+        return cb(this)
+    }
+}
+
+public class ItemResolver {
+    let idVal: ItemId
+    var throughTypeRefsVal: Bool = false
+    var throughTypeAliasesVal: Bool = false
+
+    public init(id: ItemId) {
+        this.idVal = id
+    }
+
+    public func throughTypeRefs(): ItemResolver {
+        this.throughTypeRefsVal = true
+        return this
+    }
+
+    public func throughTypeAliases(): ItemResolver {
+        this.throughTypeAliasesVal = true
+        return this
+    }
+
+    public func resolve(ctx: CjbindContext): Item {
+        var id = this.idVal
+        var seenIds = HashSet<ItemId>()
+
+        while (true) {
+            let item = ctx.resolveItem(id)
+
+            if (!seenIds.add(id)) {
+                return item
+            }
+
+            let tyKind = item.asType().flatMap {t => t.kind}
+            match (tyKind) {
+                case Some(TypeKind.ResolvedTypeRef(nextId)) =>
+                    if (this.throughTypeRefsVal) {
+                        id = nextId
+                    }
+                case Some(TypeKind.TypeKindAlias(nextId)) =>
+                    if (this.throughTypeAliasesVal) {
+                        id = nextId
+                    }
+                case _ => return item
+            }
+        }
+
+        throw Exception("unreachable")
+    }
+}
+
+extend ItemId {
+    func intoResolver(): ItemResolver {
+        return ItemResolver(this)
     }
 }

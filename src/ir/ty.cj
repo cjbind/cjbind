@@ -72,6 +72,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
+    public func isEnum(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindEnum(_) => true
+            case _ => false
+        }
+    }
+
     // cjlint-ignore -start !G.FUN.01
     public static func fromClangTy(
         potentialId: ItemId,
