@@ -6,7 +6,11 @@ import cjbind.result.Result
 
 public type ItemSet = HashSet<ItemId>
 
-public class Item {
+public interface IsOpaque<Extra> {
+    func isOpaque(ctx: CjbindContext, extra: Extra): Bool
+}
+
+public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public let id: ItemId
     public let localId: ItemId
     public let nextChildLocalId: ItemId
@@ -41,6 +45,34 @@ public class Item {
         match (this.kind) {
             case ItemKind.KindModule(module) => Some(module)
             case _ => None
+        }
+    }
+
+    public func asType(): Option<Type> {
+        match (this.kind) {
+            case ItemKind.KindType(typeInfo) => Some(typeInfo)
+            case _ => None
+        }
+    }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit) {
+        match (this.kind) {
+            case ItemKind.KindType(ty) =>
+                if (ty.shouldBeTracedUnconditionally() || !this.isOpaque(ctx, ())) {
+                    ty.trace(ctx, tracer, this)
+                }
+            case ItemKind.KindFunction(fun) => tracer.visit(fun.signature)
+            case ItemKind.KindVar(v) => tracer.visitKind(v.ty, EdgeKind.VarTypeEdge)
+            case ItemKind.KindModule(m) => ()
+        }
+    }
+    // cjlint-ignore -end
+
+    public func isOpaque(ctx: CjbindContext, _: Unit): Bool {
+        match (this.asType()) {
+            case Some(v) => return v.isOpaque(ctx, this)
+            case _ => return false
         }
     }
 
@@ -102,26 +134,28 @@ public class Item {
         }
 
         // handling types
-        
+
         let definition = cursor.definition()
         let applicaleCursor = definition ?? cursor
 
         let tyRelevantParentId = match (definition) {
-            case Some(def) => 
+            case Some(def) =>
                 if (def != cursor) {
                     ctx.addSemanticParent(def, relevantParentId)
-                    return Result.Ok(Item.fromTyOrRef(
-                        applicaleCursor.curType(),
-                        cursor,
-                        parentId,
-                        ctx
-                    ))
+                    return Result.Ok(
+                        Item.fromTyOrRef(
+                            applicaleCursor.curType(),
+                            cursor,
+                            parentId,
+                            ctx
+                        )
+                    )
                 }
                 var p = ctx.knownSemanticParent(def)
                 if (p.isNone()) {
                     p = parentId
                 }
-                p.getOrDefault { => ctx.currentModule}
+                p.getOrDefault {=> ctx.currentModule}
             case None => relevantParentId
         }
 
@@ -144,8 +178,7 @@ public class Item {
             let file = cursor.getIncludedFileName()
             match (file) {
                 case None => () // we can do nothing with this
-                case Some(includedFile) => 
-                    ctx.addDep(includedFile)
+                case Some(includedFile) => ctx.addDep(includedFile)
             }
             return Err(ParseError.Continue)
         } else {

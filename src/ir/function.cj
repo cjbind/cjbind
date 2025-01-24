@@ -152,7 +152,7 @@ func argsFromTyAndCursor(
     return result
 }
 
-public class FunctionSig {
+public class FunctionSig <: Trace<Tracer, Unit> {
     public let name: String
     public let returnType: TypeId
     public let argumentTypes: Array<(?String, TypeId)>
@@ -245,6 +245,16 @@ public class FunctionSig {
             ty.isVariadic(),
             curAbi
         ))
+    }
+    // cjlint-ignore -end
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(_: CjbindContext, tracer: Tracer, _: Unit) {
+        tracer.visitKind(this.returnType, EdgeKind.FunctionReturnEdge)
+
+        for (arg in this.argumentTypes) {
+            tracer.visitKind(arg[1], EdgeKind.FunctionParameterEdge)
+        }
     }
     // cjlint-ignore -end
 }
