@@ -2,6 +2,7 @@ package cjbind.ir
 
 import std.ast.Tokens
 import std.collection.*
+
 import cjbind.result.Result
 import cjbind.clang
 import cjbind.options.CjbindOptions
@@ -11,6 +12,18 @@ public type ItemId = UIntNative
 public type TypeId = ItemId
 
 public type ModuleId = ItemId
+
+extend ItemId <: IsOpaque<Unit> & Trace<Tracer, Unit> {
+    public func isOpaque(ctx: CjbindContext, _: Unit): Bool {
+        return ctx.resolveItem(this).isOpaque(ctx, ())
+    }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit): Unit {
+        ctx.resolveItem(this).trace(ctx, tracer, ())
+    }
+    // cjlint-ignore -end
+}
 
 public enum TypeKey <: Hashable & Equatable<TypeKey> {
     Usr(String)
@@ -540,13 +553,22 @@ public class CjbindContext {
         }
     }
 
+    func isStdintType(name: String): Bool {
+        match (name) {
+            case "int8_t" | "uint8_t" | "int16_t" | "uint16_t" | "int32_t" |
+            "uint32_t" | "int64_t" | "uint64_t" | "uintptr_t" |
+            "intptr_t" | "ptrdiff_t" | "size_t" | "ssize_t" => true
+            case _ => false
+        }
+    }
+
     func computeCodegenItems() {
         let roots = this.getItems().map {
             it => it[0]
         } |> collectArray
         roots.reverse()
 
-        
+
 
     }
 

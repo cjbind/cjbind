@@ -9,7 +9,7 @@ public enum CompKind {
     | CompKindUnion
 }
 
-public class CompInfo {
+public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public let kind: CompKind
     public var fields: CompFields = CompFieldsBefore(ArrayList())
     public let innerTypes: ArrayList<TypeId> = ArrayList()
@@ -204,6 +204,14 @@ public class CompInfo {
         }
     }
 
+    func getFields(): Array<Field> {
+        return match (fields) {
+            case CompFields.CompFieldsError => Array()
+            case CompFields.CompFieldsBefore(_) => throw Exception("getFields called before computed")
+            case CompFields.CompFieldsAfter(v) => v.fields
+        }
+    }
+
     func eachKnownFieldLayout(
         ctx: CjbindContext,
         cb: (Layout) -> Unit
@@ -280,11 +288,55 @@ public class CompInfo {
         this.fields = this.fields.computeBitfieldUnits(ctx, packed)
     }
 
-    public func deanonymizeFields(
-        ctx: CjbindContext
-    ) {
+    public func deanonymizeFields(ctx: CjbindContext) {
         this.fields.deanonymizeFields(ctx)
     }
+
+    public func isOpaque(ctx: CjbindContext, layout: Option<Layout>): Bool {
+        if (let CompFields.CompFieldsError <- this.fields) {
+            return true
+        }
+
+        let fieldsCond = this
+            .getFields()
+            .iterator()
+            .any {
+                f => match (f) {
+                    case Field.DataMember(_) => false
+                    case Field.Bitfields(unit) => unit
+                        .bitfields
+                        .iterator()
+                        .any {
+                            bf =>
+                            let bfLayout = ctx.resolveType(bf.data.ty).getLayout(ctx).getOrThrow()
+                            return (bf.data.bitfieldWidth.getOrThrow() / 8) > UInt32(bfLayout.size)
+                        }
+                }
+            }
+        if (fieldsCond) {
+            return true
+        }
+
+        if (this.isPacked(ctx, layout)) {
+            if (layout.flatMap {
+                l => return l.align > 1
+            }.getOrDefault {=> false}) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(context: CjbindContext, tracer: Tracer, item: Item) {
+        if (item.isOpaque(context, ())) {
+            return
+        }
+
+        this.fields.trace(context, tracer, ())
+    }
+    // cjlint-ignore -end
 }
 
 public open class FieldData {
@@ -352,7 +404,7 @@ public class BitfieldUnit {
     }
 }
 
-public enum Field {
+public enum Field <: Trace<Tracer, Unit> {
     DataMember(FieldData)
     | Bitfields(BitfieldUnit)
 
@@ -362,6 +414,19 @@ public enum Field {
             case Bitfields(u) => Some(u.layout)
         }
     }
+    
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(_: CjbindContext, tracer: Tracer, _: Unit) {
+        match (this) {
+            case Field.DataMember(data) =>
+                tracer.visitKind(data.ty, EdgeKind.FieldEdge)
+            case Field.Bitfields(unit) =>
+                for (bf in unit.bitfields) {
+                    tracer.visitKind(bf.data.ty, EdgeKind.FieldEdge)
+                }
+        }
+    }
+    // cjlint-ignore -end
 }
 
 public struct CompFieldsAfterValue {
@@ -377,7 +442,7 @@ public struct CompFieldsAfterValue {
     }
 }
 
-public enum CompFields {
+public enum CompFields <: Trace<Tracer, Unit> {
     CompFieldsBefore(ArrayList<RawField>)
     | CompFieldsAfter(CompFieldsAfterValue)
     | CompFieldsError
@@ -395,16 +460,11 @@ public enum CompFields {
             case _ => throw Exception("fields computed")
         }
 
-        let result = rawFieldsToFieldsAndBitfieldUnits(
-            ctx, raws, packed
-        )
+        let result = rawFieldsToFieldsAndBitfieldUnits(ctx, raws, packed)
 
         match (result) {
-            case Ok((fields, hasBitfieldUnits)) =>
-                return CompFields.CompFieldsAfter(
-                    CompFieldsAfterValue(
-                        fields.toArray(), hasBitfieldUnits
-                    ))
+            case Ok((fields, hasBitfieldUnits)) => return CompFields.CompFieldsAfter(
+                CompFieldsAfterValue(fields.toArray(), hasBitfieldUnits))
             case Err(err) => return CompFieldsError
         }
     }
@@ -420,19 +480,33 @@ public enum CompFields {
 
         for (field in fields) {
             match (field) {
-                case Field.DataMember(data) => 
+                case Field.DataMember(data) =>
                     if (data.name.isSome()) {
                         continue
                     }
 
                     anonFieldCounter++
-                    data.name = Some(
-                        "__cjbind_anon_${anonFieldCounter}"
-                    )
+                    data.name = Some("__cjbind_anon_${anonFieldCounter}")
                 case _ => ()
             }
         }
     }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(context: CjbindContext, tracer: Tracer, _: Unit) {
+        match (this) {
+            case CompFields.CompFieldsError => return
+            case CompFields.CompFieldsBefore(fields) =>
+                for (f in fields) {
+                    tracer.visitKind(f.ty, EdgeKind.FieldEdge)
+                }
+            case CompFields.CompFieldsAfter(v) =>
+                for (f in v.fields) {
+                    f.trace(context, tracer, ())
+                }
+        }
+    }
+    // cjlint-ignore -end
 }
 
 func rawFieldsToFieldsAndBitfieldUnits(
