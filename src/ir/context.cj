@@ -80,7 +80,7 @@ public class CjbindContext {
     public let translationUnit: clang.TranslationUnit
     public let targetInfo: clang.TargetInfo
 
-    public let codegenItems: Option<ItemSet> = None
+    public var codegenItems: Option<ItemSet> = None
 
     public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
@@ -568,8 +568,8 @@ public class CjbindContext {
         } |> collectArray
         roots.reverse()
 
-
-
+        let found = ItemTraversal(this, roots) |> collectArray
+        this.codegenItems = Some(ItemSet(found))
     }
 
     public func gen<E>(cb: (CjbindContext) -> Result<(Tokens, CjbindOptions), E>): Result<(Tokens, CjbindOptions), E> {
