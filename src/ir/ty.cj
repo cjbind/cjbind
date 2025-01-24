@@ -3,7 +3,7 @@ package cjbind.ir
 import cjbind.clang
 import cjbind.result.Result
 
-public class Type {
+public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     public let name: ?String
     let layout: ?Layout
     public var kind: TypeKind
@@ -314,6 +314,62 @@ public class Type {
             case _ => None
         }
     }
+
+    public func shouldBeTracedUnconditionally(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindComp(_) |
+                TypeKind.TypeKindFunction(_) |
+                TypeKind.TypeKindPointer(_) |
+                TypeKind.TypeKindArray(_, _) |
+                TypeKind.ResolvedTypeRef(_) => true
+            case _ => false
+        }
+    }
+
+    public func isOpaque(ctx: CjbindContext, _: Item): Bool {
+        return match (this.kind) {
+            case TypeKind.TypeKindOpaque => true
+            case TypeKind.TypeKindComp(comp) => comp.isOpaque(ctx, this.layout)
+            case TypeKind.ResolvedTypeRef(to) => to.isOpaque(ctx, ())
+            case _ => false
+        }
+    }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(context: CjbindContext, tracer: Tracer, item: Item) {
+        if (let Some(n) <- this.name) {
+            if (context.isStdintType(n)) {
+                return
+            }
+        }
+
+        match (this.kind) {
+            case TypeKind.TypeKindPointer(inner) => 
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindArray(inner, _) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindVector(inner, _) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindAlias(inner) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.ResolvedTypeRef(inner) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindComp(ci) =>
+                ci.trace(context, tracer, item)
+            case TypeKind.TypeKindFunction(sig) =>
+                sig.trace(context, tracer, ())
+            case TypeKind.TypeKindEnum(en) => 
+                if (let Some(r) <- en.repr) {
+                    tracer.visit(r)
+                }
+            case TypeKind.UnresolvedTypeRef(_, _, Some(id)) =>
+                tracer.visit(id)
+            case _ => () // don't care
+        }
+
+
+    }
+    // cjlint-ignore -end
 }
 
 public enum TypeKind {
