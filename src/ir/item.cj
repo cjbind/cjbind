@@ -14,7 +14,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public let id: ItemId
     public let localId: ItemId
     public let nextChildLocalId: ItemId
-    public let canonicalName: String
+    public let canonicalName: ?String
     public let comment: ?String
     public let parentId: ItemId
     public var kind: ItemKind

@@ -51,6 +51,10 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
+    public func canonicalType(ctx: CjbindContext): Type {
+        return this.safeCanonicalType(ctx).getOrThrow()
+    }
+
     public func isFloat(): Bool {
         match (this.kind) {
             case TypeKind.TypeKindFloat(_) => true
