@@ -135,19 +135,19 @@ extend Module <: CodeGenerator<Item, Unit> {
     }
 }
 
-extend Function <: CodeGenerator<Item, ?UInt32> {
+extend Function <: CodeGenerator<Item, Unit> {
     public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
         item: Item
-    ): ?UInt32 {
+    ): Unit {
         let isInternal = match (this.linkage) {
             case FunctionLinkage.LinkageInternal => true
             case FunctionLinkage.LinkageExternal => false
         }
 
         if (isInternal) {
-            return None
+            return
         }
 
         let signatureItem = ctx.resolveItem(this.signature)
@@ -158,17 +158,27 @@ extend Function <: CodeGenerator<Item, ?UInt32> {
             case _ => throw Exception("expected function type for sig")
         }
 
+        if (signature.isVariadic) {
+            // TODO: 支持可变参数调用
+            return
+        }
+
         let name = this.name
 
         if (result.seenFunction(name)) {
-            return None
+            return
         }
 
         result.sawFunction(name)
 
-        let attributes = ArrayList<Tokens>()
+        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+            let pc = preprocessComment(c)
+            Some(Attributes.doc(pc))
+        } else {
+            None
+        }
 
-        
+        let abi = signature.abi
 
 
 
