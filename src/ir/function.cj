@@ -1,6 +1,8 @@
 package cjbind.ir
 
 import std.collection.ArrayList
+import std.ast.{ToTokens, Tokens}
+
 import cjbind.clang
 import cjbind.result.Result
 
@@ -84,14 +86,34 @@ public class Function <: ClangSubItemParser<Function> {
     }
 }
 
-public enum Abi {
+public enum Abi <: ToTokens {
     C
     | Win64 // STDCALL in cangjie 
+
+    public func toTokens(): Tokens {
+        // match (this) {
+        //     case C => 
+        //         return quote(@CallingConv[CDECL])
+        //     case Win64 =>
+        //         return quote(@CallingConv[STDCALL])
+        // }
+        
+        // not sure if stdcall exist
+        return quote(@CallingConv[CDECL])
+    }
 }
 
-public enum ClangAbi {
+public enum ClangAbi <: ToTokens {
     Known(Abi)
     | Unknown(clang.CXCallingConv)
+
+    public func toTokens(): Tokens {
+        match (this) {
+            case Known(v) => v.toTokens()
+            case Unknown(v) =>
+                throw Exception("can not generate unknown calling convention")
+        }
+    }
 }
 
 func getAbi(cc: clang.CXCallingConv): ClangAbi {

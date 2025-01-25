@@ -41,6 +41,14 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.location = location
     }
 
+    public func getCanonicalName(ctx: CjbindContext): String {
+        match (this.canonicalName) {
+            case Some(v) => v
+            case None =>
+                let n = item.realCannonicalName(this, ctx)
+        }
+    }
+
     public func asModule(): Option<Module> {
         match (this.kind) {
             case ItemKind.KindModule(module) => Some(module)
