@@ -5,6 +5,7 @@ import std.collection.*
 import cjbind.ir.CjbindContext
 import cjbind.options.CjbindOptions
 import cjbind.clang
+import cjbind.codegen
 import cjbind.ir.*
 
 func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ItemId): Unit {
@@ -67,14 +68,7 @@ public func generate(opts: CjbindOptions): String {
 
     parse(ctx)
 
-    for (i in ctx.items) {
-        match (i) {
-            case Some(v) => 
-                println("${v.canonicalName} ${v.id} ${v.parentId} ${v.kind}")
-            
-            case None => println("None")
-        }
-    }
+    let (module, options) = codegen.codegen(ctx)
 
     return ""
 }

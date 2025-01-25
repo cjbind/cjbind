@@ -148,19 +148,20 @@ func searchClang(): Option<String> {
 // cjlint-ignore -end fun
 
 var STUB_CLANG_LIB = Path("./lib/libclang${DLL_SUFFIX}")
+var CLANG_STATIC_LIB = Path("./lib/libclang.a")
 
-func copyIfMissing(src: String) {
-    if (!exists(STUB_CLANG_LIB)) {
-        copy(Path(src), to: STUB_CLANG_LIB)
-    }
+func missingLib() {
+    return !exists(STUB_CLANG_LIB) && !exists(CLANG_STATIC_LIB)
 }
 
 func stagePreBuild(): Int64 {
-    // match (searchClang()) {
-    //     case Some(clang) => copyIfMissing(clang)
+    if (missingLib()) {
+        match (searchClang()) {
+            case Some(clang) => copy(Path(clang), to: STUB_CLANG_LIB)
 
-    //     case None => throw Exception("Clang not found")
-    // }
+            case None => throw Exception("Clang not found")
+        }
+    }
 
     return 0
 }
