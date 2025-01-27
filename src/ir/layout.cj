@@ -21,6 +21,19 @@ public open class Layout {
         return Opaque(this.size, this.align)
     }
 
+    static func forSizeInternal(ptrSize: Int32, size: Int32): Layout {
+        var nextAlign = 2i32
+        while (size % nextAlign == 0 && nextAlign <= ptrSize) {
+            nextAlign *= 2
+        }
+
+        return Layout(size, nextAlign / 2)
+    }
+
+    public static func forSize(ctx: CjbindContext, size: Int32): Layout {
+        return Layout.forSizeInternal(ctx.targetInfo.pointerWidth / 8, size)
+    }
+
     public static func knownCjTypeForSize(size: Int32): ?Tokens {
         return match (size) {
             case 1 => quote(UInt8)
