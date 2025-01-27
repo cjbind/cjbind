@@ -13,7 +13,23 @@ public class Utils {
 
         let argsIter = sig.argumentTypes.iterator()
 
-        let args = 
+        
+
+        throw Exception("TODO")
+    }
+
+    public static func fnsigArgumentType(
+        ctx: CjbindContext,
+        ty: TypeId
+    ): Tokens {
+        let argItem = ctx.resolveItem(ty)
+        let argTy = argItem.kind.expectType()
+
+        match (argTy.canonicalType(ctx).kind) {
+            case TypeKind.TypeKindArray(t, _) =>
+            
+        }
+
 
         throw Exception("TODO")
     }
