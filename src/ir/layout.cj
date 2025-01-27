@@ -1,5 +1,7 @@
 package cjbind.ir
 
+import std.ast.Tokens
+
 import cjbind.clang
 
 public open class Layout {
@@ -13,6 +15,20 @@ public open class Layout {
     ) {
         this.size = size
         this.align = align
+    }
+
+    public func opaque(): Opaque {
+        return Opaque(this.size, this.align)
+    }
+
+    public static func knownCjTypeForSize(size: Int32): ?Tokens {
+        return match (size) {
+            case 1 => quote(UInt8)
+            case 2 => quote(UInt16)
+            case 4 => quote(UInt32)
+            case 8 => quote(UInt64)
+            case _ => None
+        }
     }
 }
 
@@ -31,6 +47,18 @@ public class Opaque <: Layout {
         let ptrSize = UIntNative(ctx.targetInfo.pointerWidth)
         let layout = Layout(Int32(ty.size(ptrSize)), Int32(ty.align(ptrSize)))
         return Type(None, layout, TypeKind.TypeKindOpaque, ty.isConst())   
+    }
+
+    public func knownCjTypeForArray(): ?Tokens {
+        return Layout.knownCjTypeForSize(this.align)
+    }
+
+    public func arraySize(): ?Int32 {
+        if (this.knownCjTypeForArray().isSome()) {
+            return Some(this.size / max(this.align, 1))
+        } else {
+            return None
+        }
     }
 }
 
