@@ -3,7 +3,7 @@ package cjbind.codegen
 import std.ast.*
 
 import cjbind.ir.*
-import cjbind.result.Result
+import cjbind.result.{Result}
 
 interface TryToCjTy<Extra> {
     func tryToCjTy(
@@ -64,7 +64,7 @@ extend ItemId <: TryToCjTy<Unit> {
         ctx: CjbindContext,
         _: Unit
     ): Result<Tokens, Error> {
-        return ctx.resolveItem(this).tryToCjType(ctx, ())
+        return ctx.resolveItem(this).tryToCjTy(ctx, ())
     }
 }
 
@@ -107,8 +107,75 @@ extend Type <: TryToCjTy<Item> {
         item: Item
     ): Result<Tokens, Error> {
         match (this.kind) {
-            case TypeKind.TypeKindVoid => 
-                
+            case TypeKind.TypeKindVoid => return Ok(AstTy.cVoid(ctx))
+            case TypeKind.TypeKindNullPtr => return Ok(AstTy.cVoid(ctx).toPtr())
+            case TypeKind.TypeKindInt(ik) => 
+                let ret = AstTy.intKindCjType(ctx, ik, this.getLayout(ctx))
+                return Ok(ret)
+            case TypeKind.TypeKindFloat(fk) =>
+                let ret = AstTy.floatKindCjType(ctx, fk, this.getLayout(ctx))
+                return Ok(ret)
+            case TypeKind.TypeKindComplex(_) =>
+                return Err(Error.Unsupported("complex not supported yet"))
+            case TypeKind.TypeKindFunction(signature) => 
+                let ty = match(signature.tryToCjTy(ctx, item)) {
+                    case Ok(v) => v
+                    case Err(e) => return Err(e)
+                }
+                return Ok(ty)
+            case TypeKind.TypeKindArray(item, len) =>
+                let ty = match (item.tryToCjTy(ctx, ())) {
+                    case Ok(v) => v
+                    case Err(e) => return Err(e)
+                }
+                let lenOk = Int64(len)
+                let token = quote(VArray<$(ty), \$$(lenOk)>)
+                return Ok(token)
+            case TypeKind.TypeKindVector(item, len) =>
+                let ty = match (item.tryToCjTy(ctx, ())) {
+                    case Ok(v) => v
+                    case Err(e) => return Err(e)
+                }
+                let lenOk = Int64(len)
+                let token = quote(VArray<$(ty), \$$(lenOk)>)
+                return Ok(token)
+            case TypeKind.TypeKindEnum(_) =>
+                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.ResolvedTypeRef(inner) =>
+                return inner.tryToCjTy(ctx, ())
+            case TypeKind.TypeKindAlias(_) =>
+                if (let Some(n) <- this.name) {
+                    let named = Utils.typeFromNamed(ctx, n)
+                    if (let Some(nn) <- named) {
+                        return Ok(nn)
+                    }
+                }
+                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.TypeKindComp(info) =>
+                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.TypeKindOpaque =>
+                return this.tryToOpaque(ctx, item)
+            case TypeKind.TypeKindPointer(inner) =>
+                let size = this.getLayoutUnsafe(ctx, item).size
+                if (size != ctx.targetInfo.pointerWidth) {
+                    return Err(Error.InvalidPointerSize(
+                        this.name.getOrDefault {=> "unknown"},
+                        UIntNative(size),
+                        UIntNative(ctx.targetInfo.pointerWidth)
+                    ))
+                }
+
+                let innerTy = inner.intoResolver().throughTypeRefs().resolve(ctx).kind.expectType()
+
+                let ty = inner.toCjTyOrOpaque(ctx, ())
+
+                if (innerTy.canonicalType(ctx).isFunction()) {
+                    return Ok(ty)
+                } else {
+                    return Ok(ty.toPtr())
+                }
+            case TypeKind.UnresolvedTypeRef(_, _, _) =>
+                throw Exception("unreachable")
         }
     }
 }
@@ -122,5 +189,24 @@ extend Type <: ToOpaque<Item> {
             case Some(v) => Ok(v)
             case None => Err(Error.NoLayoutForOpaqueBlob)
         }
+    }
+}
+
+extend FunctionSig <: TryToCjTy<Item> {
+    public func tryToCjTy(
+        ctx: CjbindContext,
+        item: Item
+    ): Result<Tokens, Error> {
+        if (this.isVariadic) {
+            return Err(Error.Unsupported("variadic func type not supported"))
+        }
+
+        let ret = Utils.fnsigReturnTy(ctx, this)
+        let arguments = Utils.fnsigArguments(ctx, this)
+        
+        let joined = joinTokens(arguments, quote(,))
+
+        let retToken = quote(CFunc<$(joined)> -> $(ret))
+        return Ok(retToken)
     }
 }

@@ -158,10 +158,10 @@ extend Function <: CodeGenerator<Item, Unit> {
             case _ => throw Exception("expected function type for sig")
         }
 
-        if (signature.isVariadic) {
-            // TODO: 支持可变参数调用
-            return
-        }
+        // if (signature.isVariadic) {
+        //     // TODO: 支持可变参数调用
+        //     return
+        // }
 
         let name = this.name
 
