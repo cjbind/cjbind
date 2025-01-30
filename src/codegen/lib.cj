@@ -196,17 +196,10 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         let argsToken = joinTokens(args, quote(,))
 
-        let tokens = if (commentToken.isSome()) {
-            let c = commentToken.getOrThrow()
-            quote(
-                $(c)
-                foreign func $(ident) ( $(argsToken) ) : $(ret)
-            )
-        } else {
-            quote(
-                foreign func $(ident) ( $(argsToken) ) : $(ret)
-            )
-        }
+        let tokens = optionalComment(
+            commentToken,
+            quote(foreign func $(ident) ( $(argsToken) ) : $(ret))
+        )
 
         result.items.add(tokens)
     }
@@ -228,8 +221,72 @@ extend Var <: CodeGenerator<Item, Unit> {
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
-        
+        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+            let pc = preprocessComment(c)
+            Some(Attributes.doc(pc))
+        } else {
+            None
+        }
 
+        let varTy = this.ty
+        let ty = varTy.toCjTyOrOpaque(ctx, ())
+
+        if (let Some(v) <- this.val) {
+            match (v) {
+                case VarType.VarBool(vv) => result
+                    .items
+                    .add(
+                        optionalComment(
+                            commentToken,
+                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
+                        )
+                    )
+                case VarType.VarInt(vv) => result
+                    .items
+                    .add(
+                        optionalComment(
+                            commentToken,
+                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
+                        )
+                    )
+                case VarType.VarString(vv) =>
+                    let data = ArrayList(vv.toArray())
+                    data.add(0u8)
+
+                    let tokens = quote(public const $(canonicalIdent) : VArray<UInt8, $(data.size)> = $(data))
+                    if (let Some(v) <- commentToken) {
+                        v.append(Token(TokenKind.NL))
+                        v.append(Token(TokenKind.COMMENT, "// String value: ${vv}"))
+                    }
+                    result.items.add(
+                        optionalComment(
+                            commentToken,
+                            tokens
+                        )
+                    )
+                case VarType.VarFloat(vv) =>
+                    if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
+                        result
+                            .items
+                            .add(
+                                optionalComment(
+                                    commentToken,
+                                    quote(public const $(canonicalIdent) : $(ty) = $(expr))
+                                )
+                            )
+                    }
+                case VarType.VarChar(vv) => result
+                    .items
+                    .add(
+                        optionalComment(
+                            commentToken,
+                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
+                        )
+                    )
+            }
+        } else {
+            // 仓颉没有提供 extern C 的变量支持，忽略
+        }
     }
-
 }
+
