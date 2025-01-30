@@ -42,6 +42,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
+    public func isFunction(): Bool {
+        match (this.kind) {
+            case TypeKind.TypeKindFunction(_) => true
+            case _ => false
+        }
+    }
+
     public func safeCanonicalType(ctx: CjbindContext): ?Type {
         match (this.kind) {
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).safeCanonicalType(ctx)
@@ -334,6 +341,32 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 TypeKind.TypeKindArray(_, _) |
                 TypeKind.ResolvedTypeRef(_) => true
             case _ => false
+        }
+    }
+
+    public func sanitizedName(ctx: CjbindContext): ?String {
+        let nameInfo: ?(ItemId, String) = match (this.kind) {
+            case TypeKind.TypeKindPointer(inner) => Some((inner), "ptr")
+            case TypeKind.TypeKindArray(inner, length) => Some((inner, "array${length}"))
+            case _ => None
+        }
+
+        if (let Some((inner, prefix)) <- nameInfo) {
+            return ctx.resolveItem(inner)
+                .kind.expectType()
+                .sanitizedName(ctx)
+                .map {
+                    n => "${prefix}_${n}"
+                }
+        } else {
+            return this.name.map {
+                n =>
+                if (clang.isValidIdentifier(n)) {
+                    return n
+                }
+
+                return n.replace(" ", "_").replace(":", "_").replace(".", "_")
+            }
         }
     }
 

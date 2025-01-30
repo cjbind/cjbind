@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.ast.Tokens
+import std.ast.{Tokens, Token, TokenKind}
 import std.collection.*
 import cjbind.result.Result
 import cjbind.clang
@@ -452,6 +452,31 @@ public class CjbindContext {
             }
     }
 
+    public func cjMangle(name: String): String {
+        let keyword = match (name) {
+            case "as" | "break" | "Bool" | "case" | "catch" | "class" | "const" | "continue" | "Rune" | "do" | "else" | "enum" | "extend" | "for" | "from" | "func" | "false" | "finally" | "foreign" | "Float16" | "Float32" | "Float64" | "if" | "in" | "is" | "init" | "inout" | "import" | "interface" | "Int8" | "Int16" | "Int32" | "Int64" | "IntNative" | "let" | "mut" | "main" | "macro" | "match" | "Nothing" | "operator" | "prop" | "package" | "quote" | "return" | "spawn" | "super" | "static" | "struct" | "synchronized" | "try" | "this" | "true" | "type" | "throw" | "This" | "unsafe" | "Unit" | "UInt8" | "UInt16" | "UInt32" | "UInt64" | "UIntNative" | "var" | "VArray" | "where" | "while" | "abstract" | "open" | "override" | "private" | "protected" | "public" | "redef" | "get" | "set" | "sealed" | "internal" | "_" => true
+            case _ => false
+        }
+
+        if (name.contains("@") || name.contains("?") || name.contains("$") || keyword) {
+            return if (keyword) {
+                name + "_"
+            } else {
+                name.replace("@", "_").replace("?", "_").replace("$", "_")
+            }
+        }
+
+        return name
+    }
+
+    public func cjIdent(name: String): Token {
+        return this.cjIdent(this.cjMangle(name))
+    }
+
+    public func cjIdentRaw(name: String): Token {
+        return Token(TokenKind.IDENTIFIER, name)
+    }
+
     func collectTyperefs(): ArrayList<(ItemId, clang.Type, clang.Cursor, ?ItemId)> {
         if (!this.collectedTyperefs) {
             this.collectedTyperefs = true
@@ -667,8 +692,12 @@ public class ItemResolver {
     }
 }
 
-extend ItemId {
-    func intoResolver(): ItemResolver {
+public interface IntoResolver {
+    func intoResolver(): ItemResolver
+}
+
+extend ItemId <: IntoResolver {
+    public func intoResolver(): ItemResolver {
         return ItemResolver(this)
     }
 }
