@@ -12,8 +12,8 @@ public interface IsOpaque<Extra> {
 
 public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public let id: ItemId
-    public let localId: ItemId
-    public let nextChildLocalId: ItemId
+    var localId: ?ItemId
+    var nextChildLocalId: ItemId
     public let canonicalName: ?String
     public let comment: ?String
     public let parentId: ItemId
@@ -32,7 +32,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         }
 
         this.id = id
-        this.localId = 0
+        this.localId = None
         this.nextChildLocalId = 1
         this.canonicalName = ""
         this.parentId = parentId
@@ -41,13 +41,53 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.location = location
     }
 
-    public func getCanonicalName(ctx: CjbindContext): String {
-        match (this.canonicalName) {
-            case Some(v) => v
-            case None =>
-                let n = item.realCannonicalName(this, ctx)
-                
-                
+    public func getNextChildLocalId(): ItemId {
+        let v = this.nextChildLocalId
+        this.nextChildLocalId += 1
+        return v
+    }
+
+    public func getLocalId(ctx: CjbindContext): ItemId {
+        if (let Some(v) <- localId) {
+            return v
+        }
+
+        let parent = ctx.resolveItem(this.parentId)
+        let v = parent.getNextChildLocalId()
+        this.localId = Some(v)
+        return v
+    }
+
+    public func exposedId(ctx: CjbindContext): String {
+        let tyKind = this.kind.asType().map {
+            t => t.kind
+        }
+
+        let useLocal = match (tyKind) {
+            case Some(TypeKind.TypeKindComp(_)) | Some(TypeKind.TypeKindEnum(_))  => true 
+            case _ => false
+        }
+
+        if (useLocal) {
+            return this.getLocalId(ctx).toString()
+        } else {
+            return "id_${this.id}"
+        }
+    }
+
+    public func baseName(ctx: CjbindContext): String {
+        match (this.kind) {
+            case ItemKind.KindVar(v) => v.name
+            case ItemKind.KindModule(module) => module.name.getOrDefault {
+                => "_cjbind_mod_${this.exposedId(ctx)}"
+            }
+            case ItemKind.KindType(ty) =>
+                ty.sanitizedName(ctx).getOrDefault {
+                    => 
+                    "_cjbind_ty_${this.exposedId(ctx)}"
+                }
+            case ItemKind.KindFunction(fun) =>
+                fun.name
         }
     }
 
