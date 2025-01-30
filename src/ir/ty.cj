@@ -28,6 +28,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
+    public func asInt(): ?TypeKindIntKind {
+        match (this.kind) {
+            case TypeKind.TypeKindInt(v) => v
+            case _ => None
+        }
+    }
+
     public func isComp(): Bool {
         match (this.kind) {
             case TypeKind.TypeKindComp(_) => true

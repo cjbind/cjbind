@@ -4,6 +4,7 @@ import std.ast.*
 import std.collection.collectArray
 
 import cjbind.ir.*
+import cjbind.result.Result
 
 extend Tokens {
     func toPtr(): Tokens {
@@ -127,5 +128,17 @@ public class AstTy {
         }
     }
 
+    public static func floatExpr(
+        ctx: CjbindContext,
+        f: Float64
+    ): Result<Tokens, Unit> {
+        if (f.isNormal()) {
+            return Ok(quote($(f)))
+        }
 
+        // 暂时处理不了
+        // TODO: 等待添加 Nan 和 Finity 字面量支持
+        // https://gitcode.com/Cangjie/UsersForum/issues/1603
+        return Err(())
+    }
 }
