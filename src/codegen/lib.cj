@@ -44,12 +44,20 @@ public class CodegenResult {
         this.itemsSeen.add(id)
     }
 
-    public func seenFunction(name: String) {
+    public func seenFunction(name: String): Bool {
         this.functionsSeen.contains(name)
     }
 
-    public func sawFunction(name: String) {
+    public func sawFunction(name: String): Unit {
         this.functionsSeen.add(name)
+    }
+
+    public func seenVar(name: String): Bool {
+        this.varsSeen.contains(name)
+    }
+
+    public func sawVar(name: String): Unit {
+        this.varsSeen.add(name)
     }
 
     public func inner(cb: (CodegenResult) -> Unit): ArrayList<Tokens> {
@@ -98,11 +106,11 @@ extend Item <: CodeGenerator<Unit, Unit> {
         return true
     }
 
-    func codegen(
+    public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
         _: Unit
-    ) {
+    ): Unit {
         if (!this.processBeforeCodegen(ctx, result)) {
             return
         }
@@ -130,7 +138,7 @@ extend Module <: CodeGenerator<Item, Unit> {
         }
 
         if (item.id == ctx.rootModule) {
-            // TODO: 实现Union，Complex，透明Array，位域等类型的适配
+            // TODO: 实现Union，Complex，不透明Array，位域等类型的适配
         }
     }
 }
@@ -158,11 +166,6 @@ extend Function <: CodeGenerator<Item, Unit> {
             case _ => throw Exception("expected function type for sig")
         }
 
-        // if (signature.isVariadic) {
-        //     // TODO: 支持可变参数调用
-        //     return
-        // }
-
         let name = this.name
 
         if (result.seenFunction(name)) {
@@ -178,10 +181,55 @@ extend Function <: CodeGenerator<Item, Unit> {
             None
         }
 
-        let abi = signature.abi
+        // TODO: 支持自动生成 ABI 注解
+        // https://gitcode.com/Cangjie/UsersForum/issues/1595
+        // let abi = signature.abi
 
+        let args = Utils.fnsigArguments(ctx, signature)
+        let ret = Utils.fnsigReturnTy(ctx, signature)
 
+        let ident = ctx.cjIdent(name)
 
-        throw Exception("TODO")
+        if (signature.isVariadic) {
+            args.add(quote(...))
+        }
+
+        let argsToken = joinTokens(args, quote(,))
+
+        let tokens = if (commentToken.isSome()) {
+            let c = commentToken.getOrThrow()
+            quote(
+                $(c)
+                foreign func $(ident) ( $(argsToken) ) : $(ret)
+            )
+        } else {
+            quote(
+                foreign func $(ident) ( $(argsToken) ) : $(ret)
+            )
+        }
+
+        result.items.add(tokens)
     }
+}
+
+extend Var <: CodeGenerator<Item, Unit> {
+    public func codegen(
+        ctx: CjbindContext,
+        result: CodegenResult,
+        item: Item
+    ): Unit {
+        // 只支持 C，不需要考虑 namespace
+        let canonicalName = item.baseName(ctx)
+
+        if (result.seenVar(canonicalName)) {
+            return
+        }
+        result.sawVar(canonicalName)
+
+        let canonicalIdent = ctx.cjIdent(canonicalName)
+
+        
+
+    }
+
 }
