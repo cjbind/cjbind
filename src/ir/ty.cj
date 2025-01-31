@@ -353,7 +353,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
 
     public func sanitizedName(ctx: CjbindContext): ?String {
         let nameInfo: ?(ItemId, String) = match (this.kind) {
-            case TypeKind.TypeKindPointer(inner) => Some((inner), "ptr")
+            case TypeKind.TypeKindPointer(inner) => Some((inner, "ptr"))
             case TypeKind.TypeKindArray(inner, length) => Some((inner, "array${length}"))
             case _ => None
         }
@@ -383,6 +383,22 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             case TypeKind.TypeKindComp(comp) => comp.isOpaque(ctx, this.layout)
             case TypeKind.ResolvedTypeRef(to) => to.isOpaque(ctx, ())
             case _ => false
+        }
+    }
+
+    public func isInCompleteArray(
+        ctx: CjbindContext
+    ): ?ItemId {
+        match (this.kind) {
+            case TypeKind.TypeKindArray(item, len) =>
+                if (len == 0) {
+                    return Some(item)
+                } else {
+                    return None
+                }
+            case TypeKind.ResolvedTypeRef(inner) =>
+                return ctx.resolveType(inner).isInCompleteArray(ctx)
+            case _ => return None
         }
     }
 

@@ -1,17 +1,10 @@
 package cjbind.codegen
 
 import std.ast.*
-
 import cjbind.ir.*
 import cjbind.result.{Result}
 
-interface TryToCjTy<Extra> {
-    func tryToCjTy(
-        ctx: CjbindContext,
-        extra: Extra
-    ): Result<Tokens, Error>
-}
-
+// 实现时应该添加对于 ToOpaque 的实现
 interface TryToOpaque<Extra> {
     func tryGetLayout(
         ctx: CjbindContext,
@@ -23,8 +16,7 @@ interface TryToOpaque<Extra> {
         extra: Extra
     ): Result<Tokens, Error> {
         this.tryGetLayout(ctx, extra).map {
-            layout => 
-                return Helpers.blob(ctx, layout)
+            layout => return Helpers.blob(ctx, layout)
         }
     }
 }
@@ -35,7 +27,7 @@ interface ToOpaque<Extra> <: TryToOpaque<Extra> {
         extra: Extra
     ): Layout {
         this.tryGetLayout(ctx, extra).unwrapOrElse {
-           _ => return Layout.forSize(ctx, 1)
+            _ => return Layout.forSize(ctx, 1)
         }
     }
 
@@ -45,6 +37,30 @@ interface ToOpaque<Extra> <: TryToOpaque<Extra> {
     ): Tokens {
         let layout = this.getLayoutUnsafe(ctx, extra)
         Helpers.blob(ctx, layout)
+    }
+}
+
+interface TryToCjTy<Extra> {
+    func tryToCjTy(
+        ctx: CjbindContext,
+        extra: Extra
+    ): Result<Tokens, Error>
+}
+
+interface TryToCjTyOrOpaque<Extra> <: TryToCjTy<Extra> & TryToOpaque<Extra> {
+    func tryToCjTyOrOpaque(
+        ctx: CjbindContext,
+        extra: Extra
+    ): Result<Tokens, Error> {
+        this
+            .tryToCjTy(ctx, extra)
+            .orElse {
+                _ => if (let Ok(layout) <- this.tryGetLayout(ctx, extra)) {
+                    Ok(Helpers.blob(ctx, layout))
+                } else {
+                    Err(Error.NoLayoutForOpaqueBlob)
+                }
+            }
     }
 }
 
@@ -68,7 +84,7 @@ extend ItemId <: TryToCjTy<Unit> {
     }
 }
 
-extend ItemId <: ToOpaque<Unit> {
+extend ItemId <: TryToOpaque<Unit> {
     public func tryGetLayout(
         ctx: CjbindContext,
         _: Unit
@@ -77,8 +93,9 @@ extend ItemId <: ToOpaque<Unit> {
     }
 }
 
-extend ItemId <: ToCjTyOrOpaque<Unit> {
-}
+extend ItemId <: ToOpaque<Unit> {}
+
+extend ItemId <: ToCjTyOrOpaque<Unit> & TryToCjTyOrOpaque<Unit> {}
 
 extend Item <: TryToCjTy<Unit> {
     public func tryToCjTy(
@@ -89,7 +106,7 @@ extend Item <: TryToCjTy<Unit> {
     }
 }
 
-extend Item <: ToOpaque<Unit> {
+extend Item <: TryToOpaque<Unit> {
     public func tryGetLayout(
         ctx: CjbindContext,
         _: Unit
@@ -98,8 +115,7 @@ extend Item <: ToOpaque<Unit> {
     }
 }
 
-extend Item <: ToCjTyOrOpaque<Unit> {
-}
+extend Item <: ToCjTyOrOpaque<Unit> & TryToCjTyOrOpaque<Unit> {}
 
 extend Type <: TryToCjTy<Item> {
     public func tryToCjTy(
@@ -109,16 +125,15 @@ extend Type <: TryToCjTy<Item> {
         match (this.kind) {
             case TypeKind.TypeKindVoid => return Ok(AstTy.cVoid(ctx))
             case TypeKind.TypeKindNullPtr => return Ok(AstTy.cVoid(ctx).toPtr())
-            case TypeKind.TypeKindInt(ik) => 
+            case TypeKind.TypeKindInt(ik) =>
                 let ret = AstTy.intKindCjType(ctx, ik, this.getLayout(ctx))
                 return Ok(ret)
             case TypeKind.TypeKindFloat(fk) =>
                 let ret = AstTy.floatKindCjType(ctx, fk, this.getLayout(ctx))
                 return Ok(ret)
-            case TypeKind.TypeKindComplex(_) =>
-                return Err(Error.Unsupported("complex not supported yet"))
-            case TypeKind.TypeKindFunction(signature) => 
-                let ty = match(signature.tryToCjTy(ctx, item)) {
+            case TypeKind.TypeKindComplex(_) => return Err(Error.Unsupported("complex not supported yet"))
+            case TypeKind.TypeKindFunction(signature) =>
+                let ty = match (signature.tryToCjTy(ctx, item)) {
                     case Ok(v) => v
                     case Err(e) => return Err(e)
                 }
@@ -139,10 +154,8 @@ extend Type <: TryToCjTy<Item> {
                 let lenOk = Int64(len)
                 let token = quote(VArray<$(ty), \$$(lenOk)>)
                 return Ok(token)
-            case TypeKind.TypeKindEnum(_) =>
-                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
-            case TypeKind.ResolvedTypeRef(inner) =>
-                return inner.tryToCjTy(ctx, ())
+            case TypeKind.TypeKindEnum(_) => return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
             case TypeKind.TypeKindAlias(_) =>
                 if (let Some(n) <- this.name) {
                     let named = Utils.typeFromNamed(ctx, n)
@@ -151,18 +164,18 @@ extend Type <: TryToCjTy<Item> {
                     }
                 }
                 return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
-            case TypeKind.TypeKindComp(info) =>
-                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
-            case TypeKind.TypeKindOpaque =>
-                return this.tryToOpaque(ctx, item)
+            case TypeKind.TypeKindComp(info) => return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
             case TypeKind.TypeKindPointer(inner) =>
                 let size = this.getLayoutUnsafe(ctx, item).size
                 if (size != ctx.targetInfo.pointerWidth) {
-                    return Err(Error.InvalidPointerSize(
-                        this.name.getOrDefault {=> "unknown"},
-                        UIntNative(size),
-                        UIntNative(ctx.targetInfo.pointerWidth)
-                    ))
+                    return Err(
+                        Error.InvalidPointerSize(
+                            this.name.getOrDefault {=> "unknown"},
+                            UIntNative(size),
+                            UIntNative(ctx.targetInfo.pointerWidth)
+                        )
+                    )
                 }
 
                 let innerTy = inner.intoResolver().throughTypeRefs().resolve(ctx).kind.expectType()
@@ -174,13 +187,12 @@ extend Type <: TryToCjTy<Item> {
                 } else {
                     return Ok(ty.toPtr())
                 }
-            case TypeKind.UnresolvedTypeRef(_, _, _) =>
-                throw Exception("unreachable")
+            case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("unreachable")
         }
     }
 }
 
-extend Type <: ToOpaque<Item> {
+extend Type <: TryToOpaque<Item> {
     public func tryGetLayout(
         ctx: CjbindContext,
         _: Item
@@ -191,6 +203,8 @@ extend Type <: ToOpaque<Item> {
         }
     }
 }
+
+extend Type <: ToOpaque<Item> {}
 
 extend FunctionSig <: TryToCjTy<Item> {
     public func tryToCjTy(
@@ -203,7 +217,7 @@ extend FunctionSig <: TryToCjTy<Item> {
 
         let ret = Utils.fnsigReturnTy(ctx, this)
         let arguments = Utils.fnsigArguments(ctx, this)
-        
+
         let joined = joinTokens(arguments, quote(,))
 
         let retToken = quote(CFunc<$(joined)> -> $(ret))
