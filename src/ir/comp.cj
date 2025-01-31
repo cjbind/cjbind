@@ -196,7 +196,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     }
     // cjlint-ignore -end
 
-    func hasFields(): Bool {
+    public func hasFields(): Bool {
         match (this.fields) {
             case CompFields.CompFieldsError => false
             case CompFields.CompFieldsAfter(v) => !v.fields.isEmpty()
@@ -204,7 +204,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         }
     }
 
-    func getFields(): Array<Field> {
+    public func getFields(): Array<Field> {
         return match (fields) {
             case CompFields.CompFieldsError => Array()
             case CompFields.CompFieldsBefore(_) => throw Exception("getFields called before computed")
@@ -212,7 +212,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         }
     }
 
-    func eachKnownFieldLayout(
+    public func eachKnownFieldLayout(
         ctx: CjbindContext,
         cb: (Layout) -> Unit
     ) {

@@ -379,6 +379,40 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let canonicalName = item.baseName(ctx)
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
+        let isOpaque = item.isOpaque(ctx, ())
+        let fields = ArrayList<Tokens>()
+        let sigs = ArrayList<(Tokens, Tokens)>()
+
+        if (!isOpaque) {
+            let fieldDecls = this.getFields()
+
+            for ((idx, field) in fieldDecls.iterator().enumerate()) {
+                match (field) {
+                    case Field.DataMember(data) =>
+                        let fieldItem = data.ty.intoResolver()
+                            .throughTypeRefs()
+                            .resolve(ctx)
+                        let fieldTy = fieldItem.kind.expectType()
+                        let ty = data.ty.toCjTyOrOpaque(ctx, ())
+
+                        let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
+                            let pc = preprocessComment(c)
+                            Some(Attributes.doc(pc))
+                        } else {
+                            None
+                        }
+
+                        let fieldName = data.name.map {
+                            d => ctx.cjMangle(d)
+                        }.getOrThrow()
+                        let fieldIdent = ctx.cjIdent(fieldName)
+                    
+                    case _ =>
+                        throw Exception("unsupport")
+                }
+            }
+        }
+
         throw Exception("TODO")
     }
 }
