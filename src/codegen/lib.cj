@@ -290,3 +290,95 @@ extend Var <: CodeGenerator<Item, Unit> {
     }
 }
 
+extend Type <: CodeGenerator<Item, Unit> {
+    public func codegen(
+        ctx: CjbindContext,
+        result: CodegenResult,
+        item: Item
+    ): Unit {
+        match (this.kind) {
+            case TypeKind.TypeKindVoid | TypeKind.TypeKindNullPtr | TypeKind.TypeKindInt(_) | TypeKind.TypeKindFloat(_) | TypeKind
+                    .TypeKindComplex(_) | TypeKind.TypeKindArray(_, _) | TypeKind.TypeKindVector(_, _) | TypeKind
+                    .TypeKindPointer(_) | TypeKind.TypeKindFunction(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
+                    .TypeKindOpaque => ()
+            case TypeKind.TypeKindComp(ci) => ci.codegen(ctx, result, item)
+            case TypeKind.TypeKindAlias(inner) =>
+                let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
+                let name = item.baseName(ctx)
+
+                let throughTypeAliases = inner.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
+
+                if (throughTypeAliases.baseName(ctx) == name) {
+                    return
+                }
+
+                let spelling = this.name.getOrThrow()
+                if (Utils.typeFromNamed(ctx, spelling).isSome()) {
+                    return
+                }
+
+                let isOpaque = item.isOpaque(ctx, ())
+                let innerCjType = if (isOpaque) {
+                    this.toOpaque(ctx, item)
+                } else {
+                    innerItem.tryToCjTyOrOpaque(ctx, ()).unwrapOrElse {
+                        _ => this.toOpaque(ctx, item)
+                    }
+                }
+
+                let cjName = ctx.cjIdent(name)
+                let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+                    let pc = preprocessComment(c)
+                    Some(Attributes.doc(pc))
+                } else {
+                    None
+                }
+
+                let tokens = optionalComment(
+                    commentToken,
+                    quote(public type $(cjName) = $(innerCjType))
+                )
+                result.items.add(tokens)
+            case TypeKind.TypeKindEnum(ei) => ei.codegen(ctx, result, item)
+            case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("should have been resolved by now")
+        }
+    }
+}
+
+extend CompInfo <: CodeGenerator<Item, Unit> {
+    // TODO: 支持 union 和 bitfield
+    public func codegen(
+        ctx: CjbindContext,
+        result: CodegenResult,
+        item: Item
+    ): Unit {
+        let ty = item.kind.expectType()
+        let layout = ty.getLayout(ctx)
+
+        let packed = this.isPacked(ctx, layout)
+        if (packed) {
+            // 仓颉当前无法创建 packed 的结构体
+            return
+        }
+
+        if (this.isUnion()) {
+            // TODO: 支持 Union
+            return
+        }
+
+        if (let CompFieldsAfter(v) <- this.fields) {
+            if (v.hasBitfieldUnits) {
+                // TODO: 支持 bitfield
+                return
+            }
+        } else {
+            // 处理错误？
+            return
+        }
+
+        let canonicalName = item.baseName(ctx)
+        let canonicalIdent = ctx.cjIdent(canonicalName)
+
+        throw Exception("TODO")
+    }
+}
