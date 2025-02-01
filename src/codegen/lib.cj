@@ -536,7 +536,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             result.items.add(
                 optionalComment(
                     commentToken,
-                    quote(public type $(name) = $(repr))
+                    quote(public type $(ident) = $(repr))
                 )
             )
         }
