@@ -68,7 +68,10 @@ public func generate(opts: CjbindOptions): String {
 
     parse(ctx)
 
-    let (module, options) = codegen.codegen(ctx)
+    let module = match (codegen.codegen(ctx)) {
+        case Ok(v) => v
+        case Err(e) => throw Exception("Failed to generate code")
+    }
 
     return ""
 }
