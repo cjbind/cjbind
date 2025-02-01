@@ -6,8 +6,7 @@ main(): Int64 {
     let opt = CjbindOptions()
     opt.headers.add("testdata/test.h")
 
-
-    generate(opt)
+    print(generate(opt))
 
     return 0
 }
