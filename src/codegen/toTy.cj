@@ -205,6 +205,7 @@ extend Type <: TryToOpaque<Item> {
 }
 
 extend Type <: ToOpaque<Item> {}
+extend Type <: ToCjTyOrOpaque<Item> {}
 
 extend FunctionSig <: TryToCjTy<Item> {
     public func tryToCjTy(

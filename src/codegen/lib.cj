@@ -76,8 +76,8 @@ public interface CodeGenerator<Extra, Return> {
     func codegen(ctx: CjbindContext, result: CodegenResult, extra: Extra): Return
 }
 
-public func codegen(tctx: CjbindContext): Result<(Tokens, CjbindOptions), CodegenError> {
-    tctx.gen<CodegenError> {
+public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
+    return tctx.gen<CodegenError> {
         context =>
         let result = CodegenResult()
 
@@ -87,10 +87,9 @@ public func codegen(tctx: CjbindContext): Result<(Tokens, CjbindOptions), Codege
             ()
         )
 
-        throw Exception("TODO")
+        let ret = joinTokens(result.items, Tokens(Token(TokenKind.NL)))
+        return Ok<Tokens, CodegenError>(ret)
     }
-
-    throw Exception()
 }
 
 extend Item <: CodeGenerator<Unit, Unit> {
@@ -381,17 +380,20 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let isOpaque = item.isOpaque(ctx, ())
         let fields = ArrayList<Tokens>()
-        let sigs = ArrayList<(Tokens, Tokens)>()
+
+        // (fieldName, fieldType)
+        let sigs = Tokens()
+        let inits = ArrayList<Tokens>()
 
         if (!isOpaque) {
             let fieldDecls = this.getFields()
 
             for ((idx, field) in fieldDecls.iterator().enumerate()) {
+                let isLast = idx == fieldDecls.size - 1
+
                 match (field) {
                     case Field.DataMember(data) =>
-                        let fieldItem = data.ty.intoResolver()
-                            .throughTypeRefs()
-                            .resolve(ctx)
+                        let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
                         let fieldTy = fieldItem.kind.expectType()
                         let ty = data.ty.toCjTyOrOpaque(ctx, ())
 
@@ -406,13 +408,137 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             d => ctx.cjMangle(d)
                         }.getOrThrow()
                         let fieldIdent = ctx.cjIdent(fieldName)
-                    
-                    case _ =>
-                        throw Exception("unsupport")
+
+                        let fieldToken = optionalComment(
+                            fcomment,
+                            quote(public let $(fieldIdent) : $(ty))
+                        )
+                        fields.add(fieldToken)
+
+                        sigs.append(quote($(fieldIdent) : $(ty)))
+                        if (!isLast) {
+                            sigs.append(quote(,))
+                        }
+                        inits.add(quote(this.$(fieldIdent) = $(fieldIdent)))
+
+                    case _ => throw Exception("Only support normal field")
                 }
             }
         }
 
-        throw Exception("TODO")
+        if (isOpaque) {
+            match (layout) {
+                case Some(l) =>
+                    let ty = Helpers.blob(ctx, l)
+                    fields.add(quote(let _cjbind_opaque_blob: $(ty)))
+                case None => throw Exception("Expect layout for opaque comp")
+            }
+        }
+
+        if (this.isForwardDeclaration) {
+            inits.add(quote(throw Exception("opaque type should not be inited")))
+        }
+
+        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+            let pc = preprocessComment(c)
+            Some(Attributes.doc(pc))
+        } else {
+            None
+        }
+
+        let fieldsToken = joinTokens(fields, Tokens(Token(TokenKind.NL)))
+
+        let initToken = Tokens()
+
+        if (!inits.isEmpty()) {
+            let initExpr = joinTokens(inits, Tokens(Token(TokenKind.NL)))
+
+            let initBody = quote(
+
+                init($(sigs)) {
+                    $(initExpr)
+                }
+            )
+            initToken.append(initBody)
+        }
+
+        let ret = optionalComment(
+            commentToken,
+            quote(public struct $(canonicalIdent) {
+                $(fieldsToken)$(initToken)
+            })
+        )
+
+        result.items.add(ret)
+    }
+}
+
+extend Enum <: CodeGenerator<Item, Unit> {
+    public func codegen(
+        ctx: CjbindContext,
+        result: CodegenResult,
+        item: Item
+    ): Unit {
+        let name = item.baseName(ctx)
+        let ident = ctx.cjIdent(name)
+        let enumTy = item.kind.expectType()
+        let layout = enumTy.getLayout(ctx)
+
+        let reprTy: Type = match (this.repr.map {
+            r => ctx.resolveType(r)
+        }) {
+            case Some(r) => r
+            case None => Type(None, None, TypeKind.TypeKindInt(TypeKindIntKind.IntKindI8), false)
+        }
+
+        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+            let pc = preprocessComment(c)
+            Some(Attributes.doc(pc))
+        } else {
+            None
+        }
+
+        let repr = reprTy.toCjTyOrOpaque(ctx, item)
+        let hasTypedef = ctx.isEnumTypedefCombo(item.id)
+
+        let tokenVariants = ArrayList<Tokens>()
+        let enumCjTy = item.toCjTyOrOpaque(ctx, ())
+
+        for (v in this.variants) {
+            let variantName = ctx.cjMangle(v.name)
+            let vexpr = match (v.val) {
+                case EnumVariantValue.Boolean(b) => quote($(b))
+                case EnumVariantValue.Signed(s) => quote($(s))
+                case EnumVariantValue.Unsigned(u) => quote($(u))
+            }
+
+            let vComment: ?Tokens = if (let Some(c) <- v.comment) {
+                let pc = preprocessComment(c)
+                Some(Attributes.doc(pc))
+            } else {
+                None
+            }
+
+            let vConstantName = match (enumTy.name) {
+                case Some(n) => "n_${variantName}"
+                case None => variantName
+            }
+            let vIdent = ctx.cjIdent(vConstantName)
+            result.items.add(
+                optionalComment(
+                    vComment,
+                    quote(public const $(vIdent) : $(enumCjTy) = $(vexpr))
+                )
+            )
+        }
+
+        if (!hasTypedef) {
+            result.items.add(
+                optionalComment(
+                    commentToken,
+                    quote(public type $(name) = $(repr))
+                )
+            )
+        }
     }
 }
