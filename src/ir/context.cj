@@ -470,7 +470,7 @@ public class CjbindContext {
     }
 
     public func cjIdent(name: String): Token {
-        return this.cjIdent(this.cjMangle(name))
+        return this.cjIdentRaw(this.cjMangle(name))
     }
 
     public func cjIdentRaw(name: String): Token {

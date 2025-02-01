@@ -73,5 +73,5 @@ public func generate(opts: CjbindOptions): String {
         case Err(e) => throw Exception("Failed to generate code")
     }
 
-    return ""
+    return module.toString()
 }
