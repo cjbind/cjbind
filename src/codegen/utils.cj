@@ -114,13 +114,9 @@ func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
 
 func optionalComment(comment: ?Tokens, body: Tokens): Tokens {
     if (let Some(v) <- comment) {
-        return quote(
-            $(v)
-            $(body)
-        )
+        return quote($(v)
+            $(body))
     } else {
-        return quote(
-            $(body)
-        )
+        return quote($(body))
     }
 }

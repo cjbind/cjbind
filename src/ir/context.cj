@@ -543,7 +543,7 @@ public class CjbindContext {
         }
     }
 
-    func deanonymizeFields() {
+    public func deanonymizeFields() {
         let compItemIds = this
             .getItems()
             .filterMap {
@@ -571,11 +571,15 @@ public class CjbindContext {
         }
     }
 
-    func isStdintType(name: String): Bool {
+    public func isStdintType(name: String): Bool {
         match (name) {
             case "int8_t" | "uint8_t" | "int16_t" | "uint16_t" | "int32_t" | "uint32_t" | "int64_t" | "uint64_t" | "uintptr_t" | "intptr_t" | "ptrdiff_t" | "size_t" | "ssize_t" => true
             case _ => false
         }
+    }
+
+    public func isEnumTypedefCombo(id: ItemId): Bool {
+        this.enumTypedefCombos.getOrThrow().contains(id)
     }
 
     func computeCodegenItems() {
@@ -629,7 +633,7 @@ public class CjbindContext {
     }
     // cjlint-ignore -end
 
-    public func gen<E>(cb: (CjbindContext) -> Result<(Tokens, CjbindOptions), E>): Result<(Tokens, CjbindOptions), E> {
+    public func gen<E>(cb: (CjbindContext) -> Result<Tokens, E>): Result<Tokens, E> {
         this.inCodegen = true
 
         this.resolveTypeRefs()
