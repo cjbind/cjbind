@@ -5,6 +5,7 @@ import std.collection.*
 public class CjbindOptions {
     public let headers: ArrayList<String> = ArrayList()
     public let clangArgs: ArrayList<String> = ArrayList()
+    public var packageName: String = "cjbind_ffi"
 
     public init() {}
 
@@ -21,23 +22,28 @@ public class CjbindOptionsBuilder {
         opts = CjbindOptions()
     }
 
-    public func header(str: String): CjbindOptionsBuilder {
+    public func header(str: String): This {
         opts.headers.add(str)
         return this
     }
 
-    public func headers(strs: Array<String>): CjbindOptionsBuilder {
+    public func headers(strs: Array<String>): This {
         opts.headers.add(all: strs)
         return this
     }
 
-    public func clangArg(str: String): CjbindOptionsBuilder {
+    public func clangArg(str: String): This {
         opts.clangArgs.add(str)
         return this
     }
 
-    public func clangArgs(strs: Array<String>): CjbindOptionsBuilder {
+    public func clangArgs(strs: Array<String>): This {
         opts.clangArgs.add(all: strs)
+        return this
+    }
+
+    public func packageName(str: String): This {
+        opts.packageName = str
         return this
     }
 

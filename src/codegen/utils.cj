@@ -66,7 +66,7 @@ public class Utils {
             .kind
 
         match (canonicalTypeKind) {
-            case TypeKind.TypeKindVoid => quote(())
+            case TypeKind.TypeKindVoid => quote(Unit)
             case _ => sig.returnType.toCjTyOrOpaque(ctx, ())
         }
     }
