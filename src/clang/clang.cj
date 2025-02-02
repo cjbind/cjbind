@@ -98,6 +98,20 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         return file.name().isNone()
     }
 
+    public func isInSystemHeader(): Bool {
+        let ex = this.extent()
+
+        unsafe {
+            if (clang_Range_isNull(ex) == 0) {
+                let start = clang_getRangeStart(ex)
+                let ret = clang_Location_isInSystemHeader(start) != 0
+                return ret
+            } else {
+                return false
+            }
+        }
+    }
+
     public func translationUnit(): Cursor {
         unsafe {
             let tu = clang_Cursor_getTranslationUnit(x)

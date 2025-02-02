@@ -141,9 +141,13 @@ extend Module <: CodeGenerator<Item, Unit> {
         if (item.id == ctx.rootModule) {
             // TODO: 实现Union，Complex，不透明Array，位域等类型的适配
 
-            result.items.add(
-                Tokens(Token(TokenKind.COMMENT, "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT"))
-            )
+            let header = Tokens(Token(TokenKind.COMMENT, "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT"))
+            let pkgName = ctx.cjIdent(ctx.options.packageName)
+            header.append(quote(
+                
+                package $(pkgName)))
+
+            result.items.add(header, at: 0)
         }
     }
 }
@@ -473,7 +477,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let ret = optionalComment(
             commentToken,
-            quote(public struct $(canonicalIdent) {
+            quote(@C
+            public struct $(canonicalIdent) {
                 $(fieldsToken)$(initToken)
             })
         )

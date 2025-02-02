@@ -2,8 +2,9 @@ package cjbind
 
 import std.argopt.*
 import std.process.Process
-
+import std.fs.File
 import cjbind.build
+import cjbind.utils.{updateConsole, anySome, anySomeValue}
 import cjbind.options.CjbindOptions
 
 const HELP = """
@@ -16,7 +17,8 @@ const HELP = """
     [CLANG_ARGS]...\t会被直接传递给 clang 的参数
 
 选项：
-    -o, --output\t<OUTPUT> 把生成的绑定输出到文件。
+    -o, --output\t<OUTPUT> 把生成的绑定输出到文件
+    -p, --package\t<PACKAGE> 指定生成的包名
     -V, --version\t显示版本号并退出
     -h, --help\t显示帮助信息
 """
@@ -41,23 +43,58 @@ Commit 时间：\t${build.COMMIT_DATE}
 }
 
 main(): Int64 {
-    let shortArgs = "o:V:h"
-    let longArgs = ["output=", "version", "help"]
+    updateConsole()
+
+    let shortArgs = "o:p:V:h"
+    let longArgs = ["output=", "pacakge=", "version", "help"]
 
     let args = Process.current.arguments
     let ao = ArgOpt(args, shortArgs, longArgs)
 
-    if (ao.getArg("-h").isSome() || ao.getArg("--help").isSome()) {
+    if (anySome(ao.getArg("-h"), ao.getArg("--help"))) {
         help()
     }
-    if (ao.getArg("-V").isSome() || ao.getArg("--version").isSome()) {
+    if (anySome(ao.getArg("-V"), ao.getArg("--version"))) {
         version()
     }
 
     let opt = CjbindOptions()
-    opt.headers.add("testdata/test.h")
 
-    print(generate(opt))
+    let packageName = anySomeValue(ao.getArg("-p"), ao.getArg("--package"))
+    if (let Some(v) <- packageName) {
+        opt.packageName = v
+    }
+
+    let rem = ao.getUnparseArgs()
+
+    var collector = opt.headers
+    var collectingClang = false
+
+    for (l in rem) {
+        match (l) {
+            case "--" =>
+                collector = opt.clangArgs
+                collectingClang = true
+            case _ =>
+                if (l.startsWith("-") && !collectingClang) {
+                    throw Exception("未知选项: ${l}")
+                }
+
+                collector.add(l)
+        }
+    }
+
+    if (opt.headers.isEmpty()) {
+        eprintln("警告：没有指定头文件")
+    }
+
+    let binding = generate(opt)
+
+    let out = anySomeValue(ao.getArg("-o"), ao.getArg("--output"))
+    match (out) {
+        case Some(v) => File.writeTo(v, binding.toArray())
+        case None => println(binding)
+    }
 
     return 0
 }

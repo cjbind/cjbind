@@ -9,7 +9,7 @@ import cjbind.codegen
 import cjbind.ir.*
 
 func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ItemId): Unit {
-    if (cursor.isBuiltin()) {
+    if (cursor.isBuiltin() || cursor.isInSystemHeader()) {
         return
     }
 

@@ -59,6 +59,8 @@ public class PartialType <: Equatable<PartialType> {
 }
 
 public class CjbindContext {
+    public let options: CjbindOptions
+
     public let items: ArrayList<?Item>
     public let types: HashMap<TypeKey, TypeId> = HashMap()
     public let modules: HashMap<clang.Cursor, ModuleId> = HashMap()
@@ -86,6 +88,8 @@ public class CjbindContext {
     public var enumTypedefCombos: ?HashSet<ItemId> = None
 
     public init(options: CjbindOptions) {
+        this.options = options
+        
         let index = clang.Index(false, true)
 
         this.translationUnit = clang.TranslationUnit(
@@ -509,7 +513,7 @@ public class CjbindContext {
                 .fromTy(ty, loc, parentId, this)
                 .unwrapOrElse {
                     _ =>
-                    eprintln("Could not resolve type reference, falling back to opaque blob")
+                    // eprintln("Could not resolve type reference, falling back to opaque blob")
                     Item.newOpaqueType(this.nextItemId(), ty, this)
                 }
 
