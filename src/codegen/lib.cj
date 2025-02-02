@@ -2,6 +2,8 @@ package cjbind.codegen
 
 import std.ast.*
 import std.collection.{ArrayList, HashSet}
+
+import cjbind.build.VERSION
 import cjbind.ir.*
 import cjbind.options.CjbindOptions
 import cjbind.result.Result
@@ -87,14 +89,14 @@ public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
             ()
         )
 
-        let ret = joinTokens(result.items, Tokens(Token(TokenKind.NL)))
+        let ret = joinTokens(result.items, Tokens(Token(TokenKind.NL), Token(TokenKind.NL)))
         return Ok<Tokens, CodegenError>(ret)
     }
 }
 
 extend Item <: CodeGenerator<Unit, Unit> {
     func processBeforeCodegen(
-        ctx: CjbindContext,
+        _: CjbindContext,
         result: CodegenResult
     ): Bool {
         if (result.seen(this.id)) {
@@ -138,6 +140,10 @@ extend Module <: CodeGenerator<Item, Unit> {
 
         if (item.id == ctx.rootModule) {
             // TODO: 实现Union，Complex，不透明Array，位域等类型的适配
+
+            result.items.add(
+                Tokens(Token(TokenKind.COMMENT, "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT"))
+            )
         }
     }
 }
@@ -205,6 +211,7 @@ extend Function <: CodeGenerator<Item, Unit> {
 }
 
 extend Var <: CodeGenerator<Item, Unit> {
+    // cjlint-ignore -start !G.FUN.01
     public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
@@ -287,6 +294,7 @@ extend Var <: CodeGenerator<Item, Unit> {
             // 仓颉没有提供 extern C 的变量支持，忽略
         }
     }
+    // cjlint-ignore -end
 }
 
 extend Type <: CodeGenerator<Item, Unit> {
@@ -346,6 +354,7 @@ extend Type <: CodeGenerator<Item, Unit> {
 
 extend CompInfo <: CodeGenerator<Item, Unit> {
     // TODO: 支持 union 和 bitfield
+    // cjlint-ignore -start !G.FUN.01
     public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
@@ -471,9 +480,11 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         result.items.add(ret)
     }
+    // cjlint-ignore -end
 }
 
 extend Enum <: CodeGenerator<Item, Unit> {
+    // cjlint-ignore -start !G.FUN.01
     public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
@@ -482,7 +493,6 @@ extend Enum <: CodeGenerator<Item, Unit> {
         let name = item.baseName(ctx)
         let ident = ctx.cjIdent(name)
         let enumTy = item.kind.expectType()
-        let layout = enumTy.getLayout(ctx)
 
         let reprTy: Type = match (this.repr.map {
             r => ctx.resolveType(r)
@@ -501,7 +511,6 @@ extend Enum <: CodeGenerator<Item, Unit> {
         let repr = reprTy.toCjTyOrOpaque(ctx, item)
         let hasTypedef = ctx.isEnumTypedefCombo(item.id)
 
-        let tokenVariants = ArrayList<Tokens>()
         let enumCjTy = item.toCjTyOrOpaque(ctx, ())
 
         for (v in this.variants) {
@@ -520,7 +529,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             }
 
             let vConstantName = match (enumTy.name) {
-                case Some(n) => "n_${variantName}"
+                case Some(n) => "${n}_${variantName}"
                 case None => variantName
             }
             let vIdent = ctx.cjIdent(vConstantName)
@@ -541,4 +550,5 @@ extend Enum <: CodeGenerator<Item, Unit> {
             )
         }
     }
+    // cjlint-ignore -end
 }
