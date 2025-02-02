@@ -114,7 +114,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 }
             case ItemKind.KindFunction(fun) => tracer.visit(fun.signature)
             case ItemKind.KindVar(v) => tracer.visitKind(v.ty, EdgeKind.VarTypeEdge)
-            case ItemKind.KindModule(m) => ()
+            case ItemKind.KindModule(_) => ()
         }
     }
     // cjlint-ignore -end
