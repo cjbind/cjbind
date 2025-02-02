@@ -118,6 +118,7 @@ extend Item <: TryToOpaque<Unit> {
 extend Item <: ToCjTyOrOpaque<Unit> & TryToCjTyOrOpaque<Unit> {}
 
 extend Type <: TryToCjTy<Item> {
+    // cjlint-ignore -start !G.FUN.01
     public func tryToCjTy(
         ctx: CjbindContext,
         item: Item
@@ -190,6 +191,7 @@ extend Type <: TryToCjTy<Item> {
             case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("unreachable")
         }
     }
+    // cjlint-ignore -end
 }
 
 extend Type <: TryToOpaque<Item> {
@@ -210,7 +212,7 @@ extend Type <: ToCjTyOrOpaque<Item> {}
 extend FunctionSig <: TryToCjTy<Item> {
     public func tryToCjTy(
         ctx: CjbindContext,
-        item: Item
+        _: Item
     ): Result<Tokens, Error> {
         if (this.isVariadic) {
             return Err(Error.Unsupported("variadic func type not supported"))

@@ -3,3 +3,4 @@ build-script-cache/
 .devbrain/
 .cache/
 .vscode/
+.VSCodeCounter/

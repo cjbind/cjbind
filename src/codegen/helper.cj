@@ -33,7 +33,7 @@ public class Attributes {
 
 public class Helpers {
     public static func blob(
-        ctx: CjbindContext,
+        _: CjbindContext,
         layout: Layout
     ): Tokens {
         let opaque = layout.opaque()
@@ -104,7 +104,7 @@ public class AstTy {
     }
 
     public static func floatKindCjType(
-        ctx: CjbindContext,
+        _: CjbindContext,
         fk: TypeKindFloatKind,
         layout: ?Layout
     ): Tokens {
@@ -129,7 +129,7 @@ public class AstTy {
     }
 
     public static func floatExpr(
-        ctx: CjbindContext,
+        _: CjbindContext,
         f: Float64
     ): Result<Tokens, Unit> {
         if (f.isNormal()) {
