@@ -2,7 +2,6 @@ package cjbind.codegen
 
 import std.ast.*
 import std.collection.{ArrayList, HashSet}
-
 import cjbind.build.VERSION
 import cjbind.ir.*
 import cjbind.options.CjbindOptions
@@ -328,6 +327,10 @@ extend Type <: CodeGenerator<Item, Unit> {
                     return
                 }
 
+                if (spelling == "CXVirtualFileOverlay") {
+                    print("")
+                }
+
                 let isOpaque = item.isOpaque(ctx, ())
                 let innerCjType = if (isOpaque) {
                     this.toOpaque(ctx, item)
@@ -477,7 +480,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let ret = optionalComment(
             commentToken,
-            quote(@C
+            quote(
+                @C
             public struct $(canonicalIdent) {
                 $(fieldsToken)$(initToken)
             })
