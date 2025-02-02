@@ -4,7 +4,7 @@ import std.argopt.*
 import std.process.Process
 import std.fs.File
 import cjbind.build
-import cjbind.utils.{updateConsole, anySome, anySomeValue}
+import cjbind.utils.{updateConsole, anySome, anySomeValue, formatString}
 import cjbind.options.CjbindOptions
 
 const HELP = """
@@ -88,7 +88,7 @@ main(): Int64 {
         eprintln("警告：没有指定头文件")
     }
 
-    let binding = generate(opt)
+    let binding = formatString(generate(opt))
 
     let out = anySomeValue(ao.getArg("-o"), ao.getArg("--output"))
     match (out) {
