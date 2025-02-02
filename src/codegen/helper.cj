@@ -49,7 +49,7 @@ public class Helpers {
         if (dataLen == 1) {
             return ty.toTokens()
         } else {
-            return quote(VArray<$(ty), $(dataLen)>)
+            return quote(VArray<$(ty), \$$(dataLen)>)
         }
     }
 }

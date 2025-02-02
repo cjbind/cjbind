@@ -8,7 +8,7 @@ public enum CommentKind {
 }
 
 func commentKind(comment: String): ?CommentKind {
-    if (comment.startsWith("/**/")) {
+    if (comment.startsWith("/*")) {
         return Some(CommentKind.MultiLine)
     } else if (comment.startsWith("//")) {
         return Some(CommentKind.SingleLines)
