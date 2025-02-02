@@ -32,6 +32,7 @@ public macro exec(input: Tokens): Tokens {
     }
 
     let s = String.fromUtf8(stdout)
+    let clean = s.trimAscii()
 
-    return quote($(s))
+    return quote($(clean))
 }

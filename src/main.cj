@@ -12,13 +12,13 @@ const HELP = """
 用法：cjbind <OPTIONS> <HEADER> -- <CLANG_ARGS>
 
 参数：
-    <HEADER> C 头文件路径
-    [CLANG_ARGS]... 会被直接传递给 clang 的参数
+    <HEADER>\tC 头文件路径
+    [CLANG_ARGS]...\t会被直接传递给 clang 的参数
 
 选项：
-    -o, --output <OUTPUT> 把生成的绑定输出到文件。
-    -V, --version 显示版本号并退出
-    -h, --help 显示帮助信息
+    -o, --output\t<OUTPUT> 把生成的绑定输出到文件。
+    -V, --version\t显示版本号并退出
+    -h, --help\t显示帮助信息
 """
 
 func help(): Unit {
@@ -28,13 +28,13 @@ func help(): Unit {
 
 func version(): Unit {
     let version = """
-cjbind 版本：${build.VERSION}
+cjbind 版本：\t${build.VERSION}
 
-Commit Hash： ${build.COMMIT_HASH}
-Commit 时间： ${build.COMMIT_DATE}
-开发分支： ${build.BRANCH}
-标签：${build.TAG}
-洁净构建：${build.GIT_CLEAN_FILES.isEmpty()}
+Commit Hash：\t${build.COMMIT_HASH}
+Commit 时间：\t${build.COMMIT_DATE}
+开发分支：\t${build.BRANCH}
+标签：\t${build.TAG}
+洁净构建：\t${build.GIT_CLEAN_FILES.isEmpty()}
 """
     print(version)
     Process.current.exit(0)
