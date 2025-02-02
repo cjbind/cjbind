@@ -41,7 +41,7 @@ public func preprocessMultiLines(comment: String): String {
     let ret = StringBuilder()
 
     for((idx, v) in lines.iterator().enumerate()) {
-        let hasContent = v.trimAscii().isEmpty()
+        let hasContent = !v.trimAscii().isEmpty()
         if (hasContent) {
             foundContent = true
         } else if (!foundContent) {
