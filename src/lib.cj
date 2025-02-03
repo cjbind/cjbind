@@ -28,7 +28,7 @@ func parse(context: CjbindContext) {
 
     for (d in context.translationUnit.diags()) {
         let msg = d.toString()
-        let isError = d.severity() >= clang.CXDiagnostic_Error
+        let isError = d.severity() >= clang.CXDiagnosticSeverity_CXDiagnostic_Error
 
         if (isError) {
             error = match (error) {

@@ -64,7 +64,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         }
 
         let useLocal = match (tyKind) {
-            case Some(TypeKind.TypeKindComp(_)) | Some(TypeKind.TypeKindEnum(_))  => true 
+            case Some(TypeKind.TypeKindComp(_)) | Some(TypeKind.TypeKindEnum(_)) => true
             case _ => false
         }
 
@@ -81,13 +81,10 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             case ItemKind.KindModule(module) => module.name.getOrDefault {
                 => "_cjbind_mod_${this.exposedId(ctx)}"
             }
-            case ItemKind.KindType(ty) =>
-                ty.sanitizedName(ctx).getOrDefault {
-                    => 
-                    "_cjbind_ty_${this.exposedId(ctx)}"
-                }
-            case ItemKind.KindFunction(fun) =>
-                fun.name
+            case ItemKind.KindType(ty) => ty.sanitizedName(ctx).getOrDefault {
+                => "_cjbind_ty_${this.exposedId(ctx)}"
+            }
+            case ItemKind.KindFunction(fun) => fun.name
         }
     }
 
@@ -222,9 +219,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
 
         let k = cursor.kind()
 
-        if (k == clang.CXCursor_LinkageSpec || k == clang.CXCursor_UnexposedDecl) {
+        if (k == clang.CXCursorKind_CXCursor_LinkageSpec || k == clang.CXCursorKind_CXCursor_UnexposedDecl) {
             return Err(ParseError.Recurse)
-        } else if (k == clang.CXCursor_InclusionDirective) {
+        } else if (k == clang.CXCursorKind_CXCursor_InclusionDirective) {
             let file = cursor.getIncludedFileName()
             match (file) {
                 case None => () // we can do nothing with this
@@ -296,7 +293,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         }
 
         let isConst = ty.isConst()
-        let _kind = TypeKind.UnresolvedTypeRef(ty, location, parentId)
+        let kind = TypeKind.UnresolvedTypeRef(ty, location, parentId)
         let pid = parentId ?? ctx.rootModule
 
         ctx.addItem(
@@ -304,7 +301,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 potentialId,
                 None,
                 pid,
-                ItemKind.KindType(Type(None, None, _kind, isConst)),
+                ItemKind.KindType(Type(None, None, kind, isConst)),
                 None
             ),
             None,
@@ -365,7 +362,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             return Ok(rty)
         }
 
-        var validDecl = decl.kind() != clang.CXCursor_NoDeclFound
+        var validDecl = decl.kind() != clang.CXCursorKind_CXCursor_NoDeclFound
         let nxtDecl = if (validDecl) {
             decl.canonical()
         } else {
@@ -455,19 +452,19 @@ func visitChild(
     result: Box<Result<TypeId, ParseError>>
 ): clang.CXChildVisitResult {
     if (result.value.isOk()) {
-        return clang.CXChildVisit_Break
+        return clang.CXChildVisitResult_CXChildVisit_Break
     }
 
     result.value = Item.fromTyWithId(id, ty, cur, parentId, ctx)
 
     return match (result.value) {
-        case Ok(_) => clang.CXChildVisit_Break
+        case Ok(_) => clang.CXChildVisitResult_CXChildVisit_Break
         case Err(ParseError.Recurse) =>
             cur.visit {
                 c => visitChild(c, id, ty, parentId, ctx, result)
             }
-            clang.CXChildVisit_Continue
-        case Err(ParseError.Continue) => clang.CXChildVisit_Continue
+            clang.CXChildVisitResult_CXChildVisit_Continue
+        case Err(ParseError.Continue) => clang.CXChildVisitResult_CXChildVisit_Continue
     }
 }
 // cjlint-ignore -end

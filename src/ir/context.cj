@@ -96,7 +96,7 @@ public class CjbindContext {
             index,
             "",
             options.clangArgs.toArray(),
-            clang.CXTranslationUnit_DetailedPreprocessingRecord
+            clang.CXTranslationUnit_Flags_CXTranslationUnit_DetailedPreprocessingRecord
         )
 
         this.targetInfo = clang.TargetInfo(translationUnit)
@@ -253,98 +253,98 @@ public class CjbindContext {
             =>
             let k = ty.kind()
 
-            if (k == clang.CXType_NullPtr) {
+            if (k == clang.CXTypeKind_CXType_NullPtr) {
                 return TypeKind.TypeKindNullPtr
             }
-            if (k == clang.CXType_Void) {
+            if (k == clang.CXTypeKind_CXType_Void) {
                 return TypeKind.TypeKindVoid
             }
-            if (k == clang.CXType_Bool) {
+            if (k == clang.CXTypeKind_CXType_Bool) {
                 return TypeKind.TypeKindInt(IntKindBool)
             }
-            if (k == clang.CXType_Int) {
+            if (k == clang.CXTypeKind_CXType_Int) {
                 return TypeKind.TypeKindInt(IntKindInt)
             }
-            if (k == clang.CXType_UInt) {
+            if (k == clang.CXTypeKind_CXType_UInt) {
                 return TypeKind.TypeKindInt(IntKindUInt)
             }
-            if (k == clang.CXType_Char_S) {
+            if (k == clang.CXTypeKind_CXType_Char_S) {
                 return TypeKind.TypeKindInt(IntKindChar(true))
             }
-            if (k == clang.CXType_Char_U) {
+            if (k == clang.CXTypeKind_CXType_Char_U) {
                 return TypeKind.TypeKindInt(IntKindChar(false))
             }
-            if (k == clang.CXType_SChar) {
+            if (k == clang.CXTypeKind_CXType_SChar) {
                 return TypeKind.TypeKindInt(IntKindSChar)
             }
-            if (k == clang.CXType_UChar) {
+            if (k == clang.CXTypeKind_CXType_UChar) {
                 return TypeKind.TypeKindInt(IntKindUChar)
             }
-            if (k == clang.CXType_Short) {
+            if (k == clang.CXTypeKind_CXType_Short) {
                 return TypeKind.TypeKindInt(IntKindShort)
             }
-            if (k == clang.CXType_UShort) {
+            if (k == clang.CXTypeKind_CXType_UShort) {
                 return TypeKind.TypeKindInt(IntKindUShort)
             }
-            if (k == clang.CXType_WChar) {
+            if (k == clang.CXTypeKind_CXType_WChar) {
                 return TypeKind.TypeKindInt(IntKindWChar)
             }
-            if (k == clang.CXType_Char16) {
+            if (k == clang.CXTypeKind_CXType_Char16) {
                 return TypeKind.TypeKindInt(IntKindU16)
             }
-            if (k == clang.CXType_Char32) {
+            if (k == clang.CXTypeKind_CXType_Char32) {
                 return TypeKind.TypeKindInt(IntKindU32)
             }
-            if (k == clang.CXType_Long) {
+            if (k == clang.CXTypeKind_CXType_Long) {
                 return TypeKind.TypeKindInt(IntKindLong)
             }
-            if (k == clang.CXType_ULong) {
+            if (k == clang.CXTypeKind_CXType_ULong) {
                 return TypeKind.TypeKindInt(IntKindULong)
             }
-            if (k == clang.CXType_LongLong) {
+            if (k == clang.CXTypeKind_CXType_LongLong) {
                 return TypeKind.TypeKindInt(IntKindLongLong)
             }
-            if (k == clang.CXType_ULongLong) {
+            if (k == clang.CXTypeKind_CXType_ULongLong) {
                 return TypeKind.TypeKindInt(IntKindULongLong)
             }
-            if (k == clang.CXType_Int128) {
+            if (k == clang.CXTypeKind_CXType_Int128) {
                 return TypeKind.TypeKindInt(IntKindI128)
             }
-            if (k == clang.CXType_UInt128) {
+            if (k == clang.CXTypeKind_CXType_UInt128) {
                 return TypeKind.TypeKindInt(IntKindU128)
             }
-            if (k == clang.CXType_Float16 || k == clang.CXType_Half) {
+            if (k == clang.CXTypeKind_CXType_Float16 || k == clang.CXTypeKind_CXType_Half) {
                 return TypeKind.TypeKindFloat(FloatKindFloat16)
             }
-            if (k == clang.CXType_Float) {
+            if (k == clang.CXTypeKind_CXType_Float) {
                 return TypeKind.TypeKindFloat(FloatKindFloat)
             }
-            if (k == clang.CXType_Double) {
+            if (k == clang.CXTypeKind_CXType_Double) {
                 return TypeKind.TypeKindFloat(FloatKindDouble)
             }
-            if (k == clang.CXType_LongDouble) {
+            if (k == clang.CXTypeKind_CXType_LongDouble) {
                 return TypeKind.TypeKindFloat(FloatKindLongDouble)
             }
-            if (k == clang.CXType_Float128) {
+            if (k == clang.CXTypeKind_CXType_Float128) {
                 return TypeKind.TypeKindFloat(FloatKindFloat128)
             }
-            if (k == clang.CXType_Complex) {
+            if (k == clang.CXTypeKind_CXType_Complex) {
                 let ft = ty.elemType().getOrThrow().kind()
                 let floatKind = {
                     =>
-                    if (ft == clang.CXType_Float16 || ft == clang.CXType_Half) {
+                    if (ft == clang.CXTypeKind_CXType_Float16 || ft == clang.CXTypeKind_CXType_Half) {
                         return FloatKindFloat16
                     }
-                    if (ft == clang.CXType_Float) {
+                    if (ft == clang.CXTypeKind_CXType_Float) {
                         return FloatKindFloat
                     }
-                    if (ft == clang.CXType_Double) {
+                    if (ft == clang.CXTypeKind_CXType_Double) {
                         return FloatKindDouble
                     }
-                    if (ft == clang.CXType_LongDouble) {
+                    if (ft == clang.CXTypeKind_CXType_LongDouble) {
                         return FloatKindLongDouble
                     }
-                    if (ft == clang.CXType_Float128) {
+                    if (ft == clang.CXTypeKind_CXType_Float128) {
                         return FloatKindFloat128
                     }
                     throw Exception("unknown float type ${ft}")
@@ -479,6 +479,10 @@ public class CjbindContext {
 
     public func cjIdentRaw(name: String): Token {
         return Token(TokenKind.IDENTIFIER, name)
+    }
+
+    public func pointerWidth(): Int32 {
+        return this.targetInfo.pointerWidth / 8
     }
 
     func collectTyperefs(): ArrayList<(ItemId, clang.Type, clang.Cursor, ?ItemId)> {

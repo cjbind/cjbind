@@ -10,7 +10,7 @@ public enum FunctionKind {
     KindFunction
 
     public static func fromCursor(cursor: clang.Cursor): ?FunctionKind {
-        if (cursor.kind() == clang.CXCursor_FunctionDecl) {
+        if (cursor.kind() == clang.CXCursorKind_CXCursor_FunctionDecl) {
             return FunctionKind.KindFunction
         }
         return None
@@ -50,7 +50,7 @@ public class Function <: ClangSubItemParser<Function> {
         }
 
         let visibility = cursor.visibility()
-        if (visibility != clang.CXVisibility_Default) {
+        if (visibility != clang.CXVisibilityKind_CXVisibility_Default) {
             return Result.Err(ParseError.Continue)
         }
 
@@ -117,10 +117,10 @@ public enum ClangAbi <: ToTokens {
 }
 
 func getAbi(cc: clang.CXCallingConv): ClangAbi {
-    if (cc == clang.CXCallingConv_C || cc == clang.CXCallingConv_Default) {
+    if (cc == clang.CXCallingConv_CXCallingConv_C || cc == clang.CXCallingConv_CXCallingConv_Default) {
         return Known(Abi.C)
     }
-    if (cc == clang.CXCallingConv_X86_64Win64) {
+    if (cc == clang.CXCallingConv_CXCallingConv_X86_64Win64) {
         return Known(Abi.Win64)
     }
     return Unknown(cc)
@@ -212,13 +212,13 @@ public class FunctionSig <: Trace<Tracer, Unit> {
             ty.declaration()
         }
 
-        let args = if (kind == clang.CXCursor_FunctionDecl) {
+        let args = if (kind == clang.CXCursorKind_CXCursor_FunctionDecl) {
             argsFromTyAndCursor(ty, cursor, ctx)
         } else {
             let targs: ArrayList<(?String, TypeId)> = ArrayList()
             cursor.visit {
                 c =>
-                if (c.kind() == clang.CXCursor_ParmDecl) {
+                if (c.kind() == clang.CXCursorKind_CXCursor_ParmDecl) {
                     let tty = Item.fromTyOrRef(
                         c.curType(),
                         c,
@@ -233,7 +233,7 @@ public class FunctionSig <: Trace<Tracer, Unit> {
                     }
                     targs.add((_name, tty))
                 }
-                return clang.CXChildVisit_Continue
+                return clang.CXChildVisitResult_CXChildVisit_Continue
             }
 
             if (targs.isEmpty()) {
@@ -253,7 +253,7 @@ public class FunctionSig <: Trace<Tracer, Unit> {
         var callConv = ty.callConv()
         if (let Some(tty) <- cursor.curType().canonicalType().pointeeType()) {
             let cursorCallConv = tty.callConv()
-            if (cursorCallConv != clang.CXCallingConv_Invalid) {
+            if (cursorCallConv != clang.CXCallingConv_CXCallingConv_Invalid) {
                 callConv = cursorCallConv
             }
         }

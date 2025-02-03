@@ -33,10 +33,10 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public static func kindFromCursor(cursor: clang.Cursor): Result<CompKind, ParseError> {
         let k = cursor.kind()
 
-        if (k == clang.CXCursor_UnionDecl) {
+        if (k == clang.CXCursorKind_CXCursor_UnionDecl) {
             return Result.Ok(CompKind.CompKindUnion)
         }
-        if (k == clang.CXCursor_StructDecl) {
+        if (k == clang.CXCursorKind_CXCursor_StructDecl) {
             return Result.Ok(CompKind.CompKindStruct)
         }
 
@@ -69,10 +69,10 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             .flatMap {
                 cur =>
                 let k = cur.kind()
-                if (k == clang.CXCursor_ParmDecl) {
+                if (k == clang.CXCursorKind_CXCursor_ParmDecl) {
                     return true
                 }
-                if (k == clang.CXCursor_StructDecl || k == clang.CXCursor_UnionDecl) {
+                if (k == clang.CXCursorKind_CXCursor_StructDecl || k == clang.CXCursorKind_CXCursor_UnionDecl) {
                     return !cur.isDefinition()
                 }
                 return false
@@ -85,7 +85,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             .visit {
                 cur =>
                 if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
-                    if (cur.kind() == clang.CXCursor_TypedefDecl && cur.typedefType().getOrThrow().canonicalType() ==
+                    if (cur.kind() == clang.CXCursorKind_CXCursor_TypedefDecl && cur.typedefType().getOrThrow().canonicalType() ==
                         clangTy) {
                     // do nothing
                     } else {
@@ -95,7 +95,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 }
 
                 let k = cur.kind()
-                if (k == clang.CXCursor_FieldDecl) {
+                if (k == clang.CXCursorKind_CXCursor_FieldDecl) {
                     if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
                         let used: Box<Bool> = Box(false)
                         cur.visit {
@@ -103,7 +103,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                             if (child.curType() == clangTy) {
                                 used.value = true
                             }
-                            return clang.CXChildVisit_Continue
+                            return clang.CXChildVisitResult_CXChildVisit_Continue
                         }
 
                         if (!used.value) {
@@ -117,7 +117,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
                         if (width.isNone()) {
                             ci.hasUnevaluableBitFieldWidth = true
-                            return clang.CXChildVisit_Break
+                            return clang.CXChildVisitResult_CXChildVisit_Break
                         }
 
                         width
@@ -153,18 +153,18 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
                     cur.visit {
                         cur =>
-                        if (cur.kind() == clang.CXCursor_UnexposedAttr) {
+                        if (cur.kind() == clang.CXCursorKind_CXCursor_UnexposedAttr) {
                             ci.foundUnknownAttr = true
                         }
-                        return clang.CXChildVisit_Continue
+                        return clang.CXChildVisitResult_CXChildVisit_Continue
                     }
-                } else if (k == clang.CXCursor_UnexposedAttr) {
+                } else if (k == clang.CXCursorKind_CXCursor_UnexposedAttr) {
                     ci.foundUnknownAttr = true
-                } else if (k == clang.CXCursor_EnumDecl || k == clang.CXCursor_TypedefDecl || k == clang
-                    .CXCursor_StructDecl || k == clang.CXCursor_UnionDecl) {
+                } else if (k == clang.CXCursorKind_CXCursor_EnumDecl || k == clang.CXCursorKind_CXCursor_TypedefDecl || k == clang
+                    .CXCursorKind_CXCursor_StructDecl || k == clang.CXCursorKind_CXCursor_UnionDecl) {
                     let isInnerStruct: Bool = cur.semanticParent() == cursor.value || cur.isDefinition()
                     if (!isInnerStruct) {
-                        return clang.CXChildVisit_Continue
+                        return clang.CXChildVisitResult_CXChildVisit_Continue
                     }
 
                     let inner = Item.parse(cur, Some(potentialId), ctx).expect("Inner ClassDecl")
@@ -172,19 +172,19 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     if (ctx.resolveItemFallible(inner).isSome()) {
                         ci.innerTypes.add(inner)
 
-                        if (cur.isAnonymous() && cur.kind() != clang.CXCursor_EnumDecl) {
+                        if (cur.isAnonymous() && cur.kind() != clang.CXCursorKind_CXCursor_EnumDecl) {
                             let ty = cur.curType()
                             let offset = cur.offsetOfField().ok()
                             maybeAnonymousStructField.value = Some((inner, ty, offset))
                         }
                     }
-                } else if (k == clang.CXCursor_PackedAttr) {
+                } else if (k == clang.CXCursorKind_CXCursor_PackedAttr) {
                     ci.packedAttr = true
                 } else {
                     // throw those fucking away
                 }
 
-                return clang.CXChildVisit_Continue
+                return clang.CXChildVisitResult_CXChildVisit_Continue
             }
 
         if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
