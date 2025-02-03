@@ -2,9 +2,11 @@ name: Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+  release:
+    types: ["created"]
 
 jobs:
   build:
@@ -14,15 +16,23 @@ jobs:
           - os: ubuntu-24.04
             sys: linux
             arch: x64
+            ext: ""
+            friendly_name: "Linux (x64)"
           - os: ubuntu-24.04-arm
             sys: linux
             arch: arm64
+            ext: ""
+            friendly_name: "Linux (ARM64)"
           - os: macos-15
             sys: darwin
             arch: arm64
+            ext: ""
+            friendly_name: "macOS (Apple Silicon)"
           - os: windows-2025
             sys: windows
             arch: x64
+            ext: ".exe"
+            friendly_name: "Windows (x64)"
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -34,7 +44,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Download libclang
         run: |
@@ -44,9 +54,9 @@ jobs:
       - name: Setup Cangjie
         uses: Zxilly/setup-cangjie@v1.4.1
         with:
-          channel: 'canary'
+          channel: "canary"
           token: ${{ secrets.GITCODE_TOKEN }}
-        
+
       - name: Build
         run: |
           cjpm build --cfg_opt --cfg_verbose -V
@@ -57,3 +67,20 @@ jobs:
           name: cjbind-${{ matrix.os }}-${{ matrix.arch }}
           path: |
             target/release/bin/main*
+
+      - name: Rename binary
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          cd target/release/bin
+          mv main${{ matrix.ext }} cjbind-${{ matrix.sys }}-${{ matrix.arch }}${{ matrix.ext }}
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET_PATH: target/release/bin/cjbind-${{ matrix.sys }}-${{ matrix.arch }}${{ matrix.ext }}
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH" \
+            --clobber \
+            --label "${{ matrix.friendly_name }}"
