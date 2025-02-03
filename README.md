@@ -2,8 +2,28 @@
 
 自动生成仓颉到 C 库的 FFI 绑定代码。
 
-## 构建
+## 使用方式
 
-此程序依赖于 `libclang`，请确保你的系统中安装了 `llvm`。
+```shell
+自动生成仓颉到 C 库的 FFI 绑定代码。
 
-你可以从 [libclang-static](https://github.com/cjbind/libclang-static) 下载预编译的 `libclang`。下载后将其解压到 `lib` 目录下。
+用法：cjbind <OPTIONS> <HEADER> -- <CLANG_ARGS>
+
+参数：
+    <HEADER>            C 头文件路径
+    [CLANG_ARGS]...     会被直接传递给 clang 的参数
+
+选项：
+    -o, --output        <OUTPUT> 把生成的绑定输出到文件
+    -p, --package       <PACKAGE> 指定生成的包名
+    -V, --version       显示版本号并退出
+    -h, --help          显示帮助信息
+```
+
+## 开源协议
+
+本项目在 [MIT](./LICENSE) 协议下开源。
+
+## 鸣谢
+
+此程序在编写时参照了 [bindgen](https://github.com/rust-lang/rust-bindgen) 的实现。
