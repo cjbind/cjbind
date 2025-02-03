@@ -8,7 +8,7 @@ clang = { path = "./lib" }
 
 [package]
   cjc-version = "0.58.3"
-  compile-option = "--static-std --static-libs"
+  compile-option = "--static-std --static-libs -Woff unused"
   description = "A simple C binding generator for Cangjie"
   link-option = ""
   name = "cjbind"

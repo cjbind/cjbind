@@ -46,14 +46,8 @@ jobs:
         with:
           channel: 'canary'
           token: ${{ secrets.GITCODE_TOKEN }}
-
-      - name: Build
-        if: ${{ matrix.sys == 'linux' }}
-        run: |
-          cjpm build --cfg_static --cfg_opt -V
         
       - name: Build
-        if: ${{ matrix.sys != 'linux' }}
         run: |
           cjpm build --cfg_opt --cfg_verbose -V
 
