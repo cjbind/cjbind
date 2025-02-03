@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            sys: linux
+            arch: x64
+          - os: ubuntu-24.04-arm
+            sys: linux
+            arch: arm64
+          - os: macos-15
+            sys: darwin
+            arch: arm64
+          - os: windows-2025
+            sys: windows
+            arch: x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Download libclang
+        run: |
+          pip install -r scripts/requirements.txt
+          python scripts/download.py
+
+      - name: Setup Cangjie
+        uses: Zxilly/setup-cangjie@v1.4.1
+        with:
+          channel: 'canary'
+          token: ${{ secrets.GITCODE_TOKEN }}
+
+      - name: Build
+        if: ${{ matrix.sys == 'linux' }}
+        run: |
+          cjpm build --cfg_static --cfg_opt -V
+        
+      - name: Build
+        if: ${{ matrix.sys != 'linux' }}
+        run: |
+          cjpm build --cfg_opt -V
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjbind-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            target/release/bin/main*

@@ -19,8 +19,6 @@ clang = { path = "./lib" }
   version = "0.1.0"
   package-configuration = {}
 
-[target.x86_64-unknown-linux-gnu]
-  compile-option = "--static"
-
-[target.aarch64-unknown-linux-gnu]
-  compile-option = "--static"
+[profile.customized-option]
+  cfg_static = "--static"
+  cfg_opt = "-O2"
