@@ -11,7 +11,8 @@ func cxstringToString(x: CXString): String {
 
     unsafe {
         let strPtr = clang_getCString(x)
-        let str = CString(strPtr).toString()
+        let p = CPointer<UInt8>(strPtr)
+        let str = CString(p).toString()
 
         clang_disposeString(x)
         return str
@@ -173,7 +174,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     public func definition(): Option<Cursor> {
         unsafe {
             let ret = Cursor(clang_getCursorDefinition(x))
-            if (ret.isValid() && ret.kind() != CXCursor_NoDeclFound) {
+            if (ret.isValid() && ret.kind() != CXCursorKind_CXCursor_NoDeclFound) {
                 return Some(ret)
             } else {
                 return None
@@ -279,7 +280,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
     public func enumValBoolean(): ?Bool {
         unsafe {
-            if (this.kind() == CXCursor_EnumConstantDecl) {
+            if (this.kind() == CXCursorKind_CXCursor_EnumConstantDecl) {
                 let v = clang_getEnumConstantDeclValue(x) != 0
                 return Some(v)
             } else {
@@ -290,7 +291,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
     public func enumValSigned(): ?Int64 {
         unsafe {
-            if (this.kind() == CXCursor_EnumConstantDecl) {
+            if (this.kind() == CXCursorKind_CXCursor_EnumConstantDecl) {
                 let v = clang_getEnumConstantDeclValue(x)
                 return Some(Int64(v))
             } else {
@@ -301,7 +302,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
     public func enumValUnsigned(): ?UInt64 {
         unsafe {
-            if (this.kind() == CXCursor_EnumConstantDecl) {
+            if (this.kind() == CXCursorKind_CXCursor_EnumConstantDecl) {
                 let v = clang_getEnumConstantDeclValue(x)
                 return Some(UInt64(v))
             } else {
@@ -362,7 +363,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         this.visit {
             c =>
             visitor(c)
-            return CXChildVisit_Continue
+            return CXChildVisitResult_CXChildVisit_Continue
         }
     }
 
@@ -439,7 +440,7 @@ public class Type <: Equatable<Type> {
     }
 
     public func isValid(): Bool {
-        return this.x.kind != CXType_Invalid
+        return this.x.kind != CXTypeKind_CXType_Invalid
     }
 
     public func elemType(): ?Type {
@@ -493,11 +494,11 @@ public class Type <: Equatable<Type> {
 
     public func clangSizeOf(ptrSize: UIntNative): Int64 {
         let k = this.kind()
-        if (k == CXType_RValueReference || k == CXType_LValueReference) {
+        if (k == CXTypeKind_CXType_RValueReference || k == CXTypeKind_CXType_LValueReference) {
             return Int64(ptrSize)
         }
 
-        if (k == CXType_Auto) {
+        if (k == CXTypeKind_CXType_Auto) {
             if (this.isNonDeductibleAutoType()) {
                 return -6
             }
@@ -519,11 +520,11 @@ public class Type <: Equatable<Type> {
 
     public func clangAlignOf(ptrSize: UIntNative): Int64 {
         let k = this.kind()
-        if (k == CXType_RValueReference || k == CXType_LValueReference) {
+        if (k == CXTypeKind_CXType_RValueReference || k == CXTypeKind_CXType_LValueReference) {
             return Int64(ptrSize)
         }
 
-        if (k == CXType_Auto) {
+        if (k == CXTypeKind_CXType_Auto) {
             return -6
         }
 
@@ -570,7 +571,7 @@ public class Type <: Equatable<Type> {
     public func canonicalDeclaration(_: ?Cursor): ?CanonicalTypeDeclaration {
         let decl = this.declaration()
         let canonical = decl.canonical()
-        if (canonical.isValid() && canonical.kind() != CXCursor_NoDeclFound) {
+        if (canonical.isValid() && canonical.kind() != CXCursorKind_CXCursor_NoDeclFound) {
             return CanonicalTypeDeclaration(this, canonical)
         } else {
             return None
@@ -585,8 +586,8 @@ public class Type <: Equatable<Type> {
 
     public func pointeeType(): ?Type {
         let k = this.kind()
-        if (k == CXType_Pointer || k == CXType_RValueReference || k == CXType_LValueReference || k ==
-            CXType_MemberPointer || k == CXType_BlockPointer) {
+        if (k == CXTypeKind_CXType_Pointer || k == CXTypeKind_CXType_RValueReference || k == CXTypeKind_CXType_LValueReference || k ==
+            CXTypeKind_CXType_MemberPointer || k == CXTypeKind_CXType_BlockPointer) {
             unsafe {
                 let p = Type(clang_getPointeeType(x))
                 if (!p.isValid()) {
@@ -694,6 +695,12 @@ public class Index {
     }
 }
 
+extend CString {
+    func toPtr(): CPointer<Int8> {
+        return CPointer<Int8>(this.getChars())
+    }
+}
+
 public class TranslationUnit {
     let x: CXTranslationUnit
 
@@ -704,17 +711,17 @@ public class TranslationUnit {
         options: CXTranslationUnit_Flags
     ) {
         unsafe {
-            let fname = LibC.mallocCString(file)
+            let fname = LibC.mallocCString(file).toPtr()
 
             let releaser = ArrayList<() -> Unit>()
 
-            let c_args = LibC.malloc<CString>(count: cmdArgs.size)
+            let c_args = LibC.malloc<CPointer<Int8>>(count: cmdArgs.size)
             releaser.add({=> LibC.free(c_args)})
 
             for (i in 0..cmdArgs.size) {
                 let s = LibC.mallocCString(cmdArgs[i])
                 let ptr = c_args + i
-                ptr.write(s)
+                ptr.write(s.toPtr())
                 releaser.add({=> LibC.free(s)})
             }
 
@@ -940,7 +947,7 @@ public class EvalResult {
     }
 
     public func asDouble(): ?Float64 {
-        if (this.kind() == CXEval_Float) {
+        if (this.kind() == CXEvalResultKind_CXEval_Float) {
             unsafe {
                 return clang_EvalResult_getAsDouble(x)
             }
@@ -950,7 +957,7 @@ public class EvalResult {
     }
 
     public func asInt(): ?Int64 {
-        if (this.kind() != CXEval_Int) {
+        if (this.kind() != CXEvalResultKind_CXEval_Int) {
             return None
         }
 
@@ -966,7 +973,7 @@ public class EvalResult {
     }
 
     public func asLiteralString(): ?String {
-        if (this.kind() != CXEval_StrLiteral) {
+        if (this.kind() != CXEvalResultKind_CXEval_StrLiteral) {
             return None
         }
 
@@ -979,14 +986,14 @@ public class EvalResult {
         }
         let charTy = charTyO.getOrThrow()
         let k = charTy.kind()
-        if (k == CXType_Char_S || 
-        k == CXType_SChar ||
-        k == CXType_Char_U ||
-        k == CXType_UChar
+        if (k == CXTypeKind_CXType_Char_S || 
+        k == CXTypeKind_CXType_SChar ||
+        k == CXTypeKind_CXType_Char_U ||
+        k == CXTypeKind_CXType_UChar
         ) {
             unsafe {
                 let ret = clang_EvalResult_getAsStr(x)
-                let s = CString(ret)
+                let s = CString(CPointer<UInt8>(ret))
 
                 return Some(s.toString())
             }

@@ -44,7 +44,7 @@ public class Enum {
         ty: clang.Type,
         ctx: CjbindContext
     ): Result<Enum, ParseError> {
-        if (ty.kind() != clang.CXType_Enum) {
+        if (ty.kind() != clang.CXTypeKind_CXType_Enum) {
             return Err(ParseError.Continue)
         }
 
@@ -73,7 +73,7 @@ public class Enum {
         let definition = declaration.definition().getOrDefault{=>declaration}
         definition.visit {
             cursor => 
-                if (cursor.kind() == clang.CXCursor_EnumConstantDecl) {
+                if (cursor.kind() == clang.CXCursorKind_CXCursor_EnumConstantDecl) {
                     let value = if (isBool) {
                         cursor.enumValBoolean().flatMap {
                             vv => EnumVariantValue.Boolean(vv)
@@ -95,7 +95,7 @@ public class Enum {
                     }
                 }
 
-                return clang.CXChildVisit_Continue
+                return clang.CXChildVisitResult_CXChildVisit_Continue
         }
         return Ok(Enum(repr, variants.toArray()))
     }

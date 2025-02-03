@@ -169,12 +169,12 @@ extend Type <: TryToCjTy<Item> {
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
             case TypeKind.TypeKindPointer(inner) =>
                 let size = this.getLayoutUnsafe(ctx, item).size
-                if (size != ctx.targetInfo.pointerWidth) {
+                if (size != ctx.pointerWidth()) {
                     return Err(
                         Error.InvalidPointerSize(
                             this.name.getOrDefault {=> "unknown"},
                             UIntNative(size),
-                            UIntNative(ctx.targetInfo.pointerWidth)
+                            UIntNative(ctx.pointerWidth())
                         )
                     )
                 }
@@ -223,7 +223,7 @@ extend FunctionSig <: TryToCjTy<Item> {
 
         let joined = joinTokens(arguments, quote(,))
 
-        let retToken = quote(CFunc<$(joined)> -> $(ret))
+        let retToken = quote(CFunc<($(joined)) -> $(ret)>)
         return Ok(retToken)
     }
 }

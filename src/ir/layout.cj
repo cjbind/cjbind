@@ -31,7 +31,7 @@ public open class Layout {
     }
 
     public static func forSize(ctx: CjbindContext, size: Int32): Layout {
-        return Layout.forSizeInternal(ctx.targetInfo.pointerWidth / 8, size)
+        return Layout.forSizeInternal(ctx.pointerWidth(), size)
     }
 
     public static func knownCjTypeForSize(size: Int32): ?Tokens {
@@ -57,7 +57,7 @@ public class Opaque <: Layout {
         ty: clang.Type,
         ctx: CjbindContext
     ): Type {
-        let ptrSize = UIntNative(ctx.targetInfo.pointerWidth)
+        let ptrSize = UIntNative(ctx.pointerWidth())
         let layout = Layout(Int32(ty.size(ptrSize)), Int32(ty.align(ptrSize)))
         return Type(None, layout, TypeKind.TypeKindOpaque, ty.isConst())   
     }
@@ -83,16 +83,16 @@ public enum LayoutError {
     LayoutErrorUnknown
 
     public static func from(val: Int32): LayoutError {
-        if (val == clang.CXTypeLayoutError_Invalid) {
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Invalid) {
             return LayoutErrorInvalid
         }
-        if (val == clang.CXTypeLayoutError_Dependent) {
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Dependent) {
             return LayoutErrorDependent
         }
-        if (val == clang.CXTypeLayoutError_NotConstantSize) {
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_NotConstantSize) {
             return LayoutErrorNotConstantSize
         }
-        if (val == clang.CXTypeLayoutError_InvalidFieldName) {
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_InvalidFieldName) {
             return LayoutErrorInvalidFieldName
         }
         return LayoutErrorUnknown
