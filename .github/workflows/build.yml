@@ -78,9 +78,7 @@ jobs:
       - name: Upload to Release
         if: github.event_name == 'release'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ASSET_PATH: target/release/bin/cjbind-${{ matrix.sys }}-${{ matrix.arch }}${{ matrix.ext }}
         run: |
-          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH" \
-            --clobber \
-            --label "${{ matrix.friendly_name }}"
+          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.friendly_name }}" \
+            --clobber
