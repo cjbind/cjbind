@@ -23,6 +23,7 @@ jobs:
           - os: windows-2025
             sys: windows
             arch: x64
+      fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
@@ -54,7 +55,7 @@ jobs:
       - name: Build
         if: ${{ matrix.sys != 'linux' }}
         run: |
-          cjpm build --cfg_opt -V
+          cjpm build --cfg_opt --cfg_verbose -V
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
