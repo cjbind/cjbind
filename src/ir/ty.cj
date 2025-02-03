@@ -132,7 +132,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         let canonicalTy = ty.canonicalType()
         let tyKind = ty.kind()
 
-        if (tyKind == clang.CXType_Unexposed && ty != canonicalTy && canonicalTy.kind() != clang.CXType_Invalid &&
+        if (tyKind == clang.CXTypeKind_CXType_Unexposed && ty != canonicalTy && canonicalTy.kind() != clang.CXTypeKind_CXType_Invalid &&
             ty.retType().isNone()) {
             return Type.fromClangTy(
                 potentialId,
@@ -143,7 +143,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             )
         }
 
-        let tkind = if (tyKind == clang.CXType_Unexposed || tyKind == clang.CXType_Invalid) {
+        let tkind = if (tyKind == clang.CXTypeKind_CXType_Unexposed || tyKind == clang.CXTypeKind_CXType_Invalid) {
             if (ty.retType().isSome()) {
                 let sigR = FunctionSig.fromTy(ty, location, ctx)
                 match (sigR) {
@@ -152,7 +152,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 }
             } else {
                 let lk = location.kind()
-                if (lk == clang.CXCursor_TypeRef) {
+                if (lk == clang.CXCursorKind_CXCursor_TypeRef) {
                     let referenced = location.referenced().getOrThrow()
                     let referencedTy = referenced.curType()
                     let decl = referencedTy.declaration()
@@ -166,14 +166,14 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     )
                     return Ok(ParseResult.AlreadyResolved(id))
                 } else {
-                    if (ty.kind() == clang.CXType_Unexposed) {
+                    if (ty.kind() == clang.CXTypeKind_CXType_Unexposed) {
                         return Err(ParseError.Recurse)
                     } else {
                         return Err(ParseError.Continue)
                     }
                 }
             }
-        } else if (tyKind == clang.CXType_Auto) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Auto) {
             if (canonicalTy == ty) {
                 return Err(ParseError.Continue)
             }
@@ -185,7 +185,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 parentId,
                 ctx
             )
-        } else if (tyKind == clang.CXType_Pointer) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Pointer) {
             var pointee = ty.pointeeType().getOrThrow()
             if (ty != canonicalTy) {
                 let canonicalPointee = canonicalTy.pointeeType().getOrThrow()
@@ -195,7 +195,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
             let inner = Item.fromTyOrRef(pointee, location, None, ctx)
             TypeKind.TypeKindPointer(inner)
-        } else if (tyKind == clang.CXType_VariableArray) {
+        } else if (tyKind == clang.CXTypeKind_CXType_VariableArray) {
             let inner = Item
                 .fromTy(
                     ty.elemType().getOrThrow(),
@@ -205,7 +205,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 )
                 .expect("Not able to resolve array element")
             TypeKind.TypeKindPointer(inner)
-        } else if (tyKind == clang.CXType_IncompleteArray) {
+        } else if (tyKind == clang.CXTypeKind_CXType_IncompleteArray) {
             let inner = Item
                 .fromTy(
                     ty.elemType().getOrThrow(),
@@ -215,13 +215,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 )
                 .expect("Not able to resolve array element")
             TypeKind.TypeKindArray(inner, 0)
-        } else if (tyKind == clang.CXType_FunctionProto || tyKind == clang.CXType_FunctionNoProto) {
+        } else if (tyKind == clang.CXTypeKind_CXType_FunctionProto || tyKind == clang.CXTypeKind_CXType_FunctionNoProto) {
             let sig = FunctionSig.fromTy(ty, location, ctx)
             match (sig) {
                 case Ok(v) => TypeKind.TypeKindFunction(v)
                 case Err(e) => return Err(e)
             }
-        } else if (tyKind == clang.CXType_Typedef) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Typedef) {
             let inner = cursor.typedefType().getOrThrow()
             let innerId = Item.fromTyOrRef(inner, location, None, ctx)
             if (innerId == potentialId) {
@@ -229,7 +229,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             } else {
                 TypeKind.TypeKindAlias(innerId)
             }
-        } else if (tyKind == clang.CXType_Enum) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Enum) {
             let enum_ = Enum.fromTy(ty, ctx).expect("Not an enum?")
 
             if (!isAnonymous) {
@@ -240,7 +240,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
 
             TypeKind.TypeKindEnum(enum_)
-        } else if (tyKind == clang.CXType_Record) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Record) {
             let complex = CompInfo.fromTy(potentialId, ty, location, ctx).expect("Not a complex")
             if (!isAnonymous) {
                 let prettyName = ty.spelling()
@@ -250,7 +250,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
 
             TypeKind.TypeKindComp(complex)
-        } else if (tyKind == clang.CXType_Vector) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Vector) {
             let innerr = Item.fromTy(
                 ty.elemType().getOrThrow(),
                 location,
@@ -263,7 +263,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
 
             TypeKind.TypeKindVector(inner, ty.numElements().getOrThrow())
-        } else if (tyKind == clang.CXType_ConstantArray) {
+        } else if (tyKind == clang.CXTypeKind_CXType_ConstantArray) {
             let inner = Item
                 .fromTy(
                     ty.elemType().getOrThrow(),
@@ -274,7 +274,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 .expect("Not able to resolve array element")
 
             TypeKind.TypeKindArray(inner, ty.numElements().getOrThrow())
-        } else if (tyKind == clang.CXType_Atomic) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Atomic) {
             return Type.fromClangTy(
                 potentialId,
                 ty.atomicValueType(),
@@ -282,7 +282,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 parentId,
                 ctx
             )
-        } else if (tyKind == clang.CXType_Elaborated) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Elaborated) {
             return Type.fromClangTy(
                 potentialId,
                 ty.named(),
@@ -290,7 +290,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 parentId,
                 ctx
             )
-        } else if (tyKind == clang.CXType_Dependent) {
+        } else if (tyKind == clang.CXTypeKind_CXType_Dependent) {
             return Err(ParseError.Continue)
         } else {
             // unsupported
@@ -301,7 +301,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             n => !n.isEmpty()
         }
 
-        let isConst2 = ty.isConst() || (ty.kind() == clang.CXType_ConstantArray && (ty
+        let isConst2 = ty.isConst() || (ty.kind() == clang.CXTypeKind_CXType_ConstantArray && (ty
             .elemType()
             .flatMap {
                 ele => ele.isConst()

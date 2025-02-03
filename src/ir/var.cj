@@ -29,7 +29,7 @@ public class Var <: ClangSubItemParser<Var> {
     // cjlint-ignore -start !G.FUN.01
     public static func parse(cursor: clang.Cursor, ctx: CjbindContext): Result<ParseResult<Var>, ParseError> {
         let k = cursor.kind()
-        if (k == clang.CXCursor_MacroDefinition) {
+        if (k == clang.CXCursorKind_CXCursor_MacroDefinition) {
             if (cursor.isMacroFunctionLike()) {
                 return Err(ParseError.Continue)
             }
@@ -37,14 +37,14 @@ public class Var <: ClangSubItemParser<Var> {
             // currently we don't support macro parse, wait a c expr
             // TODO: we can support single literal
             return Err(ParseError.Continue)
-        } else if (k == clang.CXCursor_VarDecl) {
+        } else if (k == clang.CXCursorKind_CXCursor_VarDecl) {
             let name = cursor.spelling()
             if (name.isEmpty()) {
                 return Err(ParseError.Continue)
             }
 
             let ty = cursor.curType()
-            let isConst = ty.isConst() || ([clang.CXType_ConstantArray, clang.CXType_IncompleteArray].contains(
+            let isConst = ty.isConst() || ([clang.CXTypeKind_CXType_ConstantArray, clang.CXTypeKind_CXType_IncompleteArray].contains(
                 ty.kind()) && ty.elemType().flatMap({
                 et => et.isConst()
             }).getOrDefault {=> false})
