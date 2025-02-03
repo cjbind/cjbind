@@ -22,3 +22,4 @@ clang = { path = "./lib" }
 [profile.customized-option]
   cfg_static = "--static"
   cfg_opt = "-O2"
+  cfg_verbose = "-V"
