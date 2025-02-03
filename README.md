@@ -4,6 +4,12 @@
 
 ## 使用方式
 
+可以从 [GitHub Releases](https://github.com/cjbind/cjbind/releases) 下载适用于您的平台的二进制文件，或者参照
+[构建](./DEVELOPMENT.md) 文档自行构建。
+
+> [!IMPORTANT]  
+> 因为仓颉当前不支持静态链接，因此执行时需要依赖仓颉的 runtime，请确保环境变量配置正确。
+
 ```shell
 自动生成仓颉到 C 库的 FFI 绑定代码。
 
