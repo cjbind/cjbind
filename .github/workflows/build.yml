@@ -8,6 +8,9 @@ on:
   release:
     types: ["created"]
 
+permissions: 
+  contents: "write"
+
 jobs:
   build:
     strategy:
@@ -77,6 +80,7 @@ jobs:
 
       - name: Upload to Release
         if: github.event_name == 'release'
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ASSET_PATH: target/release/bin/cjbind-${{ matrix.sys }}-${{ matrix.arch }}${{ matrix.ext }}
