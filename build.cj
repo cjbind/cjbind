@@ -148,7 +148,7 @@ func searchClang(): Option<String> {
 // cjlint-ignore -end fun
 
 var STUB_CLANG_LIB = Path("./lib/libclang${DLL_SUFFIX}")
-var CLANG_STATIC_LIB = Path("./lib/libclang.a")
+var CLANG_STATIC_LIB = Path("./lib/libclang-full.a")
 
 func missingLib() {
     return !exists(STUB_CLANG_LIB) && !exists(CLANG_STATIC_LIB)

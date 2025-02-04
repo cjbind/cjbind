@@ -4,14 +4,14 @@ import shutil
 from pathlib import Path
 from typing import List, Tuple
 from pysmartdl2 import SmartDL
-import py7zr
 import tempfile
+import gzip
 
 LLVM_VERSION = "19.1.7"
 
 # 全局配置常量
 URL_TEMPLATES = [
-    "https://github.com/cjbind/libclang-static/releases/download/{version}/{os}-{arch}.7z"
+    "https://github.com/cjbind/libclang-static/releases/download/{version}-libclang/libclang-full-{os}-{arch}.a.gz"
 ]
 
 # 日志配置
@@ -52,9 +52,6 @@ class SystemInfo:
         if arch_name not in ("x64", "arm64"):
             raise ValueError(f"不支持的处理器架构: {arch}")
 
-        if os_name == "macos":
-            arch_name = "universal"
-
         return os_name, arch_name
 
 
@@ -77,8 +74,8 @@ class DownloadManager:
         ]
 
     def download(self, urls: List[str], dest_dir: Path) -> Path:
-        """执行多源下载"""
-        dest_file = dest_dir / "lib.7z"
+        """执行下载"""
+        dest_file = dest_dir / "libclang-full.a.gz"
 
         logger.info("启动下载任务")
         logger.debug("下载参数: %s", self.download_config)
@@ -111,52 +108,13 @@ class ArchiveHandler:
         """处理整个解压流程"""
         logger.info("开始处理压缩包")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # 解压阶段
-            extracted_dir = ArchiveHandler._extract_archive(
-                archive_path, Path(temp_dir))
+        Path(target_root).mkdir(parents=True, exist_ok=True)
+        target_file = Path(target_root) / "libclang-full.a"
 
-            # 复制阶段
-            ArchiveHandler._copy_files(
-                source_dir=extracted_dir,
-                target_dir=target_root
-            )
-
-    @staticmethod
-    def _extract_archive(archive_path: Path, dest_dir: Path) -> Path:
-        """解压7z文件到临时目录"""
-        try:
-            with py7zr.SevenZipFile(archive_path, mode='r') as z:
-                z.extractall(dest_dir)
-        except Exception as e:
-            raise RuntimeError(f"解压失败: {str(e)}") from e
-
-        lib_dir = dest_dir / "lib"
-        if not lib_dir.exists():
-            raise FileNotFoundError("压缩包中缺少lib目录")
-
-        return lib_dir
-
-    @staticmethod
-    def _copy_files(source_dir: Path, target_dir: Path) -> None:
-        """递归复制文件并跳过已存在文件"""
-        target_dir.mkdir(parents=True, exist_ok=True)
-
-        for src_path in source_dir.glob("**/*"):
-            if src_path.is_dir():
-                continue
-
-            relative_path = src_path.relative_to(source_dir)
-            dest_path = target_dir / relative_path
-
-            if dest_path.exists():
-                logger.debug("跳过已存在文件: %s", dest_path)
-                continue
-
-            dest_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_path, dest_path)
-            logger.debug("已复制文件: %s -> %s", src_path.name, dest_path)
-
+        logger.info("解压缩文件 %s 到 %s", archive_path, target_file)
+        with gzip.open(archive_path, "rb") as fin, open(target_file, "wb") as fout:
+            shutil.copyfileobj(fin, fout)
+        logger.info("解压完成")
 
 def main():
     try:
