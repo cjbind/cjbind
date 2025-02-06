@@ -55,6 +55,8 @@ def preprocess_environment(env):
         case "linux":
             ldflags += f"-L{libdir}"
 
+    ldflags += " "
+
     ldflags += run_llvm_config("--system-libs", "--libs", "core", "support", "target", "targetparser")
     ldflags = ldflags.replace("\n", " ")
 
