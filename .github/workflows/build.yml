@@ -62,7 +62,7 @@ jobs:
 
       - name: Build
         run: |
-          cjpm build --cfg_verbose -V
+          python scripts/cjpm.py build -V
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

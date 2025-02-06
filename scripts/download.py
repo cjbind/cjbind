@@ -1,147 +1,165 @@
+import os
 import platform
-import logging
 import shutil
+import sys
 from pathlib import Path
-from typing import List, Tuple
-from pysmartdl2 import SmartDL
-import tempfile
-import gzip
+from tempfile import mkdtemp
+from typing import Optional
 
-LLVM_VERSION = "19.1.7"
-
-# 全局配置常量
-URL_TEMPLATES = [
-    "https://github.com/cjbind/libclang-static/releases/download/{version}-libclang/libclang-full-{os}-{arch}.a.gz"
-]
-
-# 日志配置
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
+import requests
+import py7zr
+from py7zr.callbacks import ExtractCallback
+from tqdm import tqdm
 
 
-class SystemInfo:
-    """系统信息检测类"""
-    OS_MAPPING = {
-        "Windows": "windows",
-        "Darwin": "macos",
-        "Linux": "linux"
+class LibClangInstaller:
+    """用于自动下载和安装 libclang 的安装器"""
+
+    URL_MAP = {
+        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-windows11-llvm-mingw_64.7z",
+        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-macos-universal.7z",
+        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
+        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-linux-Ubuntu24.04-gcc11.2-arm64.7z",
     }
-
-    ARCH_MAPPING = {
-        "x86_64": "x64",
-        "amd64": "x64",
-        "aarch64": "arm64",
-        "arm64": "arm64"
-    }
-
-    @classmethod
-    def detect_platform(cls) -> Tuple[str, str]:
-        """检测并返回标准化系统信息"""
-        system = platform.system()
-        arch = platform.machine().lower()
-
-        os_name = cls.OS_MAPPING.get(system)
-        arch_name = cls.ARCH_MAPPING.get(arch, arch)
-
-        if not os_name:
-            raise ValueError(f"不支持的操作系统: {system}")
-        if arch_name not in ("x64", "arm64"):
-            raise ValueError(f"不支持的处理器架构: {arch}")
-
-        return os_name, arch_name
-
-
-class DownloadManager:
-    """下载管理类"""
 
     def __init__(self):
-        self.url_templates = URL_TEMPLATES
-        self.download_config = {
-            "timeout": 30,
-            "connections": 5,
-            "progress_bar": True
-        }
+        self.system_key = self._detect_system()
+        self.download_url = self._get_download_url()
+        self.base_dir = Path(__file__).parent.resolve()
+        self.temp_archive = self.base_dir / "temp_libclang.7z"
+        self.target_dir = self.base_dir.parent / "lib"
+        self.extract_dir: Optional[Path] = None
 
-    def generate_urls(self, os_name: str, arch: str) -> List[str]:
-        """生成实际下载URL列表"""
-        return [
-            template.format(os=os_name, arch=arch, version=LLVM_VERSION)
-            for template in self.url_templates
-        ]
+    def _detect_system(self) -> str:
+        """检测操作系统和架构"""
+        system = platform.system().lower()
+        machine = platform.machine().lower()
 
-    def download(self, urls: List[str], dest_dir: Path) -> Path:
-        """执行下载"""
-        dest_file = dest_dir / "libclang-full.a.gz"
+        if system == "windows":
+            return "windows"
+        if system == "darwin":
+            return "macos"
+        if system == "linux":
+            return "linux-arm64" if machine in ("arm64", "aarch64") else "linux-x86_64"
+        raise RuntimeError(f"Unsupported system: {system}/{machine}")
 
-        logger.info("启动下载任务")
-        logger.debug("下载参数: %s", self.download_config)
-        logger.debug("目标路径: %s", dest_file)
+    def _get_download_url(self) -> str:
+        """获取对应系统的下载地址"""
+        url = self.URL_MAP.get(self.system_key)
+        if not url:
+            raise RuntimeError(f"No download URL configured for {self.system_key}")
+        return url
+
+    def _download_file(self) -> None:
+        """下载压缩文件并显示进度条"""
+        print(f"Downloading libclang for {self.system_key}...")
 
         try:
-            downloader = SmartDL(
-                urls,
-                dest=str(dest_file),
-                progress_bar=self.download_config["progress_bar"],
-                timeout=self.download_config["timeout"],
-                threads=self.download_config["connections"]
-            )
-            downloader.start(blocking=True)
+            with requests.get(self.download_url, stream=True, timeout=30) as response:
+                response.raise_for_status()
+                total_size = int(response.headers.get('content-length', 0))
+
+                with tqdm(
+                    total=total_size,
+                    unit='B',
+                    unit_scale=True,
+                    desc="Downloading",
+                ) as pbar:
+                    with open(self.temp_archive, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                            pbar.update(len(chunk))
         except Exception as e:
-            raise RuntimeError(f"下载失败: {str(e)}") from e
+            self._cleanup()
+            raise RuntimeError(f"Download failed: {str(e)}")
 
-        if not downloader.isSuccessful:
-            errors = "\n".join(str(e) for e in downloader.get_errors())
-            raise RuntimeError(f"下载错误:\n{errors}")
+    def _extract_archive(self) -> None:
+        """解压下载的文件"""
+        try:
+            self.extract_dir = Path(mkdtemp())
+            with py7zr.SevenZipFile(self.temp_archive, 'r') as archive:
+                class TqdmExtractCallback(ExtractCallback):
+                        def __init__(self):
+                            super().__init__()
 
-        logger.info("文件下载完成: %s", dest_file)
-        return dest_file
+                            info = archive.archiveinfo().uncompressed
 
+                            self.pendingSize = None
+                            self.pbar = tqdm(
+                                total=info,
+                                unit='B',
+                                unit_scale=True,
+                                miniters=1,
+                                desc="Extracting",
+                            )
 
-class ArchiveHandler:
-    """压缩包处理类"""
-    @staticmethod
-    def process_archive(archive_path: Path, target_root: Path) -> None:
-        """处理整个解压流程"""
-        logger.info("开始处理压缩包")
+                        def report_start(self, processing_file_path, processing_bytes):
+                            pass
 
-        Path(target_root).mkdir(parents=True, exist_ok=True)
-        target_file = Path(target_root) / "libclang-full.a"
+                        def report_update(self, decompressed_bytes):
+                            self.pbar.update(int(decompressed_bytes))
 
-        logger.info("解压缩文件 %s 到 %s", archive_path, target_file)
-        with gzip.open(archive_path, "rb") as fin, open(target_file, "wb") as fout:
-            shutil.copyfileobj(fin, fout)
-        logger.info("解压完成")
+                        def report_end(self, processing_file_path, wrote_bytes):
+                            pass
 
-def main():
-    try:
-        # 获取系统信息
-        os_name, arch = SystemInfo.detect_platform()
-        logger.info("检测到系统环境: %s-%s", os_name, arch)
+                        def report_start_preparation(self):
+                            pass
 
-        # 初始化下载管理器
-        downloader = DownloadManager()
-        urls = downloader.generate_urls(os_name, arch)
-        logger.info("生成的下载地址: %s", urls[0])
+                        def report_warning(self, message):
+                            print(f"Warning: {message}")
 
-        # 执行下载
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            archive_path = downloader.download(urls, Path(tmp_dir))
+                        def report_postprocess(self):
+                            pass
+                        
+                cb = TqdmExtractCallback()
+                archive.extractall(path=self.extract_dir, callback=cb)
+                    
+        except Exception as e:
+            self._cleanup()
+            raise RuntimeError(f"Extraction failed: {str(e)}")
 
-            # 处理压缩包
-            script_dir = Path(__file__).parent.resolve()
-            target_dir = script_dir.parent / "lib"
-            ArchiveHandler.process_archive(archive_path, target_dir)
+    def _find_libclang_dir(self) -> Path:
+        """查找解压后的 libclang 目录"""
+        if not self.extract_dir:
+            raise RuntimeError("No extraction directory found")
 
-        logger.info("操作成功完成")
+        for path in self.extract_dir.rglob("libclang"):
+            if path.is_dir():
+                return path
+        raise FileNotFoundError("libclang directory not found in the archive")
 
-    except Exception as e:
-        logger.error("程序执行失败: %s", str(e), exc_info=True)
-        raise
+    def _install_files(self) -> None:
+        """移动文件到目标目录"""
+        libclang_src = self._find_libclang_dir()
+        libclang_dest = self.target_dir / "libclang"
+
+        if libclang_dest.exists():
+            shutil.rmtree(libclang_dest)
+
+        shutil.move(str(libclang_src), str(libclang_dest))
+        print(f"\nSuccessfully installed to: {libclang_dest}")
+
+    def _cleanup(self) -> None:
+        """清理临时文件"""
+        self.temp_archive.unlink(missing_ok=True)
+        if self.extract_dir and self.extract_dir.exists():
+            shutil.rmtree(self.extract_dir, ignore_errors=True)
+
+    def run(self) -> None:
+        """执行安装流程"""
+        try:
+            self.target_dir.mkdir(parents=True, exist_ok=True)
+            self._download_file()
+            self._extract_archive()
+            self._install_files()
+        finally:
+            self._cleanup()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        installer = LibClangInstaller()
+        installer.run()
+    except Exception as e:
+        print(f"\nError: {str(e)}")
+        sys.exit(1)
