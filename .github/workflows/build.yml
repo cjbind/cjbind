@@ -68,6 +68,11 @@ jobs:
           channel: "canary"
           token: ${{ secrets.GITCODE_TOKEN }}
 
+      - uses: rui314/setup-mold@v1
+        with:
+          mold-version: 2.36.0
+          make-default: true
+
       - name: Setup MSYS2
         if: matrix.sys == 'windows'
         uses: msys2/setup-msys2@v2
