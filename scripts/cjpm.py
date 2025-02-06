@@ -75,7 +75,7 @@ def preprocess_environment(env):
         ldflags += "--end-group"
 
     env["LDFLAGS"] = ldflags
-    print("ldflags:", ldflags)
+    print("ldflags:", ldflags, flush=True)
 
     return env
 
