@@ -69,6 +69,7 @@ jobs:
           token: ${{ secrets.GITCODE_TOKEN }}
 
       - uses: rui314/setup-mold@v1
+        if: matrix.sys == 'linux'
         with:
           mold-version: 2.36.0
           make-default: true
