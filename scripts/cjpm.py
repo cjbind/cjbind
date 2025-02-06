@@ -65,7 +65,7 @@ def preprocess_environment(env):
     
     match sys.platform:
         case "win32":
-            ldflags += " -lstdc++ "
+            ldflags += " -lstdc++ -lversion "
         case "darwin":
             ldflags += " -lc++ -lc++abi -lSystem "
         case "linux":
