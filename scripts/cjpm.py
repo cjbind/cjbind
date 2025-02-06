@@ -39,6 +39,9 @@ def preprocess_environment(env):
     match sys.platform:
         case "win32":
             ldflags += f"-L{libdir}"
+            cj_home = os.environ["CANGJIE_HOME"]
+            tools_dir = Path(cj_home) / "tools" / "bin"
+            ldflags += f" -L{str(tools_dir)}" # for stdc++
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
