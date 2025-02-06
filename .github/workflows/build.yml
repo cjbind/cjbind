@@ -68,11 +68,16 @@ jobs:
           channel: "canary"
           token: ${{ secrets.GITCODE_TOKEN }}
 
-      - uses: rui314/setup-mold@v1
+      - name: Install lld
         if: matrix.sys == 'linux'
-        with:
-          mold-version: 2.36.0
-          make-default: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld
+
+      - name: Replace ld with lld
+        if: matrix.sys == 'linux'
+        run: |
+          sudo update-alternatives --install /usr/bin/ld ld /usr/bin/lld 100
 
       - name: Setup MSYS2
         if: matrix.sys == 'windows'
