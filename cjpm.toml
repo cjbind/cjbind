@@ -13,6 +13,9 @@
   version = "0.1.0"
   package-configuration = {}
 
+[profile.build]
+  lto = "full"
+
 [profile.customized-option]
   cfg_opt = "-O2"
   cfg_verbose = "-V"
