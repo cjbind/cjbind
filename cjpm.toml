@@ -28,20 +28,20 @@ glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.0" }
   link-option = "--strip-all"
 
 [target.aarch64-apple-darwin]
-  link-option = "-L ./lib -l:libclang-full.a"
+  link-option = "-L ./lib -l:libclang-full.a -lc++ -lunwind -lc++abi"
 
 [target.aarch64-apple-darwin.release]
   compile-option = "-O2"
 
 [target.x86_64-unknown-linux-gnu]
-  link-option = "-L ./lib --start-group -l:libclang-full.a -l:libstdc++.a -lgcc_s -lgcc --end-group"
+  link-option = "-L ./lib --start-group -l:libclang-full.a -lgcc_s -lgcc --end-group"
 
 [target.x86_64-unknown-linux-gnu.release]
   compile-option = "-O2"
   link-option = "--strip-all"
 
 [target.aarch64-unknown-linux-gnu]
-  link-option = "-L ./lib --start-group -l:libclang-full.a -l:libstdc++.a -lgcc_s -lgcc --end-group"
+  link-option = "-L ./lib --start-group -l:libclang-full.a -lgcc_s -lgcc --end-group"
 
 [target.aarch64-unknown-linux-gnu.release]
   compile-option = "-O2"
