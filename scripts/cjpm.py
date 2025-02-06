@@ -44,13 +44,31 @@ CLANG_LIBS = [
 ]
 
 def preprocess_environment(env):
-    ldflags = run_llvm_config("--ldflags", "--system-libs", "--libs", "core", "support", "target", "targetparser")
+    ldflags = ""
+    libdir = run_llvm_config("--libdir")
+
+    match sys.platform:
+        case "win32":
+            ldflags += f"-L{libdir}"
+        case "darwin":
+            ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
+        case "linux":
+            ldflags += f"-L{libdir}"
+
+    ldflags += run_llvm_config("--system-libs", "--libs", "core", "support", "target", "targetparser")
     ldflags = ldflags.replace("\n", " ")
 
     for lib in CLANG_LIBS:
         ldflags += f" -l{lib}"
+    
+    if sys.platform != "darwin":
+        ldflags += " -lstdc++"
+    else:
+        ldflags += " -lc++ -lc++abi -lSystem"
 
     env["LDFLAGS"] = ldflags
+    print("ldflags:", ldflags)
+
     return env
 
 def main():
