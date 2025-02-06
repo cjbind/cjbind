@@ -42,7 +42,7 @@ def preprocess_environment(env):
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
-            ldflags += f"-L{libdir}"
+            ldflags += f"-L{libdir} --gc-sections"
 
     ldflags += " "
 
@@ -60,10 +60,6 @@ def preprocess_environment(env):
             lib_name = lib_name[3:]
         ldflags += f" -l{lib_name} "
     
-    # if sys.platform != "darwin":
-    #     ldflags += " -lstdc++ "
-    # else:
-    #     ldflags += " -lc++ -lc++abi -lSystem "
     match sys.platform:
         case "win32":
             ldflags += " -lstdc++ "
