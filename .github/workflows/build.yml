@@ -76,8 +76,7 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-gcc
-            python
-          path-type: strict
+          path-type: inherit
 
       - name: Build
         if: matrix.sys != 'windows'
