@@ -49,7 +49,15 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Cache libclang
+        id: cache-libclang
+        uses: actions/cache@v4
+        with:
+          path: lib/libclang
+          key: libclang-${{ runner.os }}-19.1.7
+
       - name: Download libclang
+        if: steps.cache-libclang.outputs.cache-hit != 'true'
         run: |
           pip install -r scripts/requirements.txt
           python scripts/download.py
