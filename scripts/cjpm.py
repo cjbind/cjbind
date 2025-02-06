@@ -57,7 +57,7 @@ def preprocess_environment(env):
 
     ldflags += " "
 
-    ldflags += run_llvm_config("--system-libs", "--libs", "core", "support", "target", "targetparser")
+    ldflags += run_llvm_config("--system-libs", "--libs")
     ldflags = ldflags.replace("\n", " ")
 
     for lib in CLANG_LIBS:
