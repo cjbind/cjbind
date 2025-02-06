@@ -60,10 +60,17 @@ def preprocess_environment(env):
             lib_name = lib_name[3:]
         ldflags += f" -l{lib_name} "
     
-    if sys.platform != "darwin":
-        ldflags += " -lstdc++ "
-    else:
-        ldflags += " -lc++ -lc++abi -lSystem "
+    # if sys.platform != "darwin":
+    #     ldflags += " -lstdc++ "
+    # else:
+    #     ldflags += " -lc++ -lc++abi -lSystem "
+    match sys.platform:
+        case "win32":
+            ldflags += " -lstdc++ "
+        case "darwin":
+            ldflags += " -lc++ -lc++abi -lSystem "
+        case "linux":
+            ldflags += " -lstdc++ -lgcc_s "
 
     if sys.platform != "darwin":
         ldflags += "--end-group"
