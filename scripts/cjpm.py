@@ -57,6 +57,9 @@ def preprocess_environment(env):
 
     ldflags += " "
 
+    if sys.platform != "darwin":
+        ldflags += "--start-group "
+
     ldflags += run_llvm_config("--system-libs", "--libs")
     ldflags = ldflags.replace("\n", " ")
 
@@ -64,9 +67,12 @@ def preprocess_environment(env):
         ldflags += f" -l{lib}"
     
     if sys.platform != "darwin":
-        ldflags += " -lstdc++"
+        ldflags += " -lstdc++ "
     else:
-        ldflags += " -lc++ -lc++abi -lSystem"
+        ldflags += " -lc++ -lc++abi -lSystem "
+
+    if sys.platform != "darwin":
+        ldflags += "--end-group"
 
     env["LDFLAGS"] = ldflags
     print("ldflags:", ldflags)
