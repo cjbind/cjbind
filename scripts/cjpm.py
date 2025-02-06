@@ -2,11 +2,17 @@
 import os
 import sys
 import subprocess
+from pathlib import Path
 
-def run_llvm_config(*args):
+
+
+def libclang_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir)
-    llvm_config_path = os.path.join(parent_dir, 'lib', 'libclang', 'bin', 'llvm-config')
+    return os.path.join(parent_dir, 'lib', 'libclang')
+
+def run_llvm_config(*args):
+    llvm_config_path = os.path.join(libclang_dir(), 'bin', 'llvm-config')
     if sys.platform == "win32":
         llvm_config_path += ".exe"
     
@@ -25,23 +31,6 @@ def run_llvm_config(*args):
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Command {cmd} failed with output:\n{e.output}") from e
 
-CLANG_LIBS = [
-    "clang",
-    "clangAST",
-    "clangAnalysis",
-    "clangBasic",
-    "clangDriver",
-    "clangEdit",
-    "clangExtractAPI",
-    "clangFrontend",
-    "clangIndex",
-    "clangLex",
-    "clangParse",
-    "clangRewrite",
-    "clangSema",
-    "clangSerialization",
-    "clangTooling",
-]
 
 def preprocess_environment(env):
     ldflags = ""
@@ -63,8 +52,13 @@ def preprocess_environment(env):
     ldflags += run_llvm_config("--system-libs", "--libs")
     ldflags = ldflags.replace("\n", " ")
 
-    for lib in CLANG_LIBS:
-        ldflags += f" -l{lib}"
+    libdir = Path(os.path.join(libclang_dir(), "lib"))
+
+    for lib in libdir.glob("libclang*.a"):
+        lib_name = lib.stem
+        if lib_name.startswith("lib"):
+            lib_name = lib_name[3:]
+        ldflags += f" -l{lib_name} "
     
     if sys.platform != "darwin":
         ldflags += " -lstdc++ "
