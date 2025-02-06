@@ -68,7 +68,27 @@ jobs:
           channel: "canary"
           token: ${{ secrets.GITCODE_TOKEN }}
 
+      - name: Setup MSYS2
+        if: matrix.sys == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-clang
+            mingw-w64-x86_64-gcc
+            python
+          path-type: strict
+
       - name: Build
+        if: matrix.sys != 'windows'
+        run: |
+          python scripts/cjpm.py build -V
+
+      - name: Build Windows
+        if: matrix.sys == 'windows'
+        shell: msys2 {0}
         run: |
           python scripts/cjpm.py build -V
 

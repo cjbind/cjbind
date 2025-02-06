@@ -14,7 +14,7 @@
   package-configuration = {}
 
 [profile.build]
-  lto = "full"
+  lto = "thin"
 
 [profile.customized-option]
   cfg_opt = "-O2"
