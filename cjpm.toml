@@ -1,8 +1,5 @@
 [dependencies]
 
-[script-dependencies]
-glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.0" }
-
 [package]
   cjc-version = "0.58.3"
   compile-option = "--static-std --static-libs -Woff unused"
@@ -21,27 +18,27 @@ glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.0" }
   cfg_verbose = "-V"
 
 [target.x86_64-w64-mingw32]
-  link-option = "-L ./lib --start-group -l:libclang-full.a -lversion -lole32 -luuid -lshell32 -lntdll --end-group"
+  link-option = "${LDFLAGS}"
 
 [target.x86_64-w64-mingw32.release]
   compile-option = "-O2"
   link-option = "--strip-all"
 
 [target.aarch64-apple-darwin]
-  link-option = "-l:./lib/libclang-full.a -lc++ -lc++abi"
+  link-option = "${LDFLAGS}"
 
 [target.aarch64-apple-darwin.release]
   compile-option = "-O2"
 
 [target.x86_64-unknown-linux-gnu]
-  link-option = "--gc-sections -L ./lib --start-group -l:libclang-full.a -lgcc_s -lgcc --end-group"
+  link-option = "${LDFLAGS}"
 
 [target.x86_64-unknown-linux-gnu.release]
   compile-option = "-O2"
   link-option = "--strip-all"
 
 [target.aarch64-unknown-linux-gnu]
-  link-option = "--gc-sections -L ./lib --start-group -l:libclang-full.a -lgcc_s -lgcc --end-group"
+  link-option = "${LDFLAGS}"
 
 [target.aarch64-unknown-linux-gnu.release]
   compile-option = "-O2"
