@@ -1,1 +1,3 @@
-pysmartdl2
+requests
+tqdm
+py7zr
