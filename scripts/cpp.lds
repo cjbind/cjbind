@@ -1,5 +1,6 @@
 SECTIONS {
   .text : {
+    /* 原脚本的.text段内容 */
     *(.text.unlikely .text.*_unlikely .text.unlikely.*)
     *(.text.exit .text.exit.*)
     *(.text.startup .text.startup.*)
@@ -15,6 +16,12 @@ SECTIONS {
     g_runtimeStaticEnd = .;
     *(.cjinit_function .cjinit_function.*)
     *(.gnu.warning)
+
+    *(.text.*)
+    *(.text.*.*)
+  }
+
+  /DISCARD/ : {
     *(.text.*)
   }
 }
