@@ -49,15 +49,15 @@ def preprocess_environment(env):
 
     match sys.platform:
         case "win32":
-            ldflags += f"-L{libdir}"
+            ldflags += f" --gc-sections --gc-keep-exported -L{libdir}"
             if not debug:
-                ldflags = "--strip-all " + ldflags
+                ldflags = "--strip-all" + ldflags
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
-            ldflags += f"--gc-sections -L{libdir} -T {cpp_lds()}"
+            ldflags += f" --gc-sections --gc-keep-exported -L{libdir} -T {cpp_lds()}"
             if not debug:
-                ldflags = "--strip-all " + ldflags
+                ldflags = "--strip-all" + ldflags
 
     ldflags += " "
 
