@@ -2,7 +2,7 @@
 
 [package]
   cjc-version = "0.58.3"
-  compile-option = "-Woff unused --static-std --static-libs "
+  compile-option = "-Woff unused"
   description = "A simple C binding generator for Cangjie"
   link-option = ""
   name = "cjbind"
