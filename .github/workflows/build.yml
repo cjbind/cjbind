@@ -51,6 +51,10 @@ jobs:
           python-version: "3.13"
           cache: "pip"
 
+      - name: Install Python deps
+        run: |
+          pip install -r scripts/requirements.txt
+
       - name: Cache libclang
         id: cache-libclang
         uses: actions/cache@v4
@@ -61,7 +65,6 @@ jobs:
       - name: Download libclang
         if: steps.cache-libclang.outputs.cache-hit != 'true'
         run: |
-          pip install -r scripts/requirements.txt
           python scripts/download.py
 
       - name: Setup Cangjie
