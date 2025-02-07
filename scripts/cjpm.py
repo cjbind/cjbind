@@ -4,12 +4,15 @@ import sys
 import subprocess
 from pathlib import Path
 
-
+def root_dir():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(script_dir)
 
 def libclang_dir():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)
-    return os.path.join(parent_dir, 'lib', 'libclang')
+    return os.path.join(root_dir(), 'lib', 'libclang')
+
+def cpp_lds():
+    return os.path.join(libclang_dir(), 'cpp.lds')
 
 def run_llvm_config(*args):
     llvm_config_path = os.path.join(libclang_dir(), 'bin', 'llvm-config')
@@ -38,11 +41,11 @@ def preprocess_environment(env):
 
     match sys.platform:
         case "win32":
-            ldflags += f"--gc-sections --discard-all --strip-all -L{libdir}"
+            ldflags += f"--gc-sections --strip-all -L{libdir}"
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
-            ldflags += f"--gc-sections --discard-all --strip-all -L{libdir}"
+            ldflags += f"--gc-sections --strip-all -L{libdir} -T {cpp_lds()}"
 
     ldflags += " "
 
