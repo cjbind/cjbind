@@ -15,7 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: 
+        os:
           - runner: "ubuntu-24.04"
             sys: "linux"
             arch: "x64"
@@ -32,7 +32,7 @@ jobs:
             sys: "windows"
             arch: "x64"
             friendly_name: "Windows (x64)"
-        build: 
+        build:
           - channel: "release"
             flag: ""
           - channel: "debug"
@@ -49,6 +49,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: "pip"
 
       - name: Cache libclang
         id: cache-libclang
@@ -94,7 +95,7 @@ jobs:
         shell: bash
         run: |
           ./target/${{ matrix.build.channel }}/bin/main${{ matrix.os.ext }} --version
-      
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
