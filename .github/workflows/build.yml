@@ -94,6 +94,7 @@ jobs:
           target/release/bin/main${{ matrix.ext }} --version
 
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cjbind-${{ matrix.os }}-${{ matrix.arch }}
