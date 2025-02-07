@@ -45,13 +45,19 @@ def preprocess_environment(env):
     ldflags = ""
     libdir = run_llvm_config("--libdir")
 
+    debug = "-g" in sys.argv
+
     match sys.platform:
         case "win32":
-            ldflags += f"--gc-sections --strip-all -L{libdir}"
+            ldflags += f"--gc-sections -L{libdir}"
+            if not debug:
+                ldflags = "--strip-all " + ldflags
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
-            ldflags += f"--gc-sections --strip-all -L{libdir} -T {cpp_lds()}"
+            ldflags += f"--gc-sections -L{libdir} -T {cpp_lds()}"
+            if not debug:
+                ldflags = "--strip-all " + ldflags
 
     ldflags += " "
 
