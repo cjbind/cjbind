@@ -16,23 +16,27 @@ jobs:
     strategy:
       matrix:
         os: 
-          - runner: ubuntu-24.04
-            sys: linux
-            arch: x64
+          - runner: "ubuntu-24.04"
+            sys: "linux"
+            arch: "x64"
             friendly_name: "Linux (x64)"
-          - runner: ubuntu-24.04-arm
-            sys: linux
-            arch: arm64
+          - runner: "ubuntu-24.04-arm"
+            sys: "linux"
+            arch: "arm64"
             friendly_name: "Linux (ARM64)"
-          - runner: macos-15
-            sys: darwin
-            arch: arm64
+          - runner: "macos-15"
+            sys: "darwin"
+            arch: "arm64"
             friendly_name: "macOS (Apple Silicon)"
-          - runner: windows-2025
-            sys: windows
-            arch: x64
+          - runner: "windows-2025"
+            sys: "windows"
+            arch: "x64"
             friendly_name: "Windows (x64)"
-        debug: [true, false]
+        build: 
+          - channel: "release"
+            flag: ""
+          - channel: "debug"
+            flag: "-g"
       fail-fast: false
 
     runs-on: ${{ matrix.os.runner }}
@@ -75,52 +79,29 @@ jobs:
             mingw-w64-x86_64-gcc
           path-type: inherit
 
-      - name: Build Unix Debug
-        if: matrix.os.sys != 'windows' && matrix.debug == 'true'
+      - name: Build unix ${{ matrix.build.channel }}
+        if: matrix.os.sys != 'windows'
         run: |
-          python scripts/cjpm.py build --cfg_verbose -V -g
+          python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
-      - name: Build Unix Release
-        if: matrix.os.sys != 'windows' && matrix.debug == 'false'
-        run: |
-          python scripts/cjpm.py build --cfg_verbose -V
-
-      - name: Build Windows
-        if: matrix.os.sys == 'windows' && matrix.debug == 'true'
+      - name: Build windows ${{ matrix.build.channel }}
+        if: matrix.os.sys == 'windows'
         shell: msys2 {0}
         run: |
-          python scripts/cjpm.py build --cfg_verbose -V -g
-
-      - name: Build Windows
-        if: matrix.os.sys == 'windows' && matrix.debug == 'false'
-        shell: msys2 {0}
-        run: |
-          python scripts/cjpm.py build --cfg_verbose -V
+          python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Test binary
         shell: bash
         run: |
-            if ${{ matrix.debug }}; then
-              ./target/debug/bin/main${{ matrix.os.ext }} --version
-            else
-              ./target/release/bin/main${{ matrix.os.ext }} --version
-            fi
-
-      - name: Upload artifact
-        if: always() && matrix.debug == 'false'
-        uses: actions/upload-artifact@v4
-        with:
-          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-release
-          path: |
-            target/release/bin/main*
+          ./target/${{ matrix.build.channel }}/bin/main${{ matrix.os.ext }} --version
       
       - name: Upload artifact
-        if: always() && matrix.debug == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-debug
+          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}
           path: |
-            target/debug/bin/main*
+            target/${{ matrix.build.channel }}/bin/main*
 
       - name: Rename binary
         if: github.event_name == 'release'
