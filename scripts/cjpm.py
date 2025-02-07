@@ -15,7 +15,7 @@ def libclang_dir():
 
 
 def cpp_lds():
-    return os.path.join(root_dir(), 'lib', 'cpp.lds')
+    return os.path.join(root_dir(), 'scripts', 'cpp.lds')
 
 
 def run_llvm_config(*args):
