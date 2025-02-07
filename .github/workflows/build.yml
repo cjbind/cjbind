@@ -15,6 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
+        debug: [true, false]
         include:
           - os: ubuntu-24.04
             sys: linux
@@ -78,25 +79,39 @@ jobs:
             mingw-w64-x86_64-gcc
           path-type: inherit
 
-      - name: Build
-        if: matrix.sys != 'windows'
+      - name: Build Unix Debug
+        if: matrix.sys != 'windows' && matrix.debug == 'true'
+        run: |
+          python scripts/cjpm.py build --cfg_verbose -V -g
+
+      - name: Build Unix Release
+        if: matrix.sys != 'windows' && matrix.debug == 'false'
         run: |
           python scripts/cjpm.py build --cfg_verbose -V
+
+      - name: Build Windows
+        if: matrix.sys == 'windows' && matrix.debug == 'true'
+        shell: msys2 {0}
+        run: |
           python scripts/cjpm.py build --cfg_verbose -V -g
 
       - name: Build Windows
-        if: matrix.sys == 'windows'
+        if: matrix.sys == 'windows' && matrix.debug == 'false'
         shell: msys2 {0}
         run: |
           python scripts/cjpm.py build --cfg_verbose -V
-          python scripts/cjpm.py build --cfg_verbose -V -g
 
       - name: Test binary
+        shell: bash
         run: |
-          target/release/bin/main${{ matrix.ext }} --version
+            if ${{ matrix.debug }}; then
+              ./target/debug/bin/main${{ matrix.ext }} --version
+            else
+              ./target/release/bin/main${{ matrix.ext }} --version
+            fi
 
       - name: Upload artifact
-        if: always()
+        if: always() && matrix.debug == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: cjbind-${{ matrix.os }}-${{ matrix.arch }}-release
@@ -104,7 +119,7 @@ jobs:
             target/release/bin/main*
       
       - name: Upload artifact
-        if: always()
+        if: always() && matrix.debug == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: cjbind-${{ matrix.os }}-${{ matrix.arch }}-debug
