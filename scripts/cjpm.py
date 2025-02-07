@@ -4,26 +4,31 @@ import sys
 import subprocess
 from pathlib import Path
 
+
 def root_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.dirname(script_dir)
 
+
 def libclang_dir():
     return os.path.join(root_dir(), 'lib', 'libclang')
 
+
 def cpp_lds():
-    return os.path.join(libclang_dir(), 'cpp.lds')
+    return os.path.join(root_dir(), 'lib', 'cpp.lds')
+
 
 def run_llvm_config(*args):
     llvm_config_path = os.path.join(libclang_dir(), 'bin', 'llvm-config')
     if sys.platform == "win32":
         llvm_config_path += ".exe"
-    
+
     if not os.path.isfile(llvm_config_path):
-        raise FileNotFoundError(f"The llvm-config executable was not found at {llvm_config_path}")
-    
+        raise FileNotFoundError(
+            f"The llvm-config executable was not found at {llvm_config_path}")
+
     cmd = [llvm_config_path] + list(args)
-    
+
     try:
         output = subprocess.check_output(
             cmd,
@@ -32,7 +37,8 @@ def run_llvm_config(*args):
         )
         return output.strip()
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Command {cmd} failed with output:\n{e.output}") from e
+        raise RuntimeError(
+            f"Command {cmd} failed with output:\n{e.output}") from e
 
 
 def preprocess_environment(env):
@@ -62,7 +68,7 @@ def preprocess_environment(env):
         if lib_name.startswith("lib"):
             lib_name = lib_name[3:]
         ldflags += f" -l{lib_name} "
-    
+
     match sys.platform:
         case "win32":
             ldflags += " -lstdc++ -lversion "
@@ -79,6 +85,7 @@ def preprocess_environment(env):
 
     return env
 
+
 def main():
     base_env = os.environ.copy()
     processed_env = preprocess_environment(base_env)
@@ -88,12 +95,13 @@ def main():
     process = subprocess.run(
         command,
         env=processed_env,
-        stdin=sys.stdin,   
-        stdout=sys.stdout, 
-        stderr=sys.stderr, 
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     )
-    
+
     sys.exit(process.returncode)
+
 
 if __name__ == "__main__":
     main()
