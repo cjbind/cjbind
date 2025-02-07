@@ -45,7 +45,7 @@ def preprocess_environment(env):
         case "darwin":
             ldflags += f"-L{libdir} -search_paths_first -headerpad_max_install_names"
         case "linux":
-            ldflags += f"-L{libdir}"
+            ldflags += f"--gc-sections -L{libdir}"
 
     ldflags += " "
 
