@@ -54,7 +54,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: lib/libclang
-          key: libclang-${{ runner.os }}-19.1.7
+          key: libclang-${{ matrix.os }}-${{ matrix.arch }}-19.1.7
 
       - name: Download libclang
         if: steps.cache-libclang.outputs.cache-hit != 'true'
