@@ -82,13 +82,14 @@ jobs:
         if: matrix.sys != 'windows'
         run: |
           python scripts/cjpm.py build --cfg_verbose -V
+          python scripts/cjpm.py build --cfg_verbose -V -g
 
       - name: Build Windows
         if: matrix.sys == 'windows'
         shell: msys2 {0}
         run: |
-          python scripts/cjpm.py build -V
-          python scripts/cjpm.py build -V -g
+          python scripts/cjpm.py build --cfg_verbose -V
+          python scripts/cjpm.py build --cfg_verbose -V -g
 
       - name: Test binary
         run: |
