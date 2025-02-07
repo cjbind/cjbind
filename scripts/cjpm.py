@@ -49,7 +49,7 @@ def preprocess_environment(env):
 
     match sys.platform:
         case "win32":
-            ldflags += f" --gc-sections --gc-keep-exported -L{libdir}"
+            ldflags += f" -L{libdir}"
             if not debug:
                 ldflags = "--strip-all" + ldflags
         case "darwin":
