@@ -11,36 +11,23 @@
   src-dir = ""
   target-dir = ""
   version = "0.1.0"
-  package-configuration = {}
+
+[package.package-configuration."cjbind"]
+  compile-option = "--link-options \"${LDFLAGS} --strip-all\""
 
 [profile.customized-option]
   cfg_opt = "-O2"
   cfg_verbose = "-V"
 
-[target.x86_64-w64-mingw32]
-  link-option = "${LDFLAGS}"
-
 [target.x86_64-w64-mingw32.release]
   compile-option = "-O2"
-  link-option = "--strip-all"
-
-[target.aarch64-apple-darwin]
-  link-option = "${LDFLAGS}"
 
 [target.aarch64-apple-darwin.release]
   compile-option = "-O2"
 
-[target.x86_64-unknown-linux-gnu]
-  link-option = "${LDFLAGS}"
-
 [target.x86_64-unknown-linux-gnu.release]
   compile-option = "-O2"
-  link-option = "--strip-all"
-
-[target.aarch64-unknown-linux-gnu]
-  link-option = "${LDFLAGS}"
 
 [target.aarch64-unknown-linux-gnu.release]
   compile-option = "-O2"
-  link-option = "--strip-all"
   
