@@ -68,13 +68,13 @@ jobs:
           channel: "canary"
           token: ${{ secrets.GITCODE_TOKEN }}
 
-      - name: Install lld
-        if: matrix.sys == 'linux'
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 20
-          sudo update-alternatives --install /usr/bin/ld ld /usr/bin/lld-20 100
+      # - name: Install lld
+      #   if: matrix.sys == 'linux'
+      #   run: |
+      #     wget https://apt.llvm.org/llvm.sh
+      #     chmod +x llvm.sh
+      #     sudo ./llvm.sh 20
+      #     sudo update-alternatives --install /usr/bin/ld ld /usr/bin/lld-20 100
 
       - name: Setup MSYS2
         if: matrix.sys == 'windows'
