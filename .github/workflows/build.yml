@@ -104,14 +104,14 @@ jobs:
             target/${{ matrix.build.channel }}/bin/main*
 
       - name: Rename binary
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && matrix.build.channel == 'release'
         shell: bash
         run: |
           cd target/release/bin
           mv main${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}${{ matrix.os.ext }}
 
       - name: Upload to Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && matrix.build.channel == 'release'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
