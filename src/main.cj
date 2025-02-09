@@ -8,7 +8,7 @@ import cjbind.utils.{updateConsole, anySome, anySomeValue, formatString}
 import cjbind.options.CjbindOptions
 
 const HELP = """
-自动生成仓颉到 C 库的 FFI 绑定代码。
+自动生成 C 库到仓颉的 FFI 绑定代码。
 
 用法：cjbind <OPTIONS> <HEADER> -- <CLANG_ARGS>
 
