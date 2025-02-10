@@ -1,5 +1,7 @@
 // cjbind 0.1.0 生成，请勿编辑, DO NOT EDIT
 
+// cjlint-ignore -start !G.NAM.03 !G.NAM.05 !G.FUN.01 !G.OTH.03
+
 package cjbind.clang
 
 // No error.
@@ -7150,3 +7152,5 @@ public type __time64_t = Int64
 
 // Retrieve the last modification time of the given file.
 public type time_t = __time64_t
+
+// cjlint-ignore -end
