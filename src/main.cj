@@ -1,10 +1,6 @@
 package cjbind
 
-import std.argopt.*
-import std.process.Process
-import std.fs.File
-import cjbind.build
-import cjbind.utils.{updateConsole, anySome, anySomeValue, formatString}
+import cjbind.utils.{updateConsole, formatString}
 import cjbind.options.CjbindOptions
 
 main(): Int64 {
