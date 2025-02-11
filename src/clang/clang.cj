@@ -19,6 +19,12 @@ func cxstringToString(x: CXString): String {
     }
 }
 
+public func getClangVersion(): String {
+    unsafe {
+        cxstringToString(clang_getClangVersion())
+    }
+}
+
 // workaround cfunc capture limit
 // thus we can only work as single thread
 var CursorVisitCallback: HashMap<Int64, ?(Cursor) -> CXChildVisitResult> = HashMap<Int64, ?(Cursor) -> CXChildVisitResult>()

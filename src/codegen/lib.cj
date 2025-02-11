@@ -533,7 +533,12 @@ extend Enum <: CodeGenerator<Item, Unit> {
             }
 
             let vConstantName = match (enumTy.name) {
-                case Some(n) => "${n}_${variantName}"
+                case Some(n) => 
+                    if (ctx.options.noEnumPrefix) {
+                        variantName
+                    } else {
+                        "${n}_${variantName}"
+                    }
                 case None => variantName
             }
             let vIdent = ctx.cjIdent(vConstantName)

@@ -2,7 +2,6 @@ package cjbind
 
 import std.collection.*
 
-import cjbind.ir.CjbindContext
 import cjbind.options.CjbindOptions
 import cjbind.clang
 import cjbind.codegen

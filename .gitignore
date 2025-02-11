@@ -1,3 +1,4 @@
+*.macrocall
 target/
 build-script-cache/
 .devbrain/
