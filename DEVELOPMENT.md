@@ -19,7 +19,7 @@ cjbind -o libclang.cj -p cjbind.clang T:\cjbind-bootstrap\include\clang-c\Index.
 
 此程序依赖于 `libclang`，请确保你的系统中安装了 `llvm`。
 
-你可以从 [libclang-static](https://github.com/cjbind/libclang-static) 下载预编译的 `libclang`。下载后将其解压到 `lib` 目录下。
+当前 `cjbind` 使用 `qt` 提供的预编译 `libclang`。使用以下命令下载 `libclang`：
 
 ```
 python scripts/download.py
