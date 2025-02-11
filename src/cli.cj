@@ -6,6 +6,7 @@ import cjbind.arg.{Flag, StringFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
 import cjbind.options.CjbindOptions
+import cjbind.utils.sprintAlign
 
 func processArgs(): (CjbindOptions, (String) -> Unit) {
     let noEnumPrefixFlag = BoolFlag(None, "no-enum-prefix", "no-enum-prefix",
@@ -50,17 +51,29 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
 }
 
 func printVersion() {
+    
+
+    let pre = [
+        "Commit Hash：",
+        "Commit 时间：",
+        "标签：",
+        "洁净构建："
+    ]
+    let post = [
+        build.COMMIT_HASH,
+        build.COMMIT_DATE,
+        build.TAG,
+        build.GIT_CLEAN_FILES.isEmpty().toString()
+    ]
+
+    let versionInfo = sprintAlign(pre, post, insert: "")
+
     let version = """
 cjbind 版本：\t${build.VERSION}
+libclang 版本：\t${getClangVersion()}
 
-Commit Hash：\t${build.COMMIT_HASH}
-Commit 时间：\t${build.COMMIT_DATE}
-开发分支：\t${build.BRANCH}
-标签：\t${build.TAG}
-洁净构建：\t${build.GIT_CLEAN_FILES.isEmpty()}
-
-libclang 版本：\t${getClangVersion()}"""
-    print(version)
+${versionInfo}"""
+    println(version)
 
     Process.current.exit(0)
 }
