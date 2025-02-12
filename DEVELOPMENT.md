@@ -1,9 +1,13 @@
 # cjbind
 
+## 依赖版本
+
+- 仓颉版本：`0.58.3`
+- Python 版本：`>= 3.11`
+
 ## 更新版本
 
 - 更新 `cjpm.toml`
-- 更新 `build/const.cj`
 
 ## 生成 libclang 绑定
 
@@ -15,12 +19,20 @@ cjbind -o libclang.cj -p cjbind.clang T:\cjbind-bootstrap\include\clang-c\Index.
 
 ## 拉取最新的 `libclang` 预编译包
 
-## 构建
-
 此程序依赖于 `libclang`，请确保你的系统中安装了 `llvm`。
 
 当前 `cjbind` 使用 `qt` 提供的预编译 `libclang`。使用以下命令下载 `libclang`：
 
 ```
 python scripts/download.py
+```
+
+## 构建
+
+因为仓颉当前不支持在 `build.cj` 中设置 `link-options`, 因此编译时需要设置环境变量来完成链接。
+
+使用 `scripts/cjpm.py` 来自动设置环境变量。
+
+```
+python scripts/cjpm.py build -V
 ```

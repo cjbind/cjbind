@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+import tomllib
 
 
 def root_dir():
@@ -39,6 +40,12 @@ def run_llvm_config(*args):
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
             f"Command {cmd} failed with output:\n{e.output}") from e
+    
+def read_version():
+    cjpm_toml = os.path.join(root_dir(), "cjpm.toml")
+    with open(cjpm_toml, "rb") as f:
+        data = tomllib.load(f)
+    return data["package"]["version"]
 
 
 def preprocess_environment(env):
@@ -88,6 +95,7 @@ def preprocess_environment(env):
 
     env["LDFLAGS"] = ldflags
     print("ldflags:", ldflags, flush=True)
+    env["CJBIND_VERSION"] = read_version()
 
     return env
 
