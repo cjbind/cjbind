@@ -366,31 +366,32 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let ty = item.kind.expectType()
         let layout = ty.getLayout(ctx)
 
+        let canonicalName = item.baseName(ctx)
+        var isOpaque = item.isOpaque(ctx, ())
+
         let packed = this.isPacked(ctx, layout)
         if (packed) {
             // 仓颉当前无法创建 packed 的结构体
+            eprintln("警告：${canonicalName} 是一个 packed 类型，cj 暂不支持，跳过生成")
             return
         }
 
         if (this.isUnion()) {
             // TODO: 支持 Union
-            return
+            isOpaque = true
         }
 
         if (let CompFieldsAfter(v) <- this.fields) {
             if (v.hasBitfieldUnits) {
                 // TODO: 支持 bitfield
-                return
+                isOpaque = true
             }
         } else {
-            // 处理错误？
-            return
+            throw Exception("${canonicalName} 的字段应该被正确计算")
         }
 
-        let canonicalName = item.baseName(ctx)
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
-        let isOpaque = item.isOpaque(ctx, ())
         let fields = ArrayList<Tokens>()
 
         // (fieldName, fieldType)
@@ -447,7 +448,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             }
         }
 
-        if (this.isForwardDeclaration) {
+        if (this.isForwardDeclaration || isOpaque) {
             inits.add(quote(throw Exception("opaque type should not be inited")))
         }
 
