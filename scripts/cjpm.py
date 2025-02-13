@@ -79,15 +79,22 @@ def preprocess_environment(env):
 
     static_libs = run_llvm_config("--link-static", "--libs")
     
-    for lib in static_libs.split():
-        lib_name = lib[2:]
-        ldflags += f" -l:lib{lib_name}.a "
+    if sys.platform != "darwin":
+        for lib in static_libs.split():
+            lib_name = lib[2:]
+            ldflags += f" -l:lib{lib_name}.a "
+    else:
+        ldflags += static_libs + " "
 
     libdir = Path(os.path.join(libclang_dir(), "lib"))
 
     for lib in libdir.glob("libclang*.a"):
         lib_name = lib.stem
-        ldflags += f" -l:{lib_name}.a "
+        if sys.platform != "darwin":
+            ldflags += f" -l:{lib_name}.a "
+        else:
+            lib_name = lib_name[3:]
+            ldflags += f" -l{lib_name} "
 
     match sys.platform:
         case "win32":
