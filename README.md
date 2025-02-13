@@ -39,11 +39,12 @@ irm https://example.com/install.ps1 | iex
     [CLANG_ARGS]...   会被直接传递给 clang 的参数
 
 选项：
-        --no-enum-prefix      生成枚举时，不使用枚举名称作为枚举值的前缀
-    -o, --output <FILE>       把生成的绑定输出到文件
-    -p, --package <PACKAGE>   生成的绑定中的包名
-    -v, --version             显示版本号并退出
-    -h, --help                显示帮助信息
+        --no-enum-prefix           生成枚举时，不使用枚举名称作为枚举值的前缀
+        --no-detect-include-path   禁用自动 include 路径检测
+    -o, --output <FILE>            把生成的绑定输出到文件
+    -p, --package <PACKAGE>        生成的绑定中的包名
+    -v, --version                  显示版本号并退出
+    -h, --help                     显示帮助信息
 ```
 
 ## 开源协议
