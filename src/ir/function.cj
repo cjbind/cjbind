@@ -279,4 +279,8 @@ public class FunctionSig <: Trace<Tracer, Unit> {
         }
     }
     // cjlint-ignore -end
+
+    public func getIsVariadic(): Bool {
+        return this.isVariadic && !this.argumentTypes.isEmpty()
+    }
 }
