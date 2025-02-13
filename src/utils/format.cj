@@ -9,9 +9,14 @@ public func formatString(f: String): String {
     let temp = tmpDir.join("cjbind.cj")
     File.writeTo(temp, f.toArray())
 
-    let (code, _, _) = Process.runOutput("cjfmt", ["-f", temp.toString()])
-    if (code != 0) {
-        throw Exception("cjfmt 失败")
+    try {
+        let (code, _, _) = Process.runOutput("cjfmt", ["-f", temp.toString()])
+        if (code != 0) {
+            throw Exception("cjfmt 失败")
+        }
+    } catch (e: Exception) {
+        eprintln("cjfmt 失败: ${e.toString()}")
+        return f
     }
 
     let out = String.fromUtf8(File.readFrom(temp))

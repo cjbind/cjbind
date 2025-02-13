@@ -8,6 +8,7 @@ public class CjbindOptions {
     
     public var packageName: String = "cjbind_ffi"
     public var noEnumPrefix = false 
+    public var noDetectIncludePath = false
 
     public init() {}
 

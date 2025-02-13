@@ -1,3 +1,4 @@
 version = 0
 
 [requires]
+  glob = {commitId = "0a7282ad74a8cda24a742ed42fc5d671b4411ecd", git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.1.1"}
