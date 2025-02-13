@@ -89,7 +89,9 @@ func extractClangSearchPaths(path: String, args: Array<String>): ?Array<String> 
 
     let rawPaths = output[start..end].replace("(framework directory)", "")
 
-    let paths = rawPaths.lines().filter {l => !l.isEmpty()} |> collectArray
+    let paths = rawPaths.lines().filter {l => !l.isEmpty()}.map {
+        l => l.trimAscii()
+    } |> collectArray
 
     return paths
 }

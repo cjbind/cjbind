@@ -214,7 +214,7 @@ extend FunctionSig <: TryToCjTy<Item> {
         ctx: CjbindContext,
         _: Item
     ): Result<Tokens, Error> {
-        if (this.isVariadic) {
+        if (this.getIsVariadic()) {
             return Err(Error.Unsupported("variadic func type not supported"))
         }
 

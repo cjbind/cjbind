@@ -198,7 +198,7 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         let ident = ctx.cjIdent(name)
 
-        if (signature.isVariadic) {
+        if (signature.getIsVariadic()) {
             args.add(quote(...))
         }
 
