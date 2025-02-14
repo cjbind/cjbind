@@ -59,4 +59,11 @@ public enum TypeKindIntKind {
     public func signednessMatches(val: Int64): Bool {
         val >= 0 || this.isSigned()
     }
+
+    public func isChar(): Bool {
+        return match (this) {
+            case IntKindChar(_) | IntKindSChar | IntKindUChar => true
+            case _ => false
+        }
+    }
 }

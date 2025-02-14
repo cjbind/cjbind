@@ -183,8 +183,13 @@ extend Type <: TryToCjTy<Item> {
 
                 let ty = inner.toCjTyOrOpaque(ctx, ())
 
-                if (innerTy.canonicalType(ctx).isFunction()) {
+                let innerCanonicalType = innerTy.canonicalType(ctx)
+
+                if (innerCanonicalType.isFunction()) {
                     return Ok(ty)
+                } else if (innerCanonicalType.isChar() && ctx.options.autoCString) {
+                    let token = quote(CString)
+                    return Ok(token)
                 } else {
                     return Ok(ty.toPtr())
                 }

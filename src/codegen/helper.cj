@@ -72,7 +72,7 @@ public class AstTy {
     ): Tokens {
         return match (ik) {
             case TypeKindIntKind.IntKindBool => quote(Bool)
-            case TypeKindIntKind.IntKindChar(_) => rawType(ctx, "Int8")
+            case TypeKindIntKind.IntKindChar(_) => rawType(ctx, "UInt8")
             case TypeKindIntKind.IntKindSChar => rawType(ctx, "Int8")
             case TypeKindIntKind.IntKindUChar => rawType(ctx, "UInt8")
             case TypeKindIntKind.IntKindShort => rawType(ctx, "Int16")
