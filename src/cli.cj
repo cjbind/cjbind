@@ -11,7 +11,9 @@ import cjbind.utils.sprintAlign
 func processArgs(): (CjbindOptions, (String) -> Unit) {
     let noEnumPrefixFlag = BoolFlag(None, "no-enum-prefix", "no-enum-prefix",
         "生成枚举时，不使用枚举名称作为枚举值的前缀",)
-    let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path", "禁用自动 include 路径检测")
+    let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",
+        "禁用自动 include 路径检测")
+    let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
 
@@ -22,6 +24,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     let parser = ArgsParser(
         noEnumPrefixFlag,
         noDetectIncludePath,
+        autoCString,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -42,6 +45,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.packageName = packageFlag.value.getOrThrow()
     opt.noEnumPrefix = noEnumPrefixFlag.value
     opt.noDetectIncludePath = noDetectIncludePath.value
+    opt.autoCString = autoCString.value
 
     let output: ?String = outputFlag.value
 
@@ -54,8 +58,6 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
 }
 
 func printVersion() {
-    
-
     let pre = [
         "Commit Hash：",
         "Commit 时间：",

@@ -9,3 +9,5 @@ enum {
     UB,
     UC
 };
+
+void f(char* s);

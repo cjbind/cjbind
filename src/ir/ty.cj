@@ -35,6 +35,14 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
+    public func isChar(): Bool {
+        let intType = match (this.asInt()) {
+            case Some(v) => v
+            case None => return false
+        }
+        return intType.isChar()
+    }
+
     public func isComp(): Bool {
         match (this.kind) {
             case TypeKind.TypeKindComp(_) => true
