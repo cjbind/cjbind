@@ -212,13 +212,13 @@ extend Function <: CodeGenerator<Item, Unit> {
         result.items.add(tokens)
 
         if (ctx.options.makeFuncWrapper) {
-            let wrapperName = ctx.cjIdent("${name}_wrapper")
+            let wrapperName = ctx.cjIdent("${name}${ctx.options.funcWrapperSuffix}")
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
             let argsNameToken = joinTokens(argsName, quote(,))
             let tokens = optionalComment(
                 commentToken,
                 quote(public func $(wrapperName) ( $(argsToken) ) : $(ret) {
-                    return $(ident)( $(argsNameToken) )
+                    unsafe { return $(ident)( $(argsNameToken) ) }
                 })
             )
 

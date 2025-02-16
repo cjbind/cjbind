@@ -14,6 +14,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",
         "禁用自动 include 路径检测")
     let makeFuncWrapperFlag = BoolFlag(None, "make-func-wrapper", "make-func-wrapper", "生成 foreign 函数包装器以允许包外调用")
+    let funcWrapperSuffixFlag = StringFlag(None, "func-wrapper-suffix", "func-wrapper-suffix", "生成函数包装器时使用的后缀，默认为 _cjbindwrapper", "SUFFIX", "_cjbindwrapper")
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
@@ -27,6 +28,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
         noEnumPrefixFlag,
         noDetectIncludePath,
         makeFuncWrapperFlag,
+        funcWrapperSuffixFlag,
         autoCString,
         outputFlag,
         packageFlag,
@@ -50,6 +52,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.noDetectIncludePath = noDetectIncludePath.value
     opt.autoCString = autoCString.value
     opt.makeFuncWrapper = makeFuncWrapperFlag.value
+    opt.funcWrapperSuffix = funcWrapperSuffixFlag.value.getOrThrow()
 
     let output: ?String = outputFlag.value
 
