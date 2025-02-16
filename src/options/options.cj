@@ -10,6 +10,7 @@ public class CjbindOptions {
     public var noEnumPrefix = false 
     public var noDetectIncludePath = false
     public var makeFuncWrapper = false
+    public var funcWrapperSuffix = "_cjbindwrapper"
     public var autoCString = false
 
     public init() {}
