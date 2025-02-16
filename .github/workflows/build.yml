@@ -52,11 +52,6 @@ jobs:
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install Python deps
-        working-directory: scripts
-        run: |
-          uv sync
-
       - name: Cache libclang
         id: cache-libclang
         uses: actions/cache@v4
@@ -67,7 +62,7 @@ jobs:
       - name: Download libclang
         if: steps.cache-libclang.outputs.cache-hit != 'true'
         run: |
-          uv run python scripts/download.py
+          uv scripts/download.py
 
       - name: Setup Cangjie
         uses: Zxilly/setup-cangjie@v1.4.1
@@ -88,7 +83,7 @@ jobs:
       - name: Build unix ${{ matrix.build.channel }}
         if: matrix.os.sys != 'windows'
         run: |
-          uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
+          uv scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Build windows ${{ matrix.build.channel }}
         if: matrix.os.sys == 'windows'
