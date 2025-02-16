@@ -1,4 +1,6 @@
 *.macrocall
+
+scripts/.venv/
 target/
 build-script-cache/
 .devbrain/

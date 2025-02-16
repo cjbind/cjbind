@@ -1,3 +1,0 @@
-requests
-tqdm
-py7zr
