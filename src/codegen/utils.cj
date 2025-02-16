@@ -35,6 +35,32 @@ public class Utils {
         return args
     }
 
+    public static func fnsigArgumentNames(
+        ctx: CjbindContext,
+        sig: FunctionSig
+    ): ArrayList<Tokens> {
+        let unnamedArguments = Box(0)
+
+        let argsIter = sig.argumentTypes.iterator()
+
+        let args = argsIter.map {
+            v =>
+            let name = v[0]
+            let argName = if (let Some(n) <- name) {
+                ctx.cjMangle(n)
+            } else {
+                unnamedArguments.value += 1
+                "arg${unnamedArguments.value}"
+            }
+
+            let argIdent = ctx.cjIdent(argName)
+
+            return Tokens(argIdent)
+        } |> collectArrayList
+
+        return args
+    }
+
     public static func fnsigArgumentType(
         ctx: CjbindContext,
         ty: TypeId

@@ -13,7 +13,9 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
         "生成枚举时，不使用枚举名称作为枚举值的前缀",)
     let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",
         "禁用自动 include 路径检测")
+    let makeFuncWrapperFlag = BoolFlag(None, "make-func-wrapper", "make-func-wrapper", "生成 foreign 函数包装器以允许包外调用")
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
+
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
 
@@ -24,6 +26,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     let parser = ArgsParser(
         noEnumPrefixFlag,
         noDetectIncludePath,
+        makeFuncWrapperFlag,
         autoCString,
         outputFlag,
         packageFlag,
@@ -46,6 +49,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.noEnumPrefix = noEnumPrefixFlag.value
     opt.noDetectIncludePath = noDetectIncludePath.value
     opt.autoCString = autoCString.value
+    opt.makeFuncWrapper = makeFuncWrapperFlag.value
 
     let output: ?String = outputFlag.value
 
