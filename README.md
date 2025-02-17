@@ -18,13 +18,13 @@
 #### Linux/macOS
 
 ```shell
-curl -fsSL https://example.com/install.sh | bash
+curl -fsSL https://cjbind.zxilly.dev/install.sh | bash
 ```
 
 #### Windows
 
 ```powershell
-irm https://example.com/install.ps1 | iex
+irm https://cjbind.zxilly.dev/install.ps1 | iex
 ```
 
 ### 使用
