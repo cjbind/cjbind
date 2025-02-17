@@ -205,6 +205,7 @@ extend Function <: CodeGenerator<Item, Unit> {
         let argsToken = joinTokens(args, quote(,))
 
         let tokens = optionalComment(
+            ctx,
             commentToken,
             quote(foreign func $(ident) ( $(argsToken) ) : $(ret))
         )
@@ -216,9 +217,11 @@ extend Function <: CodeGenerator<Item, Unit> {
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
             let argsNameToken = joinTokens(argsName, quote(,))
             let tokens = optionalComment(
+                ctx,
                 commentToken,
-                quote(public func $(wrapperName) ( $(argsToken) ) : $(ret) {
-                    unsafe { return $(ident)( $(argsNameToken) ) }
+                quote(
+                    public unsafe func $(wrapperName) ( $(argsToken) ) : $(ret) {
+                    return $(ident)( $(argsNameToken) )
                 })
             )
 
@@ -244,7 +247,7 @@ extend Var <: CodeGenerator<Item, Unit> {
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
-        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+        var commentToken: ?Tokens = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
             Some(Attributes.doc(pc))
         } else {
@@ -260,6 +263,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                     .items
                     .add(
                         optionalComment(
+                            ctx,
                             commentToken,
                             quote(public const $(canonicalIdent) : $(ty) = $(vv))
                         )
@@ -268,31 +272,57 @@ extend Var <: CodeGenerator<Item, Unit> {
                     .items
                     .add(
                         optionalComment(
+                            ctx,
                             commentToken,
                             quote(public const $(canonicalIdent) : $(ty) = $(vv))
                         )
                     )
                 case VarType.VarString(vv) =>
-                    let data = ArrayList(vv.toArray())
-                    data.add(0u8)
+                    if (!ctx.options.makeCjString) {
+                        let data = ArrayList<UInt8>()
 
-                    let tokens = quote(public const $(canonicalIdent) : VArray<UInt8, $(data.size)> = $(data))
-                    if (let Some(v) <- commentToken) {
-                        v.append(Token(TokenKind.NL))
-                        v.append(Token(TokenKind.COMMENT, "// String value: ${vv}"))
-                    }
-                    result.items.add(
-                        optionalComment(
-                            commentToken,
-                            tokens
+                        let ptr = vv.getChars()
+                        let size = vv.size()
+                        for (i in 0..=size) {
+                            let d = unsafe { (ptr + i).read() }
+                            data.add(d)
+                        }
+
+                        let tokens = quote(
+                            public const $(canonicalIdent) : VArray<UInt8, \$$(data.size)> = $(data.toArray()))
+                        if (commentToken.isNone()) {
+                            commentToken = Tokens()
+                        }
+
+                        if (let Some(v) <- commentToken) {
+                            v.append(Token(TokenKind.NL))
+                            v.append(Token(TokenKind.COMMENT, "// String value: ${vv}"))
+                        }
+                        result.items.add(
+                            optionalComment(
+                                ctx,
+                                commentToken,
+                                tokens
+                            )
                         )
-                    )
+                    } else {
+                        let str = vv.toString()
+                        let tokens = quote(public const $(canonicalIdent) : String = $(str))
+                        result.items.add(
+                            optionalComment(
+                                ctx,
+                                commentToken,
+                                tokens
+                            )
+                        )
+                    }
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
                         result
                             .items
                             .add(
                                 optionalComment(
+                                    ctx,
                                     commentToken,
                                     quote(public const $(canonicalIdent) : $(ty) = $(expr))
                                 )
@@ -302,6 +332,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                     .items
                     .add(
                         optionalComment(
+                            ctx,
                             commentToken,
                             quote(public const $(canonicalIdent) : $(ty) = $(vv))
                         )
@@ -359,6 +390,7 @@ extend Type <: CodeGenerator<Item, Unit> {
                 }
 
                 let tokens = optionalComment(
+                    ctx,
                     commentToken,
                     quote(public type $(cjName) = $(innerCjType))
                 )
@@ -437,6 +469,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                         let fieldIdent = ctx.cjIdent(fieldName)
 
                         let fieldToken = optionalComment(
+                            ctx,
                             fcomment,
                             quote(public let $(fieldIdent) : $(ty))
                         )
@@ -490,6 +523,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         }
 
         let ret = optionalComment(
+            ctx,
             commentToken,
             quote(@C
             public struct $(canonicalIdent) {
@@ -548,7 +582,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             }
 
             let vConstantName = match (enumTy.name) {
-                case Some(n) => 
+                case Some(n) =>
                     if (ctx.options.noEnumPrefix) {
                         variantName
                     } else {
@@ -559,6 +593,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             let vIdent = ctx.cjIdent(vConstantName)
             result.items.add(
                 optionalComment(
+                    ctx,
                     vComment,
                     quote(public const $(vIdent) : $(enumCjTy) = $(vexpr))
                 )
@@ -568,6 +603,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
         if (!hasTypedef) {
             result.items.add(
                 optionalComment(
+                    ctx,
                     commentToken,
                     quote(public type $(ident) = $(repr))
                 )

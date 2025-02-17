@@ -41,9 +41,12 @@ irm https://example.com/install.ps1 | iex
 选项：
         --no-enum-prefix                 生成枚举时，不使用枚举名称作为枚举值的前缀
         --no-detect-include-path         禁用自动 include 路径检测
+        --no-comment                     不尝试生成代码中的注释
         --make-func-wrapper              生成 foreign 函数包装器以允许包外调用
         --func-wrapper-suffix <SUFFIX>   生成函数包装器时使用的后缀，默认为 _cjbindwrapper
         --auto-cstring                   把 char* 转换为 CString 而不是 CPointer<UInt8>
+        --array-pointers-in-args         把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>
+        --make-cjstring                  把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致
     -o, --output <FILE>                  把生成的绑定输出到文件
     -p, --package <PACKAGE>              生成的绑定中的包名
     -v, --version                        显示版本号并退出

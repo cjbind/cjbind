@@ -13,9 +13,12 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
         "生成枚举时，不使用枚举名称作为枚举值的前缀",)
     let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",
         "禁用自动 include 路径检测")
+    let noComment = BoolFlag(None, "no-comment", "no-comment", "不尝试生成代码中的注释")
     let makeFuncWrapperFlag = BoolFlag(None, "make-func-wrapper", "make-func-wrapper", "生成 foreign 函数包装器以允许包外调用")
     let funcWrapperSuffixFlag = StringFlag(None, "func-wrapper-suffix", "func-wrapper-suffix", "生成函数包装器时使用的后缀，默认为 _cjbindwrapper", "SUFFIX", "_cjbindwrapper")
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
+    let arrayPointersInArgs = BoolFlag(None, "array-pointers-in-args", "array-pointers-in-args", "把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>")
+    let makeCjString = BoolFlag(None, "make-cjstring", "make-cjstring", "把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -27,9 +30,12 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     let parser = ArgsParser(
         noEnumPrefixFlag,
         noDetectIncludePath,
+        noComment,
         makeFuncWrapperFlag,
         funcWrapperSuffixFlag,
         autoCString,
+        arrayPointersInArgs,
+        makeCjString,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -50,9 +56,12 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.packageName = packageFlag.value.getOrThrow()
     opt.noEnumPrefix = noEnumPrefixFlag.value
     opt.noDetectIncludePath = noDetectIncludePath.value
+    opt.noComment = noComment.value
     opt.autoCString = autoCString.value
     opt.makeFuncWrapper = makeFuncWrapperFlag.value
     opt.funcWrapperSuffix = funcWrapperSuffixFlag.value.getOrThrow()
+    opt.arrayPointersInArgs = arrayPointersInArgs.value
+    opt.makeCjString = makeCjString.value
 
     let output: ?String = outputFlag.value
 

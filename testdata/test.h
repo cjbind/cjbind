@@ -10,4 +10,6 @@ enum {
     UC
 };
 
-void f(char* s);
+void f(char [233]);
+
+char* ss = "hello";
