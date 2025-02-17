@@ -106,5 +106,5 @@ public enum VarType {
     | VarInt(Int64)
     | VarFloat(Float64)
     | VarChar(UInt8)
-    | VarString(String)
+    | VarString(CString)
 }

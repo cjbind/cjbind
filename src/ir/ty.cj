@@ -235,6 +235,16 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             if (innerId == potentialId) {
                 TypeKind.TypeKindOpaque
             } else {
+                if (let Some(n) <- name) {
+                    if (inner.kind() == clang.CXTypeKind_CXType_Pointer) {
+                        let pointee = inner.pointeeType().getOrThrow()
+                        if (pointee.kind() == clang.CXTypeKind_CXType_Elaborated &&
+                        pointee.declaration().spelling() == n) {
+                            name = Some(n + "_ptr")
+                        } 
+                    }
+                }
+
                 TypeKind.TypeKindAlias(innerId)
             }
         } else if (tyKind == clang.CXTypeKind_CXType_Enum) {
