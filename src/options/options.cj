@@ -9,9 +9,12 @@ public class CjbindOptions {
     public var packageName: String = "cjbind_ffi"
     public var noEnumPrefix = false 
     public var noDetectIncludePath = false
+    public var noComment = false
     public var makeFuncWrapper = false
     public var funcWrapperSuffix = "_cjbindwrapper"
     public var autoCString = false
+    public var arrayPointersInArgs = false
+    public var makeCjString = false
 
     public init() {}
 

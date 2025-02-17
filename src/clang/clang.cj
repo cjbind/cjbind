@@ -978,7 +978,7 @@ public class EvalResult {
         }
     }
 
-    public func asLiteralString(): ?String {
+    public func asLiteralString(): ?CString {
         if (this.kind() != CXEvalResultKind_CXEval_StrLiteral) {
             return None
         }
@@ -1001,7 +1001,7 @@ public class EvalResult {
                 let ret = clang_EvalResult_getAsStr(x)
                 let s = CString(CPointer<UInt8>(ret))
 
-                return Some(s.toString())
+                return Some(s)
             }
         }
 

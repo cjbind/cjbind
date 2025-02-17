@@ -70,8 +70,12 @@ public class Utils {
 
         match (argTy.canonicalType(ctx).kind) {
             case TypeKind.TypeKindArray(t, _) =>
-                let stream = t.toCjTyOrOpaque(ctx, ())
-                return stream.toPtr()
+                let stream = if (ctx.options.arrayPointersInArgs) {
+                    argTy.toCjTyOrOpaque(ctx, argItem)
+                } else {
+                    t.toCjTyOrOpaque(ctx, ()).toPtr()
+                }
+                return stream
             case _ => argItem.toCjTyOrOpaque(ctx, ())
         }
     }
@@ -138,8 +142,8 @@ func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
     return ret
 }
 
-func optionalComment(comment: ?Tokens, body: Tokens): Tokens {
-    if (let Some(v) <- comment) {
+func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
+    if (let Some(v) <- comment && !ctx.options.noComment) {
         return quote($(v)
             $(body))
     } else {
