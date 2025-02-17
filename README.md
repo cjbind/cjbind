@@ -4,7 +4,6 @@
 
 ## 使用方式
 
-
 ### 安装
 
 可以从 [GitHub Releases](https://github.com/cjbind/cjbind/releases) 下载适用于您的平台的二进制文件，或者参照
