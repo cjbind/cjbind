@@ -89,7 +89,7 @@ public class CjbindContext {
 
     public init(options: CjbindOptions) {
         this.options = options
-        
+
         let index = clang.Index(false, true)
 
         this.translationUnit = clang.TranslationUnit(
@@ -457,10 +457,27 @@ public class CjbindContext {
     }
 
     public func cjMangle(name: String): String {
-        let keyword = match (name) {
-            case "as" | "break" | "Bool" | "case" | "catch" | "class" | "const" | "continue" | "Rune" | "do" | "else" | "enum" | "extend" | "for" | "from" | "func" | "false" | "finally" | "foreign" | "Float16" | "Float32" | "Float64" | "if" | "in" | "is" | "init" | "inout" | "import" | "interface" | "Int8" | "Int16" | "Int32" | "Int64" | "IntNative" | "let" | "mut" | "main" | "macro" | "match" | "Nothing" | "operator" | "prop" | "package" | "quote" | "return" | "spawn" | "super" | "static" | "struct" | "synchronized" | "try" | "this" | "true" | "type" | "throw" | "This" | "unsafe" | "Unit" | "UInt8" | "UInt16" | "UInt32" | "UInt64" | "UIntNative" | "var" | "VArray" | "where" | "while" | "abstract" | "open" | "override" | "private" | "protected" | "public" | "redef" | "get" | "set" | "sealed" | "internal" | "_" => true
-            case _ => false
-        }
+        let builtins: Array<String> = ["acquireArrayRawData", "alignOf", "eprint", "eprintln", "ifNone", "ifSome", "max",
+            "min", "print", "println", "refEq", "releaseArrayRawData", "sizeOf", "sleep", "zeroValue", "Byte", "Int",
+            "UInt", "Int8", "Int16", "Int32", "Int64", "IntNative", "UInt8", "UInt16", "UInt32", "UInt64", "UIntNative",
+            "Float16", "Float32", "Float64", "Bool", "Rune", "Unit", "CPointer", "CString", "Any", "Hasher",
+            "ThreadContext", "Countable", "Collection", "Less", "Greater", "LessOrEqual", "GreaterOrEqual", "Comparable",
+            "Equal", "NotEqual", "Equatable", "Hashable", "Iterable", "Resource", "ToString", "CType", "ArrayIterator",
+            "Box", "Future", "Iterator", "Object", "RangeIterator", "StackTraceElement", "StringBuilder", "Thread",
+            "ThreadLocal", "AnnotationKind", "Endian", "Ordering", "Option", "Array", "CPointerHandle",
+            "CPointerResource", "CStringResource", "DefaultHasher", "Duration", "LibC", "Range", "String",
+            "ArithmeticException", "Error", "Exception", "IllegalArgumentException", "IllegalFormatException",
+            "IllegalMemoryException", "IllegalStateException", "IndexOutOfBoundsException", "NegativeArraySizeException",
+            "NoneValueException", "OutOfMemoryError", "OverflowException", "SpawnException", "StackOverflowError",
+            "TimeoutException", "UnsupportedException", "as", "break", "case", "catch", "class", "const", "continue",
+            "do", "else", "enum", "extend", "for", "from", "func", "false", "finally", "foreign", "if", "in", "is",
+            "init", "inout", "import", "interface", "let", "mut", "main", "macro", "match", "Nothing", "operator",
+            "prop", "package", "quote", "return", "spawn", "super", "static", "struct", "synchronized", "try", "this",
+            "true", "type", "throw", "This", "unsafe", "var", "VArray", "where", "while", "abstract", "open", "override",
+            "private", "protected", "public", "redef", "get", "set", "sealed", "internal", "_", "Some", "None", "Init",
+            "MemberFunction", "MemberProperty", "MemberVariable", "Parameter", "Type", "Big", "Little", "LT", "GT", "EQ"]
+
+        let keyword = builtins.contains(name)
 
         if (name.contains("@") || name.contains("?") || name.contains("$") || keyword) {
             return if (keyword) {
