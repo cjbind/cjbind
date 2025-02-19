@@ -11,8 +11,7 @@ func cxstringToString(x: CXString): String {
 
     unsafe {
         let strPtr = clang_getCString(x)
-        let p = CPointer<UInt8>(strPtr)
-        let str = CString(p).toString()
+        let str = strPtr.toString()
 
         clang_disposeString(x)
         return str
@@ -717,17 +716,17 @@ public class TranslationUnit {
         options: CXTranslationUnit_Flags
     ) {
         unsafe {
-            let fname = LibC.mallocCString(file).toPtr()
+            let fname = LibC.mallocCString(file)
 
             let releaser = ArrayList<() -> Unit>()
 
-            let c_args = LibC.malloc<CPointer<Int8>>(count: cmdArgs.size)
+            let c_args = LibC.malloc<CString>(count: cmdArgs.size)
             releaser.add({=> LibC.free(c_args)})
 
             for (i in 0..cmdArgs.size) {
                 let s = LibC.mallocCString(cmdArgs[i])
                 let ptr = c_args + i
-                ptr.write(s.toPtr())
+                ptr.write(s)
                 releaser.add({=> LibC.free(s)})
             }
 
@@ -999,9 +998,7 @@ public class EvalResult {
         ) {
             unsafe {
                 let ret = clang_EvalResult_getAsStr(x)
-                let s = CString(CPointer<UInt8>(ret))
-
-                return Some(s)
+                return Some(ret)
             }
         }
 
