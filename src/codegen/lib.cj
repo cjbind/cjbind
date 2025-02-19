@@ -436,7 +436,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 isOpaque = true
             }
         } else {
-            throw Exception("${canonicalName} 的字段应该被正确计算")
+            throw Exception("${canonicalName} 的字段应该已经被正确计算")
         }
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
@@ -494,12 +494,14 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 case Some(l) =>
                     let ty = Helpers.blob(ctx, l)
                     fields.add(quote(let _cjbind_opaque_blob: $(ty)))
+                    inits.add(quote(this._cjbind_opaque_blob = unsafe { zeroValue<$(ty)>() }))
+
                 case None => throw Exception("Expect layout for opaque comp")
             }
         }
 
-        if (this.isForwardDeclaration || isOpaque) {
-            inits.add(quote(throw Exception("opaque type should not be inited")))
+        if (this.isForwardDeclaration) {
+            inits.add(quote(throw Exception("type should not be inited")))
         }
 
         let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
@@ -512,13 +514,18 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let fieldsToken = joinTokens(fields, Tokens(Token(TokenKind.NL)))
 
         let initToken = Tokens()
+        let initVisibility = if (this.isForwardDeclaration) {
+            Tokens()
+        } else {
+            quote(public )
+        }
 
         if (!inits.isEmpty()) {
             let initExpr = joinTokens(inits, Tokens(Token(TokenKind.NL)))
 
             let initBody = quote(
 
-                init($(sigs)) {
+                $(initVisibility)init($(sigs)) {
                     $(initExpr)
                 }
             )
@@ -529,13 +536,48 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             ctx,
             commentToken,
             quote(
-                @C
+            @C
             public struct $(canonicalIdent) {
                 $(fieldsToken)$(initToken)
             })
         )
 
         result.items.add(ret)
+
+        if (!ctx.options.noLayoutTests && !this.isForwardDeclaration) {
+            if (let Some(l) <- layout) {
+                let size = l.size
+                let align = l.align
+                let sizeOfExpr = quote(sizeOf<$(canonicalIdent)>())
+                let alignOfExpr = quote(alignOf<$(canonicalIdent)>())
+
+                func generateErrorMsg(ty: String, num: Int32, expr: String): String {
+                    return "${ty} of ${canonicalName} is not ${num} but \${${expr}} bytes"
+                }
+
+                let sizeOfErr = generateErrorMsg("Size", size, "size")
+                let alignOfErr = generateErrorMsg("Alignment", align, "align")
+                
+
+                let testToken = removePrefixNL(
+                    quote(
+                    @When[debug]
+                    let _ = {
+                    =>
+                        let size = $(sizeOfExpr)
+                        if (size != $size) {
+                            throw Exception($(sizeOfErr))
+                        }
+                        let align = $(alignOfExpr)
+                        if (align != $(align)) {
+                            throw Exception($(alignOfErr))
+                        }
+                    })
+                )
+
+                result.items.add(testToken)
+            }
+        }
     }
     // cjlint-ignore -end
 }

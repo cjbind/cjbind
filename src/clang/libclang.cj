@@ -1,6 +1,4 @@
-// cjbind 0.1.0 生成，请勿编辑, DO NOT EDIT
-
-// cjlint-ignore -start !G.NAM.03 !G.NAM.05 !G.FUN.01 !G.OTH.03
+// cjbind 0.1.12 生成，请勿编辑, DO NOT EDIT
 
 package cjbind.clang
 
@@ -40,9 +38,22 @@ public struct CXString {
     public let data: CPointer<Unit>
     public let private_flags: UInt32
 
-    init(data: CPointer<Unit>, private_flags: UInt32) {
+    public init(data: CPointer<Unit>, private_flags: UInt32) {
         this.data = data
         this.private_flags = private_flags
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXString>()
+    if (size != 16) {
+        throw Exception("Size of CXString is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXString>()
+    if (align != 8) {
+        throw Exception("Alignment of CXString is not 8 but ${align} bytes")
     }
 }
 
@@ -51,14 +62,27 @@ public struct CXStringSet {
     public let Strings: CPointer<CXString>
     public let Count: UInt32
 
-    init(Strings: CPointer<CXString>, Count: UInt32) {
+    public init(Strings: CPointer<CXString>, Count: UInt32) {
         this.Strings = Strings
         this.Count = Count
     }
 }
 
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXStringSet>()
+    if (size != 16) {
+        throw Exception("Size of CXStringSet is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXStringSet>()
+    if (align != 8) {
+        throw Exception("Alignment of CXStringSet is not 8 but ${align} bytes")
+    }
+}
+
 // Retrieve the character data associated with the given string.
-foreign func clang_getCString(string: CXString): CPointer<Int8>
+foreign func clang_getCString(string: CXString): CString
 
 // Free the given string.
 foreign func clang_disposeString(string: CXString): Unit
@@ -73,7 +97,7 @@ foreign func clang_getBuildSessionTimestamp(): UInt64
 @C
 public struct CXVirtualFileOverlayImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -90,8 +114,7 @@ foreign func clang_VirtualFileOverlay_create(options: UInt32): CXVirtualFileOver
 // Map an absolute virtual file path to an absolute real one.
 // The virtual path must be canonicalized (not contain "."/"..").
 // \returns 0 for success, non-zero to indicate an error.
-foreign func clang_VirtualFileOverlay_addFileMapping(arg1: CXVirtualFileOverlay, virtualPath: CPointer<Int8>,
-    realPath: CPointer<Int8>): CXErrorCode
+foreign func clang_VirtualFileOverlay_addFileMapping(arg1: CXVirtualFileOverlay, virtualPath: CString, realPath: CString): CXErrorCode
 
 // Set the case sensitivity for the \c CXVirtualFileOverlay object.
 // The \c CXVirtualFileOverlay object is case-sensitive by default, this
@@ -107,7 +130,7 @@ foreign func clang_VirtualFileOverlay_setCaseSensitivity(arg1: CXVirtualFileOver
 // \param out_buffer_size pointer to receive the buffer size.
 // \returns 0 for success, non-zero to indicate an error.
 foreign func clang_VirtualFileOverlay_writeToBuffer(arg1: CXVirtualFileOverlay, options: UInt32,
-    out_buffer_ptr: CPointer<CPointer<Int8>>, out_buffer_size: CPointer<UInt32>): CXErrorCode
+    out_buffer_ptr: CPointer<CString>, out_buffer_size: CPointer<UInt32>): CXErrorCode
 
 // free memory allocated by libclang, such as the buffer returned by
 // \c CXVirtualFileOverlay() or \c clang_ModuleMapDescriptor_writeToBuffer().
@@ -121,7 +144,7 @@ foreign func clang_VirtualFileOverlay_dispose(arg1: CXVirtualFileOverlay): Unit
 @C
 public struct CXModuleMapDescriptorImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -136,11 +159,11 @@ foreign func clang_ModuleMapDescriptor_create(options: UInt32): CXModuleMapDescr
 
 // Sets the framework module name that the module.modulemap describes.
 // \returns 0 for success, non-zero to indicate an error.
-foreign func clang_ModuleMapDescriptor_setFrameworkModuleName(arg1: CXModuleMapDescriptor, name: CPointer<Int8>): CXErrorCode
+foreign func clang_ModuleMapDescriptor_setFrameworkModuleName(arg1: CXModuleMapDescriptor, name: CString): CXErrorCode
 
 // Sets the umbrella header name that the module.modulemap describes.
 // \returns 0 for success, non-zero to indicate an error.
-foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg1: CXModuleMapDescriptor, name: CPointer<Int8>): CXErrorCode
+foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg1: CXModuleMapDescriptor, name: CString): CXErrorCode
 
 // Write out the \c CXModuleMapDescriptor object to a char buffer.
 //
@@ -150,7 +173,7 @@ foreign func clang_ModuleMapDescriptor_setUmbrellaHeader(arg1: CXModuleMapDescri
 // \param out_buffer_size pointer to receive the buffer size.
 // \returns 0 for success, non-zero to indicate an error.
 foreign func clang_ModuleMapDescriptor_writeToBuffer(arg1: CXModuleMapDescriptor, options: UInt32,
-    out_buffer_ptr: CPointer<CPointer<Int8>>, out_buffer_size: CPointer<UInt32>): CXErrorCode
+    out_buffer_ptr: CPointer<CString>, out_buffer_size: CPointer<UInt32>): CXErrorCode
 
 // Dispose a \c CXModuleMapDescriptor object.
 foreign func clang_ModuleMapDescriptor_dispose(arg1: CXModuleMapDescriptor): Unit
@@ -170,8 +193,21 @@ foreign func clang_getFileTime(SFile: CXFile): time_t
 public struct CXFileUniqueID {
     public let data: VArray<UInt64, $3>
 
-    init(data: VArray<UInt64, $3>) {
+    public init(data: VArray<UInt64, $3>) {
         this.data = data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXFileUniqueID>()
+    if (size != 24) {
+        throw Exception("Size of CXFileUniqueID is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXFileUniqueID>()
+    if (align != 8) {
+        throw Exception("Alignment of CXFileUniqueID is not 8 but ${align} bytes")
     }
 }
 
@@ -202,9 +238,22 @@ public struct CXSourceLocation {
     public let ptr_data: VArray<CPointer<Unit>, $2>
     public let int_data: UInt32
 
-    init(ptr_data: VArray<CPointer<Unit>, $2>, int_data: UInt32) {
+    public init(ptr_data: VArray<CPointer<Unit>, $2>, int_data: UInt32) {
         this.ptr_data = ptr_data
         this.int_data = int_data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXSourceLocation>()
+    if (size != 24) {
+        throw Exception("Size of CXSourceLocation is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXSourceLocation>()
+    if (align != 8) {
+        throw Exception("Alignment of CXSourceLocation is not 8 but ${align} bytes")
     }
 }
 
@@ -218,10 +267,23 @@ public struct CXSourceRange {
     public let begin_int_data: UInt32
     public let end_int_data: UInt32
 
-    init(ptr_data: VArray<CPointer<Unit>, $2>, begin_int_data: UInt32, end_int_data: UInt32) {
+    public init(ptr_data: VArray<CPointer<Unit>, $2>, begin_int_data: UInt32, end_int_data: UInt32) {
         this.ptr_data = ptr_data
         this.begin_int_data = begin_int_data
         this.end_int_data = end_int_data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXSourceRange>()
+    if (size != 24) {
+        throw Exception("Size of CXSourceRange is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXSourceRange>()
+    if (align != 8) {
+        throw Exception("Alignment of CXSourceRange is not 8 but ${align} bytes")
     }
 }
 
@@ -401,9 +463,22 @@ public struct CXSourceRangeList {
     // An array of \c CXSourceRanges.
     public let ranges: CPointer<CXSourceRange>
 
-    init(count: UInt32, ranges: CPointer<CXSourceRange>) {
+    public init(count: UInt32, ranges: CPointer<CXSourceRange>) {
         this.count = count
         this.ranges = ranges
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXSourceRangeList>()
+    if (size != 16) {
+        throw Exception("Size of CXSourceRangeList is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXSourceRangeList>()
+    if (align != 8) {
+        throw Exception("Alignment of CXSourceRangeList is not 8 but ${align} bytes")
     }
 }
 
@@ -482,8 +557,7 @@ public type CXLoadDiag_Error = UInt32
 //
 // \returns A loaded CXDiagnosticSet if successful, and NULL otherwise.  These
 // diagnostics should be released using clang_disposeDiagnosticSet().
-foreign func clang_loadDiagnostics(file: CPointer<Int8>, error: CPointer<CXLoadDiag_Error>,
-    errorString: CPointer<CXString>): CXDiagnosticSet
+foreign func clang_loadDiagnostics(file: CString, error: CPointer<CXLoadDiag_Error>, errorString: CPointer<CXString>): CXDiagnosticSet
 
 // Release a CXDiagnosticSet and all of its contained diagnostics.
 foreign func clang_disposeDiagnosticSet(Diags: CXDiagnosticSet): Unit
@@ -675,7 +749,7 @@ public type CXIndex = CPointer<Unit>
 @C
 public struct CXTargetInfoImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -686,7 +760,7 @@ public type CXTargetInfo = CPointer<CXTargetInfoImpl>
 @C
 public struct CXTranslationUnitImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -707,16 +781,29 @@ public struct CXUnsavedFile {
     // The file whose contents have not yet been saved.
     //
     // This file must already exist in the file system.
-    public let Filename: CPointer<Int8>
+    public let Filename: CString
     // A buffer containing the unsaved contents of this file.
-    public let Contents: CPointer<Int8>
+    public let Contents: CString
     // The length of the unsaved contents of this buffer.
     public let Length: UInt64
 
-    init(Filename: CPointer<Int8>, Contents: CPointer<Int8>, Length: UInt64) {
+    public init(Filename: CString, Contents: CString, Length: UInt64) {
         this.Filename = Filename
         this.Contents = Contents
         this.Length = Length
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXUnsavedFile>()
+    if (size != 24) {
+        throw Exception("Size of CXUnsavedFile is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXUnsavedFile>()
+    if (align != 8) {
+        throw Exception("Alignment of CXUnsavedFile is not 8 but ${align} bytes")
     }
 }
 
@@ -754,10 +841,23 @@ public struct CXVersion {
     // e.g., in version '10' or '10.7'.
     public let Subminor: Int32
 
-    init(Major: Int32, Minor: Int32, Subminor: Int32) {
+    public init(Major: Int32, Minor: Int32, Subminor: Int32) {
         this.Major = Major
         this.Minor = Minor
         this.Subminor = Subminor
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXVersion>()
+    if (size != 12) {
+        throw Exception("Size of CXVersion is not 12 but ${size} bytes")
+    }
+    let align = alignOf<CXVersion>()
+    if (align != 4) {
+        throw Exception("Alignment of CXVersion is not 4 but ${align} bytes")
     }
 }
 
@@ -877,11 +977,45 @@ public const CXGlobalOptFlags_CXGlobalOpt_ThreadBackgroundPriorityForAll: CXGlob
 
 public type CXGlobalOptFlags = UInt32
 
+// Index initialization options.
+//
+// 0 is the default value of each member of this struct except for Size.
+// Initialize the struct in one of the following three ways to avoid adapting
+// code each time a new member is added to it:
+// \code
+// CXIndexOptions Opts;
+// memset(&Opts, 0, sizeof(Opts));
+// Opts.Size = sizeof(CXIndexOptions);
+// \endcode
+// or explicitly initialize the first data member and zero-initialize the rest:
+// \code
+// CXIndexOptions Opts = { sizeof(CXIndexOptions) };
+// \endcode
+// or to prevent the -Wmissing-field-initializers warning for the above version:
+// \code
+// CXIndexOptions Opts{};
+// Opts.Size = sizeof(CXIndexOptions);
+// \endcode
 @C
-struct CXIndexOptions {
-   init() {
-      throw Exception("bitfield struct not supported")
-   }
+public struct CXIndexOptions {
+    let _cjbind_opaque_blob: VArray<UInt64, $4>
+
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $4>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIndexOptions>()
+    if (size != 32) {
+        throw Exception("Size of CXIndexOptions is not 32 but ${size} bytes")
+    }
+    let align = alignOf<CXIndexOptions>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIndexOptions is not 8 but ${align} bytes")
+    }
 }
 
 // Provides a shared context for creating translation units.
@@ -962,7 +1096,7 @@ foreign func clang_CXIndex_getGlobalOptions(arg1: CXIndex): UInt32
 // The invocation emission path specifies a path which will contain log
 // files for certain libclang invocations. A null value (default) implies that
 // libclang invocations are not logged..
-foreign func clang_CXIndex_setInvocationEmissionPathOption(arg1: CXIndex, Path: CPointer<Int8>): Unit
+foreign func clang_CXIndex_setInvocationEmissionPathOption(arg1: CXIndex, Path: CString): Unit
 
 // Determine whether the given header is guarded against
 // multiple inclusions, either with the conventional
@@ -977,7 +1111,7 @@ foreign func clang_isFileMultipleIncludeGuarded(tu: CXTranslationUnit, file: CXF
 //
 // \returns the file handle for the named file in the translation unit \p tu,
 // or a NULL file handle if the file was not a part of this translation unit.
-foreign func clang_getFile(tu: CXTranslationUnit, file_name: CPointer<Int8>): CXFile
+foreign func clang_getFile(tu: CXTranslationUnit, file_name: CString): CXFile
 
 // Retrieve the buffer associated with the given file.
 //
@@ -989,7 +1123,7 @@ foreign func clang_getFile(tu: CXTranslationUnit, file_name: CPointer<Int8>): CX
 //
 // \returns a pointer to the buffer in memory that holds the contents of
 // \p file, or a NULL pointer when the file is not loaded.
-foreign func clang_getFileContents(tu: CXTranslationUnit, file: CXFile, size: CPointer<UIntNative>): CPointer<Int8>
+foreign func clang_getFileContents(tu: CXTranslationUnit, file: CXFile, size: CPointer<UIntNative>): CString
 
 // Retrieves the source location associated with a given file/line/column
 // in a particular translation unit.
@@ -1072,15 +1206,15 @@ foreign func clang_getTranslationUnitSpelling(CTUnit: CXTranslationUnit): CXStri
 // those files.  The contents and name of these files (as specified by
 // CXUnsavedFile) are copied when necessary, so the client only needs to
 // guarantee their validity until the call to this function returns.
-foreign func clang_createTranslationUnitFromSourceFile(CIdx: CXIndex, source_filename: CPointer<Int8>,
-    num_clang_command_line_args: Int32, clang_command_line_args: CPointer<CPointer<Int8>>, num_unsaved_files: UInt32,
+foreign func clang_createTranslationUnitFromSourceFile(CIdx: CXIndex, source_filename: CString,
+    num_clang_command_line_args: Int32, clang_command_line_args: CPointer<CString>, num_unsaved_files: UInt32,
     unsaved_files: CPointer<CXUnsavedFile>): CXTranslationUnit
 
 // Same as \c clang_createTranslationUnit2, but returns
 // the \c CXTranslationUnit instead of an error code.  In case of an error this
 // routine returns a \c NULL \c CXTranslationUnit, without further detailed
 // error codes.
-foreign func clang_createTranslationUnit(CIdx: CXIndex, ast_filename: CPointer<Int8>): CXTranslationUnit
+foreign func clang_createTranslationUnit(CIdx: CXIndex, ast_filename: CString): CXTranslationUnit
 
 // Create a translation unit from an AST file (\c -emit-ast).
 //
@@ -1088,8 +1222,7 @@ foreign func clang_createTranslationUnit(CIdx: CXIndex, ast_filename: CPointer<I
 // \c CXTranslationUnit.
 //
 // \returns Zero on success, otherwise returns an error code.
-foreign func clang_createTranslationUnit2(CIdx: CXIndex, ast_filename: CPointer<Int8>,
-    out_TU: CPointer<CXTranslationUnit>): CXErrorCode
+foreign func clang_createTranslationUnit2(CIdx: CXIndex, ast_filename: CString, out_TU: CPointer<CXTranslationUnit>): CXErrorCode
 
 // Used to indicate that no special translation-unit options are
 // needed.
@@ -1227,9 +1360,8 @@ foreign func clang_defaultEditingTranslationUnitOptions(): UInt32
 // the \c CXTranslationUnit instead of an error code.  In case of an error this
 // routine returns a \c NULL \c CXTranslationUnit, without further detailed
 // error codes.
-foreign func clang_parseTranslationUnit(CIdx: CXIndex, source_filename: CPointer<Int8>,
-    command_line_args: CPointer<CPointer<Int8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>,
-    num_unsaved_files: UInt32, options: UInt32): CXTranslationUnit
+foreign func clang_parseTranslationUnit(CIdx: CXIndex, source_filename: CString, command_line_args: CPointer<CString>,
+    num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32): CXTranslationUnit
 
 // Parse the given source file and the translation unit corresponding
 // to that file.
@@ -1273,15 +1405,15 @@ foreign func clang_parseTranslationUnit(CIdx: CXIndex, source_filename: CPointer
 // diagnostics produced by the compiler.
 //
 // \returns Zero on success, otherwise returns an error code.
-foreign func clang_parseTranslationUnit2(CIdx: CXIndex, source_filename: CPointer<Int8>,
-    command_line_args: CPointer<CPointer<Int8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>,
-    num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CXTranslationUnit>): CXErrorCode
+foreign func clang_parseTranslationUnit2(CIdx: CXIndex, source_filename: CString, command_line_args: CPointer<CString>,
+    num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32,
+    out_TU: CPointer<CXTranslationUnit>): CXErrorCode
 
 // Same as clang_parseTranslationUnit2 but requires a full command line
 // for \c command_line_args including argv[0]. This is useful if the standard
 // library paths are relative to the binary.
-foreign func clang_parseTranslationUnit2FullArgv(CIdx: CXIndex, source_filename: CPointer<Int8>,
-    command_line_args: CPointer<CPointer<Int8>>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>,
+foreign func clang_parseTranslationUnit2FullArgv(CIdx: CXIndex, source_filename: CString,
+    command_line_args: CPointer<CString>, num_command_line_args: Int32, unsaved_files: CPointer<CXUnsavedFile>,
     num_unsaved_files: UInt32, options: UInt32, out_TU: CPointer<CXTranslationUnit>): CXErrorCode
 
 // Used to indicate that no special saving options are needed.
@@ -1349,7 +1481,7 @@ public type CXSaveError = UInt32
 // \returns A value that will match one of the enumerators of the CXSaveError
 // enumeration. Zero (CXSaveError_None) indicates that the translation unit was
 // saved successfully, while a non-zero value indicates that a problem occurred.
-foreign func clang_saveTranslationUnit(TU: CXTranslationUnit, FileName: CPointer<Int8>, options: UInt32): Int32
+foreign func clang_saveTranslationUnit(TU: CXTranslationUnit, FileName: CString, options: UInt32): Int32
 
 // Suspend a translation unit in order to free memory associated with it.
 //
@@ -1445,16 +1577,29 @@ public type CXTUResourceUsageKind = UInt32
 
 // Returns the human-readable null-terminated C string that represents
 //  the name of the memory category.  This string should never be freed.
-foreign func clang_getTUResourceUsageName(kind: CXTUResourceUsageKind): CPointer<Int8>
+foreign func clang_getTUResourceUsageName(kind: CXTUResourceUsageKind): CString
 
 @C
 public struct CXTUResourceUsageEntry {
     public let kind: CXTUResourceUsageKind
     public let amount: UInt64
 
-    init(kind: CXTUResourceUsageKind, amount: UInt64) {
+    public init(kind: CXTUResourceUsageKind, amount: UInt64) {
         this.kind = kind
         this.amount = amount
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXTUResourceUsageEntry>()
+    if (size != 8) {
+        throw Exception("Size of CXTUResourceUsageEntry is not 8 but ${size} bytes")
+    }
+    let align = alignOf<CXTUResourceUsageEntry>()
+    if (align != 4) {
+        throw Exception("Alignment of CXTUResourceUsageEntry is not 4 but ${align} bytes")
     }
 }
 
@@ -1465,10 +1610,23 @@ public struct CXTUResourceUsage {
     public let numEntries: UInt32
     public let entries: CPointer<CXTUResourceUsageEntry>
 
-    init(data: CPointer<Unit>, numEntries: UInt32, entries: CPointer<CXTUResourceUsageEntry>) {
+    public init(data: CPointer<Unit>, numEntries: UInt32, entries: CPointer<CXTUResourceUsageEntry>) {
         this.data = data
         this.numEntries = numEntries
         this.entries = entries
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXTUResourceUsage>()
+    if (size != 24) {
+        throw Exception("Size of CXTUResourceUsage is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXTUResourceUsage>()
+    if (align != 8) {
+        throw Exception("Alignment of CXTUResourceUsage is not 8 but ${align} bytes")
     }
 }
 
@@ -2624,10 +2782,23 @@ public struct CXCursor {
     public let xdata: Int32
     public let data: VArray<CPointer<Unit>, $3>
 
-    init(kind: CXCursorKind, xdata: Int32, data: VArray<CPointer<Unit>, $3>) {
+    public init(kind: CXCursorKind, xdata: Int32, data: VArray<CPointer<Unit>, $3>) {
         this.kind = kind
         this.xdata = xdata
         this.data = data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXCursor>()
+    if (size != 32) {
+        throw Exception("Size of CXCursor is not 32 but ${size} bytes")
+    }
+    let align = alignOf<CXCursor>()
+    if (align != 8) {
+        throw Exception("Alignment of CXCursor is not 8 but ${align} bytes")
     }
 }
 
@@ -2780,14 +2951,27 @@ public struct CXPlatformAvailability {
     // suggest replacement APIs.
     public let Message: CXString
 
-    init(Platform: CXString, Introduced: CXVersion, Deprecated: CXVersion, Obsoleted: CXVersion, Unavailable: Int32,
-        Message: CXString) {
+    public init(Platform: CXString, Introduced: CXVersion, Deprecated: CXVersion, Obsoleted: CXVersion,
+        Unavailable: Int32, Message: CXString) {
         this.Platform = Platform
         this.Introduced = Introduced
         this.Deprecated = Deprecated
         this.Obsoleted = Obsoleted
         this.Unavailable = Unavailable
         this.Message = Message
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXPlatformAvailability>()
+    if (size != 72) {
+        throw Exception("Size of CXPlatformAvailability is not 72 but ${size} bytes")
+    }
+    let align = alignOf<CXPlatformAvailability>()
+    if (align != 8) {
+        throw Exception("Alignment of CXPlatformAvailability is not 8 but ${align} bytes")
     }
 }
 
@@ -2875,7 +3059,7 @@ foreign func clang_Cursor_getTranslationUnit(arg1: CXCursor): CXTranslationUnit
 @C
 public struct CXCursorSetImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -3669,9 +3853,22 @@ public struct CXType {
     public let kind: CXTypeKind
     public let data: VArray<CPointer<Unit>, $2>
 
-    init(kind: CXTypeKind, data: VArray<CPointer<Unit>, $2>) {
+    public init(kind: CXTypeKind, data: VArray<CPointer<Unit>, $2>) {
         this.kind = kind
         this.data = data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXType>()
+    if (size != 24) {
+        throw Exception("Size of CXType is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXType>()
+    if (align != 8) {
+        throw Exception("Alignment of CXType is not 8 but ${align} bytes")
     }
 }
 
@@ -4153,7 +4350,7 @@ foreign func clang_Type_getSizeOf(T: CXType): Int64
 //   CXTypeLayoutError_Dependent is returned.
 // If the field's name S is not found,
 //   CXTypeLayoutError_InvalidFieldName is returned.
-foreign func clang_Type_getOffsetOf(T: CXType, S: CPointer<Int8>): Int64
+foreign func clang_Type_getOffsetOf(T: CXType, S: CString): Int64
 
 // Return the type that was modified by this attributed type.
 //
@@ -4385,7 +4582,7 @@ foreign func clang_visitChildren(parent: CXCursor, visitor: CXCursorVisitor, cli
 @C
 public struct _CXChildVisitResult {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -4405,25 +4602,25 @@ foreign func clang_visitChildrenWithBlock(parent: CXCursor, block: CXCursorVisit
 foreign func clang_getCursorUSR(arg1: CXCursor): CXString
 
 // Construct a USR for a specified Objective-C class.
-foreign func clang_constructUSR_ObjCClass(class_name: CPointer<Int8>): CXString
+foreign func clang_constructUSR_ObjCClass(class_name: CString): CXString
 
 // Construct a USR for a specified Objective-C category.
-foreign func clang_constructUSR_ObjCCategory(class_name: CPointer<Int8>, category_name: CPointer<Int8>): CXString
+foreign func clang_constructUSR_ObjCCategory(class_name: CString, category_name: CString): CXString
 
 // Construct a USR for a specified Objective-C protocol.
-foreign func clang_constructUSR_ObjCProtocol(protocol_name: CPointer<Int8>): CXString
+foreign func clang_constructUSR_ObjCProtocol(protocol_name: CString): CXString
 
 // Construct a USR for a specified Objective-C instance variable and
 //   the USR for its containing class.
-foreign func clang_constructUSR_ObjCIvar(name: CPointer<Int8>, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCIvar(name: CString, classUSR: CXString): CXString
 
 // Construct a USR for a specified Objective-C method and
 //   the USR for its containing class.
-foreign func clang_constructUSR_ObjCMethod(name: CPointer<Int8>, isInstanceMethod: UInt32, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCMethod(name: CString, isInstanceMethod: UInt32, classUSR: CXString): CXString
 
 // Construct a USR for a specified Objective-C property and the USR
 //  for its containing class.
-foreign func clang_constructUSR_ObjCProperty(property: CPointer<Int8>, classUSR: CXString): CXString
+foreign func clang_constructUSR_ObjCProperty(property: CString, classUSR: CXString): CXString
 
 // Retrieve a name for the entity referenced by this cursor.
 foreign func clang_getCursorSpelling(arg1: CXCursor): CXString
@@ -4995,9 +5192,22 @@ public struct CXToken {
     public let int_data: VArray<UInt32, $4>
     public let ptr_data: CPointer<Unit>
 
-    init(int_data: VArray<UInt32, $4>, ptr_data: CPointer<Unit>) {
+    public init(int_data: VArray<UInt32, $4>, ptr_data: CPointer<Unit>) {
         this.int_data = int_data
         this.ptr_data = ptr_data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXToken>()
+    if (size != 24) {
+        throw Exception("Size of CXToken is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXToken>()
+    if (align != 8) {
+        throw Exception("Alignment of CXToken is not 8 but ${align} bytes")
     }
 }
 
@@ -5087,9 +5297,9 @@ foreign func clang_disposeTokens(TU: CXTranslationUnit, Tokens: CPointer<CXToken
 // @{
 foreign func clang_getCursorKindSpelling(Kind: CXCursorKind): CXString
 
-foreign func clang_getDefinitionSpellingAndExtent(arg1: CXCursor, startBuf: CPointer<CPointer<Int8>>,
-    endBuf: CPointer<CPointer<Int8>>, startLine: CPointer<UInt32>, startColumn: CPointer<UInt32>,
-    endLine: CPointer<UInt32>, endColumn: CPointer<UInt32>): Unit
+foreign func clang_getDefinitionSpellingAndExtent(arg1: CXCursor, startBuf: CPointer<CString>,
+    endBuf: CPointer<CString>, startLine: CPointer<UInt32>, startColumn: CPointer<UInt32>, endLine: CPointer<UInt32>,
+    endColumn: CPointer<UInt32>): Unit
 
 foreign func clang_enableStackTraces(): Unit
 
@@ -5125,9 +5335,22 @@ public struct CXCompletionResult {
     // code-completion result into the editing buffer.
     public let CompletionString: CXCompletionString
 
-    init(CursorKind: CXCursorKind, CompletionString: CXCompletionString) {
+    public init(CursorKind: CXCursorKind, CompletionString: CXCompletionString) {
         this.CursorKind = CursorKind
         this.CompletionString = CompletionString
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXCompletionResult>()
+    if (size != 16) {
+        throw Exception("Size of CXCompletionResult is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXCompletionResult>()
+    if (align != 8) {
+        throw Exception("Alignment of CXCompletionResult is not 8 but ${align} bytes")
     }
 }
 
@@ -5393,9 +5616,22 @@ public struct CXCodeCompleteResults {
     // \c Results array.
     public let NumResults: UInt32
 
-    init(Results: CPointer<CXCompletionResult>, NumResults: UInt32) {
+    public init(Results: CPointer<CXCompletionResult>, NumResults: UInt32) {
         this.Results = Results
         this.NumResults = NumResults
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXCodeCompleteResults>()
+    if (size != 16) {
+        throw Exception("Size of CXCodeCompleteResults is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXCodeCompleteResults>()
+    if (align != 8) {
+        throw Exception("Alignment of CXCodeCompleteResults is not 8 but ${align} bytes")
     }
 }
 
@@ -5652,7 +5888,7 @@ foreign func clang_defaultCodeCompleteOptions(): UInt32
 // containing code-completion results, which should eventually be
 // freed with \c clang_disposeCodeCompleteResults(). If code
 // completion fails, returns NULL.
-foreign func clang_codeCompleteAt(TU: CXTranslationUnit, complete_filename: CPointer<Int8>, complete_line: UInt32,
+foreign func clang_codeCompleteAt(TU: CXTranslationUnit, complete_filename: CString, complete_line: UInt32,
     complete_column: UInt32, unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, options: UInt32): CPointer<CXCodeCompleteResults>
 
 // Sort the code-completion results in case-insensitive alphabetical
@@ -5798,7 +6034,7 @@ foreign func clang_EvalResult_getAsDouble(E: CXEvalResult): Float64
 // kind is other than Int or float. User must not free this pointer,
 // instead call clang_EvalResult_dispose on the CXEvalResult returned
 // by clang_Cursor_Evaluate.
-foreign func clang_EvalResult_getAsStr(E: CXEvalResult): CPointer<Int8>
+foreign func clang_EvalResult_getAsStr(E: CXEvalResult): CString
 
 // Disposes the created Eval memory.
 foreign func clang_EvalResult_dispose(E: CXEvalResult): Unit
@@ -5812,7 +6048,7 @@ public type CXRemapping = CPointer<Unit>
 //
 // \returns the requested remapping. This remapping must be freed
 // via a call to \c clang_remap_dispose(). Can return NULL if an error occurred.
-foreign func clang_getRemappings(path: CPointer<Int8>): CXRemapping
+foreign func clang_getRemappings(path: CString): CXRemapping
 
 // Retrieve a remapping.
 //
@@ -5822,7 +6058,7 @@ foreign func clang_getRemappings(path: CPointer<Int8>): CXRemapping
 //
 // \returns the requested remapping. This remapping must be freed
 // via a call to \c clang_remap_dispose(). Can return NULL if an error occurred.
-foreign func clang_getRemappingsFromFileList(filePaths: CPointer<CPointer<Int8>>, numFiles: UInt32): CXRemapping
+foreign func clang_getRemappingsFromFileList(filePaths: CPointer<CString>, numFiles: UInt32): CXRemapping
 
 // Determine the number of remappings.
 foreign func clang_remap_getNumFiles(arg1: CXRemapping): UInt32
@@ -5852,10 +6088,23 @@ public struct CXCursorAndRangeVisitor {
     public let context: CPointer<Unit>
     public let visit: CFunc<(context: CPointer<Unit>, arg1: CXCursor, arg2: CXSourceRange) -> CXVisitorResult>
 
-    init(context: CPointer<Unit>,
+    public init(context: CPointer<Unit>,
         visit: CFunc<(context: CPointer<Unit>, arg1: CXCursor, arg2: CXSourceRange) -> CXVisitorResult>) {
         this.context = context
         this.visit = visit
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXCursorAndRangeVisitor>()
+    if (size != 16) {
+        throw Exception("Size of CXCursorAndRangeVisitor is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXCursorAndRangeVisitor>()
+    if (align != 8) {
+        throw Exception("Alignment of CXCursorAndRangeVisitor is not 8 but ${align} bytes")
     }
 }
 
@@ -5900,7 +6149,7 @@ foreign func clang_findIncludesInFile(TU: CXTranslationUnit, file: CXFile, visit
 @C
 public struct _CXCursorAndRangeVisitorBlock {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -5930,9 +6179,22 @@ public struct CXIdxLoc {
     public let ptr_data: VArray<CPointer<Unit>, $2>
     public let int_data: UInt32
 
-    init(ptr_data: VArray<CPointer<Unit>, $2>, int_data: UInt32) {
+    public init(ptr_data: VArray<CPointer<Unit>, $2>, int_data: UInt32) {
         this.ptr_data = ptr_data
         this.int_data = int_data
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxLoc>()
+    if (size != 24) {
+        throw Exception("Size of CXIdxLoc is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxLoc>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxLoc is not 8 but ${align} bytes")
     }
 }
 
@@ -5942,7 +6204,7 @@ public struct CXIdxIncludedFileInfo {
     // Location of '#' in the \#include/\#import directive.
     public let hashLoc: CXIdxLoc
     // Filename as written in the \#include/\#import directive.
-    public let filename: CPointer<Int8>
+    public let filename: CString
     // The actual file that the \#include/\#import directive resolved to.
     public let file: CXFile
     public let isImport: Int32
@@ -5951,7 +6213,7 @@ public struct CXIdxIncludedFileInfo {
     // import.
     public let isModuleImport: Int32
 
-    init(hashLoc: CXIdxLoc, filename: CPointer<Int8>, file: CXFile, isImport: Int32, isAngled: Int32,
+    public init(hashLoc: CXIdxLoc, filename: CString, file: CXFile, isImport: Int32, isAngled: Int32,
         isModuleImport: Int32) {
         this.hashLoc = hashLoc
         this.filename = filename
@@ -5959,6 +6221,19 @@ public struct CXIdxIncludedFileInfo {
         this.isImport = isImport
         this.isAngled = isAngled
         this.isModuleImport = isModuleImport
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxIncludedFileInfo>()
+    if (size != 56) {
+        throw Exception("Size of CXIdxIncludedFileInfo is not 56 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxIncludedFileInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxIncludedFileInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -5975,11 +6250,24 @@ public struct CXIdxImportedASTFileInfo {
     // a module import. Applicable only for modules.
     public let isImplicit: Int32
 
-    init(file: CXFile, module: CXModule, loc: CXIdxLoc, isImplicit: Int32) {
+    public init(file: CXFile, module: CXModule, loc: CXIdxLoc, isImplicit: Int32) {
         this.file = file
         this.module = module
         this.loc = loc
         this.isImplicit = isImplicit
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxImportedASTFileInfo>()
+    if (size != 48) {
+        throw Exception("Size of CXIdxImportedASTFileInfo is not 48 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxImportedASTFileInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxImportedASTFileInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6050,10 +6338,23 @@ public struct CXIdxAttrInfo {
     public let cursor: CXCursor
     public let loc: CXIdxLoc
 
-    init(kind: CXIdxAttrKind, cursor: CXCursor, loc: CXIdxLoc) {
+    public init(kind: CXIdxAttrKind, cursor: CXCursor, loc: CXIdxLoc) {
         this.kind = kind
         this.cursor = cursor
         this.loc = loc
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxAttrInfo>()
+    if (size != 64) {
+        throw Exception("Size of CXIdxAttrInfo is not 64 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxAttrInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxAttrInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6062,14 +6363,14 @@ public struct CXIdxEntityInfo {
     public let kind: CXIdxEntityKind
     public let templateKind: CXIdxEntityCXXTemplateKind
     public let lang: CXIdxEntityLanguage
-    public let name: CPointer<Int8>
-    public let USR: CPointer<Int8>
+    public let name: CString
+    public let USR: CString
     public let cursor: CXCursor
     public let attributes: CPointer<CPointer<CXIdxAttrInfo>>
     public let numAttributes: UInt32
 
-    init(kind: CXIdxEntityKind, templateKind: CXIdxEntityCXXTemplateKind, lang: CXIdxEntityLanguage,
-        name: CPointer<Int8>, USR: CPointer<Int8>, cursor: CXCursor, attributes: CPointer<CPointer<CXIdxAttrInfo>>,
+    public init(kind: CXIdxEntityKind, templateKind: CXIdxEntityCXXTemplateKind, lang: CXIdxEntityLanguage,
+        name: CString, USR: CString, cursor: CXCursor, attributes: CPointer<CPointer<CXIdxAttrInfo>>,
         numAttributes: UInt32) {
         this.kind = kind
         this.templateKind = templateKind
@@ -6082,12 +6383,38 @@ public struct CXIdxEntityInfo {
     }
 }
 
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxEntityInfo>()
+    if (size != 80) {
+        throw Exception("Size of CXIdxEntityInfo is not 80 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxEntityInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxEntityInfo is not 8 but ${align} bytes")
+    }
+}
+
 @C
 public struct CXIdxContainerInfo {
     public let cursor: CXCursor
 
-    init(cursor: CXCursor) {
+    public init(cursor: CXCursor) {
         this.cursor = cursor
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxContainerInfo>()
+    if (size != 32) {
+        throw Exception("Size of CXIdxContainerInfo is not 32 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxContainerInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxContainerInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6098,12 +6425,25 @@ public struct CXIdxIBOutletCollectionAttrInfo {
     public let classCursor: CXCursor
     public let classLoc: CXIdxLoc
 
-    init(attrInfo: CPointer<CXIdxAttrInfo>, objcClass: CPointer<CXIdxEntityInfo>, classCursor: CXCursor,
+    public init(attrInfo: CPointer<CXIdxAttrInfo>, objcClass: CPointer<CXIdxEntityInfo>, classCursor: CXCursor,
         classLoc: CXIdxLoc) {
         this.attrInfo = attrInfo
         this.objcClass = objcClass
         this.classCursor = classCursor
         this.classLoc = classLoc
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxIBOutletCollectionAttrInfo>()
+    if (size != 72) {
+        throw Exception("Size of CXIdxIBOutletCollectionAttrInfo is not 72 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxIBOutletCollectionAttrInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxIBOutletCollectionAttrInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6131,7 +6471,7 @@ public struct CXIdxDeclInfo {
     public let numAttributes: UInt32
     public let flags: UInt32
 
-    init(entityInfo: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc,
+    public init(entityInfo: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc,
         semanticContainer: CPointer<CXIdxContainerInfo>, lexicalContainer: CPointer<CXIdxContainerInfo>,
         isRedeclaration: Int32, isDefinition: Int32, isContainer: Int32, declAsContainer: CPointer<CXIdxContainerInfo>,
         isImplicit: Int32, attributes: CPointer<CPointer<CXIdxAttrInfo>>, numAttributes: UInt32, flags: UInt32) {
@@ -6151,6 +6491,19 @@ public struct CXIdxDeclInfo {
     }
 }
 
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxDeclInfo>()
+    if (size != 128) {
+        throw Exception("Size of CXIdxDeclInfo is not 128 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxDeclInfo is not 8 but ${align} bytes")
+    }
+}
+
 public const CXIdxObjCContainerKind_CXIdxObjCContainer_ForwardRef: CXIdxObjCContainerKind = 0
 public const CXIdxObjCContainerKind_CXIdxObjCContainer_Interface: CXIdxObjCContainerKind = 1
 public const CXIdxObjCContainerKind_CXIdxObjCContainer_Implementation: CXIdxObjCContainerKind = 2
@@ -6162,9 +6515,22 @@ public struct CXIdxObjCContainerDeclInfo {
     public let declInfo: CPointer<CXIdxDeclInfo>
     public let kind: CXIdxObjCContainerKind
 
-    init(declInfo: CPointer<CXIdxDeclInfo>, kind: CXIdxObjCContainerKind) {
+    public init(declInfo: CPointer<CXIdxDeclInfo>, kind: CXIdxObjCContainerKind) {
         this.declInfo = declInfo
         this.kind = kind
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCContainerDeclInfo>()
+    if (size != 16) {
+        throw Exception("Size of CXIdxObjCContainerDeclInfo is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCContainerDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCContainerDeclInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6174,10 +6540,23 @@ public struct CXIdxBaseClassInfo {
     public let cursor: CXCursor
     public let loc: CXIdxLoc
 
-    init(base: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc) {
+    public init(base: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc) {
         this.base = base
         this.cursor = cursor
         this.loc = loc
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxBaseClassInfo>()
+    if (size != 64) {
+        throw Exception("Size of CXIdxBaseClassInfo is not 64 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxBaseClassInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxBaseClassInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6187,10 +6566,23 @@ public struct CXIdxObjCProtocolRefInfo {
     public let cursor: CXCursor
     public let loc: CXIdxLoc
 
-    init(protocol: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc) {
+    public init(protocol: CPointer<CXIdxEntityInfo>, cursor: CXCursor, loc: CXIdxLoc) {
         this.protocol = protocol
         this.cursor = cursor
         this.loc = loc
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCProtocolRefInfo>()
+    if (size != 64) {
+        throw Exception("Size of CXIdxObjCProtocolRefInfo is not 64 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCProtocolRefInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCProtocolRefInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6199,9 +6591,22 @@ public struct CXIdxObjCProtocolRefListInfo {
     public let protocols: CPointer<CPointer<CXIdxObjCProtocolRefInfo>>
     public let numProtocols: UInt32
 
-    init(protocols: CPointer<CPointer<CXIdxObjCProtocolRefInfo>>, numProtocols: UInt32) {
+    public init(protocols: CPointer<CPointer<CXIdxObjCProtocolRefInfo>>, numProtocols: UInt32) {
         this.protocols = protocols
         this.numProtocols = numProtocols
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCProtocolRefListInfo>()
+    if (size != 16) {
+        throw Exception("Size of CXIdxObjCProtocolRefListInfo is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCProtocolRefListInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCProtocolRefListInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6211,11 +6616,24 @@ public struct CXIdxObjCInterfaceDeclInfo {
     public let superInfo: CPointer<CXIdxBaseClassInfo>
     public let protocols: CPointer<CXIdxObjCProtocolRefListInfo>
 
-    init(containerInfo: CPointer<CXIdxObjCContainerDeclInfo>, superInfo: CPointer<CXIdxBaseClassInfo>,
+    public init(containerInfo: CPointer<CXIdxObjCContainerDeclInfo>, superInfo: CPointer<CXIdxBaseClassInfo>,
         protocols: CPointer<CXIdxObjCProtocolRefListInfo>) {
         this.containerInfo = containerInfo
         this.superInfo = superInfo
         this.protocols = protocols
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCInterfaceDeclInfo>()
+    if (size != 24) {
+        throw Exception("Size of CXIdxObjCInterfaceDeclInfo is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCInterfaceDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCInterfaceDeclInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6227,7 +6645,7 @@ public struct CXIdxObjCCategoryDeclInfo {
     public let classLoc: CXIdxLoc
     public let protocols: CPointer<CXIdxObjCProtocolRefListInfo>
 
-    init(containerInfo: CPointer<CXIdxObjCContainerDeclInfo>, objcClass: CPointer<CXIdxEntityInfo>,
+    public init(containerInfo: CPointer<CXIdxObjCContainerDeclInfo>, objcClass: CPointer<CXIdxEntityInfo>,
         classCursor: CXCursor, classLoc: CXIdxLoc, protocols: CPointer<CXIdxObjCProtocolRefListInfo>) {
         this.containerInfo = containerInfo
         this.objcClass = objcClass
@@ -6237,16 +6655,42 @@ public struct CXIdxObjCCategoryDeclInfo {
     }
 }
 
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCCategoryDeclInfo>()
+    if (size != 80) {
+        throw Exception("Size of CXIdxObjCCategoryDeclInfo is not 80 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCCategoryDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCCategoryDeclInfo is not 8 but ${align} bytes")
+    }
+}
+
 @C
 public struct CXIdxObjCPropertyDeclInfo {
     public let declInfo: CPointer<CXIdxDeclInfo>
     public let getter: CPointer<CXIdxEntityInfo>
     public let setter: CPointer<CXIdxEntityInfo>
 
-    init(declInfo: CPointer<CXIdxDeclInfo>, getter: CPointer<CXIdxEntityInfo>, setter: CPointer<CXIdxEntityInfo>) {
+    public init(declInfo: CPointer<CXIdxDeclInfo>, getter: CPointer<CXIdxEntityInfo>, setter: CPointer<CXIdxEntityInfo>) {
         this.declInfo = declInfo
         this.getter = getter
         this.setter = setter
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxObjCPropertyDeclInfo>()
+    if (size != 24) {
+        throw Exception("Size of CXIdxObjCPropertyDeclInfo is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxObjCPropertyDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxObjCPropertyDeclInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6256,10 +6700,23 @@ public struct CXIdxCXXClassDeclInfo {
     public let bases: CPointer<CPointer<CXIdxBaseClassInfo>>
     public let numBases: UInt32
 
-    init(declInfo: CPointer<CXIdxDeclInfo>, bases: CPointer<CPointer<CXIdxBaseClassInfo>>, numBases: UInt32) {
+    public init(declInfo: CPointer<CXIdxDeclInfo>, bases: CPointer<CPointer<CXIdxBaseClassInfo>>, numBases: UInt32) {
         this.declInfo = declInfo
         this.bases = bases
         this.numBases = numBases
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxCXXClassDeclInfo>()
+    if (size != 24) {
+        throw Exception("Size of CXIdxCXXClassDeclInfo is not 24 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxCXXClassDeclInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxCXXClassDeclInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6317,7 +6774,7 @@ public struct CXIdxEntityRefInfo {
     // Sets of symbol roles of the reference.
     public let role: CXSymbolRole
 
-    init(kind: CXIdxEntityRefKind, cursor: CXCursor, loc: CXIdxLoc, referencedEntity: CPointer<CXIdxEntityInfo>,
+    public init(kind: CXIdxEntityRefKind, cursor: CXCursor, loc: CXIdxLoc, referencedEntity: CPointer<CXIdxEntityInfo>,
         parentEntity: CPointer<CXIdxEntityInfo>, container: CPointer<CXIdxContainerInfo>, role: CXSymbolRole) {
         this.kind = kind
         this.cursor = cursor
@@ -6326,6 +6783,19 @@ public struct CXIdxEntityRefInfo {
         this.parentEntity = parentEntity
         this.container = container
         this.role = role
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXIdxEntityRefInfo>()
+    if (size != 96) {
+        throw Exception("Size of CXIdxEntityRefInfo is not 96 but ${size} bytes")
+    }
+    let align = alignOf<CXIdxEntityRefInfo>()
+    if (align != 8) {
+        throw Exception("Alignment of CXIdxEntityRefInfo is not 8 but ${align} bytes")
     }
 }
 
@@ -6354,7 +6824,7 @@ public struct IndexerCallbacks {
     // Called to index a reference of an entity.
     public let indexEntityReference: CFunc<(client_data: CXClientData, arg1: CPointer<CXIdxEntityRefInfo>) -> Unit>
 
-    init(abortQuery: CFunc<(client_data: CXClientData, reserved: CPointer<Unit>) -> Int32>,
+    public init(abortQuery: CFunc<(client_data: CXClientData, reserved: CPointer<Unit>) -> Int32>,
         diagnostic: CFunc<(client_data: CXClientData, arg1: CXDiagnosticSet, reserved: CPointer<Unit>) -> Unit>,
         enteredMainFile: CFunc<(client_data: CXClientData, mainFile: CXFile, reserved: CPointer<Unit>) -> CXIdxClientFile>,
         ppIncludedFile: CFunc<(client_data: CXClientData, arg1: CPointer<CXIdxIncludedFileInfo>) -> CXIdxClientFile>,
@@ -6370,6 +6840,19 @@ public struct IndexerCallbacks {
         this.startedTranslationUnit = startedTranslationUnit
         this.indexDeclaration = indexDeclaration
         this.indexEntityReference = indexEntityReference
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<IndexerCallbacks>()
+    if (size != 64) {
+        throw Exception("Size of IndexerCallbacks is not 64 but ${size} bytes")
+    }
+    let align = alignOf<IndexerCallbacks>()
+    if (align != 8) {
+        throw Exception("Alignment of IndexerCallbacks is not 8 but ${align} bytes")
     }
 }
 
@@ -6470,7 +6953,7 @@ public type CXIndexOptFlags = UInt32
 // The rest of the parameters are the same as #clang_parseTranslationUnit.
 foreign func clang_indexSourceFile(arg1: CXIndexAction, client_data: CXClientData,
     index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32,
-    source_filename: CPointer<Int8>, command_line_args: CPointer<CPointer<Int8>>, num_command_line_args: Int32,
+    source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32,
     unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CXTranslationUnit>,
     TU_options: UInt32): Int32
 
@@ -6479,7 +6962,7 @@ foreign func clang_indexSourceFile(arg1: CXIndexAction, client_data: CXClientDat
 // library paths are relative to the binary.
 foreign func clang_indexSourceFileFullArgv(arg1: CXIndexAction, client_data: CXClientData,
     index_callbacks: CPointer<IndexerCallbacks>, index_callbacks_size: UInt32, index_options: UInt32,
-    source_filename: CPointer<Int8>, command_line_args: CPointer<CPointer<Int8>>, num_command_line_args: Int32,
+    source_filename: CString, command_line_args: CPointer<CString>, num_command_line_args: Int32,
     unsaved_files: CPointer<CXUnsavedFile>, num_unsaved_files: UInt32, out_TU: CPointer<CXTranslationUnit>,
     TU_options: UInt32): Int32
 
@@ -6718,9 +7201,22 @@ public struct CXComment {
     public let ASTNode: CPointer<Unit>
     public let TranslationUnit: CXTranslationUnit
 
-    init(ASTNode: CPointer<Unit>, TranslationUnit: CXTranslationUnit) {
+    public init(ASTNode: CPointer<Unit>, TranslationUnit: CXTranslationUnit) {
         this.ASTNode = ASTNode
         this.TranslationUnit = TranslationUnit
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+    let size = sizeOf<CXComment>()
+    if (size != 16) {
+        throw Exception("Size of CXComment is not 16 but ${size} bytes")
+    }
+    let align = alignOf<CXComment>()
+    if (align != 8) {
+        throw Exception("Alignment of CXComment is not 8 but ${align} bytes")
     }
 }
 
@@ -7092,7 +7588,7 @@ foreign func clang_FullComment_getAsXML(Comment: CXComment): CXString
 @C
 public struct CXAPISetImpl {
     init() {
-        throw Exception("opaque type should not be inited")
+        throw Exception("type should not be inited")
     }
 }
 
@@ -7130,7 +7626,7 @@ foreign func clang_disposeAPISet(api: CXAPISet): Unit
 // \returns a string containing the serialized symbol graph representation for
 // the symbol being queried or a null string if it can not be found in the
 // APISet.
-foreign func clang_getSymbolGraphForUSR(usr: CPointer<Int8>, api: CXAPISet): CXString
+foreign func clang_getSymbolGraphForUSR(usr: CString, api: CXAPISet): CXString
 
 // Generate a single symbol symbol graph for the declaration at the given
 // cursor. Returns a null string if the AST node for the cursor isn't a
@@ -7152,5 +7648,3 @@ public type __time64_t = Int64
 
 // Retrieve the last modification time of the given file.
 public type time_t = __time64_t
-
-// cjlint-ignore -end

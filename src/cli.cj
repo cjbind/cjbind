@@ -14,6 +14,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",
         "禁用自动 include 路径检测")
     let noComment = BoolFlag(None, "no-comment", "no-comment", "不尝试生成代码中的注释")
+    let noLayoutTests = BoolFlag(None, "no-layout-test", "no-layout-test", "不生成布局测试代码")
     let builtins = BoolFlag(None, "builtins", "builtins", "生成内置定义的 bindings，如 __builtin_va_list")
     let makeFuncWrapperFlag = BoolFlag(None, "make-func-wrapper", "make-func-wrapper", "生成 foreign 函数包装器以允许包外调用")
     let funcWrapperSuffixFlag = StringFlag(None, "func-wrapper-suffix", "func-wrapper-suffix", "生成函数包装器时使用的后缀，默认为 _cjbindwrapper", "SUFFIX", "_cjbindwrapper")
@@ -32,6 +33,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
         noEnumPrefixFlag,
         noDetectIncludePath,
         noComment,
+        noLayoutTests,
         builtins,
         makeFuncWrapperFlag,
         funcWrapperSuffixFlag,
@@ -58,6 +60,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.packageName = packageFlag.value.getOrThrow()
     opt.noEnumPrefix = noEnumPrefixFlag.value
     opt.noDetectIncludePath = noDetectIncludePath.value
+    opt.noLayoutTests = noLayoutTests.value
     opt.builtins = builtins.value
     opt.noComment = noComment.value
     opt.autoCString = autoCString.value

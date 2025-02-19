@@ -12,6 +12,11 @@ enum {
     UC
 };
 
+struct Some {
+    int a;
+    char b;
+};
+
 void f(char [233]);
 
 char* ss = "hello";
