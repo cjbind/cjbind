@@ -118,7 +118,7 @@ public class Utils {
             case "uint32_t" => primitiveTy(ctx, "UInt32")
             case "int64_t" => primitiveTy(ctx, "Int64")
             case "uint64_t" => primitiveTy(ctx, "UInt64")
-            
+
             case "size_t" => primitiveTy(ctx, "UIntNative")
             case "uintptr_t" => primitiveTy(ctx, "UIntNative")
 
@@ -142,11 +142,32 @@ func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
     return ret
 }
 
+func removeSuffixNL(val: Tokens): Tokens {
+    let ret = Tokens()
+    for ((idx, v) in val.iterator().enumerate()) {
+        if (idx != val.size - 1 || v.kind != TokenKind.NL) {
+            ret.append(v)
+        }
+    }
+
+    return ret
+}
+
+func removePrefixNL(val: Tokens): Tokens {
+    let ret = Tokens()
+    for ((idx, v) in val.iterator().enumerate()) {
+        if (idx != 0 || v.kind != TokenKind.NL) {
+            ret.append(v)
+        }
+    }
+    return ret
+}
+
 func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
     if (let Some(v) <- comment && !ctx.options.noComment) {
-        let tokens = v
+        let tokens = removeSuffixNL(v)
         tokens.append(Token(TokenKind.NL))
-        tokens.append(body)
+        tokens.append(removePrefixNL(body))
         return tokens
     } else {
         return body
