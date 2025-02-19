@@ -41,6 +41,7 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
         --no-enum-prefix                 生成枚举时，不使用枚举名称作为枚举值的前缀
         --no-detect-include-path         禁用自动 include 路径检测
         --no-comment                     不尝试生成代码中的注释
+        --builtins                       生成内置定义的 bindings，如 __builtin_va_list
         --make-func-wrapper              生成 foreign 函数包装器以允许包外调用
         --func-wrapper-suffix <SUFFIX>   生成函数包装器时使用的后缀，默认为 _cjbindwrapper
         --auto-cstring                   把 char* 转换为 CString 而不是 CPointer<UInt8>
