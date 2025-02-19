@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 enum E1 {
     A,
     B,

@@ -288,16 +288,19 @@ extend Var <: CodeGenerator<Item, Unit> {
                             data.add(d)
                         }
 
-                        let tokens = quote(
-                            public const $(canonicalIdent) : VArray<UInt8, \$$(data.size)> = $(data.toArray()))
-                        if (commentToken.isNone()) {
-                            commentToken = Tokens()
-                        }
+                        let dataSize = data.size
+                        let dataTokens = data.toArray()
 
+                        let tokens = quote(public const $(canonicalIdent) : VArray<UInt8, \$$(dataSize)> = $(dataTokens))
+
+                        let origStr = Token(TokenKind.COMMENT, "// String value: ${vv}")
                         if (let Some(v) <- commentToken) {
                             v.append(Token(TokenKind.NL))
-                            v.append(Token(TokenKind.COMMENT, "// String value: ${vv}"))
+                            v.append(origStr)
+                        } else {
+                            commentToken = Tokens(origStr)
                         }
+
                         result.items.add(
                             optionalComment(
                                 ctx,
@@ -525,7 +528,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let ret = optionalComment(
             ctx,
             commentToken,
-            quote(@C
+            quote(
+                @C
             public struct $(canonicalIdent) {
                 $(fieldsToken)$(initToken)
             })

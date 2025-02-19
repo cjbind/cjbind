@@ -144,9 +144,11 @@ func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
 
 func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
     if (let Some(v) <- comment && !ctx.options.noComment) {
-        return quote($(v)
-            $(body))
+        let tokens = v
+        tokens.append(Token(TokenKind.NL))
+        tokens.append(body)
+        return tokens
     } else {
-        return quote($(body))
+        return body
     }
 }
