@@ -4,6 +4,7 @@
 
 - 仓颉版本：`0.58.3`
 - Python 版本：`>= 3.11`
+- uv: `>= 0.6.0` (用于运行 `scripts` 下的脚本并自动配置依赖)
 
 ## 更新版本
 
@@ -24,7 +25,7 @@ cjbind -o libclang.cj -p cjbind.clang T:\cjbind-bootstrap\include\clang-c\Index.
 当前 `cjbind` 使用 `qt` 提供的预编译 `libclang`。使用以下命令下载 `libclang`：
 
 ```
-python scripts/download.py
+uv run scripts/download.py
 ```
 
 ## 构建
@@ -34,5 +35,5 @@ python scripts/download.py
 使用 `scripts/cjpm.py` 来自动设置环境变量。
 
 ```
-python scripts/cjpm.py build -V
+uv run scripts/cjpm.py build -V
 ```
