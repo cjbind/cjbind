@@ -1,6 +1,14 @@
 # cjbind
 
+![构建状态](https://img.shields.io/github/actions/workflow/status/cjbind/cjbind/build.yml?style=flat-square)
+![版本](https://img.shields.io/github/v/release/cjbind/cjbind?style=flat-square)
+![许可证](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
+
 自动生成仓颉到 C 库的 FFI 绑定代码。
+
+## 文档
+
+完整文档请访问 [cjbind.zxilly.dev](https://cjbind.zxilly.dev)
 
 ## 使用方式
 
@@ -9,7 +17,7 @@
 可以从 [GitHub Releases](https://github.com/cjbind/cjbind/releases) 下载适用于您的平台的二进制文件，或者参照
 [构建](./DEVELOPMENT.md) 文档自行构建。
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > 因为仓颉当前不支持静态链接，因此执行时需要依赖仓颉的 runtime，请确保环境变量配置正确。
 
 你也可以使用以下安装脚本安装：
