@@ -271,7 +271,7 @@ public class FunctionSig <: Trace<Tracer, Unit> {
     // cjlint-ignore -end
 
     // cjlint-ignore -start !G.ITF.04
-    public func trace(_: CjbindContext, tracer: Tracer, _: Unit) {
+    public func trace(_: CjbindContext, tracer: Tracer, _: Unit): Unit {
         tracer.visitKind(this.returnType, EdgeKind.FunctionReturnEdge)
 
         for (arg in this.argumentTypes) {

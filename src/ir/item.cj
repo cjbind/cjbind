@@ -103,7 +103,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     }
 
     // cjlint-ignore -start !G.ITF.04
-    public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit) {
+    public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit): Unit {
         match (this.kind) {
             case ItemKind.KindType(ty) =>
                 if (ty.shouldBeTracedUnconditionally() || !this.isOpaque(ctx, ())) {
