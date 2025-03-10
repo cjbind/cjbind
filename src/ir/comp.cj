@@ -215,7 +215,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public func eachKnownFieldLayout(
         ctx: CjbindContext,
         cb: (Layout) -> Unit
-    ) {
+    ): Unit {
         match (this.fields) {
             case CompFields.CompFieldsError => ()
             case CompFields.CompFieldsAfter(v) => for (field in v.fields) {
@@ -283,12 +283,12 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public func computeBitfieldUnits(
         ctx: CjbindContext,
         layout: ?Layout
-    ) {
+    ): Unit {
         let packed = this.isPacked(ctx, layout)
         this.fields = this.fields.computeBitfieldUnits(ctx, packed)
     }
 
-    public func deanonymizeFields(ctx: CjbindContext) {
+    public func deanonymizeFields(ctx: CjbindContext): Unit {
         this.fields.deanonymizeFields(ctx)
     }
 
@@ -329,7 +329,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     }
 
     // cjlint-ignore -start !G.ITF.04
-    public func trace(context: CjbindContext, tracer: Tracer, item: Item) {
+    public func trace(context: CjbindContext, tracer: Tracer, item: Item): Unit {
         if (item.isOpaque(context, ())) {
             return
         }
@@ -416,7 +416,7 @@ public enum Field <: Trace<Tracer, Unit> {
     }
     
     // cjlint-ignore -start !G.ITF.04
-    public func trace(_: CjbindContext, tracer: Tracer, _: Unit) {
+    public func trace(_: CjbindContext, tracer: Tracer, _: Unit): Unit {
         match (this) {
             case Field.DataMember(data) =>
                 tracer.visitKind(data.ty, EdgeKind.FieldEdge)
@@ -493,7 +493,7 @@ public enum CompFields <: Trace<Tracer, Unit> {
     }
 
     // cjlint-ignore -start !G.ITF.04
-    public func trace(context: CjbindContext, tracer: Tracer, _: Unit) {
+    public func trace(context: CjbindContext, tracer: Tracer, _: Unit): Unit {
         match (this) {
             case CompFields.CompFieldsError => return
             case CompFields.CompFieldsBefore(fields) =>
