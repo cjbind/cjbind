@@ -71,6 +71,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.24
+          cache: false
 
       - name: Setup Cangjie
         uses: Zxilly/setup-cangjie@v1.5.0
