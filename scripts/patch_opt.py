@@ -3,6 +3,15 @@ import sys
 import shutil
 import subprocess
 import platform
+import sys
+
+if sys.platform.startswith('win'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def patch():
     # 获取 CANGJIE_HOME 环境变量
