@@ -3,7 +3,7 @@
 
 [package]
   cjc-version = "0.59.6"
-  compile-option = "-Woff unused -V"
+  compile-option = "-Woff unused -V -O2"
   description = "A simple C binding generator for Cangjie"
   link-option = ""
   name = "cjbind"
@@ -12,9 +12,6 @@
   src-dir = ""
   target-dir = ""
   version = "0.1.13"
-
-[profile.build]
-  incremental = true
 
 [package.package-configuration."cjbind"]
   compile-option = "--link-options \"${LDFLAGS}\""
