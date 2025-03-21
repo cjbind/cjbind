@@ -1,7 +1,7 @@
 macro package cjbind.build.macros
 
 import std.ast.{Tokens, TokenKind, diagReport, DiagReportLevel, ToTokens}
-import std.process.{Process, ProcessRedirect}
+import std.process.{executeWithOutput, ProcessRedirect}
 
 public macro exec(input: Tokens): Tokens {
     if (input.size != 1) {
@@ -26,7 +26,7 @@ public macro exec(input: Tokens): Tokens {
     }
 
     let args = token.value.split(" ", removeEmpty: true)
-    let (code, stdout, _) = Process.runOutput(args[0], args[1..], stdOut: ProcessRedirect.Pipe)
+    let (code, stdout, _) = executeWithOutput(args[0], args[1..], stdOut: ProcessRedirect.Pipe)
     if (code != 0) {
         throw Exception("exec failed: ${token.value}")
     }
