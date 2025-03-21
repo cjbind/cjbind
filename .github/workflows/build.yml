@@ -39,8 +39,8 @@ jobs:
         build:
           - channel: "release"
             flag: ""
-          - channel: "debug"
-            flag: "-g"
+          # - channel: "debug"
+          #   flag: "-g"
       fail-fast: false
 
     runs-on: ${{ matrix.os.runner }}
@@ -67,11 +67,21 @@ jobs:
         run: |
           uv run scripts/download.py
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@v1.4.1
+        uses: Zxilly/setup-cangjie@v1.5.0
         with:
           channel: "canary"
+          version: "0.59.6"
           token: ${{ secrets.GITCODE_TOKEN }}
+
+      - name: Patch Cangjie
+        run: |
+          uv run scripts/patch_opt.py
 
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'

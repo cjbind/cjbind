@@ -1,7 +1,7 @@
 package cjbind
 
 import std.fs.File
-import std.process.Process
+import std.env
 import cjbind.arg.{Flag, StringFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
@@ -46,7 +46,7 @@ func processArgs(): (CjbindOptions, (String) -> Unit) {
         helpFlag
     )
 
-    let (headers, clangArgs) = parser.parse(Process.current.arguments)
+    let (headers, clangArgs) = parser.parse(env.getCommandLine())
 
     if (versionFlag.value) {
         printVersion()
@@ -102,11 +102,11 @@ libclang 版本：\t${getClangVersion()}
 ${versionInfo}"""
     println(version)
 
-    Process.current.exit(0)
+    env.exit(0)
 }
 
 func printHelp(parser: ArgsParser): Nothing {
     println(parser.getHelp())
 
-    Process.current.exit(0)
+    env.exit(0)
 }

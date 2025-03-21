@@ -1,16 +1,17 @@
 package cjbind.utils
 
-import std.process.Process
+import std.env
+import std.process.executeWithOutput
 import std.fs.{Directory, File, remove}
 
 public func formatString(f: String): String {
-    let tmpDir = Directory.createTemp(Process.current.tempDirectory)
+    let tmpDir = Directory.createTemp(env.getTempDirectory())
 
     let temp = tmpDir.join("cjbind.cj")
     File.writeTo(temp, f.toArray())
 
     try {
-        let (code, _, _) = Process.runOutput("cjfmt", ["-f", temp.toString()])
+        let (code, _, _) = executeWithOutput("cjfmt", ["-f", temp.toString()])
         if (code != 0) {
             throw Exception("cjfmt 失败")
         }
