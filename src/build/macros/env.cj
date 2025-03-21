@@ -1,7 +1,7 @@
 macro package cjbind.build.macros
 
 import std.ast.{Tokens, TokenKind, diagReport, DiagReportLevel, ToTokens}
-import std.process.Process
+import std.env
 
 public macro env(input: Tokens): Tokens {
     if (input.size != 1) {
@@ -26,7 +26,7 @@ public macro env(input: Tokens): Tokens {
     }
 
     let name = token.value
-    let value = match (Process.current.getEnv(name)) {
+    let value = match (env.getVariable(name)) {
         case Some(v) => v
         case None => ""
     }

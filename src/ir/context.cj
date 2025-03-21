@@ -133,7 +133,7 @@ public class CjbindContext {
         item: Item,
         declaration: ?clang.Cursor,
         _: ?clang.Cursor
-    ) {
+    ): Unit {
         let id = item.id
         let isType = item.kind.isType()
         let isUnnamed = item.kind.isType() && item.kind.expectType().name.isNone()
@@ -174,7 +174,7 @@ public class CjbindContext {
         }
     }
 
-    public func addItemToModule(item: Item) {
+    public func addItemToModule(item: Item): Unit {
         let p = this.items[Int64(item.parentId)]
         if (let Some(pp) <- p) {
             if (let Some(module) <- pp.asModule()) {
@@ -203,7 +203,7 @@ public class CjbindContext {
         return None
     }
 
-    public func addBuiltinItem(item: Item) {
+    public func addBuiltinItem(item: Item): Unit {
         this.addItemToModule(item)
         let id = item.id
 
@@ -390,7 +390,7 @@ public class CjbindContext {
         return this.buildBuiltinTy(ty)
     }
 
-    public func beginParsing(partialTy: PartialType) {
+    public func beginParsing(partialTy: PartialType): Unit {
         this.currentlyParsedTypes.add(partialTy)
     }
 
@@ -427,7 +427,7 @@ public class CjbindContext {
     public func addSemanticParent(
         def: clang.Cursor,
         parentId: ItemId
-    ) {
+    ): Unit {
         this.semanticParents.add(def, parentId)
     }
 
@@ -435,7 +435,7 @@ public class CjbindContext {
         return this.semanticParents.get(def)
     }
 
-    public func addDep(dep: String) {
+    public func addDep(dep: String): Unit {
         this.deps.add(dep)
     }
 
@@ -568,7 +568,7 @@ public class CjbindContext {
         }
     }
 
-    public func deanonymizeFields() {
+    public func deanonymizeFields(): Unit {
         let compItemIds = this
             .getItems()
             .filterMap {

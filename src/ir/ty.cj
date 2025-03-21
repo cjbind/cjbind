@@ -421,7 +421,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     }
 
     // cjlint-ignore -start !G.ITF.04
-    public func trace(context: CjbindContext, tracer: Tracer, item: Item) {
+    public func trace(context: CjbindContext, tracer: Tracer, item: Item): Unit {
         if (let Some(n) <- this.name) {
             if (context.isStdintType(n)) {
                 return
