@@ -259,13 +259,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
 
             TypeKind.TypeKindEnum(enum_)
         } else if (tyKind == clang.CXTypeKind_CXType_Record) {
-            let complex = CompInfo.fromTy(potentialId, ty, location, ctx).expect("Not a complex")
             if (!isAnonymous) {
                 let prettyName = ty.spelling()
                 if (clang.isValidIdentifier(prettyName)) {
                     name = Some(prettyName)
                 }
             }
+            let complex = CompInfo.fromTy(potentialId, ty, location, ctx).expect("${name} not a complex")
 
             TypeKind.TypeKindComp(complex)
         } else if (tyKind == clang.CXTypeKind_CXType_Vector) {
