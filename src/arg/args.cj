@@ -92,6 +92,10 @@ public class ArgsParser {
 
     public func parse(input: Array<String>): (Array<String>, Array<String>) {
         let it = input.iterator()
+
+        // remove bin
+        it.next()
+        
         let headers = ArrayList<String>()
         var collectingClangArgs = false
         let clangArgs = ArrayList<String>()
