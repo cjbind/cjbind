@@ -2,9 +2,22 @@
 
 ## 依赖版本
 
-- 仓颉版本：`0.58.3`
-- Python 版本：`>= 3.11`
-- uv: `>= 0.6.0` (用于运行 `scripts` 下的脚本并自动配置依赖)
+- 仓颉版本：`0.59.6`：需要为 opt 生成补丁
+- uv: `>= 0.6.0` Python 版本：`>= 3.11`：用于运行 `scripts` 下的脚本并自动配置依赖
+- Go: `>= 1.24`：用于构建 opt 的补丁
+
+## 修补编译器
+
+确保当前环境中安装了 `Go`，并且环境变量 `CANGJIE_HOME` 指向仓颉的安装目录。
+在 `cjbind` 的根目录下运行以下命令：
+
+```
+uv run scripts/patch_opt.py
+```
+
+这会构建 `scripts/opt.go` 并替换原有的 `opt`，原有的 `opt` 会被重命名为 `opt.old(.exe)`。
+
+这是为了 workaround 编译器中 llvm pass `cangjie-ir-verifier` 在 `cjbing.clang` 上的错误报错。 
 
 ## 更新版本
 
