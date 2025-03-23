@@ -62,6 +62,10 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
     -h, --help                           显示帮助信息
 ```
 
+## 开发
+
+查看 [开发文档](./DEVELOPMENT.md) 以获取更多信息。
+
 ## 开源协议
 
 本项目在 [MIT](./LICENSE) 协议下开源。
