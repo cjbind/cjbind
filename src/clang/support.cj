@@ -135,5 +135,7 @@ public func getClangSearchPaths(args: Array<String>): Option<Array<String>> {
         return extractClangSearchPaths(v.toString(), args)
     }
 
+    eprintln("无法自动检测系统头文件导入路径，请手动设置搜索路径或者安装 clang")
+
     return None
 }
