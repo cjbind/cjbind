@@ -60,7 +60,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: lib/libclang
-          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-19.1.7
+          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0
 
       - name: Download libclang
         if: steps.cache-libclang.outputs.cache-hit != 'true'

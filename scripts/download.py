@@ -24,10 +24,10 @@ class LibClangInstaller:
     """用于自动下载和安装 libclang 的安装器"""
 
     URL_MAP = {
-        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-windows-mingw_64.7z",
-        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-macos-universal.7z",
-        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
-        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-19.1.7-linux-Ubuntu24.04-gcc11.2-arm64.7z",
+        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-mingw_64.7z",
+        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
+        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
+        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu24.04-gcc11.2-arm64.7z",
     }
 
     def __init__(self):
