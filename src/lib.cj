@@ -83,7 +83,7 @@ func detectIncludePaths(options: CjbindOptions) {
             } |> collectArrayList
     }().toArray()
 
-    let searchPaths = clang.getClangSearchPaths(clangArgsForClang)
+    let searchPaths = clang.getSearchPaths(clangArgsForClang)
 
     if (let Some(ps) <- searchPaths) {
         for (p in ps) {
