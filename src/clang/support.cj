@@ -3,7 +3,7 @@ package cjbind.clang
 import std.fs.Path
 import std.process.{executeWithOutput, ProcessRedirect}
 import std.io.{readString, ByteBuffer}
-import std.collection.{collectArray, ArrayList}
+import std.collection.{collectArray, ArrayList, Map, HashMap}
 import std.posix.{access, isReg, X_OK}
 import glob
 
@@ -28,9 +28,9 @@ func isExecutable(path: String): Bool {
     return access(path, X_OK) == 0
 }
 
-func run(bin: String, args: Array<String>, readStderr!: Bool = false): ?String {
+func run(bin: String, args: Array<String>, readStderr!: Bool = false, env!: Option<Map<String, String>> = None): ?String {
     try {
-        let (_, out, err) = executeWithOutput(bin, args, stdIn: ProcessRedirect.Discard)
+        let (_, out, err) = executeWithOutput(bin, args, stdIn: ProcessRedirect.Discard, environment: env)
         let buf = if (readStderr) {
             ByteBuffer(err)
         } else {
@@ -69,7 +69,8 @@ func extractCCSearchPaths(path: String, args: Array<String>): ?Array<String> {
     let ccArgs = ArrayList<String>(["-E", "-x", "c", "-", "-v"])
     ccArgs.add(all: args)
 
-    let output = if (let Some(v) <- run(path, ccArgs.toArray(), readStderr: true)) {
+    let env = HashMap(("LC_ALL", "C"))
+    let output = if (let Some(v) <- run(path, ccArgs.toArray(), readStderr: true, env: env)) {
         v
     } else {
         return None
@@ -96,7 +97,7 @@ func extractCCSearchPaths(path: String, args: Array<String>): ?Array<String> {
     return paths
 }
 
-public func getClangSearchPaths(args: Array<String>): Option<Array<String>> {
+public func getSearchPaths(args: Array<String>): Option<Array<String>> {
     // TODO: 手动解析 PATH
     if (let Some(v) <- extractCCSearchPaths("clang${EXE_SUFFIX}", args)) {
         return v
