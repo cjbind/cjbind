@@ -65,11 +65,11 @@ func find(directory: String, patterns: Array<String>): ?Path {
     return None
 }
 
-func extractClangSearchPaths(path: String, args: Array<String>): ?Array<String> {
-    let clangArgs = ArrayList<String>(["-E", "-x", "c", "-", "-v"])
-    clangArgs.add(all: args)
+func extractCCSearchPaths(path: String, args: Array<String>): ?Array<String> {
+    let ccArgs = ArrayList<String>(["-E", "-x", "c", "-", "-v"])
+    ccArgs.add(all: args)
 
-    let output = if (let Some(v) <- run(path, clangArgs.toArray(), readStderr: true)) {
+    let output = if (let Some(v) <- run(path, ccArgs.toArray(), readStderr: true)) {
         v
     } else {
         return None
@@ -98,7 +98,11 @@ func extractClangSearchPaths(path: String, args: Array<String>): ?Array<String> 
 
 public func getClangSearchPaths(args: Array<String>): Option<Array<String>> {
     // TODO: 手动解析 PATH
-    if (let Some(v) <- extractClangSearchPaths("clang${EXE_SUFFIX}", args)) {
+    if (let Some(v) <- extractCCSearchPaths("clang${EXE_SUFFIX}", args)) {
+        return v
+    }
+
+    if (let Some(v) <- extractCCSearchPaths("gcc${EXE_SUFFIX}", args)) {
         return v
     }
 
@@ -132,10 +136,10 @@ public func getClangSearchPaths(args: Array<String>): Option<Array<String>> {
     }
 
     if (let Some(v) <- clang) {
-        return extractClangSearchPaths(v.toString(), args)
+        return extractCCSearchPaths(v.toString(), args)
     }
 
-    eprintln("无法自动检测系统头文件导入路径，请手动设置搜索路径或者安装 clang")
+    eprintln("无法自动检测系统头文件导入路径，请手动设置搜索路径或者安装 clang/gcc")
 
     return None
 }
