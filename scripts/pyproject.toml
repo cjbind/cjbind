@@ -1,0 +1,11 @@
+[project]
+name = "cjbind-scripts"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "py7zr>=0.22.0",
+    "requests>=2.32.3",
+    "tqdm>=4.67.1",
+]
