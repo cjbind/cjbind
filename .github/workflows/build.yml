@@ -16,22 +16,22 @@ jobs:
     strategy:
       matrix:
         os:
-          - runner: "ubuntu-24.04"
+          - runner: "ubuntu-20.04"
             sys: "linux"
             arch: "x64"
             friendly_name: "Linux (x64)"
             ext: ""
-          - runner: "ubuntu-24.04-arm"
+          - runner: "ubuntu-22.04-arm"
             sys: "linux"
             arch: "arm64"
             friendly_name: "Linux (ARM64)"
             ext: ""
-          - runner: "macos-15"
+          - runner: "macos-14"
             sys: "darwin"
             arch: "arm64"
             friendly_name: "macOS (Apple Silicon)"
             ext: ""
-          - runner: "windows-2025"
+          - runner: "windows-2022"
             sys: "windows"
             arch: "x64"
             friendly_name: "Windows (x64)"
@@ -60,7 +60,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: lib/libclang
-          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0
+          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
 
       - name: Download libclang
         if: steps.cache-libclang.outputs.cache-hit != 'true'

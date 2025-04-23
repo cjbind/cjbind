@@ -27,7 +27,7 @@ class LibClangInstaller:
         "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-mingw_64.7z",
         "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
         "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
-        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu24.04-gcc11.2-arm64.7z",
+        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Debian11.6-gcc10.0-arm64.7z",
     }
 
     def __init__(self):
