@@ -1,12 +1,3 @@
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#     "py7zr",
-#     "requests",
-#     "tqdm",
-# ]
-# ///
-
 import platform
 import shutil
 import sys
