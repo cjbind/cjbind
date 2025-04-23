@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - runner: "ubuntu-20.04"
+          - runner: "ubuntu-22.04"
             sys: "linux"
             arch: "x64"
             friendly_name: "Linux (x64)"
