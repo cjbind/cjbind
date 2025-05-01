@@ -52,12 +52,8 @@ jobs:
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
         with:
-          working-directory: ./scripts
-
-      - name: Install python dependencies
-        working-directory: ./scripts
-        run: |
-          uv sync
+          python-version: "3.13"
+          cache-dependency-glob: "**/*.py.lock"
 
       - name: Cache libclang
         id: cache-libclang
