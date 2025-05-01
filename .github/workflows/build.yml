@@ -54,6 +54,11 @@ jobs:
         with:
           working-directory: ./scripts
 
+      - name: Install python dependencies
+        working-directory: ./scripts
+        run: |
+          uv sync
+
       - name: Cache libclang
         id: cache-libclang
         uses: actions/cache@v4
