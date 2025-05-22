@@ -102,11 +102,11 @@ def preprocess_environment(env):
 
     match sys.platform:
         case "win32":
-            ldflags += " -l:libstdc++.a -lversion -lwinpthread "
+            ldflags += " -lstdc++ -lversion "
         case "darwin":
             ldflags += " -lc++ -lc++abi -lSystem "
         case "linux":
-            ldflags += " -l:libstdc++.a -lgcc_s "
+            ldflags += " -lstdc++ -lgcc_s "
 
     if sys.platform != "darwin":
         ldflags += "--end-group"
