@@ -43,7 +43,7 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
 可以使用镜像源加速下载：
 
 ```powershell
-irm https://cjbind.zxilly.dev/install.ps1 | iex -args "--mirror"
+& ([scriptblock]::Create((irm https://cjbind.zxilly.dev/install.ps1))) --mirror
 ```
 
 ### 使用
