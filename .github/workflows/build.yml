@@ -79,10 +79,10 @@ jobs:
           cache: true
 
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@v1.6.2
+        uses: Zxilly/setup-cangjie@v1.8.0
         with:
-          channel: "canary"
-          version: "0.60.5"
+          channel: "lts"
+          version: "latest"
           token: ${{ secrets.GITCODE_TOKEN }}
 
       - name: Patch Cangjie
