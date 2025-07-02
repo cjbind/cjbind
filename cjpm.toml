@@ -23,9 +23,6 @@
 [target.x86_64-w64-mingw32.release]
   compile-option = "-O2"
 
-[target.x86_64-apple-darwin.release]
-  compile-option = "-O2"
-
 [target.aarch64-apple-darwin.release]
   compile-option = "-O2"
 
