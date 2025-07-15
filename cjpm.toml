@@ -11,7 +11,7 @@
   override-compile-option = ""
   src-dir = ""
   target-dir = ""
-  version = "0.2.0"
+  version = "0.2.1"
 
 [package.package-configuration."cjbind"]
   compile-option = "--link-options \"${LDFLAGS}\""
