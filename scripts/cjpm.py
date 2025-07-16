@@ -102,7 +102,7 @@ def preprocess_environment(env):
 
     match sys.platform:
         case "win32":
-            ldflags += " -l:libstdc++.a -lversion -lwinpthread "
+            ldflags += " -l:libstdc++.a -l:libwinpthread.a -lmingwex -lmsvcrt -lversion "
         case "darwin":
             ldflags += " -lc++ -lc++abi -lSystem "
         case "linux":
