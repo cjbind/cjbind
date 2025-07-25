@@ -1,5 +1,6 @@
 package cjbind.clang
 
+import std.fs.{File as FSFile, remove}
 import std.collection.{HashMap, ArrayList}
 
 import cjbind.result.Result
@@ -396,6 +397,16 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         CursorVisitCallback.remove(cbId)
     }
 
+    public func collectChildren(): ArrayList<Cursor> {
+        let children = ArrayList<Cursor>()
+        this.visit {
+            c =>
+            children.add(c)
+            return CXChildVisitResult_CXChildVisit_Continue
+        }
+        return children
+    }
+
     // cjlint-ignore -start !G.OPR.01 eq
     public operator func ==(that: Cursor): Bool {
         unsafe {
@@ -776,9 +787,114 @@ public class TranslationUnit {
         return this.x.isNull()
     }
 
+    public func save(file: String): Result<Unit, CXSaveError> {
+        unsafe {
+            let fs = LibC.mallocCString(file)
+            let ret = clang_saveTranslationUnit(
+                this.x,
+                fs,
+                clang_defaultSaveOptions(this.x)
+            )
+            if (ret != 0) {
+                return Result.Err(UInt32(ret))
+            } else {
+                return Result.Ok(())
+            }
+        }
+    }
+
     ~init() {
         unsafe {
             clang_disposeTranslationUnit(x)
+        }
+    }
+}
+
+public class UnsavedFile {
+    public let x: CXUnsavedFile
+    public let name: CString
+    public let contents: CString
+
+    public init(name: String, contents: String) {
+        unsafe {
+            let name = LibC.mallocCString(name)
+            let contents = LibC.mallocCString(contents)
+            this.name = name
+            this.contents = contents
+            this.x = CXUnsavedFile(
+                name,
+                contents,
+                UInt64(contents.size())
+            )
+        }
+    }
+
+    ~init() {
+        unsafe {
+            LibC.free(this.name)
+            LibC.free(this.contents)
+        }
+    }
+}
+
+public class FallbackTranslationUnit {
+    public let filePath: String
+    public let pchPath: String
+    public let idx: Index
+    public let tu: TranslationUnit
+
+    public init(
+        file: String,
+        pch_path: String,
+        cArgs: Array<String>
+    ) {
+        let buf = Array<Byte>()
+        FSFile.writeTo(file, buf)
+
+        let fIndex = Index(true, false)
+        let fTranslationUnit = TranslationUnit(
+            fIndex,
+            file,
+            cArgs,
+            CXTranslationUnit_Flags_CXTranslationUnit_None
+        )
+
+        this.filePath = file
+        this.pchPath = pch_path
+        this.idx = fIndex
+        this.tu = fTranslationUnit
+    }
+
+    ~init() {
+        remove(this.filePath)
+        remove(this.pchPath)
+    }
+
+    public func reparse(
+        unsavedContents: String
+    ): Result<Unit, CXErrorCode> {
+        unsafe {
+            let filepath = LibC.mallocCString(this.filePath)
+            let content = LibC.mallocCString(unsavedContents)
+
+            var unsaved: VArray<CXUnsavedFile, $1> = [
+                UnsavedFile(this.filePath, unsavedContents).x
+            ]
+
+            let ret = clang_reparseTranslationUnit(
+                this.tu.x,
+                1,
+                inout unsaved,
+                clang_defaultReparseOptions(this.tu.x)
+            )
+
+            LibC.free(filepath)
+
+            if (ret != 0) {
+                return Result.Err(UInt32(ret))
+            } else {
+                return Result.Ok(())
+            }
         }
     }
 }
@@ -942,6 +1058,12 @@ public class EvalResult {
         unsafe {
             this.x = clang_Cursor_Evaluate(cursor.x)
             this.ty = cursor.curType().canonicalType()
+        }
+    }
+
+    ~init() {
+        unsafe {
+            clang_EvalResult_dispose(x)
         }
     }
 

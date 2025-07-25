@@ -2,6 +2,7 @@ package cjbind.ir
 
 import std.ast.{Tokens, Token, TokenKind}
 import std.collection.*
+import std.fs.Path
 import cjbind.result.Result
 import cjbind.clang
 import cjbind.options.CjbindOptions
@@ -72,6 +73,8 @@ public class CjbindContext {
 
     public let currentlyParsedTypes: ArrayList<PartialType> = ArrayList()
 
+    public let parsedMacros: HashMap<String, MacroEvalResult> = HashMap()
+
     public let includes: HashMap<String, (String, UIntNative)> = HashMap()
     public let deps: HashSet<String>
 
@@ -79,6 +82,7 @@ public class CjbindContext {
     public var inCodegen: Bool = false
 
     public let translationUnit: clang.TranslationUnit
+    public var fallbackTu: Option<clang.FallbackTranslationUnit> = None
     public let targetInfo: clang.TargetInfo
 
     public var codegenItems: Option<ItemSet> = None
@@ -112,6 +116,91 @@ public class CjbindContext {
         this.deps = HashSet(options.headers)
         this.rootModule = 0
         this.currentModule = 0
+    }
+
+    // cjlint-ignore -start !G.FUN.01
+    public func tryEnsureFallbackTranslationUnit(
+    ): Option<clang.FallbackTranslationUnit> {
+        if (this.fallbackTu.isSome()) {
+            return this.fallbackTu
+        }
+
+        let file = "./.macro_eval.c"
+
+        let index = clang.Index(false, false)
+
+        let headerNamesToCompile = ArrayList<String>()
+        let headerPaths = ArrayList<String>()
+        let headerIncludes = ArrayList<String>()
+        let singleHeader = if (let Some(h) <- this.options.headers.last) {
+            h
+        } else {
+            return None
+        }
+
+        let headerCnt = this.options.headers.size
+        for (i in 0..(headerCnt - 1)) {
+            let header = this.options.headers[i]
+            let path = Path(header)
+            if (path.parent.isEmpty()) {
+                headerPaths.add(".")
+            } else {
+                headerPaths.add(path.parent.toString())
+            }
+            let headerName = path.fileName
+            headerIncludes.add(headerName)
+            let compileName = if (let Some(v) <- headerName.split(".h", removeEmpty: true).first) {
+                v
+            } else {
+                return None
+            }
+
+            headerNamesToCompile.add(compileName)
+        }
+        let pch = "./" + String.join(headerNamesToCompile.toArray(), delimiter: "-") + "-precompile.h.pch"
+
+        var cArgs = ArrayList<String>()
+        cArgs.add("-x")
+        cArgs.add("c-header")
+        for (h in headerPaths) {
+            cArgs.add("-I${h}")
+        }
+        for (h in headerIncludes) {
+            cArgs.add("-include")
+            cArgs.add(h)
+        }
+        let tu = clang.TranslationUnit(
+            index,
+            singleHeader,
+            cArgs.toArray(),
+            clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
+        )
+        if (let None <- tu.save(pch).ok()) {
+            return None
+        }
+
+        cArgs = ArrayList<String>()
+        cArgs.add("-include-pch")
+        cArgs.add(pch)
+
+        this.fallbackTu = Some(
+            clang.FallbackTranslationUnit(
+                file,
+                pch,
+                cArgs.toArray()
+            )
+        )
+
+        return this.fallbackTu
+    }
+    // cjlint-ignore -end
+
+    public func parsedMacro(macro_name: String): Bool {
+        return this.parsedMacros.contains(macro_name)
+    }
+
+    public func noteParsedMacro(id: String, value: MacroEvalResult): Unit {
+        this.parsedMacros.add(id, value)
     }
 
     public func withModule(module_id: ModuleId, cb: (CjbindContext) -> Unit): Unit {
