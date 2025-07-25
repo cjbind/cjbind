@@ -101,6 +101,66 @@ public class Var <: ClangSubItemParser<Var> {
     // cjlint-ignore -end
 }
 
+// cjlint-ignore -start !G.FUN.01
+func parseMacroClangFallback(
+    ctx: CjbindContext,
+    cursor: clang.Cursor
+): Option<(String, MacroEvalResult)> {
+    let ftu = match (ctx.tryEnsureFallbackTranslationUnit()) {
+        case Some(ftu) => ftu
+        case None => return None
+    }
+
+    let contents = "int main() {{ ${cursor.spelling()}; }}"
+    ftu.reparse(contents);
+
+    let rootChildren = ftu.tu.cursor().collectChildren()
+    let mainFunc = match (rootChildren.last) {
+        case Some(m) => m
+        case None => return None
+    }
+    let allStmts = mainFunc.collectChildren()
+    let macroStmt = match (allStmts.first) {
+        case Some(s) => s
+        case None => return None
+    }
+
+    let parenExprs = macroStmt.collectChildren()
+    let paren = match (parenExprs.first) {
+        case Some(p) => p
+        case None => return None
+    }
+
+    let evalutated = paren.evalutate()
+    let evalutatedKind = evalutated.kind()
+
+    if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
+        match (evalutated.asInt()) {
+            case Some(v) => 
+                return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(v)))
+            case None => 
+                return None
+        }
+    } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
+        match (evalutated.asDouble()) {
+            case Some(v) => 
+                return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
+            case None => 
+                return None
+        }
+    } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
+        match (evalutated.asLiteralString()) {
+            case Some(v) => 
+                return Some((cursor.spelling(), MacroEvalResult.EvalStr(v.toString())))
+            case None => 
+                return None
+        }
+    }
+
+    return None
+}
+// cjlint-ignore -end
+
 public enum VarType {
     VarBool(Bool)
     | VarInt(Int64)
