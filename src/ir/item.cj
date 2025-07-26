@@ -41,6 +41,26 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.location = location
     }
 
+    public static func builtinType(nkd: TypeKind, isConst: Bool, ctx: CjbindContext): TypeId {
+        match (nkd) {
+            case TypeKind.TypeKindVoid => ()
+            case TypeKind.TypeKindInt(_) => ()
+            case TypeKind.TypeKindFloat(_) => ()
+            case TypeKind.TypeKindPointer(_) => ()
+            case _ => throw Exception("Unexpected builtin type kind: ${nkd}")
+        }
+
+        let ty = Type(None, None, nkd, isConst)
+        let nid = ctx.nextItemId()
+        let module = ctx.rootModule
+        ctx.addItem(
+            Item(nid, None, module, ItemKind.KindType(ty), None),
+            None,
+            None
+        )
+        return nid
+    }
+
     public func getNextChildLocalId(): ItemId {
         let v = this.nextChildLocalId
         this.nextChildLocalId += 1

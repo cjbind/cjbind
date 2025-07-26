@@ -34,9 +34,46 @@ public class Var <: ClangSubItemParser<Var> {
                 return Err(ParseError.Continue)
             }
 
-            // currently we don't support macro parse, wait a c expr
-            // TODO: we can support single literal
-            return Err(ParseError.Continue)
+            // TODO: add expr eval, only use clang eval as fallback
+            let (name, value) = match (parseMacroClangFallback(ctx, cursor)) {
+                case Some(v) => v
+                case None => return Err(ParseError.Continue)
+            }
+
+            if (name.isEmpty()) {
+                throw Exception("Macro name can't be empty")
+            }
+
+            let previouslyDefined = ctx.parsedMacro(name)
+            ctx.noteParsedMacro(name, value)
+
+            if (previouslyDefined) {
+                eprintln("Warning: Macro `${name}` is already defined")
+                return Err(ParseError.Continue)
+            }
+
+            let (typeKind, val) = match (value) {
+                case MacroEvalResult.EvalResultInt(it) => (TypeKind.TypeKindInt(IntKindI64), VarType.VarInt(it))
+                case MacroEvalResult.EvalFloat(it) => (TypeKind.TypeKindFloat(FloatKindDouble), VarType.VarFloat(it))
+                case MacroEvalResult.EvalStr(it) =>
+                    let charTy = Item.builtinType(
+                        TypeKind.TypeKindInt(TypeKindIntKind.IntKindU8),
+                        true,
+                        ctx
+                    )
+                    (TypeKind.TypeKindPointer(charTy), VarType.VarString(it))
+                // FIXME: didn't consider for now as clang didn't provide these
+                case _ => throw Exception("unreachable")
+            }
+
+            let ty = Item.builtinType(typeKind, true, ctx)
+
+            return Ok(
+                ParseResult.New(
+                    Var(name, ty, Some(val), true),
+                    Some(cursor)
+                )
+            )
         } else if (k == clang.CXCursorKind_CXCursor_VarDecl) {
             let name = cursor.spelling()
             if (name.isEmpty()) {
@@ -44,8 +81,9 @@ public class Var <: ClangSubItemParser<Var> {
             }
 
             let ty = cursor.curType()
-            let isConst = ty.isConst() || ([clang.CXTypeKind_CXType_ConstantArray, clang.CXTypeKind_CXType_IncompleteArray].contains(
-                ty.kind()) && ty.elemType().flatMap({
+            let isConst = ty.isConst() || ([clang.CXTypeKind_CXType_ConstantArray,
+                clang.CXTypeKind_CXType_IncompleteArray].contains(ty.kind()) &&
+                ty.elemType().flatMap({
                 et => et.isConst()
             }).getOrDefault {=> false})
 
@@ -54,10 +92,9 @@ public class Var <: ClangSubItemParser<Var> {
                 case Err(e) => return Err(e)
             }
 
-            let canonicalTy = ctx.safeResolveType(tyId)
-                .flatMap {
-                    t => t.safeCanonicalType(ctx)
-                }
+            let canonicalTy = ctx.safeResolveType(tyId).flatMap {
+                t => t.safeCanonicalType(ctx)
+            }
 
             let isInteger = canonicalTy.flatMap {
                 t => t.isInteger()
@@ -136,24 +173,22 @@ func parseMacroClangFallback(
 
     if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
         match (evalutated.asInt()) {
-            case Some(v) => 
-                return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(v)))
-            case None => 
-                return None
+            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(v)))
+            case None => return None
         }
     } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
         match (evalutated.asDouble()) {
-            case Some(v) => 
-                return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
-            case None => 
-                return None
+            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
+            case None => return None
         }
     } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
         match (evalutated.asLiteralString()) {
-            case Some(v) => 
-                return Some((cursor.spelling(), MacroEvalResult.EvalStr(v.toString())))
-            case None => 
-                return None
+            case Some(v) => unsafe {
+                // copy to prevent ref to freed memory
+                let vv = LibC.mallocCString(v.toString())
+                return Some((cursor.spelling(), MacroEvalResult.EvalStr(vv)))
+            }
+            case None => return None
         }
     }
 
