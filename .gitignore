@@ -8,3 +8,4 @@ build-script-cache/
 .vscode/
 .VSCodeCounter/
 *.txt
+*.exe

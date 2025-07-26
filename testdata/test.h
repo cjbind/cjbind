@@ -1,5 +1,10 @@
 #include <stdio.h>
 
+#define INT_MACRO 42
+#define FLOAT_MACRO 3.14f
+#define STRING_MACRO "Hello, World!"
+#define CHAR_MACRO 'A'
+
 enum E1 {
     A,
     B,

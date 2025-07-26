@@ -1,6 +1,7 @@
 package cjbind.codegen
 
 import std.ast.*
+import std.env
 import std.collection.{ArrayList, HashSet}
 import cjbind.build.VERSION
 import cjbind.ir.*
@@ -129,7 +130,7 @@ extend Module <: CodeGenerator<Item, Unit> {
         ctx: CjbindContext,
         result: CodegenResult,
         item: Item
-    ) {
+    ): Unit {
         let codegenItems = ctx.codegenItems.getOrThrow()
         for (child in this.children) {
             if (codegenItems.contains(child)) {
@@ -139,8 +140,12 @@ extend Module <: CodeGenerator<Item, Unit> {
 
         if (item.id == ctx.rootModule) {
             // TODO: 实现Union，Complex，不透明Array，位域等类型的适配
-
             let header = Tokens(Token(TokenKind.COMMENT, "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT"))
+            let cliArgs = String.join(env.getCommandLine(), delimiter: " ")
+            header.append(quote(
+                // cjbind 命令行：$(cliArgs)
+            ))
+
             let pkgName = ctx.cjIdent(ctx.options.packageName)
             header.append(quote(
                 
