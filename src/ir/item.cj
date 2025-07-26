@@ -47,7 +47,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             case TypeKind.TypeKindInt(_) => ()
             case TypeKind.TypeKindFloat(_) => ()
             case TypeKind.TypeKindPointer(_) => ()
-            case _ => throw Exception("Unexpected builtin type kind: ${nkd}")
+            case _ => throw Exception("Unexpected builtin type kind")
         }
 
         let ty = Type(None, None, nkd, isConst)
