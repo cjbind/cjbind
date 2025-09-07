@@ -72,7 +72,7 @@ def upload_releases(release_dir: Path, tag_name: str, target_commitish: str, tit
         "target_commitish": target_commitish,
     }
     response: requests.Response = session.post(
-        "https://api.gitcode.com/api/v5/repos/cjbind/cjbind/releases",
+        "https://api.gitcode.com/api/v5/repos/Cangjie-TPC/cjbind/releases",
         json=payload,
     )
     response.raise_for_status()
@@ -84,7 +84,7 @@ def upload_releases(release_dir: Path, tag_name: str, target_commitish: str, tit
         file_name: str = file.name
     
         response = session.post(
-            f"https://api.gitcode.com/api/v5/repos/cjbind/cjbind/releases/{tag_name}/upload_url",
+            f"https://api.gitcode.com/api/v5/repos/Cangjie-TPC/cjbind/releases/{tag_name}/upload_url",
             params={
                 "file_name": file_name,
             }
