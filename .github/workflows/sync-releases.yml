@@ -1,0 +1,31 @@
+name: Sync Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (optional, uses latest if not specified)'
+        required: false
+        type: string
+
+permissions:
+  contents: "write"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          cache-dependency-glob: "**/*.py.lock"
+
+      - name: Download and sync releases
+        run: uv run scripts/sync.py ${{ inputs.version || 'latest' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
