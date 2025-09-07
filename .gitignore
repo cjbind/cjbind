@@ -6,6 +6,8 @@ build-script-cache/
 .devbrain/
 .cache/
 .vscode/
+.cursor/
+.claude/
 .VSCodeCounter/
 *.txt
 *.exe
