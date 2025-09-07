@@ -96,10 +96,11 @@ def upload_releases(
     if not response.ok:
         print(f"Failed to create release: {response.json()}")
         
-        if response.status_code != 409:
-            response.raise_for_status()
+        error_data = response.json()
+        if error_data.get("error_code") == 409:
+            print(f"Release already exists: {tag_name}")
         else:
-            print(f"Release already exists: {response.json()}")
+            response.raise_for_status()
 
     print(f"Created release at: {response.json()}")
 
