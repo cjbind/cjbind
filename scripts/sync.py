@@ -17,6 +17,7 @@ from github import Github, Auth
 from github.Repository import Repository
 from github.GitRelease import GitRelease
 from tqdm import tqdm
+from tqdm.utils import CallbackIOWrapper
 
 g: Github = Github(auth=Auth.Token(os.environ.get("GITHUB_TOKEN")))
 
@@ -133,27 +134,20 @@ def upload_releases(
         #   }
         # }
         response_data = response.json()
+        print(f"Upload url response data: {response_data}")
         url = response_data["url"]
         headers = response_data["headers"]
 
         file_size = file.stat().st_size
         with open(file, "rb") as f:
-            with tqdm(total=file_size, unit='B', unit_scale=True, desc=f"Uploading {file_name}", leave=False) as pbar:
-                def read_with_progress(chunk_size=8192):
-                    while True:
-                        chunk = f.read(chunk_size)
-                        if not chunk:
-                            break
-                        pbar.update(len(chunk))
-                        yield chunk
-                
-                file_data = b''.join(read_with_progress())
-                f.seek(0)
-                
-                response = session.put(url, data=file_data, headers=headers, timeout=30)
+            with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc=f"Uploading {file_name}", leave=False) as t:
+                wrapped_file = CallbackIOWrapper(t.update, f, "read")
+                response = session.put(url, data=wrapped_file, headers=headers, timeout=30)
                 if not response.ok:
                     print(f"Failed to upload file: {response.json()}")
                     response.raise_for_status()
+                print(f"Uploaded file: {file_name}")
+                print(f"Response: {response.json()}")
 
 
 if __name__ == "__main__":
