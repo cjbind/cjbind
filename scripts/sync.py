@@ -101,8 +101,9 @@ def upload_releases(
             print(f"Release already exists: {tag_name}")
         else:
             response.raise_for_status()
-
-    print(f"Created release at: {response.json()}")
+    else:
+        print(f"Created release at: {response.json()}")
+    
 
     # https://api.gitcode.com/api/v5/repos/:owner/:repo/releases/:tag/upload_url
 
