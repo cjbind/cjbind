@@ -74,15 +74,14 @@ jobs:
           cache: true
 
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@v1.8.0
+        uses: Zxilly/setup-cangjie@v2
         with:
           channel: "lts"
-          version: "latest"
-          token: ${{ secrets.GITCODE_TOKEN }}
+          version: "auto"
 
-      - name: Patch Cangjie
-        run: |
-          uv run scripts/patch_opt.py
+      # - name: Patch Cangjie
+      #   run: |
+      #     uv run scripts/patch_opt.py
 
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
