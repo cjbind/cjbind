@@ -24,6 +24,9 @@ jobs:
           python-version: "3.13"
           cache-dependency-glob: "**/*.py.lock"
 
+      - name: Enable TCP BBR
+        uses: Zxilly/actions-bbr@v1
+
       - name: Download and sync releases
         run: uv run scripts/sync.py ${{ inputs.version || 'latest' }}
         env:
