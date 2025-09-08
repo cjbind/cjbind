@@ -43,7 +43,7 @@ def download_releases(version: str) -> Tuple[Path, str, str, str]:
         release_dir.mkdir(exist_ok=True)
 
         assets = list(release.get_assets())
-        for asset in tqdm(assets, desc="Downloading assets", unit="file"):
+        for asset in assets:
             asset_path: Path = release_dir / asset.name
 
             response: requests.Response = requests.get(
@@ -56,10 +56,11 @@ def download_releases(version: str) -> Tuple[Path, str, str, str]:
             total_size = int(response.headers.get('content-length', 0))
             
             with open(asset_path, "wb") as f:
-                with tqdm(total=total_size, unit='B', unit_scale=True, desc=asset.name) as pbar:
+                with tqdm(total=total_size, unit='B', unit_scale=True, desc=asset.name, leave=True) as pbar:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                         pbar.update(len(chunk))
+            break
 
     print(f"Downloaded releases to: {temp_dir}")
     return [
@@ -69,7 +70,6 @@ def download_releases(version: str) -> Tuple[Path, str, str, str]:
         release.name,
         release.body,
     ]
-
 
 def upload_releases(
     release_dir: Path, tag_name: str, target_commitish: str, title: str, body: str
@@ -95,7 +95,7 @@ def upload_releases(
         json=payload,
     )
     if not response.ok:
-        print(f"Failed to create release: {response.json()}")
+        print(f"Failed to create release: {response.text}")
         
         error_data = response.json()
         if error_data.get("error_code") == 409:
@@ -103,7 +103,7 @@ def upload_releases(
         else:
             response.raise_for_status()
     else:
-        print(f"Created release at: {response.json()}")
+        print(f"Created release at: {response.text}")
     
 
     # https://api.gitcode.com/api/v5/repos/:owner/:repo/releases/:tag/upload_url
@@ -111,7 +111,7 @@ def upload_releases(
     files = list(release_dir.glob("**/*"))
     files = [f for f in files if f.is_file()]
     
-    for file in tqdm(files, desc="Uploading files", unit="file"):
+    for file in files:
         file_name: str = file.name
 
         response = session.get(
@@ -121,7 +121,7 @@ def upload_releases(
             },
         )
         if not response.ok:
-            print(f"Failed to get upload url: {response.json()}")
+            print(f"Failed to get upload url: {response.text}")
             response.raise_for_status()
 
         # {
@@ -140,19 +140,19 @@ def upload_releases(
 
         file_size = file.stat().st_size
         with open(file, "rb") as f:
-            with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc=f"Uploading {file_name}", leave=False) as t:
+            with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024, desc=f"Uploading {file_name}", leave=True) as t:
                 wrapped_file = CallbackIOWrapper(t.update, f, "read")
                 response = session.put(url, data=wrapped_file, headers=headers, timeout=30)
                 if not response.ok:
-                    print(f"Failed to upload file: {response.json()}")
+                    print(f"Failed to upload file: {response.text}")
                     response.raise_for_status()
                 print(f"Uploaded file: {file_name}")
-                print(f"Response: {response.json()}")
+                print(f"Response: {response.text}")
 
 
 if __name__ == "__main__":
     version: str = sys.argv[1] if len(sys.argv) > 1 else "latest"
-    release_dir: Path
+    release_dir: Path   
     tag_name: str
     target_commitish: str
     title: str
