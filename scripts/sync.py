@@ -60,7 +60,6 @@ def download_releases(version: str) -> Tuple[Path, str, str, str]:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                         pbar.update(len(chunk))
-            break
 
     print(f"Downloaded releases to: {temp_dir}")
     return [
@@ -76,12 +75,9 @@ def upload_releases(
 ) -> None:
     gitcode_token: str | None = os.environ.get("GITCODE_TOKEN")
 
+    auth_param = {"access_token": gitcode_token}
+
     session: requests.Session = requests.Session()
-    session.headers.update(
-        {
-            "Authorization": f"Bearer {gitcode_token}",
-        }
-    )
 
     # https://api.gitcode.com/api/v5/repos/:owner/:repo/releases
     payload: Dict[str, str] = {
@@ -93,6 +89,7 @@ def upload_releases(
     response: requests.Response = session.post(
         "https://api.gitcode.com/api/v5/repos/Cangjie-TPC/cjbind/releases",
         json=payload,
+        params=auth_param
     )
     if not response.ok:
         print(f"Failed to create release: {response.text}")
@@ -118,7 +115,8 @@ def upload_releases(
             f"https://api.gitcode.com/api/v5/repos/Cangjie-TPC/cjbind/releases/{tag_name}/upload_url",
             params={
                 "file_name": file_name,
-            },
+                "access_token": gitcode_token
+            }
         )
         if not response.ok:
             print(f"Failed to get upload url: {response.text}")
