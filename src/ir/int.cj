@@ -56,8 +56,8 @@ public enum TypeKindIntKind {
         }
     }
 
-    public func signednessMatches(val: Int64): Bool {
-        val >= 0 || this.isSigned()
+    public func signednessMatches(nonNegative: Bool): Bool {
+        nonNegative || this.isSigned()
     }
 
     public func isChar(): Bool {

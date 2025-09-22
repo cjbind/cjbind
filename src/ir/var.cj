@@ -3,6 +3,7 @@ package cjbind.ir
 import std.collection.ArrayList
 import cjbind.clang
 import cjbind.result.Result
+import std.ast.{Tokens, ToTokens, Token, TokenKind}
 
 public class Var <: ClangSubItemParser<Var> {
     public let name: String
@@ -53,7 +54,11 @@ public class Var <: ClangSubItemParser<Var> {
             }
 
             let (typeKind, val) = match (value) {
-                case MacroEvalResult.EvalResultInt(it) => (TypeKind.TypeKindInt(IntKindI64), VarType.VarInt(it))
+                case MacroEvalResult.EvalResultInt(it) => 
+                    match (it) {
+                        case Ints.Int(v) => (TypeKind.TypeKindInt(IntKindI64), VarType.VarInt(it))
+                        case Ints.UInt(v) => (TypeKind.TypeKindInt(IntKindU64), VarType.VarInt(it))
+                    }
                 case MacroEvalResult.EvalFloat(it) => (TypeKind.TypeKindFloat(FloatKindDouble), VarType.VarFloat(it))
                 case MacroEvalResult.EvalStr(it) =>
                     let charTy = Item.builtinType(
@@ -110,12 +115,12 @@ public class Var <: ClangSubItemParser<Var> {
                 }
 
                 let iv = cursor.evalutate().asInt()
-                if (iv.isNone() || !kind.signednessMatches(iv.getOrThrow())) {
+                if (iv.isNone() || !kind.signednessMatches(iv.getOrThrow().toInts().isNonNegative())) {
                     None
                 } else {
-                    let kv = iv.getOrThrow()
+                    let kv = iv.getOrThrow().toInts()
                     match (kind) {
-                        case IntKindBool => VarType.VarBool(kv != 0)
+                        case IntKindBool => VarType.VarBool(kv.isZero())
                         case _ => VarType.VarInt(kv)
                     }
                 }
@@ -173,7 +178,11 @@ func parseMacroClangFallback(
 
     if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
         match (evalutated.asInt()) {
-            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(v)))
+            case Some(v) => 
+            match (v) {
+                case clang.EvalResultInt.Int(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.Int(v))))
+                case clang.EvalResultInt.UInt(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.UInt(v))))
+            }
             case None => return None
         }
     } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
@@ -196,9 +205,48 @@ func parseMacroClangFallback(
 }
 // cjlint-ignore -end
 
+public enum Ints <: ToTokens {
+    Int(Int64) |
+    UInt(UInt64)
+
+    public func toTokens(): Tokens {
+        let tokens = Tokens()
+        
+        match (this) {
+            case Int(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}i64"))
+            case UInt(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}u64"))
+        }
+
+        return tokens
+    }
+
+    public func isNonNegative(): Bool {
+        match (this) {
+            case Int(v) => v >= 0
+            case UInt(v) => true
+        }
+    }
+
+    public func isZero(): Bool {
+        match (this) {
+            case Int(v) => v == 0
+            case UInt(v) => v == 0
+        }
+    }
+}
+
+extend clang.EvalResultInt {
+    public func toInts(): Ints {
+        match (this) {
+            case Int(v) => Ints.Int(v)
+            case UInt(v) => Ints.UInt(v)
+        }
+    }
+}
+
 public enum VarType {
     VarBool(Bool)
-    | VarInt(Int64)
+    | VarInt(Ints)
     | VarFloat(Float64)
     | VarChar(UInt8)
     | VarString(CString)
