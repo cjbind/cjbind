@@ -145,7 +145,6 @@ def upload_releases(
                     print(f"Failed to upload file: {response.text}")
                     response.raise_for_status()
                 print(f"Uploaded file: {file_name}")
-                print(f"Response: {response.text}")
 
 
 if __name__ == "__main__":
@@ -161,6 +160,5 @@ if __name__ == "__main__":
     print(f"Version: {tag_name}")
     print(f"Target commitish: {target_commitish}")
     print(f"Title: {title}")
-    print(f"Body: {body}")
 
     upload_releases(release_dir, tag_name, target_commitish, title, body)
