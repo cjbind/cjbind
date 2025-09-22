@@ -1050,6 +1050,11 @@ public class ClangTokenIterator <: Iterator<ClangToken> {
     }
 }
 
+public enum EvalResultInt {
+    Int(Int64) |
+    UInt(UInt64)
+}
+
 public class EvalResult {
     let x: CXEvalResult
     let ty: Type
@@ -1083,7 +1088,7 @@ public class EvalResult {
         }
     }
 
-    public func asInt(): ?Int64 {
+    public func asInt(): ?EvalResultInt {
         if (this.kind() != CXEvalResultKind_CXEval_Int) {
             return None
         }
@@ -1091,11 +1096,12 @@ public class EvalResult {
         unsafe {
             if (clang_EvalResult_isUnsignedInt(x) != 0) {
                 let v = clang_EvalResult_getAsUnsigned(x)
-                return Some(Int64(v))
+
+                return Some(EvalResultInt.UInt(UInt64(v)))
             }
 
             let v = clang_EvalResult_getAsLongLong(x)
-            return Some(v)
+            return Some(EvalResultInt.Int(v))
         }
     }
 
