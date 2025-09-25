@@ -1,7 +1,7 @@
 package cjbind.clang
 
 import std.fs.Path
-import std.process.{executeWithOutput, ProcessRedirect}
+import std.process.{launch, ProcessRedirect}
 import std.io.{readString, ByteBuffer}
 import std.collection.{collectArray, ArrayList, Map, HashMap}
 import std.posix.{access, isReg, X_OK}
@@ -30,7 +30,8 @@ func isExecutable(path: String): Bool {
 
 func run(bin: String, args: Array<String>, readStderr!: Bool = false, env!: Option<Map<String, String>> = None): ?String {
     try {
-        let (_, out, err) = executeWithOutput(bin, args, stdIn: ProcessRedirect.Discard, environment: env)
+        let p = launch(bin, args, stdIn: ProcessRedirect.Discard, environment: env)
+        let (_, out, err) = p.waitOutput()
         let buf = if (readStderr) {
             ByteBuffer(err)
         } else {
