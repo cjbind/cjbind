@@ -2,7 +2,7 @@
   glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.2.0" }
 
 [package]
-  cjc-version = "1.0.1"
+  cjc-version = "1.0.3"
   compile-option = "-Woff unused -V"
   description = "A simple C binding generator for Cangjie"
   link-option = ""
