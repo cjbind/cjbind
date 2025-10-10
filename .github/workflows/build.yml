@@ -79,9 +79,9 @@ jobs:
           channel: "lts"
           version: "auto"
 
-      - name: Patch Cangjie
-        run: |
-          uv run scripts/patch_opt.py
+      # - name: Patch Cangjie
+      #   run: |
+      #     uv run scripts/patch_opt.py
 
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
