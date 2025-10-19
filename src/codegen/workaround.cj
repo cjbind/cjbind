@@ -1,22 +1,21 @@
 package cjbind.codegen
 
-import std.ast.{Tokens, Token, TokenKind}
+import std.ast.{Tokens, Token, TokenKind, ToTokens, TokenKind}
 
 foreign func CJ_AST_Float64ToCPointer(num: Float64): CString
 
 // workaround 仓颉标准库中有 bug 的 Float64 to Tokens 转换函数
 public func float64toTokens(val: Float64): Tokens {
-    let strPtr = unsafe { CJ_AST_Float64ToCPointer(val) }
-    var floatStr = String()
-    if (!strPtr.isNull()) {
-        floatStr = strPtr.toString()
-        unsafe { LibC.free(strPtr) }
-    }
-    floatStr = floatStr.replace("+", "")
+    let oldTokens = val.toTokens()
+    let tokens = Tokens()
 
-    if (val < 0.0) {
-        return Tokens().append(Token(TokenKind.SUB)).append(Token(TokenKind.FLOAT_LITERAL, floatStr[1..]))
+    for (token in oldTokens) {
+        var t = token
+        if (token.kind == TokenKind.FLOAT_LITERAL && token.value.contains("+")) {
+            t = Token(TokenKind.FLOAT_LITERAL, token.value.replace("+", ""))
+        }
+        tokens.append(t)
     }
-    let tok: Token = Token(TokenKind.FLOAT_LITERAL, floatStr)
-    return tok.toTokens()
+
+    return tokens
 }
