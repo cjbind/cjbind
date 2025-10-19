@@ -132,7 +132,6 @@ def upload_releases(
         #   }
         # }
         response_data = response.json()
-        print(f"Upload url response data: {response_data}")
         url = response_data["url"]
         headers = response_data["headers"]
 
