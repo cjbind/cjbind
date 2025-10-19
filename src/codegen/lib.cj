@@ -326,13 +326,14 @@ extend Var <: CodeGenerator<Item, Unit> {
                     }
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
+                        let floatTokens = float64toTokens(vv)
                         result
                             .items
                             .add(
                                 optionalComment(
                                     ctx,
                                     commentToken,
-                                    quote(public const $(canonicalIdent) : $(ty) = $(expr))
+                                    quote(public const $(canonicalIdent) : $(ty) = $(floatTokens))
                                 )
                             )
                     }
