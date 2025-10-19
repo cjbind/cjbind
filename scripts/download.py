@@ -24,10 +24,10 @@ class LibClangInstaller:
     """用于自动下载和安装 libclang 的安装器"""
 
     URL_MAP = {
-        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-windows-mingw_64-regular.7z",
-        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-macos-universal.7z",
-        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Ubuntu22.04-gcc11.4-x86_64.7z",
-        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/libclang-release_20.1.3-based-linux-Debian-11.6-gcc10.2-arm64.7z",
+        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-mingw_64.7z",
+        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
+        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
+        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Debian11.6-gcc10.0-arm64.7z",
     }
 
     def __init__(self):
@@ -55,7 +55,8 @@ class LibClangInstaller:
         """获取对应系统的下载地址"""
         url = self.URL_MAP.get(self.system_key)
         if not url:
-            raise RuntimeError(f"No download URL configured for {self.system_key}")
+            raise RuntimeError(
+                f"No download URL configured for {self.system_key}")
         return url
 
     def _download_file(self) -> None:
@@ -87,41 +88,41 @@ class LibClangInstaller:
             self.extract_dir = Path(mkdtemp())
             with py7zr.SevenZipFile(self.temp_archive, 'r') as archive:
                 class TqdmExtractCallback(ExtractCallback):
-                        def __init__(self):
-                            super().__init__()
+                    def __init__(self):
+                        super().__init__()
 
-                            info = archive.archiveinfo().uncompressed
+                        info = archive.archiveinfo().uncompressed
 
-                            self.pendingSize = None
-                            self.pbar = tqdm(
-                                total=info,
-                                unit='B',
-                                unit_scale=True,
-                                miniters=1,
-                                desc="Extracting",
-                            )
+                        self.pendingSize = None
+                        self.pbar = tqdm(
+                            total=info,
+                            unit='B',
+                            unit_scale=True,
+                            miniters=1,
+                            desc="Extracting",
+                        )
 
-                        def report_start(self, processing_file_path, processing_bytes):
-                            pass
+                    def report_start(self, processing_file_path, processing_bytes):
+                        pass
 
-                        def report_update(self, decompressed_bytes):
-                            self.pbar.update(int(decompressed_bytes))
+                    def report_update(self, decompressed_bytes):
+                        self.pbar.update(int(decompressed_bytes))
 
-                        def report_end(self, processing_file_path, wrote_bytes):
-                            pass
+                    def report_end(self, processing_file_path, wrote_bytes):
+                        pass
 
-                        def report_start_preparation(self):
-                            pass
+                    def report_start_preparation(self):
+                        pass
 
-                        def report_warning(self, message):
-                            print(f"Warning: {message}")
+                    def report_warning(self, message):
+                        print(f"Warning: {message}")
 
-                        def report_postprocess(self):
-                            pass
-                        
+                    def report_postprocess(self):
+                        pass
+
                 cb = TqdmExtractCallback()
                 archive.extractall(path=self.extract_dir, callback=cb)
-                    
+
         except Exception as e:
             self._cleanup()
             raise RuntimeError(f"Extraction failed: {str(e)}")
