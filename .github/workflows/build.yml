@@ -55,15 +55,15 @@ jobs:
           python-version: "3.13"
           cache-dependency-glob: "**/*.py.lock"
 
-      - name: Cache libclang
-        id: cache-libclang
-        uses: actions/cache@v4
+      - name: Restore cached libclang
+        id: cache-libclang-restore
+        uses: actions/cache/restore@v4
         with:
           path: lib/libclang
           key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
 
       - name: Download libclang
-        if: steps.cache-libclang.outputs.cache-hit != 'true'
+        if: steps.cache-libclang-restore.outputs.cache-hit != 'true'
         run: |
           uv run scripts/download.py
 
@@ -133,3 +133,13 @@ jobs:
         run: |
           gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.os.friendly_name }}" \
             --clobber
+
+      - name: Always Save libclang
+        id: cache-libclang-save
+        if: always() && steps.cache-libclang-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
+          path: |
+            lib/libclang
+
