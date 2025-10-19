@@ -22,16 +22,13 @@
 
 [target.x86_64-w64-mingw32.release]
   compile-option = "-O2"
-  link-option = "-l:libcangjie-std-ast.dll"
 
 [target.aarch64-apple-darwin.release]
   compile-option = "-O2"
 
 [target.x86_64-unknown-linux-gnu.release]
   compile-option = "-O2"
-  link-option = "-l:libcangjie-std-ast.so"
 
 [target.aarch64-unknown-linux-gnu.release]
   compile-option = "-O2"
-  link-option = "-l:libcangjie-std-ast.so"
   
