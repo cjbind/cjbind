@@ -25,3 +25,13 @@ struct Some {
 void f(char [233]);
 
 char* ss = "hello";
+
+struct Point {
+    int a;
+    int b;
+    struct {
+        int x;
+        int y;
+    };
+    int z;
+};
