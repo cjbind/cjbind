@@ -90,6 +90,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     // do nothing
                     } else {
                         let field = RawField(None, ty, None, None, offset)
+                        maybeAnonymousStructField.value = None
                         ci.fields.appendRawField(field)
                     }
                 }
@@ -108,6 +109,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
                         if (!used.value) {
                             let field = RawField(None, ty, None, None, offset)
+                            maybeAnonymousStructField.value = None
                             ci.fields.appendRawField(field)
                         }
                     }
@@ -189,6 +191,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
         if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
             let tf = RawField(None, ty, None, None, offset)
+            maybeAnonymousStructField.value = None
             ci.fields.appendRawField(tf)
         }
 
