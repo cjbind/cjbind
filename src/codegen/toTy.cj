@@ -155,7 +155,7 @@ extend Type <: TryToCjTy<Item> {
                 let lenOk = Int64(len)
                 let token = quote(VArray<$(ty), \$$(lenOk)>)
                 return Ok(token)
-            case TypeKind.TypeKindEnum(_) => return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+            case TypeKind.TypeKindEnum(_) => return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
             case TypeKind.TypeKindAlias(_) =>
                 if (let Some(n) <- this.name) {
@@ -164,8 +164,8 @@ extend Type <: TryToCjTy<Item> {
                         return Ok(nn)
                     }
                 }
-                return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
-            case TypeKind.TypeKindComp(info) => return Ok(Tokens(ctx.cjIdentRaw(item.baseName(ctx))))
+                return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
+            case TypeKind.TypeKindComp(info) => return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
             case TypeKind.TypeKindPointer(inner) =>
                 let size = this.getLayoutUnsafe(ctx, item).size
