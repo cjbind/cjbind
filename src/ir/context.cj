@@ -23,6 +23,10 @@ extend ItemId <: IsOpaque<Unit> & Trace<Tracer, Unit> {
         ctx.resolveItem(this).trace(ctx, tracer, ())
     }
     // cjlint-ignore -end
+
+    public func ancestors(ctx: CjbindContext): ItemAncestorsIter {
+        return ItemAncestorsIter(ctx, this)
+    }
 }
 
 public enum TypeKey <: Hashable & Equatable<TypeKey> {

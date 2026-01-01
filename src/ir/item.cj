@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.collection.{HashSet, contains}
+import std.collection.{ArrayList, HashSet, contains}
 import cjbind.clang
 import cjbind.result.Result
 
@@ -10,11 +10,34 @@ public interface IsOpaque<Extra> {
     func isOpaque(ctx: CjbindContext, extra: Extra): Bool
 }
 
+public class ItemAncestorsIter <: Iterator<ItemId> {
+    var currentId: ItemId
+    let ctx: CjbindContext
+
+    public init(ctx: CjbindContext, startId: ItemId) {
+        this.ctx = ctx
+        this.currentId = startId
+    }
+
+    public func next(): Option<ItemId> {
+        let item = this.ctx.resolveItemFallible(this.currentId)
+        match (item) {
+            case Some(it) =>
+                if (it.parentId == this.currentId) {
+                    return None
+                }
+                this.currentId = it.parentId
+                return Some(this.currentId)
+            case None => return None
+        }
+    }
+}
+
 public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public let id: ItemId
     var localId: ?ItemId
     var nextChildLocalId: ItemId
-    public let canonicalName: ?String
+    var canonicalNameCache: ?String
     public let comment: ?String
     public let parentId: ItemId
     public var kind: ItemKind
@@ -34,7 +57,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.id = id
         this.localId = None
         this.nextChildLocalId = 1
-        this.canonicalName = ""
+        this.canonicalNameCache = None
         this.parentId = parentId
         this.comment = comment
         this.kind = kind
@@ -106,6 +129,57 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             }
             case ItemKind.KindFunction(fun) => fun.name
         }
+    }
+
+    public func isAnon(): Bool {
+        match (this.kind) {
+            case ItemKind.KindModule(module) => module.name.isNone()
+            case ItemKind.KindType(ty) => ty.name.isNone()
+            case ItemKind.KindFunction(_) => false
+            case ItemKind.KindVar(_) => false
+        }
+    }
+
+    public func ancestors(ctx: CjbindContext): ItemAncestorsIter {
+        return ItemAncestorsIter(ctx, this.id)
+    }
+
+    public func canonicalName(ctx: CjbindContext): String {
+        if (let Some(cached) <- this.canonicalNameCache) {
+            return cached
+        }
+
+        let result = this.realCanonicalName(ctx)
+        this.canonicalNameCache = Some(result)
+        return result
+    }
+
+    func realCanonicalName(ctx: CjbindContext): String {
+        let baseName = this.baseName(ctx)
+
+        let ancestorIds = ArrayList<ItemId>()
+        for (id in this.ancestors(ctx)) {
+            if (id != ctx.rootModule) {
+                ancestorIds.add(id)
+            }
+        }
+
+        var names = ArrayList<String>()
+        for (id in ancestorIds) {
+            let item = ctx.resolveItem(id)
+            let name = item.baseName(ctx)
+            if (!name.isEmpty() && !name.startsWith("_cjbind_")) {
+                names.add(name)
+            }
+        }
+
+        names.reverse()
+
+        if (!baseName.isEmpty()) {
+            names.add(baseName)
+        }
+
+        return String.join(names.toArray(), delimiter: "_")
     }
 
     public func asModule(): Option<Module> {
