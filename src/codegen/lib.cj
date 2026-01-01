@@ -243,7 +243,7 @@ extend Var <: CodeGenerator<Item, Unit> {
         item: Item
     ): Unit {
         // 只支持 C，不需要考虑 namespace
-        let canonicalName = item.baseName(ctx)
+        let canonicalName = item.canonicalName(ctx)
 
         if (result.seenVar(canonicalName)) {
             return
@@ -368,11 +368,11 @@ extend Type <: CodeGenerator<Item, Unit> {
             case TypeKind.TypeKindComp(ci) => ci.codegen(ctx, result, item)
             case TypeKind.TypeKindAlias(inner) =>
                 let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
-                let name = item.baseName(ctx)
+                let name = item.canonicalName(ctx)
 
                 let throughTypeAliases = inner.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
 
-                if (throughTypeAliases.baseName(ctx) == name) {
+                if (throughTypeAliases.canonicalName(ctx) == name) {
                     return
                 }
 
@@ -421,7 +421,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let ty = item.kind.expectType()
         let layout = ty.getLayout(ctx)
 
-        let canonicalName = item.baseName(ctx)
+        let canonicalName = item.canonicalName(ctx)
         var isOpaque = item.isOpaque(ctx, ())
 
         let packed = this.isPacked(ctx, layout)
@@ -595,7 +595,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item
     ): Unit {
-        let name = item.baseName(ctx)
+        let name = item.canonicalName(ctx)
         let ident = ctx.cjIdent(name)
         let enumTy = item.kind.expectType()
 
