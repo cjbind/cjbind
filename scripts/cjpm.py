@@ -153,8 +153,7 @@ class LdFlagsBuilder:
 
     def build(self) -> str:
         """Build the final LDFLAGS string."""
-        flags_str = " ".join(self._flags)
-        return f'--link-options="{flags_str}"'
+        return " ".join(self._flags)
 
 
 def root_dir():
