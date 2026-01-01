@@ -50,3 +50,18 @@ uv run scripts/download.py
 ```
 uv run scripts/cjpm.py build -V
 ```
+
+### 链接模式
+
+通过 `LINK_MODE` 环境变量控制链接模式：
+
+- `static`（默认）：静态链接 libclang，生成的二进制文件不依赖外部 libclang
+- `dynamic`：动态链接系统 libclang，需要运行时有 libclang 可用
+
+```
+# 静态链接（默认）
+uv run scripts/cjpm.py build -V
+
+# 动态链接
+LINK_MODE=dynamic uv run scripts/cjpm.py build -V
+```

@@ -255,16 +255,16 @@ def read_version():
     return data["package"]["version"]
 
 
-def is_static_libclang():
-    """Check if STATIC_LIBCLANG env var is set to 'true'."""
-    return os.environ.get("STATIC_LIBCLANG", "").lower() == "true"
+def is_dynamic_libclang():
+    """Check if dynamic linking should be used (LINK_MODE env var, default: static, options: static/dynamic)."""
+    return os.environ.get("LINK_MODE", "static").lower() == "dynamic"
 
 
 def preprocess_environment(env):
     builder = LdFlagsBuilder()
     libdir = run_llvm_config("--libdir")
     debug = "-g" in sys.argv
-    static = is_static_libclang()
+    dynamic = is_dynamic_libclang()
 
     # Strip flag (non-debug mode)
     if not debug and sys.platform != "darwin":
@@ -287,25 +287,7 @@ def preprocess_environment(env):
     libs = []
     libs.extend(system_libs.split())
 
-    if static:
-        # Static LLVM libs
-        static_libs = run_llvm_config("--link-static", "--libs")
-        for lib in static_libs.split():
-            lib_name = lib[2:]  # strip -l
-            if sys.platform != "darwin":
-                libs.append(f"-l:lib{lib_name}.a")
-            else:
-                libs.append(lib)
-
-        # Static libclang libs
-        libdir_path = Path(os.path.join(libclang_dir(), "lib"))
-        for lib in libdir_path.glob("libclang*.a"):
-            lib_name = lib.stem
-            if sys.platform != "darwin":
-                libs.append(f"-l:{lib_name}.a")
-            else:
-                libs.append(f"-l{lib_name[3:]}")  # strip 'lib' prefix
-    else:
+    if dynamic:
         # Dynamic libclang - search for library and link directly by full path
         found = find_libclang()
         if found:
@@ -330,21 +312,39 @@ def preprocess_environment(env):
                     libs.append("-l:libclang.dll.a")
                 case _:
                     libs.append("-lclang")
+    else:
+        # Static LLVM libs
+        static_libs = run_llvm_config("--link-static", "--libs")
+        for lib in static_libs.split():
+            lib_name = lib[2:]  # strip -l
+            if sys.platform != "darwin":
+                libs.append(f"-l:lib{lib_name}.a")
+            else:
+                libs.append(lib)
+
+        # Static libclang libs
+        libdir_path = Path(os.path.join(libclang_dir(), "lib"))
+        for lib in libdir_path.glob("libclang*.a"):
+            lib_name = lib.stem
+            if sys.platform != "darwin":
+                libs.append(f"-l:{lib_name}.a")
+            else:
+                libs.append(f"-l{lib_name[3:]}")  # strip 'lib' prefix
 
     # C++ runtime
     match sys.platform:
         case "win32":
-            if static:
-                libs.extend(["-l:libstdc++.a", "-l:libwinpthread.a", "-lmingwex", "-lmsvcrt", "-lversion"])
-            else:
+            if dynamic:
                 libs.extend(["-lstdc++", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"])
+            else:
+                libs.extend(["-l:libstdc++.a", "-l:libwinpthread.a", "-lmingwex", "-lmsvcrt", "-lversion"])
         case "darwin":
             libs.extend(["-lc++", "-lc++abi", "-lSystem"])
         case "linux":
-            if static:
-                libs.extend(["-l:libstdc++.a", "-lgcc_s"])
-            else:
+            if dynamic:
                 libs.extend(["-lstdc++", "-lgcc_s"])
+            else:
+                libs.extend(["-l:libstdc++.a", "-lgcc_s"])
 
     # Add with grouping for non-darwin
     if sys.platform != "darwin":
