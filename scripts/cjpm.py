@@ -159,7 +159,11 @@ class LdFlagsBuilder:
 
     def add_lib_path(self, path: str) -> "LdFlagsBuilder":
         """Add a library search path."""
-        self._flags.append(f"-L{path}")
+        # Escape paths containing spaces with \"
+        if " " in path:
+            self._flags.append(f'\\"-L{path}\\"')
+        else:
+            self._flags.append(f"-L{path}")
         return self
 
     def add_group(self, *libs: str) -> "LdFlagsBuilder":
