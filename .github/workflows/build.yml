@@ -121,7 +121,6 @@ jobs:
         shell: msys2 {0}
         env:
           STATIC_LIBCLANG: ${{ matrix.linking.mode == 'static' && 'true' || '' }}
-          LIBCLANG_PATH: ${{ matrix.linking.mode == 'dynamic' && 'C:/msys64/mingw64/bin' || '' }}
         run: |
           uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
