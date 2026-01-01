@@ -11,6 +11,27 @@ import glob
 from pathlib import Path
 import tomllib
 
+if sys.platform == "win32":
+    import ctypes
+    from ctypes import wintypes
+
+    _GetShortPathNameW = ctypes.windll.kernel32.GetShortPathNameW
+    _GetShortPathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+    _GetShortPathNameW.restype = wintypes.DWORD
+
+    def get_short_path(path: str) -> str:
+        """Get Windows 8.3 short path name to avoid spaces."""
+        buf_size = _GetShortPathNameW(path, None, 0)
+        if buf_size == 0:
+            return path  # Fallback to original path
+        buf = ctypes.create_unicode_buffer(buf_size)
+        _GetShortPathNameW(path, buf, buf_size)
+        return buf.value
+else:
+    def get_short_path(path: str) -> str:
+        """No-op on non-Windows platforms."""
+        return path
+
 
 # libclang search directories per platform
 LIBCLANG_SEARCH_DIRS = {
@@ -160,7 +181,18 @@ class LdFlagsBuilder:
 
     def add_lib_path(self, path: str) -> "LdFlagsBuilder":
         """Add a library search path."""
+        # Convert to short path on Windows if path contains spaces
+        if " " in path:
+            path = get_short_path(path)
         self._flags.append(f"-L{path}")
+        return self
+
+    def add_lib_file(self, path: str) -> "LdFlagsBuilder":
+        """Add a library file by full path."""
+        # Convert to short path on Windows if path contains spaces
+        if " " in path:
+            path = get_short_path(path)
+        self._flags.append(path)
         return self
 
     def add_group(self, *libs: str) -> "LdFlagsBuilder":
@@ -168,20 +200,17 @@ class LdFlagsBuilder:
         self._flags.append("--start-group")
         for lib in libs:
             if lib and lib.strip():
-                self._flags.append(lib.strip())
+                lib = lib.strip()
+                # Convert to short path on Windows if lib is a path with spaces
+                if " " in lib:
+                    lib = get_short_path(lib)
+                self._flags.append(lib)
         self._flags.append("--end-group")
         return self
 
     def build(self) -> str:
-        """Build the final LDFLAGS string with proper quoting."""
-        quoted = []
-        for flag in self._flags:
-            if " " in flag:
-                # Wrap flags with spaces in quotes
-                quoted.append(f'"{flag}"')
-            else:
-                quoted.append(flag)
-        return " ".join(quoted)
+        """Build the final LDFLAGS string."""
+        return " ".join(self._flags)
 
 
 def root_dir():
