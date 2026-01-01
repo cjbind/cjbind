@@ -16,6 +16,7 @@ if sys.platform.startswith('win'):
 
 PASSES_TO_REMOVE = {
     'BitcodeWriterPass',
+    'cangjie-ir-verifier',  # 此 pass 有 bug，需要移除
 }
 
 
