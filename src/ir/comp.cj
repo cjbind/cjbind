@@ -84,18 +84,22 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             .value
             .visit {
                 cur =>
-                if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
-                    if (cur.kind() == clang.CXCursorKind_CXCursor_TypedefDecl && cur.typedefType().getOrThrow().canonicalType() ==
-                        clangTy) {
-                    // do nothing
-                    } else {
-                        let field = RawField(None, ty, None, None, offset)
-                        maybeAnonymousStructField.value = None
-                        ci.fields.appendRawField(field)
+                let k = cur.kind()
+                if (k != clang.CXCursorKind_CXCursor_FieldDecl) {
+                    if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
+                        if (k == clang.CXCursorKind_CXCursor_TypedefDecl && cur.typedefType().getOrThrow().canonicalType() ==
+                            clangTy) {
+                            // Typedefs of anonymous structs appear later in the ast
+                            // than the struct itself, that would otherwise be an
+                            // anonymous field. Detect that case here, and do nothing.
+                        } else {
+                            let field = RawField(None, ty, None, None, offset)
+                            maybeAnonymousStructField.value = None
+                            ci.fields.appendRawField(field)
+                        }
                     }
                 }
 
-                let k = cur.kind()
                 if (k == clang.CXCursorKind_CXCursor_FieldDecl) {
                     if (let Some((ty, clangTy, offset)) <- maybeAnonymousStructField.value) {
                         let used: Box<Bool> = Box(false)
