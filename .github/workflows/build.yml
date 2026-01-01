@@ -41,6 +41,9 @@ jobs:
             flag: ""
           # - channel: "debug"
           #   flag: "-g"
+        linking:
+          - mode: "static"
+          - mode: "dynamic"
       fail-fast: false
 
     runs-on: ${{ matrix.os.runner }}
@@ -83,6 +86,18 @@ jobs:
         run: |
           uv run scripts/patch_opt.py
 
+      - name: Install system libclang (dynamic, Linux)
+        if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev
+
+      - name: Install system libclang (dynamic, macOS)
+        if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'darwin'
+        run: |
+          brew install llvm
+          echo "$(brew --prefix llvm)/lib" >> $GITHUB_PATH
+
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
         uses: msys2/setup-msys2@v2
@@ -91,16 +106,21 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-gcc
+            ${{ matrix.linking.mode == 'dynamic' && 'mingw-w64-x86_64-clang' || '' }}
           path-type: inherit
 
-      - name: Build unix ${{ matrix.build.channel }}
+      - name: Build unix ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
         if: matrix.os.sys != 'windows'
+        env:
+          STATIC_LIBCLANG: ${{ matrix.linking.mode == 'static' && 'true' || '' }}
         run: |
           uv run scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
-      - name: Build windows ${{ matrix.build.channel }}
+      - name: Build windows ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
         if: matrix.os.sys == 'windows'
         shell: msys2 {0}
+        env:
+          STATIC_LIBCLANG: ${{ matrix.linking.mode == 'static' && 'true' || '' }}
         run: |
           uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
@@ -113,7 +133,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}
+          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
           path: |
             target/${{ matrix.build.channel }}/bin/main*
 
@@ -122,16 +142,16 @@ jobs:
         shell: bash
         run: |
           cd target/release/bin
-          mv main${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}${{ matrix.os.ext }}
+          mv main${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
 
       - name: Upload to Release
         if: github.event_name == 'release' && matrix.build.channel == 'release'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_PATH: target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}${{ matrix.os.ext }}
+          ASSET_PATH: target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
         run: |
-          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.os.friendly_name }}" \
+          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.os.friendly_name }} (${{ matrix.linking.mode }})" \
             --clobber
 
       - name: Always Save libclang
