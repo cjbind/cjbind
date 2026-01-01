@@ -314,6 +314,14 @@ def preprocess_environment(env):
             print(f"Found libclang: {full_path} (dev_symlink={is_dev})", flush=True)
             # Directly specify the library file path
             libs.append(full_path)
+
+            # Add DLL directory to PATH in GitHub Actions (Windows only)
+            if sys.platform == "win32":
+                github_path = os.environ.get("GITHUB_PATH")
+                if github_path:
+                    with open(github_path, "a", encoding="utf-8") as f:
+                        f.write(str(libclang_path) + "\n")
+                    print(f"Added to GITHUB_PATH: {libclang_path}", flush=True)
         else:
             # Fallback to default names
             print("Warning: libclang not found, using default link names", flush=True)
