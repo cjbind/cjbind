@@ -112,7 +112,7 @@ jobs:
       - name: Build unix ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
         if: matrix.os.sys != 'windows'
         env:
-          STATIC_LIBCLANG: ${{ matrix.linking.mode == 'static' && 'true' || '' }}
+          LINK_MODE: ${{ matrix.linking.mode }}
         run: |
           uv run scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
@@ -120,7 +120,7 @@ jobs:
         if: matrix.os.sys == 'windows'
         shell: msys2 {0}
         env:
-          STATIC_LIBCLANG: ${{ matrix.linking.mode == 'static' && 'true' || '' }}
+          LINK_MODE: ${{ matrix.linking.mode }}
         run: |
           uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
