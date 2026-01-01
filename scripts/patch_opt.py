@@ -14,8 +14,48 @@ if sys.platform.startswith('win'):
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
+PASSES_TO_REMOVE = {
+    'BitcodeWriterPass',
+}
+
+
+def parse_top_level_passes(passes):
+    result = []
+    current = []
+    depth = 0
+
+    for char in passes:
+        if char == ',' and depth == 0:
+            if current:
+                result.append(''.join(current))
+                current = []
+        else:
+            current.append(char)
+            if char in '(<':
+                depth += 1
+            elif char in ')>':
+                depth -= 1
+
+    if current:
+        result.append(''.join(current))
+
+    return result
+
+
+def get_pass_name(pass_str):
+    for i, char in enumerate(pass_str):
+        if char in '(<':
+            return pass_str[:i]
+    return pass_str
+
+
+def filter_passes(passes):
+    top_level = parse_top_level_passes(passes)
+    filtered = [p for p in top_level if get_pass_name(p) not in PASSES_TO_REMOVE]
+    return ','.join(filtered)
+
+
 def get_passes(opt_path):
-    """调用 opt 获取最新的 passes 字符串"""
     with tempfile.NamedTemporaryFile(suffix='.bc', delete=False) as temp_file:
         temp_path = temp_file.name
 
@@ -32,20 +72,20 @@ def get_passes(opt_path):
             stderr=subprocess.STDOUT,
             text=True,
         )
-        return result.strip()
+        passes = result.strip()
+        passes = filter_passes(passes)
+        return passes
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
 
 def generate_opt_go(template_path, passes):
-    """读取 opt.go 模板并替换占位符，返回生成的临时文件路径"""
     with open(template_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
     content = content.replace('__PASSES_PLACEHOLDER__', passes)
 
-    # 创建临时文件
     fd, temp_path = tempfile.mkstemp(suffix='.go')
     with os.fdopen(fd, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -79,7 +119,6 @@ def patch():
     else:
         print(f"{opt_old_path} 已经存在，跳过重命名")
     
-    # 获取最新的 passes
     print(f"从 {opt_old_path} 获取最新 passes...")
     try:
         passes = get_passes(opt_old_path)
@@ -88,7 +127,6 @@ def patch():
         print(f"获取 passes 失败: {e}")
         sys.exit(1)
 
-    # 读取 opt.go 模板并生成临时文件
     current_dir = os.path.dirname(os.path.abspath(__file__))
     opt_go_path = os.path.join(current_dir, 'opt.go')
 
@@ -109,7 +147,6 @@ def patch():
         print(f"编译失败: {e}")
         sys.exit(1)
     finally:
-        # 清理临时文件
         if os.path.exists(temp_opt_go):
             os.remove(temp_opt_go)
 
