@@ -145,7 +145,7 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = quote(VArray<$(ty), \$$(lenOk)>)
+                let token = if (lenOk == 0) { quote(CPointer<$(ty)>) } else { quote(VArray<$(ty), \$$(lenOk)>) }
                 return Ok(token)
             case TypeKind.TypeKindVector(item, len) =>
                 let ty = match (item.tryToCjTy(ctx, ())) {
