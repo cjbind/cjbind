@@ -173,15 +173,15 @@ class LdFlagsBuilder:
         return self
 
     def build(self) -> str:
-        """Build the final LDFLAGS string with proper escaping."""
-        escaped = []
+        """Build the final LDFLAGS string with proper quoting."""
+        quoted = []
         for flag in self._flags:
             if " " in flag:
-                # Wrap flags with spaces in escaped quotes
-                escaped.append(f'\\"{flag}\\"')
+                # Wrap flags with spaces in quotes
+                quoted.append(f'"{flag}"')
             else:
-                escaped.append(flag)
-        return " ".join(escaped)
+                quoted.append(flag)
+        return " ".join(quoted)
 
 
 def root_dir():
@@ -249,7 +249,7 @@ def preprocess_environment(env):
         case "darwin":
             builder.add("-search_paths_first", "-headerpad_max_install_names")
         case "linux":
-            builder.add("--gc-sections", "--gc-keep-exported", f"-T {cpp_lds()}")
+            builder.add("--gc-sections", "--gc-keep-exported", f"-T{cpp_lds()}")
 
     # System libs
     system_libs = run_llvm_config("--system-libs")
