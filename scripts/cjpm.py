@@ -8,7 +8,6 @@ import sys
 import subprocess
 import re
 import glob
-import shlex
 from pathlib import Path
 import tomllib
 
@@ -155,7 +154,7 @@ class LdFlagsBuilder:
     def build(self) -> str:
         """Build the final LDFLAGS string."""
         flags_str = " ".join(self._flags)
-        return f"--link-options {shlex.quote(flags_str)}"
+        return f'--link-options "{flags_str}"'
 
 
 def root_dir():
