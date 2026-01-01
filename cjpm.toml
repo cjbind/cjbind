@@ -14,7 +14,7 @@
   version = "0.2.7"
 
 [package.package-configuration."cjbind"]
-  compile-option = "--link-options \"${LDFLAGS}\""
+  compile-option = "\"${LDFLAGS}\""
 
 [profile.customized-option]
   cfg_opt = "-O2"
