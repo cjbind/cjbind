@@ -153,9 +153,9 @@ class LdFlagsBuilder:
         return self
 
     def build(self) -> str:
-        """Build the final LDFLAGS string with proper escaping."""
-        flags_str = " ".join(shlex.quote(flag) for flag in self._flags)
-        return f'--link-options "{flags_str}"'
+        """Build the final LDFLAGS string."""
+        flags_str = " ".join(self._flags)
+        return f"--link-options {shlex.quote(flags_str)}"
 
 
 def root_dir():
