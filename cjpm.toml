@@ -5,16 +5,13 @@
   cjc-version = "1.0.3"
   compile-option = "-Woff unused -V"
   description = "A simple C binding generator for Cangjie"
-  link-option = ""
+  link-option = "${LDFLAGS}"
   name = "cjbind"
   output-type = "executable"
   override-compile-option = ""
   src-dir = ""
   target-dir = ""
   version = "0.2.7"
-
-[package.package-configuration."cjbind"]
-  compile-option = "--link-options \"${LDFLAGS}\""
 
 [profile.customized-option]
   cfg_opt = "-O2"

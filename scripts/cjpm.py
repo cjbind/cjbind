@@ -112,13 +112,14 @@ def find_libclang() -> tuple[Path, str, bool] | None:
                         versioned_results.append((directory, path.name, version))
 
     # Prefer development symlinks (they can be linked with -l flag)
+    # Use max without reversed to prefer earlier-found entries (LIBCLANG_PATH first)
     if dev_results:
-        best = max(reversed(dev_results), key=lambda x: x[2])
+        best = max(dev_results, key=lambda x: x[2])
         return (best[0], best[1], True)
 
     # Fall back to versioned libraries (need -l: syntax)
     if versioned_results:
-        best = max(reversed(versioned_results), key=lambda x: x[2])
+        best = max(versioned_results, key=lambda x: x[2])
         return (best[0], best[1], False)
 
     return None
@@ -159,11 +160,7 @@ class LdFlagsBuilder:
 
     def add_lib_path(self, path: str) -> "LdFlagsBuilder":
         """Add a library search path."""
-        # Escape paths containing spaces with \"
-        if " " in path:
-            self._flags.append(f'\\"-L{path}\\"')
-        else:
-            self._flags.append(f"-L{path}")
+        self._flags.append(f"-L{path}")
         return self
 
     def add_group(self, *libs: str) -> "LdFlagsBuilder":
