@@ -66,10 +66,21 @@ def parse_libclang_version(filename: str) -> list[int]:
     return parts
 
 
-def find_libclang() -> tuple[Path, str] | None:
+def is_dev_symlink(filename: str) -> bool:
+    """Check if filename is a development symlink (ends with .so, .dylib, or .dll without version suffix)."""
+    # Development symlinks: libclang.so, libclang-15.so (no version after .so)
+    # Runtime libraries: libclang.so.15, libclang-15.so.15.0.0
+    if filename.endswith(".so") or filename.endswith(".dylib") or filename.endswith(".dll"):
+        return True
+    return False
+
+
+def find_libclang() -> tuple[Path, str, bool] | None:
     """Find the best libclang shared library.
 
-    Returns (directory, filename) tuple or None if not found.
+    Returns (directory, filename, is_dev_symlink) tuple or None if not found.
+    The is_dev_symlink flag indicates if the file is a proper .so/.dylib/.dll file
+    that can be linked with -l flag, vs a versioned runtime library that needs -l: syntax.
     """
     # Collect search directories
     dirs = []
@@ -86,7 +97,8 @@ def find_libclang() -> tuple[Path, str] | None:
                 dirs.append(path)
 
     # Search for libclang files
-    results = []
+    dev_results = []  # Development symlinks (.so files)
+    versioned_results = []  # Versioned runtime libraries (.so.X files)
     file_patterns = LIBCLANG_FILE_PATTERNS.get(sys.platform, [])
     for directory in dirs:
         for pattern in file_patterns:
@@ -94,14 +106,22 @@ def find_libclang() -> tuple[Path, str] | None:
                 path = Path(match_path)
                 if path.is_file():
                     version = parse_libclang_version(path.name)
-                    results.append((directory, path.name, version))
+                    if is_dev_symlink(path.name):
+                        dev_results.append((directory, path.name, version))
+                    else:
+                        versioned_results.append((directory, path.name, version))
 
-    if not results:
-        return None
+    # Prefer development symlinks (they can be linked with -l flag)
+    if dev_results:
+        best = max(reversed(dev_results), key=lambda x: x[2])
+        return (best[0], best[1], True)
 
-    # Select best version (highest version, first found as tiebreaker)
-    best = max(reversed(results), key=lambda x: x[2])
-    return (best[0], best[1])
+    # Fall back to versioned libraries (need -l: syntax)
+    if versioned_results:
+        best = max(reversed(versioned_results), key=lambda x: x[2])
+        return (best[0], best[1], False)
+
+    return None
 
 
 def get_libclang_link_name(filename: str) -> str:
@@ -252,11 +272,16 @@ def preprocess_environment(env):
         # Dynamic libclang - search for library
         found = find_libclang()
         if found:
-            libclang_path, libclang_filename = found
-            print(f"Found libclang: {libclang_path / libclang_filename}", flush=True)
+            libclang_path, libclang_filename, is_dev = found
+            print(f"Found libclang: {libclang_path / libclang_filename} (dev_symlink={is_dev})", flush=True)
             builder.add_lib_path(str(libclang_path))
-            link_name = get_libclang_link_name(libclang_filename)
-            libs.append(f"-l{link_name}")
+            if is_dev:
+                # Use standard -l flag for development symlinks (.so files)
+                link_name = get_libclang_link_name(libclang_filename)
+                libs.append(f"-l{link_name}")
+            else:
+                # Use -l: syntax for versioned runtime libraries (.so.X files)
+                libs.append(f"-l:{libclang_filename}")
         else:
             # Fallback to default names
             print("Warning: libclang not found, using default link names", flush=True)
