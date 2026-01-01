@@ -173,8 +173,15 @@ class LdFlagsBuilder:
         return self
 
     def build(self) -> str:
-        """Build the final LDFLAGS string."""
-        return " ".join(self._flags)
+        """Build the final LDFLAGS string with proper escaping."""
+        escaped = []
+        for flag in self._flags:
+            if " " in flag:
+                # Wrap flags with spaces in escaped quotes
+                escaped.append(f'\\"{flag}\\"')
+            else:
+                escaped.append(flag)
+        return " ".join(escaped)
 
 
 def root_dir():
@@ -270,19 +277,14 @@ def preprocess_environment(env):
             else:
                 libs.append(f"-l{lib_name[3:]}")  # strip 'lib' prefix
     else:
-        # Dynamic libclang - search for library
+        # Dynamic libclang - search for library and link directly by full path
         found = find_libclang()
         if found:
             libclang_path, libclang_filename, is_dev = found
-            print(f"Found libclang: {libclang_path / libclang_filename} (dev_symlink={is_dev})", flush=True)
-            builder.add_lib_path(str(libclang_path))
-            if is_dev:
-                # Use standard -l flag for development symlinks (.so files)
-                link_name = get_libclang_link_name(libclang_filename)
-                libs.append(f"-l{link_name}")
-            else:
-                # Use -l: syntax for versioned runtime libraries (.so.X files)
-                libs.append(f"-l:{libclang_filename}")
+            full_path = str(libclang_path / libclang_filename)
+            print(f"Found libclang: {full_path} (dev_symlink={is_dev})", flush=True)
+            # Directly specify the library file path
+            libs.append(full_path)
         else:
             # Fallback to default names
             print("Warning: libclang not found, using default link names", flush=True)
