@@ -28,7 +28,13 @@ public macro env(input: Tokens): Tokens {
     let name = token.value
     let value = match (env.getVariable(name)) {
         case Some(v) => v
-        case None => ""
+        case None => 
+            let isCI = env.getVariable("CI").isSome()
+            if (isCI) {
+                throw Exception("env variable ${name} is not set")
+            } else {
+                "env-placeholder"
+            }
     }
 
     let clean = value.trimAscii()
