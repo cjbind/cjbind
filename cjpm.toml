@@ -1,32 +1,4 @@
-[dependencies]
-  glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.2.0" }
-
-[package]
-  cjc-version = "1.0.4"
-  compile-option = "-Woff unused -V"
-  description = "A simple C binding generator for Cangjie"
-  link-option = "${LDFLAGS}"
-  name = "cjbind"
-  output-type = "executable"
-  override-compile-option = ""
-  src-dir = ""
-  target-dir = ""
-  version = "0.2.7"
-
-[profile.customized-option]
-  cfg_opt = "-O2"
-  cfg_verbose = "-V"
-
-[target.x86_64-w64-mingw32.release]
-  compile-option = "-O2"
-
-[target.aarch64-apple-darwin.release]
-  compile-option = "-O2"
-  link-option = "-no_data_const"
-
-[target.x86_64-unknown-linux-gnu.release]
-  compile-option = "-O2"
-
-[target.aarch64-unknown-linux-gnu.release]
-  compile-option = "-O2"
-  
+[workspace]
+members = [
+    "cjbind"
+]
