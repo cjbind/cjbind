@@ -127,7 +127,7 @@ jobs:
       - name: Test binary
         shell: bash
         run: |
-          ./target/${{ matrix.build.channel }}/bin/main${{ matrix.os.ext }} --version
+          ./target/${{ matrix.build.channel }}/bin/cjbind${{ matrix.os.ext }} --version
 
       - name: Upload artifact
         if: always()
@@ -135,14 +135,14 @@ jobs:
         with:
           name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
           path: |
-            target/${{ matrix.build.channel }}/bin/main*
+            target/${{ matrix.build.channel }}/bin/cjbind*
 
       - name: Rename binary
         if: github.event_name == 'release' && matrix.build.channel == 'release'
         shell: bash
         run: |
           cd target/release/bin
-          mv main${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
+          mv cjbind${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
 
       - name: Upload to Release
         if: github.event_name == 'release' && matrix.build.channel == 'release'
