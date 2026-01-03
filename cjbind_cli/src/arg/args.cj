@@ -1,4 +1,4 @@
-package cjbind.arg
+package cjbind_cli.arg
 
 import std.collection.{ArrayList, HashMap}
 import cjbind.utils.sprintAlign
