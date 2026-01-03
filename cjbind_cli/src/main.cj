@@ -1,5 +1,6 @@
-package cjbind
+package cjbind_cli
 
+import cjbind.{generate}
 import cjbind.utils.{updateConsole, formatString}
 import cjbind.options.CjbindOptions
 
