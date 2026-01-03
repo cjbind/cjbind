@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "cjbind",
-    "cjbind_cli"
+    "cjbind_cli",
+    "cjbind_test"
 ]
