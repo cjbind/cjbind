@@ -1,0 +1,8 @@
+[dependencies]
+  cjbind = { path = "../cjbind" }
+
+[package]
+  cjc-version = "1.0.4"
+  name = "cjbind_test"
+  output-type = "executable"
+  version = "0.2.7"
