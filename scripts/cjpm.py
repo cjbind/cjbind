@@ -249,7 +249,7 @@ def run_llvm_config(*args):
             f"Command {cmd} failed with output:\n{e.output}") from e
     
 def read_version():
-    cjpm_toml = os.path.join(root_dir(), "cjbind", "cjpm.toml")
+    cjpm_toml = os.path.join(root_dir(), "cjbind_cli", "cjpm.toml")
     with open(cjpm_toml, "rb") as f:
         data = tomllib.load(f)
     return data["package"]["version"]

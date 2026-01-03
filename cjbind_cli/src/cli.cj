@@ -1,14 +1,14 @@
-package cjbind
+package cjbind_cli
 
 import std.fs.File
 import std.env
-import cjbind.arg.{Flag, StringFlag, BoolFlag, ArgsParser}
+import cjbind_cli.arg.{Flag, StringFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
 import cjbind.options.CjbindOptions
 import cjbind.utils.sprintAlign
 
-func processArgs(): (CjbindOptions, (String) -> Unit) {
+public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let noEnumPrefixFlag = BoolFlag(None, "no-enum-prefix", "no-enum-prefix",
         "生成枚举时，不使用枚举名称作为枚举值的前缀",)
     let noDetectIncludePath = BoolFlag(None, "no-detect-include-path", "no-detect-include-path",

@@ -1,6 +1,6 @@
 package cjbind.build
 
-import cjbind.build.macros.{exec, env}
+import cjbind.build.macros.{env, exec}
 
 public const VERSION: String = @env("CJBIND_VERSION")
 public const COMMIT_HASH: String = @exec("git rev-parse HEAD")
