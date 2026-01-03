@@ -11,3 +11,5 @@ build-script-cache/
 .VSCodeCounter/
 *.txt
 *.exe
+
+CLAUDE.md

@@ -1,2 +1,0 @@
-package cjbind_test
-
