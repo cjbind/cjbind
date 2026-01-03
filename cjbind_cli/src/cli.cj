@@ -2,7 +2,7 @@ package cjbind_cli
 
 import std.fs.File
 import std.env
-import cjbind_cli.arg.{Flag, StringFlag, BoolFlag, ArgsParser}
+import cjbind_cli.arg.{StringFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
 import cjbind.options.CjbindOptions
