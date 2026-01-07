@@ -95,6 +95,12 @@ jobs:
           brew install llvm
           echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> $GITHUB_ENV
 
+      - name: Install OpenSSL on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install openssl
+          echo "DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
         uses: msys2/setup-msys2@v2
