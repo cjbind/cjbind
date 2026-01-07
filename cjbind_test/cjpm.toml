@@ -6,4 +6,4 @@
   cjc-version = "1.0.4"
   name = "cjbind_test"
   output-type = "executable"
-  version = "0.2.7"
+  version = "0.2.9"
