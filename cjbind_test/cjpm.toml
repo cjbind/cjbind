@@ -3,7 +3,7 @@
   glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.2.0" }
 
 [package]
-  cjc-version = "1.0.4"
+  cjc-version = "1.1.0-alpha.20260107020002"
   name = "cjbind_test"
   output-type = "executable"
   version = "0.2.9"
