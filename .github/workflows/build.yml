@@ -39,11 +39,11 @@ jobs:
         build:
           - channel: "release"
             flag: ""
-          # - channel: "debug"
-          #   flag: "-g"
+          - channel: "debug"
+            flag: "-g"
         linking:
-          - mode: "static"
           - mode: "dynamic"
+          - mode: "static"
       fail-fast: false
 
     runs-on: ${{ matrix.os.runner }}
@@ -60,13 +60,14 @@ jobs:
 
       - name: Restore cached libclang
         id: cache-libclang-restore
+        if: matrix.linking.mode == 'static'
         uses: actions/cache/restore@v4
         with:
           path: lib/libclang
           key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
 
       - name: Download libclang
-        if: steps.cache-libclang-restore.outputs.cache-hit != 'true'
+        if: matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
         run: |
           uv run scripts/download.py
 
@@ -109,15 +110,16 @@ jobs:
             ${{ matrix.linking.mode == 'dynamic' && 'mingw-w64-x86_64-clang' || '' }}
           path-type: inherit
 
+      # Skip debug builds on release events
       - name: Build unix ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
-        if: matrix.os.sys != 'windows'
+        if: matrix.os.sys != 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
         env:
           LINK_MODE: ${{ matrix.linking.mode }}
         run: |
           uv run scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Build windows ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
-        if: matrix.os.sys == 'windows'
+        if: matrix.os.sys == 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
         shell: msys2 {0}
         env:
           LINK_MODE: ${{ matrix.linking.mode }}
@@ -125,12 +127,13 @@ jobs:
           uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Test binary
+        if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
         shell: bash
         run: |
           ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
 
       - name: Upload artifact
-        if: always()
+        if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
         uses: actions/upload-artifact@v4
         with:
           name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
@@ -156,7 +159,7 @@ jobs:
 
       - name: Always Save libclang
         id: cache-libclang-save
-        if: always() && steps.cache-libclang-restore.outputs.cache-hit != 'true'
+        if: always() && matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
