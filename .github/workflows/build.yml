@@ -80,8 +80,8 @@ jobs:
       - name: Setup Cangjie
         uses: Zxilly/setup-cangjie@v2
         with:
-          channel: "lts"
-          version: "auto"
+          channel: "nightly"
+          version: "1.1.0-alpha.20260107020002"
 
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
