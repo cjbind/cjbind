@@ -146,6 +146,25 @@ def find_libclang() -> tuple[Path, str, bool] | None:
     return None
 
 
+def find_gcc_lib_path():
+    """Find the directory containing libgcc.a using gcc."""
+    try:
+        # Try finding libgcc using gcc
+        output = subprocess.check_output(
+            ["gcc", "-print-libgcc-file-name"],
+            text=True,
+            stderr=subprocess.DEVNULL
+        ).strip()
+        # The output is likely a path like .../libgcc.a
+        # We need to make sure we're getting a valid path
+        path = Path(output)
+        if path.is_file():
+            return str(path.parent)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    return None
+
+
 def get_libclang_link_name(filename: str) -> str:
     """Get linker name from filename (strips 'lib' prefix and extensions)."""
     name = filename
@@ -256,8 +275,8 @@ def read_version():
 
 
 def is_dynamic_libclang():
-    """Check if dynamic linking should be used (LINK_MODE env var, default: static, options: static/dynamic)."""
-    return os.environ.get("LINK_MODE", "static").lower() == "dynamic"
+    """Check if dynamic linking should be used (LINK_MODE env var, default: dynamic, options: static/dynamic)."""
+    return os.environ.get("LINK_MODE", "dynamic").lower() == "dynamic"
 
 
 def preprocess_environment(env):
@@ -266,19 +285,33 @@ def preprocess_environment(env):
     debug = "-g" in sys.argv
     dynamic = is_dynamic_libclang()
 
-    # Strip flag (non-debug mode)
+    # Print build mode info
+    link_mode = "dynamic" if dynamic else "static"
+    build_mode = "debug" if debug else "release"
+    print(f"Build mode: {build_mode}, Link mode: {link_mode} (platform: {sys.platform})", flush=True)
+
+    # Strip flag (release mode only, not on darwin)
     if not debug and sys.platform != "darwin":
         builder.add("--strip-all")
 
     # Library search path
     builder.add_lib_path(libdir)
 
+    # Add GCC lib path for Windows to find libgcc.a
+    if sys.platform == "win32":
+        gcc_lib_path = find_gcc_lib_path()
+        if gcc_lib_path:
+            builder.add_lib_path(gcc_lib_path)
+
     # Platform-specific flags
     match sys.platform:
         case "darwin":
             builder.add("-search_paths_first", "-headerpad_max_install_names")
         case "linux":
-            builder.add("--gc-sections", "--gc-keep-exported", f"-T{cpp_lds()}")
+            # Skip gc-sections in debug mode to preserve debug info
+            if not debug:
+                builder.add("--gc-sections", "--gc-keep-exported")
+            builder.add(f"-T{cpp_lds()}")
 
     # System libs
     system_libs = run_llvm_config("--system-libs")
@@ -332,19 +365,26 @@ def preprocess_environment(env):
                 libs.append(f"-l{lib_name[3:]}")  # strip 'lib' prefix
 
     # C++ runtime
+    runtime_libs = []
     match sys.platform:
         case "win32":
             if dynamic:
-                libs.extend(["-lstdc++", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"])
+                # Dynamic linking: use shared versions of all runtime libs
+                runtime_libs = ["-lstdc++", "-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
             else:
-                libs.extend(["-l:libstdc++.a", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"])
+                runtime_libs = ["-l:libstdc++.a", "-l:libgcc.a", "-l:libgcc_eh.a", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
         case "darwin":
-            libs.extend(["-lc++", "-lc++abi", "-lSystem"])
+            runtime_libs = ["-lc++", "-lc++abi", "-lSystem"]
         case "linux":
             if dynamic:
-                libs.extend(["-lstdc++", "-lgcc_s"])
+                # Dynamic linking: use shared versions of all runtime libs
+                runtime_libs = ["-lstdc++", "-lgcc_s"]
             else:
-                libs.extend(["-l:libstdc++.a", "-lgcc_s"])
+                # Static linking: use static versions of all runtime libs
+                runtime_libs = ["-l:libstdc++.a", "-l:libgcc.a", "-l:libgcc_eh.a"]
+    
+    print(f"Runtime libs: {' '.join(runtime_libs)}", flush=True)
+    libs.extend(runtime_libs)
 
     # Add with grouping for non-darwin
     if sys.platform != "darwin":
