@@ -83,10 +83,6 @@ jobs:
           channel: "lts"
           version: "auto"
 
-      - name: Patch Cangjie
-        run: |
-          uv run scripts/patch_opt.py
-
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
         run: |
