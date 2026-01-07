@@ -281,7 +281,6 @@ def is_dynamic_libclang():
 
 def preprocess_environment(env):
     builder = LdFlagsBuilder()
-    libdir = run_llvm_config("--libdir")
     debug = "-g" in sys.argv
     dynamic = is_dynamic_libclang()
 
@@ -294,8 +293,10 @@ def preprocess_environment(env):
     if not debug and sys.platform != "darwin":
         builder.add("--strip-all")
 
-    # Library search path
-    builder.add_lib_path(libdir)
+    # Library search path (only for static linking)
+    if not dynamic:
+        libdir = run_llvm_config("--libdir")
+        builder.add_lib_path(libdir)
 
     # Add GCC lib path for Windows to find libgcc.a
     if sys.platform == "win32":
@@ -311,14 +312,11 @@ def preprocess_environment(env):
             # Skip gc-sections in debug mode to preserve debug info
             if not debug:
                 builder.add("--gc-sections", "--gc-keep-exported")
-            builder.add(f"-T{cpp_lds()}")
-
-    # System libs
-    system_libs = run_llvm_config("--system-libs")
+            if not dynamic:
+                builder.add(f"-T{cpp_lds()}")
 
     # Build library list for grouping (non-darwin)
     libs = []
-    libs.extend(system_libs.split())
 
     if dynamic:
         # Dynamic libclang - search for library and link directly by full path
@@ -346,6 +344,10 @@ def preprocess_environment(env):
                 case _:
                     libs.append("-lclang")
     else:
+        # Static linking: use llvm-config to get system libs and LLVM libs
+        system_libs = run_llvm_config("--system-libs")
+        libs.extend(system_libs.split())
+
         # Static LLVM libs
         static_libs = run_llvm_config("--link-static", "--libs")
         for lib in static_libs.split():
