@@ -10,7 +10,7 @@
   override-compile-option = ""
   src-dir = ""
   target-dir = ""
-  version = "0.2.9"
+  version = "0.2.10"
 
 [profile.customized-option]
   cfg_opt = "-O2"
