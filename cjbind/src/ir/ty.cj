@@ -347,6 +347,9 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     case None => None
                 }
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
+            case TypeKind.TypeKindPointer(_) =>
+                let size = ctx.pointerWidth()
+                Some(Layout(size, size))
             case _ => None
         }
     }

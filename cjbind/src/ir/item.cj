@@ -26,8 +26,9 @@ public class ItemAncestorsIter <: Iterator<ItemId> {
                 if (it.parentId == this.currentId) {
                     return None
                 }
+                let oldId = this.currentId
                 this.currentId = it.parentId
-                return Some(this.currentId)
+                return Some(oldId)
             case None => return None
         }
     }

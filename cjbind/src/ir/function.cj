@@ -88,17 +88,16 @@ public class Function <: ClangSubItemParser<Function> {
 
 public enum Abi <: ToTokens {
     C
-    | Win64 // STDCALL in cangjie 
+    | Stdcall
+    | Fastcall
+    | ThisCall
+    | Vectorcall
+    | Aapcs
+    | Win64
 
     public func toTokens(): Tokens {
-        // match (this) {
-        //     case C => 
-        //         return quote(@CallingConv[CDECL])
-        //     case Win64 =>
-        //         return quote(@CallingConv[STDCALL])
-        // }
-        
-        // not sure if stdcall exist
+        // Cangjie currently only supports CDECL calling convention.
+        // All ABIs are mapped to CDECL until Cangjie adds support for others.
         return quote(@CallingConv[CDECL])
     }
 }
@@ -110,8 +109,9 @@ public enum ClangAbi <: ToTokens {
     public func toTokens(): Tokens {
         match (this) {
             case Known(v) => v.toTokens()
-            case Unknown(v) =>
-                throw Exception("can not generate unknown calling convention")
+            case Unknown(_) =>
+                // Fall back to C calling convention for unknown ABIs
+                Abi.C.toTokens()
         }
     }
 }
@@ -119,6 +119,21 @@ public enum ClangAbi <: ToTokens {
 func getAbi(cc: clang.CXCallingConv): ClangAbi {
     if (cc == clang.CXCallingConv_CXCallingConv_C || cc == clang.CXCallingConv_CXCallingConv_Default) {
         return Known(Abi.C)
+    }
+    if (cc == clang.CXCallingConv_CXCallingConv_X86StdCall) {
+        return Known(Abi.Stdcall)
+    }
+    if (cc == clang.CXCallingConv_CXCallingConv_X86FastCall) {
+        return Known(Abi.Fastcall)
+    }
+    if (cc == clang.CXCallingConv_CXCallingConv_X86ThisCall) {
+        return Known(Abi.ThisCall)
+    }
+    if (cc == clang.CXCallingConv_CXCallingConv_X86VectorCall || cc == clang.CXCallingConv_CXCallingConv_AArch64VectorCall) {
+        return Known(Abi.Vectorcall)
+    }
+    if (cc == clang.CXCallingConv_CXCallingConv_AAPCS) {
+        return Known(Abi.Aapcs)
     }
     if (cc == clang.CXCallingConv_CXCallingConv_X86_64Win64) {
         return Known(Abi.Win64)

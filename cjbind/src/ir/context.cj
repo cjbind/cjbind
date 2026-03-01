@@ -573,11 +573,7 @@ public class CjbindContext {
         let keyword = builtins.contains(name)
 
         if (name.contains("@") || name.contains("?") || name.contains("$") || keyword) {
-            return if (keyword) {
-                name + "_"
-            } else {
-                name.replace("@", "_").replace("?", "_").replace("$", "_")
-            }
+            return name.replace("@", "_").replace("?", "_").replace("$", "_") + "_"
         }
 
         return name

@@ -77,7 +77,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 }
                 return false
             }
-            .getOrDefault({=> false})
+            .getOrDefault({=> true})
 
         let maybeAnonymousStructField: Box<?(TypeId, clang.Type, ?UIntNative)> = Box(None)
         cursor
@@ -300,6 +300,10 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     }
 
     public func isOpaque(ctx: CjbindContext, layout: Option<Layout>): Bool {
+        if (this.hasUnevaluableBitFieldWidth) {
+            return true
+        }
+
         if (let CompFields.CompFieldsError <- this.fields) {
             return true
         }
@@ -616,15 +620,10 @@ func bitfieldsToAllocationUnits(
         bitfieldUnitCount: Box<Int64>,
         unitSizeInBits: UInt32,
         unitAlignInBits: UInt32,
-        bitfields: ArrayList<Bitfield>,
-        packed: Bool
+        bitfields: ArrayList<Bitfield>
     ) {
         bitfieldUnitCount.value += 1
-        let align = if (packed) {
-            1u32
-        } else {
-            bytesFromBitsPow2(unitAlignInBits)
-        }
+        let align = 1u32
         let size = alignTo(unitSizeInBits, 8) / 8
         let layout = Layout(Int32(size), Int32(align))
         let tf = Field.Bitfields(
@@ -663,7 +662,7 @@ func bitfieldsToAllocationUnits(
 
         if (bitfield.name.isSome()) {
             maxAlign = max(maxAlign, bitfieldAlign)
-            unitAlign = max(unitAlign, bitfieldWidth)
+            unitAlign = max(unitAlign, bitfieldAlign)
         }
 
         bitfieldsInUnit.add(Bitfield(UIntNative(offset), bitfield))
@@ -679,8 +678,7 @@ func bitfieldsToAllocationUnits(
             bitfieldUnitCount,
             unitSizeInBits,
             unitAlign,
-            bitfieldsInUnit,
-            packed
+            bitfieldsInUnit
         )
     }
 
