@@ -217,7 +217,7 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         result.items.add(tokens)
 
-        if (ctx.options.makeFuncWrapper) {
+        if (ctx.options.makeFuncWrapper && !signature.getIsVariadic()) {
             let wrapperName = ctx.cjIdent("${name}${ctx.options.funcWrapperSuffix}")
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
             let argsNameToken = joinTokens(argsName, quote(,))
@@ -603,7 +603,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             r => ctx.resolveType(r)
         }) {
             case Some(r) => r
-            case None => Type(None, None, TypeKind.TypeKindInt(TypeKindIntKind.IntKindI8), false)
+            case None => Type(None, None, TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt), false)
         }
 
         let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
