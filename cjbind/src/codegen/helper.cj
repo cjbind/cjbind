@@ -79,8 +79,20 @@ public class AstTy {
             case TypeKindIntKind.IntKindUShort => rawType(ctx, "UInt16")
             case TypeKindIntKind.IntKindInt => rawType(ctx, "Int32")
             case TypeKindIntKind.IntKindUInt => rawType(ctx, "UInt32")
-            case TypeKindIntKind.IntKindLong => rawType(ctx, "Int64")
-            case TypeKindIntKind.IntKindULong => rawType(ctx, "UInt64")
+            case TypeKindIntKind.IntKindLong =>
+                let longSize = layout.getOrThrow().size
+                match (longSize) {
+                    case 4 => rawType(ctx, "Int32")
+                    case 8 => rawType(ctx, "Int64")
+                    case _ => rawType(ctx, "Int64")
+                }
+            case TypeKindIntKind.IntKindULong =>
+                let ulongSize = layout.getOrThrow().size
+                match (ulongSize) {
+                    case 4 => rawType(ctx, "UInt32")
+                    case 8 => rawType(ctx, "UInt64")
+                    case _ => rawType(ctx, "UInt64")
+                }
             case TypeKindIntKind.IntKindLongLong => rawType(ctx, "Int64")
             case TypeKindIntKind.IntKindULongLong => rawType(ctx, "UInt64")
             case TypeKindIntKind.IntKindWChar =>
