@@ -21,6 +21,9 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
     let arrayPointersInArgs = BoolFlag(None, "array-pointers-in-args", "array-pointers-in-args", "把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>")
     let makeCjString = BoolFlag(None, "make-cjstring", "make-cjstring", "把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致")
+    let objcFlag = BoolFlag(None, "objc", "objc", "启用 Objective-C 绑定生成模式")
+    let objcCodegenModeFlag = StringFlag(None, "objc-codegen-mode", "objc-codegen-mode", "ObjC 代码生成模式: runtime (默认) 或 compiler", "MODE", "runtime")
+    let objcGenerateDefinitions = BoolFlag(None, "objc-generate-definitions", "objc-generate-definitions", "在 compiler 模式下生成带默认返回值的方法桩体")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -40,6 +43,9 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         autoCString,
         arrayPointersInArgs,
         makeCjString,
+        objcFlag,
+        objcCodegenModeFlag,
+        objcGenerateDefinitions,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -68,6 +74,9 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.funcWrapperSuffix = funcWrapperSuffixFlag.value.getOrThrow()
     opt.arrayPointersInArgs = arrayPointersInArgs.value
     opt.makeCjString = makeCjString.value
+    opt.objc = objcFlag.value
+    opt.objcCodegenMode = objcCodegenModeFlag.value.getOrThrow()
+    opt.objcGenerateDefinitions = objcGenerateDefinitions.value
 
     let output: ?String = outputFlag.value
 

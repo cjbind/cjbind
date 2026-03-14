@@ -177,6 +177,17 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func retType(): ?Type {
+        unsafe {
+            let ret = Type(clang_getCursorResultType(x))
+            if (ret.isValid()) {
+                return Some(ret)
+            } else {
+                return None
+            }
+        }
+    }
+
     public func definition(): Option<Cursor> {
         unsafe {
             let ret = Cursor(clang_getCursorDefinition(x))
@@ -407,6 +418,57 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         return children
     }
 
+    // --- ObjC support ---
+
+    /// Get ObjC property attributes (readonly, copy, retain, etc.)
+    public func objcPropertyAttributes(): UInt32 {
+        unsafe {
+            return clang_Cursor_getObjCPropertyAttributes(x, 0)
+        }
+    }
+
+    /// Get ObjC property getter name
+    public func objcPropertyGetterName(): String {
+        unsafe {
+            return cxstringToString(clang_Cursor_getObjCPropertyGetterName(x))
+        }
+    }
+
+    /// Get ObjC property setter name
+    public func objcPropertySetterName(): String {
+        unsafe {
+            return cxstringToString(clang_Cursor_getObjCPropertySetterName(x))
+        }
+    }
+
+    /// Check if this cursor is an ObjC @optional method/property
+    public func isObjCOptional(): Bool {
+        unsafe {
+            return clang_Cursor_isObjCOptional(x) != 0
+        }
+    }
+
+    /// Get ObjC declaration qualifiers (in, out, inout, bycopy, byref, oneway)
+    public func objcDeclQualifiers(): UInt32 {
+        unsafe {
+            return clang_Cursor_getObjCDeclQualifiers(x)
+        }
+    }
+
+    /// Get ObjC selector index for this cursor
+    public func objcSelectorIndex(): Int32 {
+        unsafe {
+            return clang_Cursor_getObjCSelectorIndex(x)
+        }
+    }
+
+    /// Get ObjC type encoding for a declaration
+    public func objcTypeEncoding(): String {
+        unsafe {
+            return cxstringToString(clang_getDeclObjCTypeEncoding(x))
+        }
+    }
+
     // cjlint-ignore -start !G.OPR.01 eq
     public operator func ==(that: Cursor): Bool {
         unsafe {
@@ -603,7 +665,7 @@ public class Type <: Equatable<Type> {
     public func pointeeType(): ?Type {
         let k = this.kind()
         if (k == CXTypeKind_CXType_Pointer || k == CXTypeKind_CXType_RValueReference || k == CXTypeKind_CXType_LValueReference || k ==
-            CXTypeKind_CXType_MemberPointer || k == CXTypeKind_CXType_BlockPointer) {
+            CXTypeKind_CXType_MemberPointer || k == CXTypeKind_CXType_BlockPointer || k == CXTypeKind_CXType_ObjCObjectPointer) {
             unsafe {
                 let p = Type(clang_getPointeeType(x))
                 if (!p.isValid()) {
@@ -624,6 +686,63 @@ public class Type <: Equatable<Type> {
     public func atomicValueType(): Type {
         unsafe {
             return Type(clang_Type_getValueType(x))
+        }
+    }
+
+    // --- ObjC support ---
+
+    /// Get nullability of this type (NonNull, Nullable, Unspecified, Invalid)
+    public func nullability(): CXTypeNullabilityKind {
+        unsafe {
+            return clang_Type_getNullability(x)
+        }
+    }
+
+    public func isNullable(): Bool {
+        let n = this.nullability()
+        return n == CXTypeNullabilityKind_CXTypeNullability_Nullable ||
+            n == CXTypeNullabilityKind_CXTypeNullability_NullableResult
+    }
+
+    /// Get ObjC type encoding string
+    public func objcEncoding(): String {
+        unsafe {
+            return cxstringToString(clang_Type_getObjCEncoding(x))
+        }
+    }
+
+    /// Get the base type of an ObjC object type
+    public func objcObjectBaseType(): Type {
+        unsafe {
+            return Type(clang_Type_getObjCObjectBaseType(x))
+        }
+    }
+
+    /// Get the number of ObjC type arguments
+    public func numObjCTypeArgs(): UInt32 {
+        unsafe {
+            return clang_Type_getNumObjCTypeArgs(x)
+        }
+    }
+
+    /// Get an ObjC type argument at the given index
+    public func objcTypeArg(index: UInt32): Type {
+        unsafe {
+            return Type(clang_Type_getObjCTypeArg(x, index))
+        }
+    }
+
+    /// Get the number of ObjC protocol references
+    public func numObjCProtocolRefs(): UInt32 {
+        unsafe {
+            return clang_Type_getNumObjCProtocolRefs(x)
+        }
+    }
+
+    /// Get ObjC protocol declaration at the given index
+    public func objcProtocolDecl(index: UInt32): Cursor {
+        unsafe {
+            return Cursor(clang_Type_getObjCProtocolDecl(x, index))
         }
     }
 

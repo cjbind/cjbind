@@ -365,6 +365,8 @@ extend Type <: CodeGenerator<Item, Unit> {
                     .TypeKindComplex(_) | TypeKind.TypeKindArray(_, _) | TypeKind.TypeKindVector(_, _) | TypeKind
                     .TypeKindPointer(_) | TypeKind.TypeKindFunction(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
                     .TypeKindOpaque => ()
+            case TypeKind.TypeKindObjCInterface(iface) => iface.codegen(ctx, result, item)
+            case TypeKind.TypeKindObjCId | TypeKind.TypeKindObjCSel | TypeKind.TypeKindObjCBlockPointer(_) => ()
             case TypeKind.TypeKindComp(ci) => ci.codegen(ctx, result, item)
             case TypeKind.TypeKindAlias(inner) =>
                 let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)

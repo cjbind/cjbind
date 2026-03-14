@@ -231,6 +231,12 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
         } else if (tyKind == clang.CXTypeKind_CXType_Typedef) {
             let inner = cursor.typedefType().getOrThrow()
+            // Detect ObjC generic typedef (typedef + ObjCObjectPointer + TemplateTypeParameter)
+            // These are erased to id to prevent duplicate typedefs
+            let innerKind = inner.kind()
+            if (innerKind == clang.CXTypeKind_CXType_ObjCObjectPointer || innerKind == clang.CXTypeKind_CXType_ObjCTypeParam) {
+                TypeKind.TypeKindObjCId
+            } else {
             let innerId = Item.fromTyOrRef(inner, location, None, ctx)
             if (innerId == potentialId) {
                 TypeKind.TypeKindOpaque
@@ -241,11 +247,12 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                         if (pointee.kind() == clang.CXTypeKind_CXType_Elaborated &&
                         pointee.declaration().spelling() == n) {
                             name = Some(n + "_ptr")
-                        } 
+                        }
                     }
                 }
 
                 TypeKind.TypeKindAlias(innerId)
+            }
             }
         } else if (tyKind == clang.CXTypeKind_CXType_Enum) {
             let enum_ = Enum.fromTy(ty, ctx).expect("Not an enum?")
@@ -310,6 +317,29 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             )
         } else if (tyKind == clang.CXTypeKind_CXType_Dependent) {
             return Err(ParseError.Continue)
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCId || tyKind == clang.CXTypeKind_CXType_ObjCClass) {
+            TypeKind.TypeKindObjCId
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCSel) {
+            TypeKind.TypeKindObjCSel
+        } else if (tyKind == clang.CXTypeKind_CXType_BlockPointer) {
+            let pointee = ty.pointeeType().getOrThrow()
+            let inner = Item.fromTyOrRef(pointee, location, None, ctx)
+            TypeKind.TypeKindObjCBlockPointer(inner)
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCObjectPointer) {
+            // ObjC object pointer (e.g., NSData*) - try to resolve to known class
+            let pointeeTy = ty.pointeeType()
+            if (let Some(pt) <- pointeeTy) {
+                resolveObjCInterfaceByName(ctx, pt.spelling())
+            } else {
+                TypeKind.TypeKindObjCId
+            }
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCInterface) {
+            resolveObjCInterfaceByName(ctx, ty.spelling())
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCObject) {
+            TypeKind.TypeKindObjCId
+        } else if (tyKind == clang.CXTypeKind_CXType_ObjCTypeParam) {
+            // Generic type params erased to id
+            TypeKind.TypeKindObjCId
         } else {
             // unsupported
             return Err(ParseError.Continue)
@@ -347,7 +377,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     case None => None
                 }
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
-            case TypeKind.TypeKindPointer(_) =>
+            case TypeKind.TypeKindPointer(_) |
+                TypeKind.TypeKindObjCInterface(_) |
+                TypeKind.TypeKindObjCId |
+                TypeKind.TypeKindObjCSel |
+                TypeKind.TypeKindObjCBlockPointer(_) =>
                 let size = ctx.pointerWidth()
                 Some(Layout(size, size))
             case _ => None
@@ -367,7 +401,8 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 TypeKind.TypeKindFunction(_) |
                 TypeKind.TypeKindPointer(_) |
                 TypeKind.TypeKindArray(_, _) |
-                TypeKind.ResolvedTypeRef(_) => true
+                TypeKind.ResolvedTypeRef(_) |
+                TypeKind.TypeKindObjCInterface(_) => true
             case _ => false
         }
     }
@@ -376,6 +411,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         let nameInfo: ?(ItemId, String) = match (this.kind) {
             case TypeKind.TypeKindPointer(inner) => Some((inner, "ptr"))
             case TypeKind.TypeKindArray(inner, length) => Some((inner, "array${length}"))
+            case TypeKind.TypeKindObjCInterface(iface) => return Some(iface.name)
             case _ => None
         }
 
@@ -452,12 +488,51 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 }
             case TypeKind.UnresolvedTypeRef(_, _, Some(id)) =>
                 tracer.visit(id)
+            case TypeKind.TypeKindObjCInterface(iface) =>
+                for (proto in iface.conformsTo) {
+                    tracer.visitKind(proto, EdgeKind.TypeReferenceEdge)
+                }
+                if (let Some(parent) <- iface.parentClass) {
+                    tracer.visitKind(parent, EdgeKind.TypeReferenceEdge)
+                }
+                for (method in iface.methods) {
+                    method.signature.trace(context, tracer, ())
+                }
+                for (method in iface.classMethods) {
+                    method.signature.trace(context, tracer, ())
+                }
+                for (p in iface.properties) {
+                    tracer.visitKind(p.ty, EdgeKind.TypeReferenceEdge)
+                }
+            case TypeKind.TypeKindObjCBlockPointer(inner) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case _ => () // don't care
         }
 
 
     }
     // cjlint-ignore -end
+}
+
+func resolveObjCInterfaceByName(ctx: CjbindContext, name: String): TypeKind {
+    if (name.isEmpty()) {
+        return TypeKind.TypeKindObjCId
+    }
+    match (ctx.objcInterfaces.get(name)) {
+        case Some(ifaceId) =>
+            let ifaceItem = ctx.resolveItem(ifaceId)
+            match (ifaceItem.kind) {
+                case ItemKind.KindType(ifaceTy) =>
+                    match (ifaceTy.kind) {
+                        case TypeKind.TypeKindObjCInterface(iface) =>
+                            return TypeKind.TypeKindObjCInterface(iface)
+                        case _ => ()
+                    }
+                case _ => ()
+            }
+        case None => ()
+    }
+    return TypeKind.TypeKindObjCId
 }
 
 public enum TypeKind {
@@ -476,4 +551,8 @@ public enum TypeKind {
     | TypeKindPointer(TypeId)
     | UnresolvedTypeRef(clang.Type, clang.Cursor, ?ItemId)
     | ResolvedTypeRef(TypeId)
+    | TypeKindObjCInterface(ObjCInterface)
+    | TypeKindObjCId
+    | TypeKindObjCSel
+    | TypeKindObjCBlockPointer(TypeId)
 }
