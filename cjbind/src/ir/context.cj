@@ -79,6 +79,8 @@ public class CjbindContext {
 
     public let parsedMacros: HashMap<String, MacroEvalResult> = HashMap()
 
+    public var objcInterfaces: HashMap<String, ItemId> = HashMap<String, ItemId>()
+
     public let includes: HashMap<String, (String, UIntNative)> = HashMap()
     public let deps: HashSet<String>
 

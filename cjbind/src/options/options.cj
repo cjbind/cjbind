@@ -17,6 +17,9 @@ public class CjbindOptions {
     public var autoCString = false
     public var arrayPointersInArgs = false
     public var makeCjString = false
+    public var objc = false
+    public var objcCodegenMode: String = "runtime"  // "runtime" | "compiler"
+    public var objcGenerateDefinitions = false
 
     public init() {}
 

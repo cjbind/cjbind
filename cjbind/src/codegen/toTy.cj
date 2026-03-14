@@ -193,6 +193,25 @@ extend Type <: TryToCjTy<Item> {
                 } else {
                     return Ok(ty.toPtr())
                 }
+            case TypeKind.TypeKindObjCId => return Ok(quote(CPointer<Unit>))
+            case TypeKind.TypeKindObjCSel => return Ok(quote(CPointer<Unit>))
+            case TypeKind.TypeKindObjCBlockPointer(inner) =>
+                // Try to resolve the inner function type for a typed block
+                let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
+                match (innerItem.kind.asType()) {
+                    case Some(innerTy) =>
+                        match (innerTy.canonicalType(ctx).kind) {
+                            case TypeKind.TypeKindFunction(blockSig) =>
+                                let blockRet = Utils.fnsigReturnTy(ctx, blockSig)
+                                let blockArgs = Utils.fnsigArguments(ctx, blockSig)
+                                let joinedBlockArgs = joinTokens(blockArgs, quote(,))
+                                return Ok(quote(CFunc<($(joinedBlockArgs)) -> $(blockRet)>))
+                            case _ => return Ok(quote(CPointer<Unit>))
+                        }
+                    case None => return Ok(quote(CPointer<Unit>))
+                }
+            case TypeKind.TypeKindObjCInterface(iface) =>
+                return Ok(Tokens(ctx.cjIdentRaw(iface.name)))
             case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("unreachable")
         }
     }
