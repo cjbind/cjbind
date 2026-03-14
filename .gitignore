@@ -14,3 +14,7 @@ build-script-cache/
 
 CLAUDE.md
 cangjie-mcp.log
+
+.agents/
+skills-lock.json
+ref/

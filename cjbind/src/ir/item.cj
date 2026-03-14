@@ -44,7 +44,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public var kind: ItemKind
     public let location: ?clang.SourceLocation
 
-    init(
+    public init(
         id: ItemId,
         comment: ?String,
         parentId: ItemId,

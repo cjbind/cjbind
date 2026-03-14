@@ -124,6 +124,13 @@ public class Utils {
 
             case "ssize_t" => primitiveTy(ctx, "IntNative")
             case "intptr_t" | "ptrdiff_t" => primitiveTy(ctx, "IntNative")
+
+            // ObjC type mappings
+            case "BOOL" => primitiveTy(ctx, "Bool")
+            case "NSInteger" => primitiveTy(ctx, "IntNative")
+            case "NSUInteger" => primitiveTy(ctx, "UIntNative")
+            case "CGFloat" => primitiveTy(ctx, "Float64")
+            case "NSTimeInterval" => primitiveTy(ctx, "Float64")
             case _ => None
         }
     }
