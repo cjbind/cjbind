@@ -50,10 +50,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
         with:
           python-version: "3.13"
           cache-dependency-glob: "**/*.py.lock"
@@ -61,7 +61,7 @@ jobs:
       - name: Restore cached libclang
         id: cache-libclang-restore
         if: matrix.linking.mode == 'static'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: lib/libclang
           key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
@@ -72,13 +72,13 @@ jobs:
           uv run scripts/download.py
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: 1.24
           cache: true
 
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@v2
+        uses: Zxilly/setup-cangjie@ae40ba79169e97c901fc36c94debfe68ccf7fef0 # v2.1.0
         with:
           channel: "nightly"
           version: "1.1.0-alpha.20260107020002"
@@ -103,7 +103,7 @@ jobs:
 
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@4f806de0a5a7294ffabaff804b38a9b435a73bda # v2.30.0
         with:
           msystem: MINGW64
           update: true
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
           path: |
@@ -162,7 +162,7 @@ jobs:
       - name: Always Save libclang
         id: cache-libclang-save
         if: always() && matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
           path: |
