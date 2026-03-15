@@ -24,6 +24,10 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let objcFlag = BoolFlag(None, "objc", "objc", "启用 Objective-C 绑定生成模式")
     let objcCodegenModeFlag = StringFlag(None, "objc-codegen-mode", "objc-codegen-mode", "ObjC 代码生成模式: runtime (默认) 或 compiler", "MODE", "runtime")
     let objcGenerateDefinitions = BoolFlag(None, "objc-generate-definitions", "objc-generate-definitions", "在 compiler 模式下生成带默认返回值的方法桩体")
+    let defaultEnumStyleFlag = StringFlag(None, "default-enum-style", "default-enum-style",
+        "默认枚举生成风格: consts (默认) 或 newtype", "STYLE", "consts")
+    let fitMacroConstantsFlag = BoolFlag(None, "fit-macro-constants", "fit-macro-constants",
+        "根据值范围选择最小适配整数类型")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -46,6 +50,8 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         objcFlag,
         objcCodegenModeFlag,
         objcGenerateDefinitions,
+        defaultEnumStyleFlag,
+        fitMacroConstantsFlag,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -77,6 +83,8 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.objc = objcFlag.value
     opt.objcCodegenMode = objcCodegenModeFlag.value.getOrThrow()
     opt.objcGenerateDefinitions = objcGenerateDefinitions.value
+    opt.defaultEnumStyle = defaultEnumStyleFlag.value.getOrThrow()
+    opt.fitMacroConstants = fitMacroConstantsFlag.value
 
     let output: ?String = outputFlag.value
 

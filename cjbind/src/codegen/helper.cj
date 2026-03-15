@@ -52,6 +52,92 @@ public class Helpers {
             return quote(VArray<$(ty), \$$(dataLen)>)
         }
     }
+
+    public static func unionReadHelper(typeName: String, cjType: Tokens): Tokens {
+        let funcName = "__cjbind_read_${typeName}"
+        let funcIdent = Tokens(Token(TokenKind.IDENTIFIER, funcName))
+        return quote(
+            @C
+            func $(funcIdent)(ptr: CPointer<UInt8>): $(cjType) {
+                return unsafe { CPointer<$(cjType)>(ptr).read() }
+            }
+        )
+    }
+
+    public static func unionWriteHelper(typeName: String, cjType: Tokens): Tokens {
+        let funcName = "__cjbind_write_${typeName}"
+        let funcIdent = Tokens(Token(TokenKind.IDENTIFIER, funcName))
+        return quote(
+            @C
+            func $(funcIdent)(ptr: CPointer<UInt8>, val: $(cjType)): Unit {
+                unsafe { CPointer<$(cjType)>(ptr).write(val) }
+            }
+        )
+    }
+
+    public static func bitfieldReadHelper(): Tokens {
+        return quote(
+            @C
+            func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
+                let startByte = bitOffset / 8
+                let bitShift = bitOffset % 8
+                let bytesNeeded = (bitWidth + bitShift + 7) / 8
+                var val: UInt64 = 0
+                var i: Int64 = 0
+                while (i < bytesNeeded) {
+                    val = val | (UInt64(unsafe { ptr.read(startByte + i) }) << UInt64(i * 8))
+                    i++
+                }
+                val = val >> UInt64(bitShift)
+                if (bitWidth < 64) {
+                    val = val & ((UInt64(1) << UInt64(bitWidth)) - 1)
+                }
+                return val
+            }
+        )
+    }
+
+    public static func bitfieldWriteHelper(): Tokens {
+        return quote(
+            @C
+            func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64, val: UInt64): Unit {
+                let startByte = bitOffset / 8
+                let bitShift = bitOffset % 8
+                let bytesNeeded = (bitWidth + bitShift + 7) / 8
+                var maskVal = val
+                if (bitWidth < 64) {
+                    maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
+                }
+                maskVal = maskVal << UInt64(bitShift)
+                var fieldMask: UInt64 = if (bitWidth < 64) {
+                    ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
+                } else {
+                    !UInt64(0)
+                }
+                var i: Int64 = 0
+                while (i < bytesNeeded) {
+                    let byteVal = UInt8((maskVal >> UInt64(i * 8)) & 0xFF)
+                    let byteMask = UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)
+                    let old = unsafe { ptr.read(startByte + i) }
+                    unsafe { ptr.write(startByte + i, (old & !byteMask) | (byteVal & byteMask)) }
+                    i++
+                }
+            }
+        )
+    }
+
+    public static func bitfieldReadSignedHelper(): Tokens {
+        return quote(
+            @C
+            func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
+                let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+                if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
+                    return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+                }
+                return Int64(raw)
+            }
+        )
+    }
 }
 
 public class AstTy {
