@@ -5,7 +5,7 @@ import std.env
 import std.collection.{ArrayList, HashSet}
 import cjbind.build.VERSION
 import cjbind.ir.*
-import cjbind.options.CjbindOptions
+import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.result.Result
 
 public struct CodegenSerializeError {
@@ -28,6 +28,7 @@ public enum CodegenError {
 
 public class CodegenResult {
     public let items: ArrayList<Tokens> = ArrayList<Tokens>()
+    public let helpers: ArrayList<Tokens> = ArrayList<Tokens>()
 
     public var sawCjbindUnion: Bool = false
     public var sawIncompleteArray: Bool = false
@@ -70,6 +71,7 @@ public class CodegenResult {
         this.sawIncompleteArray ||= next.sawIncompleteArray
         this.sawCjbindUnion ||= next.sawCjbindUnion
         this.sawBitfieldUnit ||= next.sawBitfieldUnit
+        this.helpers.add(all: next.helpers)
 
         return next.items
     }
@@ -90,7 +92,10 @@ public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
             ()
         )
 
-        let ret = joinTokens(result.items, Tokens(Token(TokenKind.NL), Token(TokenKind.NL)))
+        let allItems = ArrayList<Tokens>()
+        allItems.add(all: result.helpers)
+        allItems.add(all: result.items)
+        let ret = joinTokens(allItems, Tokens(Token(TokenKind.NL), Token(TokenKind.NL)))
         return Ok<Tokens, CodegenError>(ret)
     }
 }
@@ -289,6 +294,7 @@ extend Var <: CodeGenerator<Item, Unit> {
 
                         let ptr = vv.getChars()
                         let size = vv.size()
+                        // Intentionally includes null terminator for C string FFI compatibility
                         for (i in 0..=size) {
                             let d = unsafe { (ptr + i).read() }
                             data.add(d)
@@ -337,16 +343,9 @@ extend Var <: CodeGenerator<Item, Unit> {
                                     quote(public const $(canonicalIdent) : $(ty) = $(floatTokens))
                                 )
                             )
+                    } else {
+                        eprintln("Warning: skipping float constant '${canonicalName}' (NaN/Infinity/subnormal cannot be represented)")
                     }
-                case VarType.VarChar(vv) => result
-                    .items
-                    .add(
-                        optionalComment(
-                            ctx,
-                            commentToken,
-                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
-                        )
-                    )
             }
         } else {
             // 仓颉没有提供 extern C 的变量支持，忽略
@@ -473,8 +472,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 // Ensure helper functions are generated for this type
                                 if (!result.unionHelpersSeen.contains(typeName)) {
                                     result.unionHelpersSeen.add(typeName)
-                                    result.items.add(Helpers.unionReadHelper(typeName, fieldTy))
-                                    result.items.add(Helpers.unionWriteHelper(typeName, fieldTy))
+                                    result.helpers.add(Helpers.unionReadHelper(typeName, fieldTy))
+                                    result.helpers.add(Helpers.unionWriteHelper(typeName, fieldTy))
                                 }
 
                                 let readFuncName = "__cjbind_read_${typeName}"
@@ -486,13 +485,13 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 fields.add(quote(
                                     public func $(fieldIdent)(): $(fieldTy) {
                                         var s = this._storage
-                                        return unsafe { $(readIdent)(inout s) }
+                                        return unsafe { $(readIdent)(CPointer<UInt8>(inout s)) }
                                     }
                                 ))
                                 // setter (mut, write in-place)
                                 fields.add(quote(
                                     public mut func $(fieldIdent)(val!: $(fieldTy)): Unit {
-                                        unsafe { $(writeIdent)(inout this._storage, val) }
+                                        unsafe { $(writeIdent)(CPointer<UInt8>(inout this._storage), val) }
                                     }
                                 ))
                             case _ => ()
@@ -556,7 +555,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let bfFieldItem = bf.data.ty.intoResolver().throughTypeRefs().resolve(ctx)
                                 let bfFieldTy = bfFieldItem.kind.expectType()
                                 let isSigned = match (bfFieldTy.canonicalType(ctx).kind) {
-                                    case TypeKind.TypeKindInt(ik) => ik.isSigned()
+                                    case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
                                     case _ => false
                                 }
                                 let readFunc = Tokens(Token(TokenKind.IDENTIFIER,
@@ -582,9 +581,9 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             // Mark that we need bitfield helper functions
                             if (!result.sawBitfieldUnit) {
                                 result.sawBitfieldUnit = true
-                                result.items.add(Helpers.bitfieldReadHelper())
-                                result.items.add(Helpers.bitfieldWriteHelper())
-                                result.items.add(Helpers.bitfieldReadSignedHelper())
+                                result.helpers.add(Helpers.bitfieldReadHelper())
+                                result.helpers.add(Helpers.bitfieldWriteHelper())
+                                result.helpers.add(Helpers.bitfieldReadSignedHelper())
                             }
                     }
                 }
@@ -761,7 +760,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
 
         let repr = reprTy.toCjTyOrOpaque(ctx, item)
 
-        if (ctx.options.defaultEnumStyle == "newtype") {
+        if (ctx.options.defaultEnumStyle == DefaultEnumStyle.NewType) {
             // NewType style: generate @C struct wrapper
             let structFields = ArrayList<Tokens>()
 

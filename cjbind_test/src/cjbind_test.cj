@@ -39,6 +39,7 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                     opt.fitMacroConstants = true
                     i += 1
                 } else {
+                    eprintln("Warning: unrecognized test option: ${part}")
                     i += 1
                 }
             }
@@ -61,7 +62,16 @@ func processTestCase(testcase: String): Unit {
     let headerName = headerPath.fileName.toString()
     let output = generateOutput(testcase)
 
-    let baseName = headerName[0..(headerName.size - 2)]
+    var dotIdx = headerName.size
+    var di = headerName.size - 1
+    while (di >= 0) {
+        if (headerName[di] == r'.') {
+            dotIdx = di
+            break
+        }
+        di -= 1
+    }
+    let baseName = headerName[0..dotIdx]
     let expectedPath = Path("testdata/expected/${baseName}.cj")
 
     let args = getCommandLine()
@@ -80,7 +90,6 @@ public func buildOutputTestSuite(): TestSuite {
     let testcases = searchTestCases()
 
     let suiteBuilder = TestSuite.builder("Output")
-    let caseConfiguration = Configuration()
     suiteBuilder.add(UnitTestCase.createParameterized("Test cjbind output", testcases, body: processTestCase))
     suiteBuilder.build()
 }

@@ -36,7 +36,6 @@ public struct Edge {
     }
 }
 
-// TODO: 实现可追踪行为的遍历
 public class ItemTraversal <: Iterator<ItemId> & Tracer {
     let ctx: CjbindContext
     let seen: ItemSet
@@ -62,8 +61,6 @@ public class ItemTraversal <: Iterator<ItemId> & Tracer {
             case None => return None
             case Some(v) => v
         }
-
-        let newlyDiscovered = this.seen.add(id)
 
         this.currentlyTraversing = Some(id)
         id.trace(this.ctx, this, ())

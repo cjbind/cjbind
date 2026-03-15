@@ -166,23 +166,39 @@ public class AstTy {
             case TypeKindIntKind.IntKindInt => rawType(ctx, "Int32")
             case TypeKindIntKind.IntKindUInt => rawType(ctx, "UInt32")
             case TypeKindIntKind.IntKindLong =>
-                let longSize = layout.getOrThrow().size
-                match (longSize) {
+                let longLayout = match (layout) {
+                    case Some(l) => l
+                    case None =>
+                        eprintln("Warning: missing layout for long type, defaulting to 8 bytes")
+                        Layout(8, 8)
+                }
+                match (longLayout.size) {
                     case 4 => rawType(ctx, "Int32")
                     case 8 => rawType(ctx, "Int64")
                     case _ => rawType(ctx, "Int64")
                 }
             case TypeKindIntKind.IntKindULong =>
-                let ulongSize = layout.getOrThrow().size
-                match (ulongSize) {
+                let ulongLayout = match (layout) {
+                    case Some(l) => l
+                    case None =>
+                        eprintln("Warning: missing layout for ulong type, defaulting to 8 bytes")
+                        Layout(8, 8)
+                }
+                match (ulongLayout.size) {
                     case 4 => rawType(ctx, "UInt32")
                     case 8 => rawType(ctx, "UInt64")
                     case _ => rawType(ctx, "UInt64")
                 }
             case TypeKindIntKind.IntKindLongLong => rawType(ctx, "Int64")
             case TypeKindIntKind.IntKindULongLong => rawType(ctx, "UInt64")
-            case TypeKindIntKind.IntKindWChar =>
-                Layout.knownCjTypeForSize(layout.getOrThrow().size).getOrThrow()
+            case TypeKindIntKind.IntKindWChar(_) =>
+                let wcharLayout = match (layout) {
+                    case Some(l) => l
+                    case None =>
+                        eprintln("Warning: missing layout for wchar type, defaulting to 8 bytes")
+                        Layout(8, 8)
+                }
+                Layout.knownCjTypeForSize(wcharLayout.size).getOrThrow()
             case TypeKindIntKind.IntKindI8 => quote(Int8)
             case TypeKindIntKind.IntKindU8 => quote(UInt8)
             case TypeKindIntKind.IntKindI16 => quote(Int16)

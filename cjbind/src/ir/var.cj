@@ -80,7 +80,7 @@ public class Var <: ClangSubItemParser<Var> {
                     )
                     (TypeKind.TypeKindPointer(charTy), VarType.VarString(it))
                 // FIXME: didn't consider for now as clang didn't provide these
-                case _ => throw Exception("unreachable")
+                case _ => return Err(ParseError.Continue)
             }
 
             let ty = Item.builtinType(typeKind, true, ctx)
@@ -166,7 +166,10 @@ func parseMacroClangFallback(
     }
 
     let contents = "int main() {{ ${cursor.spelling()}; }}"
-    ftu.reparse(contents);
+    match (ftu.reparse(contents)) {
+        case Err(_) => return None
+        case Ok(_) => ()
+    }
 
     let rootChildren = ftu.tu.cursor().collectChildren()
     let mainFunc = match (rootChildren.last) {
@@ -274,6 +277,5 @@ public enum VarType {
     VarBool(Bool)
     | VarInt(Ints)
     | VarFloat(Float64)
-    | VarChar(UInt8)
     | VarString(CString)
 }

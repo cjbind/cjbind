@@ -65,7 +65,7 @@ public class Enum {
             .flatMap {
                 tty => match (tty.kind) {
                     case TypeKindInt(ik) => ik.isSigned()
-                    case _ => throw Exception("enum must be int")
+                    case _ => Some(true)
                 }
             }
             .getOrDefault {=> true}
@@ -92,6 +92,8 @@ public class Enum {
                         let vname = cursor.spelling()
                         let comment = cursor.rawComment()
                         variants.add(EnumVariant(vname, comment, val))
+                    } else {
+                        eprintln("Warning: failed to get value for enum variant ${cursor.spelling()}")
                     }
                 }
 

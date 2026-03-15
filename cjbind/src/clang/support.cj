@@ -77,8 +77,9 @@ func extractCCSearchPaths(path: String, args: Array<String>): ?Array<String> {
         return None
     }
 
-    let start = if (let Some(i) <- output.indexOf("#include <...> search starts here:")) {
-        i + 34
+    let marker = "#include <...> search starts here:"
+    let start = if (let Some(i) <- output.indexOf(marker)) {
+        i + marker.size
     } else {
         return None
     }

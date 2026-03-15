@@ -239,6 +239,8 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         }
     }
 
+    // Struct layout is provided by the Type.layout field populated from libclang, not recomputed here.
+    // This returns None intentionally for CompKindStruct.
     public func getLayout(ctx: CjbindContext): ?Layout {
         match (this.kind) {
             case CompKindStruct => return None
@@ -319,8 +321,12 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                         .iterator()
                         .any {
                             bf =>
-                            let bfLayout = ctx.resolveType(bf.data.ty).getLayout(ctx).getOrThrow()
-                            return (bf.data.bitfieldWidth.getOrThrow() / 8) > UInt32(bfLayout.size)
+                            let maybeLayout = ctx.resolveType(bf.data.ty).getLayout(ctx)
+                            if (maybeLayout.isNone()) {
+                                return true
+                            }
+                            let bfLayout = maybeLayout.getOrThrow()
+                            return bf.data.bitfieldWidth.getOrThrow() > UInt32(bfLayout.size) * 8
                         }
                 }
             }
@@ -623,7 +629,7 @@ func bitfieldsToAllocationUnits(
         bitfields: ArrayList<Bitfield>
     ) {
         bitfieldUnitCount.value += 1
-        let align = 1u32
+        let align = alignTo(unitAlignInBits, 8) / 8
         let size = alignTo(unitSizeInBits, 8) / 8
         let layout = Layout(Int32(size), Int32(align))
         let tf = Field.Bitfields(
@@ -636,8 +642,6 @@ func bitfieldsToAllocationUnits(
         fields2.add(tf)
     }
 
-    var maxAlign = 0u32
-    var unfilledBitsInUnit = 0u32
     var unitSizeInBits = 0u32
     var unitAlign = 0u32
     let bitfieldsInUnit = ArrayList<Bitfield>()
@@ -661,15 +665,12 @@ func bitfieldsToAllocationUnits(
         }
 
         if (bitfield.name.isSome()) {
-            maxAlign = max(maxAlign, bitfieldAlign)
             unitAlign = max(unitAlign, bitfieldAlign)
         }
 
         bitfieldsInUnit.add(Bitfield(UIntNative(offset), bitfield))
         unitSizeInBits = offset + bitfieldWidth
 
-        let dataSize = alignTo(unitSizeInBits, bitfieldAlign * 8)
-        unfilledBitsInUnit = dataSize - unitSizeInBits
     }
 
     if (unitSizeInBits != 0) {

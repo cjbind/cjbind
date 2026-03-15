@@ -68,10 +68,10 @@ public enum ItemKind <: ToString {
 
     public func toString(): String {
         match (this) {
-            case KindModule(v) => "KindModule"
-            case KindType(v) => "KindType"
-            case KindFunction(v) => "KindFunction"
-            case KindVar(v) => "KindVar"
+            case KindModule(_) => "KindModule"
+            case KindType(_) => "KindType"
+            case KindFunction(_) => "KindFunction"
+            case KindVar(_) => "KindVar"
         }
     }
 }
