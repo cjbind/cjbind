@@ -3,6 +3,7 @@ package cjbind.codegen
 import std.ast.*
 import std.collection.{ArrayList, HashMap, HashSet}
 import cjbind.ir.*
+import cjbind.options.ObjcCodegenMode
 import cjbind.result.Result
 
 extend ObjCInterface <: CodeGenerator<Item, Unit> {
@@ -11,7 +12,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item
     ): Unit {
-        if (ctx.options.objcCodegenMode == "compiler") {
+        if (ctx.options.objcCodegenMode == ObjcCodegenMode.Compiler) {
             this.codegenCompiler(ctx, result, item)
         } else {
             this.codegenRuntime(ctx, result, item)
@@ -138,6 +139,16 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             let mname = ctx.cjIdent(m.name)
             methodTokens.add(quote(
                 func $(mname)($(joined)): $(ret)
+            ))
+        }
+        for (m in this.classMethods) {
+            let sig = m.signature
+            let ret = Utils.fnsigReturnTy(ctx, sig)
+            let arguments = Utils.fnsigArguments(ctx, sig)
+            let joined = joinTokens(arguments, quote(,))
+            let mname = ctx.cjIdent(m.name)
+            methodTokens.add(quote(
+                static func $(mname)($(joined)): $(ret)
             ))
         }
 
@@ -410,6 +421,8 @@ func commentizeAnnotation(tokens: Tokens, generateDefinitions: Bool): Tokens {
     return tokens
 }
 
+// Groups init methods by parameter count. In Cangjie, init overloads with the same param count clash
+// because selector names are not preserved. Selectors in the returned set must be emitted as static func.
 func detectOverloadedInits(methods: ArrayList<ObjCMethod>): HashSet<String> {
     let paramCountMap = HashMap<Int64, ArrayList<String>>()
     for (m in methods) {
@@ -619,6 +632,10 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
     let hasSetter = match (p.setterName) {
         case Some(_) => !p.isReadonly
         case None => false
+    }
+
+    if (p.isReadonly && p.setterName.isSome()) {
+        eprintln("Warning: property '${p.name}' is readonly but has setterName '${p.setterName.getOrThrow()}'")
     }
 
     // Add static modifier for class properties

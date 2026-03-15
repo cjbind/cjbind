@@ -150,22 +150,25 @@ func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
 }
 
 func removeSuffixNL(val: Tokens): Tokens {
-    let ret = Tokens()
-    for ((idx, v) in val.iterator().enumerate()) {
-        if (idx != val.size - 1 || v.kind != TokenKind.NL) {
-            ret.append(v)
-        }
+    var end = val.size
+    while (end > 0 && val[end - 1].kind == TokenKind.NL) {
+        end--
     }
-
+    let ret = Tokens()
+    for (i in 0..end) {
+        ret.append(val[i])
+    }
     return ret
 }
 
 func removePrefixNL(val: Tokens): Tokens {
+    var start = 0
+    while (start < val.size && val[start].kind == TokenKind.NL) {
+        start++
+    }
     let ret = Tokens()
-    for ((idx, v) in val.iterator().enumerate()) {
-        if (idx != 0 || v.kind != TokenKind.NL) {
-            ret.append(v)
-        }
+    for (i in start..val.size) {
+        ret.append(val[i])
     }
     return ret
 }

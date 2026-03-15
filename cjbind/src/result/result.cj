@@ -253,14 +253,6 @@ public enum Result<T, E> {
         }
     }
 
-    public func copied(): Result<T, E> {
-        match (this) {
-            case Ok(v) => Ok(v)
-
-            case Err(e) => Err(e)
-        }
-    }
-
     public static func transpose<T>(v: Result<Option<T>, E>): Option<Result<T, E>> {
         match (v) {
             case Ok(o) => if (let Some(ov) <- o) {

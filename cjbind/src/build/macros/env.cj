@@ -25,6 +25,7 @@ public macro env(input: Tokens): Tokens {
         return Tokens()
     }
 
+    // token.value for STRING_LITERAL does not include surrounding quotes in Cangjie's AST API
     let name = token.value
     let value = match (env.getVariable(name)) {
         case Some(v) => v

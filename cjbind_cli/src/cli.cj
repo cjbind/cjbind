@@ -5,7 +5,7 @@ import std.env
 import cjbind_cli.arg.{StringFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
-import cjbind.options.CjbindOptions
+import cjbind.options.{CjbindOptions, ObjcCodegenMode, DefaultEnumStyle}
 import cjbind.utils.sprintAlign
 
 public func processArgs(): (CjbindOptions, (String) -> Unit) {
@@ -81,9 +81,21 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.arrayPointersInArgs = arrayPointersInArgs.value
     opt.makeCjString = makeCjString.value
     opt.objc = objcFlag.value
-    opt.objcCodegenMode = objcCodegenModeFlag.value.getOrThrow()
+    opt.objcCodegenMode = match (objcCodegenModeFlag.value.getOrThrow()) {
+        case "runtime" => ObjcCodegenMode.Runtime
+        case "compiler" => ObjcCodegenMode.Compiler
+        case v =>
+            eprintln("Error: --objc-codegen-mode must be 'runtime' or 'compiler', got: ${v}")
+            env.exit(1)
+    }
     opt.objcGenerateDefinitions = objcGenerateDefinitions.value
-    opt.defaultEnumStyle = defaultEnumStyleFlag.value.getOrThrow()
+    opt.defaultEnumStyle = match (defaultEnumStyleFlag.value.getOrThrow()) {
+        case "consts" => DefaultEnumStyle.Consts
+        case "newtype" => DefaultEnumStyle.NewType
+        case v =>
+            eprintln("Error: --default-enum-style must be 'consts' or 'newtype', got: ${v}")
+            env.exit(1)
+    }
     opt.fitMacroConstants = fitMacroConstantsFlag.value
 
     let output: ?String = outputFlag.value
@@ -96,7 +108,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     return (opt, writer)
 }
 
-func printVersion() {
+func printVersion(): Nothing {
     let pre = [
         "Commit Hash：",
         "Commit 时间：",

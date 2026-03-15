@@ -9,7 +9,7 @@ public func sprintAlign(pre: Array<String>, post: Array<String>, insert!: String
         return ""
     }
 
-    var preMaxLength = -1
+    var preMaxLength = 0
     for (s in pre) {
         preMaxLength = max(s.size, preMaxLength)
     }

@@ -1,10 +1,11 @@
 package cjbind.ir
 
-public struct Module {
+public class Module {
     public let name: ?String
-    public let children: ItemSet = ItemSet()
+    public let children: ItemSet
 
     public init(name: ?String) {
         this.name = name
+        this.children = ItemSet()
     }
 }

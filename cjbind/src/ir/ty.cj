@@ -370,10 +370,10 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
 
         return match (this.kind) {
             case TypeKind.TypeKindComp(ci) => ci.getLayout(ctx)
-            case TypeKind.TypeKindArray(inner, _) =>
+            case TypeKind.TypeKindArray(inner, count) =>
                 let innerLayout = ctx.resolveType(inner).getLayout(ctx)
                 match (innerLayout) {
-                    case Some(v) => Some(Layout(0, v.align))
+                    case Some(v) => Some(Layout(v.size * Int32(count), v.align))
                     case None => None
                 }
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
@@ -525,6 +525,7 @@ func resolveObjCInterfaceByName(ctx: CjbindContext, name: String): TypeKind {
                 case ItemKind.KindType(ifaceTy) =>
                     match (ifaceTy.kind) {
                         case TypeKind.TypeKindObjCInterface(iface) =>
+                            // Note: iface is a shared reference (class type). Mutations to iface will be visible to all TypeKindObjCInterface instances wrapping it.
                             return TypeKind.TypeKindObjCInterface(iface)
                         case _ => ()
                     }

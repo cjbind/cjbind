@@ -233,16 +233,16 @@ public class CjbindContext {
         let isType = item.kind.isType()
         let isUnnamed = item.kind.isType() && item.kind.expectType().name.isNone()
 
+        if (this.items[Int64(id)].isSome()) {
+            throw Exception("Item with id ${id} already exists, WTF case")
+        }
+
         if (item.id != this.rootModule) {
             this.addItemToModule(item)
         }
 
         if (isType && item.kind.expectType().isComp()) {
             this.needBitfieldAllocation.add(id)
-        }
-
-        if (this.items[Int64(id)].isSome()) {
-            throw Exception("Item with id ${id} already exists, WTF case")
         }
 
         this.items[Int64(id)] = item
@@ -382,7 +382,8 @@ public class CjbindContext {
                 return TypeKind.TypeKindInt(IntKindUShort)
             }
             if (k == clang.CXTypeKind_CXType_WChar) {
-                return TypeKind.TypeKindInt(IntKindWChar)
+                // TODO: determine wchar_t signedness from target info
+                return TypeKind.TypeKindInt(IntKindWChar(false))
             }
             if (k == clang.CXTypeKind_CXType_Char16) {
                 return TypeKind.TypeKindInt(IntKindU16)
@@ -515,7 +516,7 @@ public class CjbindContext {
 
     public func safeResolveType(typeId: TypeId): ?Type {
         this.resolveItemFallible(typeId).flatMap {
-            t => t.kind.expectType()
+            t => t.kind.asType()
         }
     }
 
@@ -634,6 +635,8 @@ public class CjbindContext {
         }
     }
 
+    // WARNING: The callback `f` must NOT call `resolveItem(id)` for the same `id` being loaned,
+    // as the slot is temporarily set to None.
     func withLoanedItem<T>(id: ItemId, f: (CjbindContext, Item) -> T): T {
         let item = this.items[Int64(id)].getOrThrow()
         this.items[Int64(id)] = None
@@ -695,7 +698,7 @@ public class CjbindContext {
     }
 
     public func isEnumTypedefCombo(id: ItemId): Bool {
-        this.enumTypedefCombos.getOrThrow().contains(id)
+        this.enumTypedefCombos?.contains(id) ?? false
     }
 
     func computeCodegenItems() {
@@ -725,8 +728,7 @@ public class CjbindContext {
                                 .throughTypeAliases()
                                 .resolve(this)
                                 .kind
-                                .expectType()
-                                .isInt()) {
+                                .asType()?.isInt() ?? false) {
                                 namesOfTypedefs.add(name)
                             }
                         }
@@ -799,10 +801,14 @@ public class ItemResolver {
                 case Some(TypeKind.ResolvedTypeRef(nextId)) =>
                     if (this.throughTypeRefsVal) {
                         id = nextId
+                    } else {
+                        return item
                     }
                 case Some(TypeKind.TypeKindAlias(nextId)) =>
                     if (this.throughTypeAliasesVal) {
                         id = nextId
+                    } else {
+                        return item
                     }
                 case _ => return item
             }

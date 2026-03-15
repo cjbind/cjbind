@@ -320,8 +320,8 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     public func enumValUnsigned(): ?UInt64 {
         unsafe {
             if (this.kind() == CXCursorKind_CXCursor_EnumConstantDecl) {
-                let v = clang_getEnumConstantDeclValue(x)
-                return Some(UInt64(v))
+                let v = clang_getEnumConstantDeclUnsignedValue(x)
+                return Some(v)
             } else {
                 None
             }
@@ -390,7 +390,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
 
         unsafe {
             let cb: CFunc<(CXCursor, CXCursor, CPointer<Unit>) -> CXChildVisitResult> = {
-                cxcs, _, cbIdData => 
+                cxcs, _, cbIdData =>
                     let id = CPointer<Int64>(cbIdData).read()
 
                     let cb = CursorVisitCallback[id].getOrThrow()
@@ -400,12 +400,13 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
             let cbIdData = LibC.malloc<Int64>(count: 1)
             cbIdData.write(cbId)
 
-            clang_visitChildren(x, cb, CPointer<Unit>(cbIdData))
-
-            LibC.free<Int64>(cbIdData)
+            try {
+                clang_visitChildren(x, cb, CPointer<Unit>(cbIdData))
+            } finally {
+                LibC.free<Int64>(cbIdData)
+                CursorVisitCallback.remove(cbId)
+            }
         }
-
-        CursorVisitCallback.remove(cbId)
     }
 
     public func collectChildren(): ArrayList<Cursor> {
@@ -798,7 +799,11 @@ public class File {
         }
 
         unsafe {
-            return cxstringToString(clang_getFileName(x))
+            let s = cxstringToString(clang_getFileName(x))
+            if (s.isEmpty()) {
+                return None
+            }
+            return Some(s)
         }
     }
 }
@@ -846,9 +851,10 @@ public class TranslationUnit {
         options: CXTranslationUnit_Flags
     ) {
         unsafe {
-            let fname = LibC.mallocCString(file)
+            let fname = CStringOwned(file)
 
             let releaser = ArrayList<() -> Unit>()
+            releaser.add({=> fname.release()})
 
             let c_args = LibC.malloc<CString>(count: cmdArgs.size)
             releaser.add({=> LibC.free(c_args)})
@@ -866,7 +872,7 @@ public class TranslationUnit {
 
             let code = clang_parseTranslationUnit2(
                 ix.x,
-                fname,
+                fname.pointer,
                 c_args,
                 Int32(cmdArgs.size),
                 unsaved,
@@ -907,18 +913,22 @@ public class TranslationUnit {
     }
 
     public func save(file: String): Result<Unit, CXSaveError> {
-        unsafe {
-            let fs = LibC.mallocCString(file)
-            let ret = clang_saveTranslationUnit(
-                this.x,
-                fs,
-                clang_defaultSaveOptions(this.x)
-            )
-            if (ret != 0) {
-                return Result.Err(UInt32(ret))
-            } else {
-                return Result.Ok(())
+        let fs = CStringOwned(file)
+        try {
+            unsafe {
+                let ret = clang_saveTranslationUnit(
+                    this.x,
+                    fs.pointer,
+                    clang_defaultSaveOptions(this.x)
+                )
+                if (ret != 0) {
+                    return Result.Err(UInt32(ret))
+                } else {
+                    return Result.Ok(())
+                }
             }
+        } finally {
+            fs.release()
         }
     }
 
@@ -992,28 +1002,28 @@ public class FallbackTranslationUnit {
     public func reparse(
         unsavedContents: String
     ): Result<Unit, CXErrorCode> {
-        unsafe {
-            let filepath = LibC.mallocCString(this.filePath)
-            let content = LibC.mallocCString(unsavedContents)
+        let content = CStringOwned(unsavedContents)
+        try {
+            unsafe {
+                var unsaved: VArray<CXUnsavedFile, $1> = [
+                    UnsavedFile(this.filePath, unsavedContents).x
+                ]
 
-            var unsaved: VArray<CXUnsavedFile, $1> = [
-                UnsavedFile(this.filePath, unsavedContents).x
-            ]
+                let ret = clang_reparseTranslationUnit(
+                    this.tu.x,
+                    1,
+                    inout unsaved,
+                    clang_defaultReparseOptions(this.tu.x)
+                )
 
-            let ret = clang_reparseTranslationUnit(
-                this.tu.x,
-                1,
-                inout unsaved,
-                clang_defaultReparseOptions(this.tu.x)
-            )
-
-            LibC.free(filepath)
-
-            if (ret != 0) {
-                return Result.Err(UInt32(ret))
-            } else {
-                return Result.Ok(())
+                if (ret != 0) {
+                    return Result.Err(UInt32(ret))
+                } else {
+                    return Result.Ok(())
+                }
             }
+        } finally {
+            content.release()
         }
     }
 }
@@ -1029,13 +1039,11 @@ public class TargetInfo {
     public let abi: ABIKind
 
     public init(tu: TranslationUnit) {
-        unsafe {
-            let ti = clang_getTranslationUnitTargetInfo(tu.x)
-            this.triple = cxstringToString(clang_TargetInfo_getTriple(ti))
-            this.pointerWidth = clang_TargetInfo_getPointerWidth(ti)
-        }
+        let ti = unsafe { OwnedTargetInfo(clang_getTranslationUnitTargetInfo(tu.x)) }
+        this.triple = ti.triple
+        this.pointerWidth = ti.pointerWidth
 
-        if (!pointerWidth > 0) {
+        if (!(pointerWidth > 0)) {
             throw Exception("pointer width is not > 0")
         }
         if (!(pointerWidth % 8 == 0)) {
@@ -1090,9 +1098,7 @@ public class CanonicalTypeDeclaration {
 
 public class RawTokens <: Iterable<ClangToken> {
     public let cursor: Cursor
-    public let tu: CXTranslationUnit
-    public let tokens: CPointer<CXToken>
-    public let tokenCount: UInt32
+    let _owned: OwnedTokens
 
     public init(cursor: Cursor) {
         var tokens = CPointer<CXToken>()
@@ -1108,10 +1114,23 @@ public class RawTokens <: Iterable<ClangToken> {
             )
 
             this.cursor = cursor
-            this.tu = tu
-            this.tokens = tokens
-            this.tokenCount = tokenCount
+            this._owned = OwnedTokens(tu, tokens, tokenCount)
         }
+    }
+
+    // The translation unit that owns the token array (non-owning reference).
+    public prop tu: CXTranslationUnit {
+        get() { return _owned.tu }
+    }
+
+    // Pointer to the token array.
+    public prop tokens: CPointer<CXToken> {
+        get() { return _owned.tokens }
+    }
+
+    // Number of tokens in the array.
+    public prop tokenCount: UInt32 {
+        get() { return _owned.count }
     }
 
     public func iterator(): ClangTokenIterator {
@@ -1120,12 +1139,12 @@ public class RawTokens <: Iterable<ClangToken> {
 }
 
 public class ClangToken {
-    let _spelling: CXString
+    let _spelling: String
     let extent: CXSourceRange
     public let kind: CXTokenKind
 
     init(
-        spelling: CXString,
+        spelling: String,
         kind: CXTokenKind,
         range: CXSourceRange
     ) {
@@ -1133,11 +1152,9 @@ public class ClangToken {
         this.extent = range
         this.kind = kind
     }
-    
+
     public func spelling(): String {
-        unsafe {
-            return cxstringToString(_spelling)
-        }
+        return _spelling
     }
 }
 
@@ -1159,7 +1176,7 @@ public class ClangTokenIterator <: Iterator<ClangToken> {
             let data = ptr.read()
 
             let kind = clang_getTokenKind(data)
-            let spell = clang_getTokenSpelling(rt.tu, data)
+            let spell = cxstringToString(clang_getTokenSpelling(rt.tu, data))
             let extent = clang_getTokenExtent(rt.tu, data)
 
             this.cur += 1
