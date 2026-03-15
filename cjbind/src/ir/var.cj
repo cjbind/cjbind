@@ -54,10 +54,22 @@ public class Var <: ClangSubItemParser<Var> {
             }
 
             let (typeKind, val) = match (value) {
-                case MacroEvalResult.EvalResultInt(it) => 
+                case MacroEvalResult.EvalResultInt(it) =>
                     match (it) {
-                        case Ints.Int(v) => (TypeKind.TypeKindInt(IntKindI64), VarType.VarInt(it))
-                        case Ints.UInt(v) => (TypeKind.TypeKindInt(IntKindU64), VarType.VarInt(it))
+                        case Ints.Int(v) =>
+                            let ik = if (ctx.options.fitMacroConstants) {
+                                fitSignedIntKind(v)
+                            } else {
+                                IntKindI64
+                            }
+                            (TypeKind.TypeKindInt(ik), VarType.VarInt(it))
+                        case Ints.UInt(v) =>
+                            let ik = if (ctx.options.fitMacroConstants) {
+                                fitUnsignedIntKind(v)
+                            } else {
+                                IntKindU64
+                            }
+                            (TypeKind.TypeKindInt(ik), VarType.VarInt(it))
                     }
                 case MacroEvalResult.EvalFloat(it) => (TypeKind.TypeKindFloat(FloatKindDouble), VarType.VarFloat(it))
                 case MacroEvalResult.EvalStr(it) =>
@@ -205,6 +217,20 @@ func parseMacroClangFallback(
 }
 // cjlint-ignore -end
 
+func fitSignedIntKind(v: Int64): TypeKindIntKind {
+    if (v >= -128 && v <= 127) { return TypeKindIntKind.IntKindI8 }
+    if (v >= -32768 && v <= 32767) { return TypeKindIntKind.IntKindI16 }
+    if (v >= -2147483648 && v <= 2147483647) { return TypeKindIntKind.IntKindI32 }
+    return TypeKindIntKind.IntKindI64
+}
+
+func fitUnsignedIntKind(v: UInt64): TypeKindIntKind {
+    if (v <= 255) { return TypeKindIntKind.IntKindU8 }
+    if (v <= 65535) { return TypeKindIntKind.IntKindU16 }
+    if (v <= 4294967295) { return TypeKindIntKind.IntKindU32 }
+    return TypeKindIntKind.IntKindU64
+}
+
 public enum Ints <: ToTokens {
     Int(Int64) |
     UInt(UInt64)
@@ -213,8 +239,8 @@ public enum Ints <: ToTokens {
         let tokens = Tokens()
         
         match (this) {
-            case Int(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}i64"))
-            case UInt(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}u64"))
+            case Int(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}"))
+            case UInt(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}"))
         }
 
         return tokens

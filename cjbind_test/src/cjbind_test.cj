@@ -16,9 +16,40 @@ func searchTestCases(): Array<String> {
     return paths.map {p => p.toString()} |> collectArray
 }
 
+func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
+    let content = String.fromUtf8(File.readFrom(Path(testcase)))
+    for (line in content.split("\n")) {
+        let trimmed = line.trimAscii()
+        if (trimmed.startsWith("// cjbind-options:")) {
+            let optsStr = trimmed["// cjbind-options:".size..].trimAscii()
+            let parts = optsStr.split(" ", removeEmpty: true)
+            var i = 0
+            while (i < parts.size) {
+                let part = parts[i].trimAscii()
+                if (part == "--default-enum-style" && i + 1 < parts.size) {
+                    opt.defaultEnumStyle = parts[i + 1].trimAscii()
+                    i += 2
+                } else if (part == "--objc") {
+                    opt.objc = true
+                    i += 1
+                } else if (part == "--no-enum-prefix") {
+                    opt.noEnumPrefix = true
+                    i += 1
+                } else if (part == "--fit-macro-constants") {
+                    opt.fitMacroConstants = true
+                    i += 1
+                } else {
+                    i += 1
+                }
+            }
+        }
+    }
+}
+
 func generateOutput(testcase: String): String {
     let opt = CjbindOptions()
     opt.headers.add(testcase)
+    applyTestOptions(opt, testcase)
     return formatString(generate(opt))
 }
 
@@ -26,10 +57,10 @@ func generateOutput(testcase: String): String {
 // 否则比较 testcase 的输出和 expected 文件
 // 输出应该在 testcase 目录下的 expected 目录中
 func processTestCase(testcase: String): Unit {
-    let output = generateOutput(testcase)
-
     let headerPath = Path(testcase)
     let headerName = headerPath.fileName.toString()
+    let output = generateOutput(testcase)
+
     let baseName = headerName[0..(headerName.size - 2)]
     let expectedPath = Path("testdata/expected/${baseName}.cj")
 

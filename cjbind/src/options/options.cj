@@ -20,6 +20,8 @@ public class CjbindOptions {
     public var objc = false
     public var objcCodegenMode: String = "runtime"  // "runtime" | "compiler"
     public var objcGenerateDefinitions = false
+    public var defaultEnumStyle: String = "consts"  // "consts" | "newtype"
+    public var fitMacroConstants = false
 
     public init() {}
 

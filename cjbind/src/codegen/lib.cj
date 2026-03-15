@@ -37,6 +37,7 @@ public class CodegenResult {
 
     public let functionsSeen: HashSet<String> = HashSet()
     public let varsSeen: HashSet<String> = HashSet<String>()
+    public let unionHelpersSeen: HashSet<String> = HashSet<String>()
 
     public func seen(id: ItemId): Bool {
         return this.itemsSeen.contains(id)
@@ -433,16 +434,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             return
         }
 
-        if (this.isUnion()) {
-            // TODO: 支持 Union
-            isOpaque = true
-        }
-
-        if (let CompFieldsAfter(v) <- this.fields) {
-            if (v.hasBitfieldUnits) {
-                // TODO: 支持 bitfield
-                isOpaque = true
-            }
+        let hasBitfields = if (let CompFieldsAfter(v) <- this.fields) {
+            !this.isUnion() && v.hasBitfieldUnits
         } else {
             throw Exception("${canonicalName} 的字段应该已经被正确计算")
         }
@@ -455,44 +448,187 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let sigs = Tokens()
         let inits = ArrayList<Tokens>()
 
-        if (!isOpaque) {
+        if (this.isUnion()) {
+            // Union: blob storage + getter/setter accessors
+            match (layout) {
+                case Some(l) =>
+                    let blobTy = Helpers.blob(ctx, l)
+                    fields.add(quote(var _storage: $(blobTy) = unsafe { zeroValue<$(blobTy)>() }))
+                    fields.add(quote(
+                        public init() {}
+                    ))
+
+                    let fieldDecls = this.getFields()
+                    for (field in fieldDecls) {
+                        match (field) {
+                            case Field.DataMember(data) =>
+                                let fieldName = match (data.name) {
+                                    case Some(n) => ctx.cjMangle(n)
+                                    case None => continue
+                                }
+                                let fieldIdent = ctx.cjIdent(fieldName)
+                                let fieldTy = data.ty.toCjTyOrOpaque(ctx, ())
+                                let typeName = fieldTy.toString().replace(" ", "")
+
+                                // Ensure helper functions are generated for this type
+                                if (!result.unionHelpersSeen.contains(typeName)) {
+                                    result.unionHelpersSeen.add(typeName)
+                                    result.items.add(Helpers.unionReadHelper(typeName, fieldTy))
+                                    result.items.add(Helpers.unionWriteHelper(typeName, fieldTy))
+                                }
+
+                                let readFuncName = "__cjbind_read_${typeName}"
+                                let writeFuncName = "__cjbind_write_${typeName}"
+                                let readIdent = Tokens(Token(TokenKind.IDENTIFIER, readFuncName))
+                                let writeIdent = Tokens(Token(TokenKind.IDENTIFIER, writeFuncName))
+
+                                // getter (non-mut, copy _storage then read)
+                                fields.add(quote(
+                                    public func $(fieldIdent)(): $(fieldTy) {
+                                        var s = this._storage
+                                        return unsafe { $(readIdent)(inout s) }
+                                    }
+                                ))
+                                // setter (mut, write in-place)
+                                fields.add(quote(
+                                    public mut func $(fieldIdent)(val!: $(fieldTy)): Unit {
+                                        unsafe { $(writeIdent)(inout this._storage, val) }
+                                    }
+                                ))
+                            case _ => ()
+                        }
+                    }
+                    result.sawCjbindUnion = true
+                case None => throw Exception("Expect layout for union")
+            }
+        } else if (!isOpaque) {
             let fieldDecls = this.getFields()
 
-            for ((idx, field) in fieldDecls.iterator().enumerate()) {
-                let isLast = idx == fieldDecls.size - 1
+            if (hasBitfields) {
+                // Bitfield struct: use var fields with zero defaults, empty init, getter/setter methods
+                for (field in fieldDecls) {
+                    match (field) {
+                        case Field.DataMember(data) =>
+                            let ty = data.ty.toCjTyOrOpaque(ctx, ())
 
-                match (field) {
-                    case Field.DataMember(data) =>
-                        let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
-                        let fieldTy = fieldItem.kind.expectType()
-                        let ty = data.ty.toCjTyOrOpaque(ctx, ())
+                            let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
+                                let pc = preprocessComment(c)
+                                Some(Attributes.doc(pc))
+                            } else {
+                                None
+                            }
 
-                        let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
-                            let pc = preprocessComment(c)
-                            Some(Attributes.doc(pc))
-                        } else {
-                            None
-                        }
+                            let fieldName = data.name.map {
+                                d => ctx.cjMangle(d)
+                            }.getOrThrow()
+                            let fieldIdent = ctx.cjIdent(fieldName)
 
-                        let fieldName = data.name.map {
-                            d => ctx.cjMangle(d)
-                        }.getOrThrow()
-                        let fieldIdent = ctx.cjIdent(fieldName)
+                            let fieldToken = optionalComment(
+                                ctx,
+                                fcomment,
+                                quote(public var $(fieldIdent) : $(ty) = unsafe { zeroValue<$(ty)>() })
+                            )
+                            fields.add(fieldToken)
 
-                        let fieldToken = optionalComment(
-                            ctx,
-                            fcomment,
-                            quote(public let $(fieldIdent) : $(ty))
-                        )
-                        fields.add(fieldToken)
+                        case Field.Bitfields(unit) =>
+                            let unitSize = Int64(unit.layout.size)
+                            let unitNth = Int64(unit.nth)
+                            let storageName = "_bitfield_${unitNth}"
+                            let storageIdent = ctx.cjIdent(storageName)
 
-                        sigs.append(quote($(fieldIdent) : $(ty)))
-                        if (!isLast) {
-                            sigs.append(quote(,))
-                        }
-                        inits.add(quote(this.$(fieldIdent) = $(fieldIdent)))
+                            // Generate storage field: var _bitfield_N: VArray<UInt8, $SIZE>
+                            fields.add(
+                                quote(var $(storageIdent) : VArray<UInt8, \$$(unitSize)> = VArray<UInt8, \$$(unitSize)>(repeat: 0))
+                            )
 
-                    case _ => throw Exception("Only support normal field")
+                            // Generate getter/setter for each bitfield
+                            for (bf in unit.bitfields) {
+                                let bfName = match (bf.data.name) {
+                                    case Some(n) => ctx.cjMangle(n)
+                                    case None => continue
+                                }
+                                let bfIdent = ctx.cjIdent(bfName)
+                                let bfTy = bf.data.ty.toCjTyOrOpaque(ctx, ())
+                                let bitOffset = Int64(bf.offsetIntoUnit)
+                                let bitWidth = Int64(bf.data.bitfieldWidth.getOrThrow())
+
+                                // Determine if the bitfield type is signed and select the appropriate read helper
+                                let bfFieldItem = bf.data.ty.intoResolver().throughTypeRefs().resolve(ctx)
+                                let bfFieldTy = bfFieldItem.kind.expectType()
+                                let isSigned = match (bfFieldTy.canonicalType(ctx).kind) {
+                                    case TypeKind.TypeKindInt(ik) => ik.isSigned()
+                                    case _ => false
+                                }
+                                let readFunc = Tokens(Token(TokenKind.IDENTIFIER,
+                                    if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
+                                ))
+
+                                // Getter: read via appropriate helper, cast to target type
+                                fields.add(quote(
+                                    public func $(bfIdent)(): $(bfTy) {
+                                        var s = this.$(storageIdent)
+                                        return $(bfTy)(unsafe { $(readFunc)(inout s, $(bitOffset), $(bitWidth)) })
+                                    }
+                                ))
+
+                                // Setter: convert to UInt64, call __cjbind_bitfield_write
+                                fields.add(quote(
+                                    public mut func $(bfIdent)(val!: $(bfTy)): Unit {
+                                        unsafe { __cjbind_bitfield_write(inout this.$(storageIdent), $(bitOffset), $(bitWidth), UInt64(val)) }
+                                    }
+                                ))
+                            }
+
+                            // Mark that we need bitfield helper functions
+                            if (!result.sawBitfieldUnit) {
+                                result.sawBitfieldUnit = true
+                                result.items.add(Helpers.bitfieldReadHelper())
+                                result.items.add(Helpers.bitfieldWriteHelper())
+                                result.items.add(Helpers.bitfieldReadSignedHelper())
+                            }
+                    }
+                }
+
+                // Add empty init for bitfield struct (all fields have default values)
+                fields.add(quote(public init() {}))
+            } else {
+                // Normal struct: use let fields with constructor params
+                for ((idx, field) in fieldDecls.iterator().enumerate()) {
+                    let isLast = idx == fieldDecls.size - 1
+
+                    match (field) {
+                        case Field.DataMember(data) =>
+                            let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
+                            let fieldTy = fieldItem.kind.expectType()
+                            let ty = data.ty.toCjTyOrOpaque(ctx, ())
+
+                            let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
+                                let pc = preprocessComment(c)
+                                Some(Attributes.doc(pc))
+                            } else {
+                                None
+                            }
+
+                            let fieldName = data.name.map {
+                                d => ctx.cjMangle(d)
+                            }.getOrThrow()
+                            let fieldIdent = ctx.cjIdent(fieldName)
+
+                            let fieldToken = optionalComment(
+                                ctx,
+                                fcomment,
+                                quote(public let $(fieldIdent) : $(ty))
+                            )
+                            fields.add(fieldToken)
+
+                            sigs.append(quote($(fieldIdent) : $(ty)))
+                            if (!isLast) {
+                                sigs.append(quote(,))
+                            }
+                            inits.add(quote(this.$(fieldIdent) = $(fieldIdent)))
+
+                        case _ => throw Exception("Only support normal field")
+                    }
                 }
             }
         }
@@ -590,6 +726,14 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -end
 }
 
+func enumVariantExpr(val: EnumVariantValue): Tokens {
+    match (val) {
+        case EnumVariantValue.Boolean(b) => quote($(b))
+        case EnumVariantValue.Signed(s) => quote($(s))
+        case EnumVariantValue.Unsigned(u) => quote($(u))
+    }
+}
+
 extend Enum <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -start !G.FUN.01
     public func codegen(
@@ -616,17 +760,56 @@ extend Enum <: CodeGenerator<Item, Unit> {
         }
 
         let repr = reprTy.toCjTyOrOpaque(ctx, item)
-        let hasTypedef = ctx.isEnumTypedefCombo(item.id)
 
+        if (ctx.options.defaultEnumStyle == "newtype") {
+            // NewType style: generate @C struct wrapper
+            let structFields = ArrayList<Tokens>()
+
+            // rawValue field
+            structFields.add(quote(public var rawValue: $(repr) = unsafe { zeroValue<$(repr)>() }))
+
+            // Named-parameter constructor
+            structFields.add(quote(
+                public init(rawValue!: $(repr)) { this.rawValue = rawValue }
+            ))
+
+            // Static constants for each variant (no enum prefix since struct provides namespace)
+            for (v in this.variants) {
+                let variantName = ctx.cjMangle(v.name)
+                let vIdent = ctx.cjIdent(variantName)
+                let vexpr = enumVariantExpr(v.val)
+                structFields.add(quote(
+                    public static let $(vIdent) = $(ident)(rawValue: $(vexpr))
+                ))
+            }
+
+            // == operator
+            structFields.add(quote(
+                public operator func ==(right: $(ident)): Bool { this.rawValue == right.rawValue }
+            ))
+
+            // != operator
+            structFields.add(quote(
+                public operator func !=(right: $(ident)): Bool { this.rawValue != right.rawValue }
+            ))
+
+            let fieldsToken = joinTokens(structFields, Tokens(Token(TokenKind.NL)))
+            result.items.add(optionalComment(ctx, commentToken, quote(
+                @C
+                public struct $(ident) {
+                    $(fieldsToken)
+                }
+            )))
+            return
+        }
+
+        // Consts style (existing behavior)
+        let hasTypedef = ctx.isEnumTypedefCombo(item.id)
         let enumCjTy = item.toCjTyOrOpaque(ctx, ())
 
         for (v in this.variants) {
             let variantName = ctx.cjMangle(v.name)
-            let vexpr = match (v.val) {
-                case EnumVariantValue.Boolean(b) => quote($(b))
-                case EnumVariantValue.Signed(s) => quote($(s))
-                case EnumVariantValue.Unsigned(u) => quote($(u))
-            }
+            let vexpr = enumVariantExpr(v.val)
 
             let vComment: ?Tokens = if (let Some(c) <- v.comment) {
                 let pc = preprocessComment(c)
