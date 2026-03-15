@@ -1,6 +1,6 @@
 package cjbind.codegen
 
-import std.ast.{Tokens, Token, TokenKind, ToTokens, TokenKind}
+import std.ast.{Tokens, Token, TokenKind, ToTokens}
 
 foreign func CJ_AST_Float64ToCPointer(num: Float64): CString
 
