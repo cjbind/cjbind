@@ -165,26 +165,6 @@ def find_gcc_lib_path():
     return None
 
 
-def find_gcc_file(filename: str) -> str | None:
-    """Find a library file using gcc's search path.
-
-    Returns the full path if found, None otherwise.
-    This bypasses -L search order issues by providing absolute paths to the linker.
-    """
-    try:
-        output = subprocess.check_output(
-            ["gcc", "-print-file-name=" + filename],
-            text=True,
-            stderr=subprocess.DEVNULL
-        ).strip()
-        p = Path(output)
-        # gcc returns just the filename if not found, or the full path if found
-        if p.is_absolute() and p.is_file():
-            return str(p)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
-    return None
-
 
 def get_libclang_link_name(filename: str) -> str:
     """Get linker name from filename (strips 'lib' prefix and extensions)."""
@@ -391,29 +371,11 @@ def preprocess_environment(env):
     runtime_libs = []
     match sys.platform:
         case "win32":
-            if dynamic:
-                # Dynamic linking: use shared versions of all runtime libs
-                runtime_libs = ["-lstdc++", "-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
-            else:
-                # Static linking: use full paths from gcc to avoid Cangjie's bundled
-                # MinGW CRT (third_party/mingw/lib) which may be older and missing
-                # symbols like fstat64/wctype that GCC 15's libstdc++ requires.
-                win_static_libs = [
-                    ("libstdc++.a", "-l:libstdc++.a"),
-                    ("libgcc.a", "-l:libgcc.a"),
-                    ("libgcc_eh.a", "-l:libgcc_eh.a"),
-                    ("libwinpthread.a", "-lwinpthread"),
-                    ("libmingwex.a", "-lmingwex"),
-                    ("libmsvcrt.a", "-lmsvcrt"),
-                ]
-                runtime_libs = []
-                for filename, fallback in win_static_libs:
-                    full_path = find_gcc_file(filename)
-                    if full_path:
-                        runtime_libs.append(full_path)
-                    else:
-                        runtime_libs.append(fallback)
-                runtime_libs.append("-lversion")
+            # Always use dynamic C++ runtime on Windows.
+            # Statically linking libstdc++ causes CRT version mismatches
+            # between MSYS2's GCC and Cangjie's bundled MinGW CRT objects,
+            # leading to missing symbols (fstat64, wctype) or runtime crashes.
+            runtime_libs = ["-lstdc++", "-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
         case "darwin":
             runtime_libs = ["-lc++", "-lc++abi", "-lSystem"]
         case "linux":
