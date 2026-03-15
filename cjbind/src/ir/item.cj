@@ -447,9 +447,6 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             if (let Some(v) <- decl.rawComment()) {
                 return v
             }
-            if (let Some(v) <- location.rawComment()) {
-                return v
-            }
             return None<String>
         }()
 

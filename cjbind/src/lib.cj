@@ -42,7 +42,7 @@ func parse(context: CjbindContext) {
         if (isError) {
             error = match (error) {
                 case None => Some(msg + "\n")
-                case Some(oldmsg) => oldmsg + msg + "\n"
+                case Some(oldmsg) => Some(oldmsg + msg + "\n")
             }
         } else {
             eprintln("clang diag: ${msg}")
@@ -107,11 +107,15 @@ func detectIncludePaths(options: CjbindOptions) {
 public func generate(opts: CjbindOptions): String {
     detectIncludePaths(opts)
 
+    // Clone clangArgs so we do not mutate the caller's options object
+    let localArgs = ArrayList<String>(opts.clangArgs)
+
     if (opts.objc) {
-        opts.clangArgs.add("-x")
-        opts.clangArgs.add("objective-c")
+        localArgs.add("-x")
+        localArgs.add("objective-c")
     }
 
+    // Last header is used as the main translation unit file. All preceding headers are pre-included via -include.
     let headerOpts = ArrayList<String>()
     for ((i, h) in opts.headers.iterator().enumerate()) {
         if (i != opts.headers.size - 1) {
@@ -119,15 +123,35 @@ public func generate(opts: CjbindOptions): String {
         }
         headerOpts.add(h)
     }
-    opts.clangArgs.add(all: headerOpts)
+    localArgs.add(all: headerOpts)
 
-    let ctx = CjbindContext(opts)
+    // Build a context options view with the local (non-mutated) clang args
+    let ctxOpts = CjbindOptions(opts.headers, localArgs)
+    ctxOpts.packageName = opts.packageName
+    ctxOpts.noEnumPrefix = opts.noEnumPrefix
+    ctxOpts.noDetectIncludePath = opts.noDetectIncludePath
+    ctxOpts.noLayoutTests = opts.noLayoutTests
+    ctxOpts.builtins = opts.builtins
+    ctxOpts.noComment = opts.noComment
+    ctxOpts.makeFuncWrapper = opts.makeFuncWrapper
+    ctxOpts.funcWrapperSuffix = opts.funcWrapperSuffix
+    ctxOpts.autoCString = opts.autoCString
+    ctxOpts.arrayPointersInArgs = opts.arrayPointersInArgs
+    ctxOpts.makeCjString = opts.makeCjString
+    ctxOpts.objc = opts.objc
+    ctxOpts.objcCodegenMode = opts.objcCodegenMode
+    ctxOpts.objcGenerateDefinitions = opts.objcGenerateDefinitions
+    ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
+    ctxOpts.fitMacroConstants = opts.fitMacroConstants
+
+    let ctx = CjbindContext(ctxOpts)
 
     parse(ctx)
 
     let module = match (codegen.codegen(ctx)) {
         case Ok(v) => v
-        case Err(e) => throw Exception("Failed to generate code")
+        case Err(e) =>
+            throw Exception("Failed to generate code")
     }
 
     return module.toString()
@@ -242,6 +266,7 @@ func parseObjCInterface(ctx: CjbindContext, cursor: clang.Cursor): Unit {
                             for (m in iface.methods) { origIface.methods.add(m) }
                             for (m in iface.classMethods) { origIface.classMethods.add(m) }
                             for (p in iface.properties) { origIface.properties.add(p) }
+                            origIface.dedupMethods()
                         case _ => ()
                     }
                 case _ => ()
@@ -284,7 +309,7 @@ func parseObjCMethod(ctx: CjbindContext, cursor: clang.Cursor, isClassMethod: Bo
     // Convert selector to Cangjie method name: "initWithFrame:" -> "initWithFrame"
     let cjName = selector.replace(":", "_").trimEnd([r'_'])
 
-    let isInitMethod = selector == "init" || selector.startsWith("initWith") || selector.startsWith("init:")
+    let isInitMethod = selector == "init" || (selector.startsWith("init") && selector.size > 4 && selector[4] >= 65 && selector[4] <= 90)  // 'A'..'Z' in ASCII
 
     // Parse return type (with cursor fallback)
     let cursorType = cursor.curType()

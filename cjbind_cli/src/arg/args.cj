@@ -93,8 +93,8 @@ public class ArgsParser {
     public func parse(input: Array<String>): (Array<String>, Array<String>) {
         let it = input.iterator()
 
-        // remove bin
-        it.next()
+        // remove bin (argv[0]); guard against empty input
+        if (it.next().isNone()) { return ([], []) }
         
         let headers = ArrayList<String>()
         var collectingClangArgs = false

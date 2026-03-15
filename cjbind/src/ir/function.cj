@@ -56,10 +56,8 @@ public class Function <: ClangSubItemParser<Function> {
 
         let linkage_c = cursor.linkage()
         let _linkage = match (linkage_c) {
-            // case clang.CXLinkage_External | clang.CXLinkage_External => FunctionLinkage.LinkageExternal
-            case 3 | 4 => FunctionLinkage.LinkageExternal
-            // case clang.CXLinkage_Internal => FunctionLinkage.LinkageInternal
-            case 2 => FunctionLinkage.LinkageInternal
+            case 4 => FunctionLinkage.LinkageExternal  // CXLinkage_External
+            case 2 | 3 => FunctionLinkage.LinkageInternal  // CXLinkage_Internal | CXLinkage_UniqueExternal
             case _ => return Result.Err(ParseError.Continue)
         }
 
@@ -158,7 +156,7 @@ func argsFromTyAndCursor(
         let argCur = cursorArgsIt.next()
         let argTy = typeArgsIt.next()
 
-        if (argCur.isNone() && argTy.isNone()) {
+        if (argCur.isNone() || argTy.isNone()) {
             break
         }
 
@@ -194,7 +192,7 @@ public class FunctionSig <: Trace<Tracer, Unit> {
     public let returnType: TypeId
     public let argumentTypes: Array<(?String, TypeId)>
 
-    public let isVariadic: Bool
+    private let isVariadic: Bool
 
     public let abi: ClangAbi
 
@@ -295,6 +293,8 @@ public class FunctionSig <: Trace<Tracer, Unit> {
     }
     // cjlint-ignore -end
 
+    // Returns false for C functions with variadic args but no named parameters
+    // (e.g., `f(...)`), as these cannot be represented in Cangjie FFI.
     public func getIsVariadic(): Bool {
         return this.isVariadic && !this.argumentTypes.isEmpty()
     }

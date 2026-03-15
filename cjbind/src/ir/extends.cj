@@ -14,11 +14,15 @@ extend clang.Type {
 }
 
 extend clang.Cursor {
+    // Returns offset in bits, not bytes.
     public func offsetOfField(): Result<UIntNative, LayoutError> {
         let offset = this.offsetOfFieldRaw()
         if (offset < 0) {
             return Result.Err(LayoutError.from(Int32(offset)))
         } else {
+            if (offset < Int64(Int32.Min) || offset > Int64(Int32.Max)) {
+                return Result.Err(LayoutError.LayoutErrorUnknown)
+            }
             return Result.Ok(UIntNative(offset))
         }
     }

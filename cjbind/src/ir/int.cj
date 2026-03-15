@@ -14,7 +14,7 @@ public enum TypeKindIntKind {
     IntKindBool
     | IntKindSChar
     | IntKindUChar
-    | IntKindWChar
+    | IntKindWChar(Bool) // isSigned
     | IntKindChar(Bool) // signed or not
     | IntKindShort
     | IntKindUShort
@@ -36,12 +36,13 @@ public enum TypeKindIntKind {
     | IntKindU128
     | IntKindCustom(IntKindCustomValue)
 
-    public func isSigned(): Bool {
+    public func isSigned(): ?Bool {
         match (this) {
-            case IntKindBool | IntKindUChar | IntKindUShort | IntKindUInt | IntKindULong | IntKindULongLong | IntKindU8 | IntKindU16 | IntKindU32 | IntKindU64 | IntKindU128 | IntKindWChar => false
-            case IntKindSChar | IntKindShort | IntKindInt | IntKindLong | IntKindLongLong | IntKindI8 | IntKindI16 | IntKindI32 | IntKindI64 | IntKindI128 => true
-            case IntKindChar(v) => v
-            case IntKindCustom(v) => v.isSigned
+            case IntKindBool | IntKindUChar | IntKindUShort | IntKindUInt | IntKindULong | IntKindULongLong | IntKindU8 | IntKindU16 | IntKindU32 | IntKindU64 | IntKindU128 => Some(false)
+            case IntKindSChar | IntKindShort | IntKindInt | IntKindLong | IntKindLongLong | IntKindI8 | IntKindI16 | IntKindI32 | IntKindI64 | IntKindI128 => Some(true)
+            case IntKindWChar(signed) => Some(signed)
+            case IntKindChar(v) => Some(v)
+            case IntKindCustom(v) => Some(v.isSigned)
         }
     }
 
@@ -57,7 +58,7 @@ public enum TypeKindIntKind {
     }
 
     public func signednessMatches(nonNegative: Bool): Bool {
-        nonNegative || this.isSigned()
+        nonNegative || this.isSigned().getOrDefault({=> false})
     }
 
     public func isChar(): Bool {

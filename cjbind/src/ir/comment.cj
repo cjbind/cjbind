@@ -33,7 +33,10 @@ public func preprocessSingleLines(comment: String): String {
 }
 
 public func preprocessMultiLines(comment: String): String {
-    let comment2 = comment.trimStart([r'/']).trimEnd([r'*', r'/'])
+    let comment2 = match (comment.lastIndexOf("*/")) {
+        case Some(idx) => comment.trimStart([r'/'])[0..idx]
+        case None => comment.trimStart([r'/'])
+    }
 
     let lines = comment2.lines().map {l => l.trimAscii().trimStart([r'*', r'!'])} |> collectArrayList
 
@@ -52,6 +55,8 @@ public func preprocessMultiLines(comment: String): String {
             if (!hasContent) {
                 continue
             }
+            ret.append(v)
+            continue
         }
 
         ret.append(v)

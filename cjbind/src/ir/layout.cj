@@ -22,6 +22,9 @@ public open class Layout {
     }
 
     static func forSizeInternal(ptrSize: Int32, size: Int32): Layout {
+        if (size == 0) {
+            return Layout(0, 1)
+        }
         var nextAlign = 2i32
         while (size % nextAlign == 0 && nextAlign <= ptrSize) {
             nextAlign *= 2
@@ -77,14 +80,19 @@ public class Opaque <: Layout {
 
 public enum LayoutError {
     LayoutErrorInvalid |
+    LayoutErrorIncomplete |
     LayoutErrorDependent |
     LayoutErrorNotConstantSize |
     LayoutErrorInvalidFieldName |
+    LayoutErrorUndeduced |
     LayoutErrorUnknown
 
     public static func from(val: Int32): LayoutError {
         if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Invalid) {
             return LayoutErrorInvalid
+        }
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Incomplete) {
+            return LayoutErrorIncomplete
         }
         if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Dependent) {
             return LayoutErrorDependent
@@ -94,6 +102,9 @@ public enum LayoutError {
         }
         if (val == clang.CXTypeLayoutError_CXTypeLayoutError_InvalidFieldName) {
             return LayoutErrorInvalidFieldName
+        }
+        if (val == clang.CXTypeLayoutError_CXTypeLayoutError_Undeduced) {
+            return LayoutErrorUndeduced
         }
         return LayoutErrorUnknown
     }
