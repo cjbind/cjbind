@@ -4,36 +4,34 @@
 
 ### C 绑定
 
-- [ ] **Union 处理**：当前将 union 转为 opaque blob (`VArray<UInt8, $size>`)，rust-bindgen 生成正确的 union 类型并支持字段访问。应生成可访问字段的 union 表示。
-  - 文件：`codegen/lib.cj` (union codegen)、`ir/comp.cj`
+- [x] **Union 处理**：生成 @C struct + blob 存储 + getter/setter 访问器（通过 CPointer 类型转换实现内存重解释）
+  - 文件：`codegen/lib.cj`、`codegen/helper.cj`
 
-- [ ] **Bitfield 处理**：当前将含 bitfield 的 struct 转为 opaque blob，rust-bindgen 生成 `BitfieldUnit` + getter/setter 访问器。应生成位域访问方法。
-  - 文件：`codegen/lib.cj`、`ir/comp.cj`
+- [x] **Bitfield 处理**：保留正常字段 + `_bitfield_N` 存储单元 + 位级 getter/setter（含有符号扩展）
+  - 文件：`codegen/lib.cj`、`codegen/helper.cj`
 
-- [ ] **Packed 结构体**：当前跳过并输出警告，rust-bindgen 用 `#[repr(packed)]` 正确生成。应支持 packed struct 生成。
-  - 文件：`codegen/lib.cj`
+- [x] ~~**Packed 结构体**：仓颉语言限制，暂不支持~~
 
-- [ ] **调用约定丢失**：IR 层 (`function.cj`) 已正确解析 Stdcall/Fastcall/ThisCall/Vectorcall/AAPCS/Win64，但 codegen 阶段全部映射为 CDECL。应将调用约定传播到生成代码中。
-  - 文件：`codegen/lib.cj`、`ir/function.cj`
+- [x] ~~**调用约定丢失**：仓颉语言限制，暂不支持~~
 
-- [ ] **Enum 生成风格单一**：仅支持常量 + 类型别名，rust-bindgen 支持 5 种模式（Rust enum、NewType、Const、ModuleConst、NonExhaustive）。可考虑增加 Cangjie `enum` 生成模式。
-  - 文件：`codegen/lib.cj`、`options/options.cj`
+- [x] **Enum 生成风格**：新增 `--default-enum-style newtype` 选项，生成 @C struct 包装 + static let 常量 + == != 操作符
+  - 文件：`codegen/lib.cj`、`options/options.cj`、`cli.cj`
 
-- [ ] **Macro 常量类型推断**：固定使用 Int64/UInt64/Float64，rust-bindgen 有 `fit_macro_constants` 自动选择最小适配类型。可优化为最小类型匹配。
-  - 文件：`ir/var.cj`、`codegen/lib.cj`
+- [x] **Macro 常量类型推断**：新增 `--fit-macro-constants` 选项，根据值范围选择最小适配整数类型
+  - 文件：`ir/var.cj`、`options/options.cj`、`cli.cj`
 
 ### ObjC 绑定
 
-- [ ] **Category runtime 模式合并到基类**：丢失了 category 边界信息。rust-bindgen 生成独立 trait。compiler 模式已用 `extend` 块处理，但 runtime 模式应保留 category 信息或至少加注释标记。
-  - 文件：`codegen/objc.cj`、`lib.cj`
+- [ ] **Category runtime 模式合并到基类**：解析时 category 方法直接合并到基类，完全丢失 category 边界信息。compiler 模式已用 `extend` 块处理，但 runtime 模式应至少加注释标记。
+  - 文件：`codegen/objc.cj`、`lib.cj:242-244`
 
-- [ ] **缺少向下转型 (Downcast)**：rust-bindgen 通过 `TryFrom` + 运行时 `isKindOfClass:` 检查实现。cjbind 仅有向上转型 (`asParentName()`)，应补充向下转型方法。
+- [ ] **缺少向下转型 (Downcast)**：仅有向上转型 `asParentName()`，无 `isKindOfClass:` 运行时检查和向下转型方法。
   - 文件：`codegen/objc.cj`
 
-- [ ] **Method selector 转换规则差异**：rust-bindgen 将冒号替换为下划线 (`initWithFrame:` → `initWithFrame_`)，cjbind 去掉尾冒号 (`initWithFrame:` → `initWithFrame`)。cjbind 通过 `@ForeignName` 保留原始 selector，做法更好，但多参数 selector 的转换规则需确认一致性。
-  - 文件：`lib.cj` (parseObjCMethod)
+- [x] **Method selector 转换规则**：已确认一致。`dataWithBytes:length:` → `dataWithBytes_length`（去尾下划线），通过 `@ForeignName` 保留原始 selector，正确性有保证。
+  - 文件：`lib.cj:284-285`
 
-- [ ] **Property setter 命名差异**：rust-bindgen 用 `setValue_`（带下划线后缀），cjbind 用 `setPropertyName`（无下划线）。cjbind 使用 Cangjie prop 语法更地道，但需确认与 ObjC 运行时 selector 匹配。
+- [x] **Property setter 命名**：已确认正确。使用 Cangjie `mut prop` 语法，通过 `@ForeignSetterName` 注解保留实际 ObjC selector `setPropertyName:`，既符合仓颉惯例又保证 ObjC 运行时正确性。
   - 文件：`codegen/objc.cj`
 
 ---
