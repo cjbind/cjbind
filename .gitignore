@@ -18,3 +18,5 @@ cangjie-mcp.log
 .agents/
 skills-lock.json
 ref/
+
+__pycache__/

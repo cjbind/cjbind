@@ -24,7 +24,7 @@ class LibClangInstaller:
     """用于自动下载和安装 libclang 的安装器"""
 
     URL_MAP = {
-        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-mingw_64.7z",
+        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-llvm-mingw_64.7z",
         "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
         "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
         "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Debian11.6-gcc10.0-arm64.7z",
@@ -154,10 +154,18 @@ class LibClangInstaller:
         if self.extract_dir and self.extract_dir.exists():
             shutil.rmtree(self.extract_dir, ignore_errors=True)
 
+    def _remove_old_libclang(self) -> None:
+        """清除旧的 libclang 目录，确保不会残留不兼容的文件"""
+        libclang_dest = self.target_dir / "libclang"
+        if libclang_dest.exists():
+            print(f"Removing old libclang: {libclang_dest}")
+            shutil.rmtree(libclang_dest)
+
     def run(self) -> None:
         """执行安装流程"""
         try:
             self.target_dir.mkdir(parents=True, exist_ok=True)
+            self._remove_old_libclang()
             self._download_file()
             self._extract_archive()
             self._install_files()

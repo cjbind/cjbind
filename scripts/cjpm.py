@@ -165,6 +165,76 @@ def find_gcc_lib_path():
     return None
 
 
+def get_runtime_libs(platform_name: str, dynamic: bool) -> list[str]:
+    """Return platform runtime libraries for the selected link mode."""
+    match platform_name:
+        case "win32":
+            if dynamic:
+                # Dynamic Windows builds use system libclang from the MSYS2 MINGW64 environment,
+                # which is still paired with GCC runtime libraries in CI.
+                return ["-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
+            # Static Windows builds use llvm-mingw-built libclang.
+            return ["-l:libc++.a", "-lclang_rt-builtins", "-lunwind", "-lucrt", "-ldbghelp", "-lshlwapi", "-lversion"]
+        case "darwin":
+            return ["-lc++", "-lc++abi", "-lSystem"]
+        case "linux":
+            if dynamic:
+                return ["-lstdc++", "-lgcc_s"]
+            return ["-l:libstdc++.a", "-l:libgcc.a", "-l:libgcc_eh.a"]
+        case _:
+            return []
+
+
+def should_add_gcc_lib_path(platform_name: str, dynamic: bool) -> bool:
+    """Return whether the wrapper should add GCC's library directory to LDFLAGS."""
+    return platform_name == "win32" and dynamic
+
+
+def ensure_codecvt_shim(libclang_lib_dir: str) -> str | None:
+    """Build a shim providing std::__1::codecvt<char,char,_Mbstatet>::id.
+
+    The llvm-mingw-built libclang references this symbol, but Cangjie's libc++
+    defines mbstate_t as int so its codecvt uses <char,char,int> instead.
+    We synthesize a tiny static library with the missing symbol.
+    """
+    if sys.platform != "win32":
+        return None
+
+    shim_lib = os.path.join(libclang_lib_dir, "libcjbind_codecvt_shim.a")
+    if os.path.exists(shim_lib):
+        return "-l:libcjbind_codecvt_shim.a"
+
+    clang_exe = os.path.join(libclang_lib_dir, "..", "bin", "clang.exe")
+    ar_exe = os.path.join(libclang_lib_dir, "..", "bin", "llvm-ar.exe")
+    if not os.path.exists(clang_exe) or not os.path.exists(ar_exe):
+        print("Warning: clang/llvm-ar not found in libclang, cannot create codecvt shim",
+              flush=True)
+        return None
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdir:
+        src = os.path.join(tmpdir, "codecvt_shim.c")
+        obj = os.path.join(tmpdir, "codecvt_shim.o")
+
+        with open(src, "w") as f:
+            f.write(
+                "// Shim: std::__1::codecvt<char,char,_Mbstatet>::id\n"
+                "// Cangjie libc++ maps mbstate_t to int; llvm-mingw maps it to _Mbstatet.\n"
+                "// locale::id = {once_flag(4B) + int32_t(4B)} = 8 bytes, align 4, zero-init.\n"
+                "// Verified against Cangjie libc++.a: .bss section size 0x08, align 2**2.\n"
+                "__attribute__((aligned(4)))\n"
+                "char _ZNSt3__17codecvtIcc9_MbstatetE2idE[8];\n"
+            )
+
+        subprocess.run(
+            [clang_exe, "-c", "-target", "x86_64-w64-mingw32", src, "-o", obj],
+            check=True,
+        )
+        subprocess.run([ar_exe, "rcs", shim_lib, obj], check=True)
+
+    print(f"Created codecvt shim: {shim_lib}", flush=True)
+    return "-l:libcjbind_codecvt_shim.a"
+
 
 def get_libclang_link_name(filename: str) -> str:
     """Get linker name from filename (strips 'lib' prefix and extensions)."""
@@ -275,15 +345,24 @@ def read_version():
     return data["package"]["version"]
 
 
-def is_dynamic_libclang():
-    """Check if dynamic linking should be used (LINK_MODE env var, default: dynamic, options: static/dynamic)."""
-    return os.environ.get("LINK_MODE", "dynamic").lower() == "dynamic"
+def parse_wrapper_args(args: list[str]) -> tuple[list[str], bool]:
+    """Extract wrapper-only flags and return arguments to forward to cjpm."""
+    forwarded_args: list[str] = []
+    use_static = False
+
+    for arg in args:
+        if arg == "--static":
+            use_static = True
+            continue
+        forwarded_args.append(arg)
+
+    return forwarded_args, use_static
 
 
-def preprocess_environment(env):
+def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     builder = LdFlagsBuilder()
-    debug = "-g" in sys.argv
-    dynamic = is_dynamic_libclang()
+    debug = "-g" in cjpm_args
+    dynamic = not use_static
 
     # Print build mode info
     link_mode = "dynamic" if dynamic else "static"
@@ -299,8 +378,8 @@ def preprocess_environment(env):
         libdir = run_llvm_config("--libdir")
         builder.add_lib_path(libdir)
 
-    # Add GCC lib path for Windows to find libgcc.a
-    if sys.platform == "win32":
+    # Dynamic Windows builds still depend on GCC runtime libraries from MSYS2.
+    if should_add_gcc_lib_path(sys.platform, dynamic):
         gcc_lib_path = find_gcc_lib_path()
         if gcc_lib_path:
             builder.add_lib_path(gcc_lib_path)
@@ -367,25 +446,14 @@ def preprocess_environment(env):
             else:
                 libs.append(f"-l{lib_name[3:]}")  # strip 'lib' prefix
 
-    # C++ runtime
-    runtime_libs = []
-    match sys.platform:
-        case "win32":
-            # Always use dynamic C++ runtime on Windows.
-            # Statically linking libstdc++ causes CRT version mismatches
-            # between MSYS2's GCC and Cangjie's bundled MinGW CRT objects,
-            # leading to missing symbols (fstat64, wctype) or runtime crashes.
-            runtime_libs = ["-lstdc++", "-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
-        case "darwin":
-            runtime_libs = ["-lc++", "-lc++abi", "-lSystem"]
-        case "linux":
-            if dynamic:
-                # Dynamic linking: use shared versions of all runtime libs
-                runtime_libs = ["-lstdc++", "-lgcc_s"]
-            else:
-                # Static linking: use static versions of all runtime libs
-                runtime_libs = ["-l:libstdc++.a", "-l:libgcc.a", "-l:libgcc_eh.a"]
-    
+    # On static Windows builds, inject a shim for the codecvt ABI mismatch
+    if not dynamic:
+        shim_flag = ensure_codecvt_shim(os.path.join(libclang_dir(), "lib"))
+        if shim_flag:
+            libs.append(shim_flag)
+
+    runtime_libs = get_runtime_libs(sys.platform, dynamic)
+
     print(f"Runtime libs: {' '.join(runtime_libs)}", flush=True)
     libs.extend(runtime_libs)
 
@@ -406,9 +474,10 @@ def preprocess_environment(env):
 
 def main():
     base_env = os.environ.copy()
-    processed_env = preprocess_environment(base_env)
+    cjpm_args, use_static = parse_wrapper_args(sys.argv[1:])
+    processed_env = preprocess_environment(base_env, cjpm_args, use_static)
 
-    command = ["cjpm"] + sys.argv[1:]
+    command = ["cjpm"] + cjpm_args
 
     process = subprocess.run(
         command,
