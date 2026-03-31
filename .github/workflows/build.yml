@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: "3.13"
           cache-dependency-glob: "**/*.py.lock"
@@ -61,10 +61,10 @@ jobs:
       - name: Restore cached libclang
         id: cache-libclang-restore
         if: matrix.linking.mode == 'static'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: lib/libclang
-          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
+          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v3
 
       - name: Download libclang
         if: matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
@@ -72,16 +72,16 @@ jobs:
           uv run scripts/download.py
 
       - name: Setup Go
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 1.24
           cache: true
 
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@ae40ba79169e97c901fc36c94debfe68ccf7fef0 # v2.1.0
+        uses: Zxilly/setup-cangjie@ff94aa01f985321ddfa5cd0973bb26b4c37e6010 # v2.1.1
         with:
           channel: "nightly"
-          version: "1.1.0-alpha.20260107020002"
+          version: "1.1.0-alpha.20260331010029"
 
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
@@ -103,7 +103,7 @@ jobs:
 
       - name: Setup MSYS2
         if: matrix.os.sys == 'windows'
-        uses: msys2/setup-msys2@4f806de0a5a7294ffabaff804b38a9b435a73bda # v2.30.0
+        uses: msys2/setup-msys2@cafece8e6baf9247cf9b1bf95097b0b983cc558d # v2.31.0
         with:
           msystem: MINGW64
           update: true
@@ -115,18 +115,22 @@ jobs:
       # Skip debug builds on release events
       - name: Build unix ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
         if: matrix.os.sys != 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
-        env:
-          LINK_MODE: ${{ matrix.linking.mode }}
         run: |
-          uv run scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
+          static_flag=""
+          if [ "${{ matrix.linking.mode }}" = "static" ]; then
+            static_flag="--static"
+          fi
+          uv run scripts/cjpm.py $static_flag build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Build windows ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
         if: matrix.os.sys == 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
         shell: msys2 {0}
-        env:
-          LINK_MODE: ${{ matrix.linking.mode }}
         run: |
-          uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
+          static_flag=""
+          if [ "${{ matrix.linking.mode }}" = "static" ]; then
+            static_flag="--static"
+          fi
+          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V ${{ matrix.build.flag }}
 
       - name: Test binary
         if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
@@ -162,9 +166,8 @@ jobs:
       - name: Always Save libclang
         id: cache-libclang-save
         if: always() && matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
           path: |
             lib/libclang
-
