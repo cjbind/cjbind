@@ -2,22 +2,8 @@
 
 ## 依赖版本
 
-- 仓颉版本：`1.0.4`：需要为 opt 生成补丁
+- 仓颉版本：`1.1.0`
 - uv: `>= 0.6.0` Python 版本：`>= 3.11`：用于运行 `scripts` 下的脚本并自动配置依赖
-- Go: `>= 1.24`：用于构建 opt 的补丁
-
-## 修补编译器
-
-确保当前环境中安装了 `Go`，并且环境变量 `CANGJIE_HOME` 指向仓颉的安装目录。
-在 `cjbind` 的根目录下运行以下命令：
-
-```
-uv run scripts/patch_opt.py
-```
-
-这会构建 `scripts/opt.go` 并替换原有的 `opt`，原有的 `opt` 会被重命名为 `opt.old(.exe)`。
-
-这是为了 workaround 编译器中 llvm pass `cangjie-ir-verifier` 在 `cjbing.clang` 上的错误报错。 
 
 ## 更新版本
 
@@ -53,15 +39,15 @@ uv run scripts/cjpm.py build -V
 
 ### 链接模式
 
-通过 `LINK_MODE` 环境变量控制链接模式：
+通过 `--static` 参数控制是否静态链接：
 
-- `static`（默认）：静态链接 libclang，生成的二进制文件不依赖外部 libclang
-- `dynamic`：动态链接系统 libclang，需要运行时有 libclang 可用
+- 默认：动态链接系统 `libclang`，需要运行时有 `libclang` 可用
+- `--static`：静态链接 `libclang`，生成的二进制文件不依赖外部 `libclang`
 
 ```
-# 静态链接（默认）
+# 动态链接（默认）
 uv run scripts/cjpm.py build -V
 
-# 动态链接
-LINK_MODE=dynamic uv run scripts/cjpm.py build -V
+# 静态链接
+uv run scripts/cjpm.py --static build -V
 ```

@@ -16,10 +16,6 @@
 
 可以从 [GitHub Releases](https://github.com/cjbind/cjbind/releases) 下载适用于您的平台的二进制文件，或者参照
 [构建](./DEVELOPMENT.md) 文档自行构建。
-
-> [!IMPORTANT]
-> 由于仓颉当前不支持静态链接，运行程序时需要依赖其 runtime，请确保相关环境变量已正确配置。
-
 你也可以使用以下安装脚本安装：
 
 #### Linux/macOS
