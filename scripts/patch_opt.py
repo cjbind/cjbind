@@ -20,6 +20,7 @@ PASSES_TO_REMOVE = {
     'cj-ir-verifier',        # 此 pass 有 bug，会报 "Need write barrier" 错误
     'cangjie-ir-verifier',   # 旧版名称，保留兼容
     'CoroConditionalWrapper', # 伪 pass，--print-pipeline-passes 输出但不能回传给 -passes=
+    'cj-barrier-opt',        # 在 cjbind.clang FFI wrapper 上因缺少 write barrier 而失败
 }
 
 OPT_LEVELS = ['O0', 'O2']
