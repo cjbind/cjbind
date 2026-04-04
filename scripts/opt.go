@@ -57,6 +57,12 @@ func OverrideArgs(exeName string) (int, error) {
 
 	filename := argsToUse[0]
 	if strings.HasSuffix(filename, "cjbind.clang.bc") {
+		passes := os.Getenv("CJBIND_OPT_PASSES")
+		if passes == "" {
+			fmt.Fprintln(os.Stderr, "错误: CJBIND_OPT_PASSES 环境变量未设置")
+			os.Exit(1)
+		}
+
 		for i := range len(argsToUse) {
 			if argsToUse[i] == "--only-verify-out" {
 				argsToUse = append(argsToUse[:i], argsToUse[i+1:]...)
@@ -66,7 +72,7 @@ func OverrideArgs(exeName string) (int, error) {
 
 		for i := range len(argsToUse) {
 			if argsToUse[i] == "-passes=default<O2>" {
-				argsToUse[i] = "-passes=__PASSES_PLACEHOLDER__"
+				argsToUse[i] = "-passes=" + passes
 				break
 			}
 		}
