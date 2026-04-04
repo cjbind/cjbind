@@ -234,14 +234,18 @@ func fitUnsignedIntKind(v: UInt64): TypeKindIntKind {
     return TypeKindIntKind.IntKindU64
 }
 
-public enum Ints <: ToTokens {
+public enum Ints <: ToTokens & ToString {
     Int(Int64) |
     UInt(UInt64)
 
     public func toTokens(): Tokens {
+        return Tokens(this.toString())
+    }
+
+    public func toString(): String {
         match (this) {
-            case Int(v) => Tokens("${v}")
-            case UInt(v) => Tokens("${v}")
+            case Int(v) => "${v}"
+            case UInt(v) => "${v}"
         }
     }
 
