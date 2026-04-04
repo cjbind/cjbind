@@ -1,6 +1,6 @@
 package cjbind.codegen
 
-import std.ast.*
+import cjbind_token.*
 import cjbind.ir.*
 import cjbind.result.{Result}
 
@@ -145,7 +145,7 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = if (lenOk == 0) { quote(CPointer<$(ty)>) } else { quote(VArray<$(ty), \$$(lenOk)>) }
+                let token = if (lenOk == 0) { Tokens("CPointer<${ty}>") } else { Tokens("VArray<${ty}, \$${lenOk}>") }
                 return Ok(token)
             case TypeKind.TypeKindVector(item, len) =>
                 let ty = match (item.tryToCjTy(ctx, ())) {
@@ -153,7 +153,7 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = quote(VArray<$(ty), \$$(lenOk)>)
+                let token = Tokens("VArray<${ty}, \$${lenOk}>")
                 return Ok(token)
             case TypeKind.TypeKindEnum(_) => return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
@@ -188,13 +188,12 @@ extend Type <: TryToCjTy<Item> {
                 if (innerCanonicalType.isFunction()) {
                     return Ok(ty)
                 } else if (innerCanonicalType.isChar() && ctx.options.autoCString) {
-                    let token = quote(CString)
-                    return Ok(token)
+                    return Ok(Tokens("CString"))
                 } else {
                     return Ok(ty.toPtr())
                 }
-            case TypeKind.TypeKindObjCId => return Ok(quote(CPointer<Unit>))
-            case TypeKind.TypeKindObjCSel => return Ok(quote(CPointer<Unit>))
+            case TypeKind.TypeKindObjCId => return Ok(Tokens("CPointer<Unit>"))
+            case TypeKind.TypeKindObjCSel => return Ok(Tokens("CPointer<Unit>"))
             case TypeKind.TypeKindObjCBlockPointer(inner) =>
                 // Try to resolve the inner function type for a typed block
                 let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
@@ -204,11 +203,11 @@ extend Type <: TryToCjTy<Item> {
                             case TypeKind.TypeKindFunction(blockSig) =>
                                 let blockRet = Utils.fnsigReturnTy(ctx, blockSig)
                                 let blockArgs = Utils.fnsigArguments(ctx, blockSig)
-                                let joinedBlockArgs = joinTokens(blockArgs, quote(,))
-                                return Ok(quote(CFunc<($(joinedBlockArgs)) -> $(blockRet)>))
-                            case _ => return Ok(quote(CPointer<Unit>))
+                                let joinedBlockArgs = joinTokens(blockArgs, ", ")
+                                return Ok(Tokens("CFunc<(${joinedBlockArgs}) -> ${blockRet}>"))
+                            case _ => return Ok(Tokens("CPointer<Unit>"))
                         }
-                    case None => return Ok(quote(CPointer<Unit>))
+                    case None => return Ok(Tokens("CPointer<Unit>"))
                 }
             case TypeKind.TypeKindObjCInterface(iface) =>
                 return Ok(Tokens(ctx.cjIdentRaw(iface.name)))
@@ -245,9 +244,9 @@ extend FunctionSig <: TryToCjTy<Item> {
         let ret = Utils.fnsigReturnTy(ctx, this)
         let arguments = Utils.fnsigArguments(ctx, this)
 
-        let joined = joinTokens(arguments, quote(,))
+        let joined = joinTokens(arguments, ", ")
 
-        let retToken = quote(CFunc<($(joined)) -> $(ret)>)
+        let retToken = Tokens("CFunc<(${joined}) -> ${ret}>")
         return Ok(retToken)
     }
 }

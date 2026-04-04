@@ -1,6 +1,6 @@
 package cjbind.codegen
 
-import std.ast.*
+import cjbind_token.*
 import std.collection.{ArrayList, collectArrayList}
 import cjbind.ir.*
 
@@ -29,7 +29,7 @@ public class Utils {
 
             let argIdent = ctx.cjIdent(argName)
 
-            return quote($(argIdent) : $(argTy))
+            return Tokens("${argIdent}: ${argTy}")
         } |> collectArrayList
 
         return args
@@ -96,13 +96,13 @@ public class Utils {
             .kind
 
         match (canonicalTypeKind) {
-            case TypeKind.TypeKindVoid => quote(Unit)
+            case TypeKind.TypeKindVoid => Tokens("Unit")
             case _ => sig.returnType.toCjTyOrOpaque(ctx, ())
         }
     }
 
-    static func primitiveTy(ctx: CjbindContext, name: String): Tokens {
-        return Tokens(ctx.cjIdentRaw(name))
+    static func primitiveTy(_: CjbindContext, name: String): Tokens {
+        return Tokens(name)
     }
 
     public static func typeFromNamed(
@@ -136,47 +136,10 @@ public class Utils {
     }
 }
 
-func joinTokens(val: Collection<Tokens>, sep: Tokens): Tokens {
-    let ret = Tokens()
-
-    for (v in val.iterator().enumerate()) {
-        ret.append(v[1])
-        if (v[0] != val.size - 1) {
-            ret.append(sep)
-        }
-    }
-
-    return ret
-}
-
-func removeSuffixNL(val: Tokens): Tokens {
-    var end = val.size
-    while (end > 0 && val[end - 1].kind == TokenKind.NL) {
-        end--
-    }
-    let ret = Tokens()
-    for (i in 0..end) {
-        ret.append(val[i])
-    }
-    return ret
-}
-
-func removePrefixNL(val: Tokens): Tokens {
-    var start = 0
-    while (start < val.size && val[start].kind == TokenKind.NL) {
-        start++
-    }
-    let ret = Tokens()
-    for (i in start..val.size) {
-        ret.append(val[i])
-    }
-    return ret
-}
-
 func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
     if (let Some(v) <- comment && !ctx.options.noComment) {
         let tokens = removeSuffixNL(v)
-        tokens.append(Token(TokenKind.NL))
+        tokens.append("\n")
         tokens.append(removePrefixNL(body))
         return tokens
     } else {
