@@ -83,6 +83,10 @@ jobs:
           channel: "nightly"
           version: "1.1.0-alpha.20260404010029"
 
+      - name: Patch Cangjie
+        run: |
+          uv run scripts/patch_opt.py
+
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
         run: |
