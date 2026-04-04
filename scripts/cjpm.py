@@ -407,9 +407,10 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     match sys.platform:
         case "darwin":
             builder.add("-search_paths_first", "-headerpad_max_install_names")
-        case "linux":
-            # Skip gc-sections in debug mode to preserve debug info
-            if not debug:
+        case "linux" | "win32":
+            if not dynamic:
+                # Static builds must gc-sections to avoid pulling in all of LLVM/libclang
+                # which causes stack overflow from too many global constructors on Windows
                 builder.add("--gc-sections", "--gc-keep-exported")
 
     # Build library list for grouping (non-darwin)
