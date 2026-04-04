@@ -359,12 +359,16 @@ def parse_wrapper_args(args: list[str]) -> tuple[list[str], bool]:
     return forwarded_args, use_static
 
 
-def read_passes_cache() -> str | None:
-    """Read cached optimization passes from scripts/.passes_cache."""
+def read_passes_cache() -> dict | None:
+    """Read cached optimization passes from scripts/.passes_cache (JSON)."""
+    import json
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.passes_cache')
     if os.path.exists(cache_file):
         with open(cache_file, 'r', encoding='utf-8') as f:
-            return f.read().strip()
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return None
     return None
 
 
@@ -378,11 +382,13 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     build_mode = "debug" if debug else "release"
     print(f"Build mode: {build_mode}, Link mode: {link_mode} (platform: {sys.platform})", flush=True)
 
-    # Set CJBIND_OPT_PASSES from cache
-    passes = read_passes_cache()
-    if passes:
-        env["CJBIND_OPT_PASSES"] = passes
-        print(f"Set CJBIND_OPT_PASSES from cache: {passes[:80]}...", flush=True)
+    # Set CJBIND_OPT_PASSES_O* from cache for each optimization level
+    passes_dict = read_passes_cache()
+    if passes_dict:
+        for level, passes in passes_dict.items():
+            env_key = f"CJBIND_OPT_PASSES_{level}"
+            env[env_key] = passes
+            print(f"Set {env_key}: {passes[:60]}...", flush=True)
     else:
         print("Warning: .passes_cache not found, opt wrapper may fail", flush=True)
 
