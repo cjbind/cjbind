@@ -3,7 +3,7 @@ package cjbind.ir
 import std.collection.ArrayList
 import cjbind.clang
 import cjbind.result.Result
-import std.ast.{Tokens, ToTokens, Token, TokenKind}
+import cjbind_token.{Tokens, ToTokens}
 
 public class Var <: ClangSubItemParser<Var> {
     public let name: String
@@ -239,14 +239,10 @@ public enum Ints <: ToTokens {
     UInt(UInt64)
 
     public func toTokens(): Tokens {
-        let tokens = Tokens()
-        
         match (this) {
-            case Int(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}"))
-            case UInt(v) => tokens.append(Token(TokenKind.INTEGER_LITERAL, "${v}"))
+            case Int(v) => Tokens("${v}")
+            case UInt(v) => Tokens("${v}")
         }
-
-        return tokens
     }
 
     public func isNonNegative(): Bool {

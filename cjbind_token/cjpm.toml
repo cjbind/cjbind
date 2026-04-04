@@ -1,12 +1,8 @@
-[dependencies]
-  cjbind_token = { path = "../cjbind_token" }
-  glob = { git = "https://github.com/Zxilly/glob-cj.git", tag = "v0.2.0" }
-
 [package]
   cjc-version = "1.1.0"
   compile-option = "-Woff unused -V"
-  description = "A simple C binding generator for Cangjie"
-  name = "cjbind"
+  description = "Lightweight token/code builder for cjbind (replaces std.ast runtime dependency)"
+  name = "cjbind_token"
   output-type = "static"
   override-compile-option = ""
   src-dir = ""

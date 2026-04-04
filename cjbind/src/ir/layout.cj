@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.ast.Tokens
+import cjbind_token.Tokens
 
 import cjbind.clang
 
@@ -39,10 +39,10 @@ public open class Layout {
 
     public static func knownCjTypeForSize(size: Int32): ?Tokens {
         return match (size) {
-            case 1 => quote(UInt8)
-            case 2 => quote(UInt16)
-            case 4 => quote(UInt32)
-            case 8 => quote(UInt64)
+            case 1 => Tokens("UInt8")
+            case 2 => Tokens("UInt16")
+            case 4 => Tokens("UInt32")
+            case 8 => Tokens("UInt64")
             case _ => None
         }
     }

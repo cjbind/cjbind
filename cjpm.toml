@@ -2,5 +2,6 @@
 members = [
     "cjbind",
     "cjbind_cli",
-    "cjbind_test"
+    "cjbind_test",
+    "cjbind_token"
 ]
