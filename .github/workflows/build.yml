@@ -39,8 +39,8 @@ jobs:
         build:
           - channel: "release"
             flag: ""
-          - channel: "debug"
-            flag: "-g"
+          # - channel: "debug"
+          #   flag: "-g"
         linking:
           - mode: "dynamic"
           - mode: "static"
