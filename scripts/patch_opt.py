@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import shutil
@@ -18,6 +19,8 @@ PASSES_TO_REMOVE = {
     'BitcodeWriterPass',
     'cangjie-ir-verifier',  # 此 pass 有 bug，需要移除
 }
+
+OPT_LEVELS = ['O0', 'O2']
 
 
 def parse_top_level_passes(passes):
@@ -56,7 +59,7 @@ def filter_passes(passes):
     return ','.join(filtered)
 
 
-def get_passes(opt_path):
+def get_passes(opt_path, opt_level):
     with tempfile.NamedTemporaryFile(suffix='.bc', delete=False) as temp_file:
         temp_path = temp_file.name
 
@@ -66,7 +69,7 @@ def get_passes(opt_path):
                 opt_path,
                 "--print-pipeline-passes",
                 "--cangjie-pipeline",
-                "-passes=default<O2>",
+                f"-passes=default<{opt_level}>",
                 "--only-verify-out",
                 temp_path,
             ],
@@ -90,17 +93,22 @@ def cache_path():
 
 
 def read_cached_passes():
+    """Read cached passes dict from JSON file."""
     path = cache_path()
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
-            return f.read().strip()
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return None
     return None
 
 
-def write_cached_passes(passes):
+def write_cached_passes(passes_dict):
+    """Write passes dict to JSON cache file."""
     path = cache_path()
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(passes)
+        json.dump(passes_dict, f, indent=2)
     print(f"缓存 passes 到 {path}")
 
 
@@ -132,18 +140,23 @@ def patch():
 
     # 检查缓存
     cached = read_cached_passes()
-    if cached:
-        print(f"使用缓存的 passes: {cached[:80]}...")
-        passes = cached
+    if cached and all(level in cached for level in OPT_LEVELS):
+        print("使用缓存的 passes:")
+        for level in OPT_LEVELS:
+            print(f"  {level}: {cached[level][:60]}...")
+        passes_dict = cached
     else:
-        print(f"从 {opt_old_path} 获取最新 passes...")
-        try:
-            passes = get_passes(opt_old_path)
-            print(f"获取到 passes: {passes[:80]}...")
-            write_cached_passes(passes)
-        except subprocess.CalledProcessError as e:
-            print(f"获取 passes 失败: {e}")
-            sys.exit(1)
+        print(f"��� {opt_old_path} 获取各优化级别的 passes...")
+        passes_dict = {}
+        for level in OPT_LEVELS:
+            try:
+                passes = get_passes(opt_old_path, level)
+                passes_dict[level] = passes
+                print(f"  {level}: {passes[:60]}...")
+            except subprocess.CalledProcessError as e:
+                print(f"获取 {level} passes 失败: {e}")
+                sys.exit(1)
+        write_cached_passes(passes_dict)
 
     opt_go_path = os.path.join(cache_dir(), 'opt.go')
 

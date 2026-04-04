@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -52,17 +53,13 @@ func ExecuteWithArgs(exeName string, args []string) (int, error) {
 	return exitCode, err
 }
 
+var passesPattern = regexp.MustCompile(`^-passes=default<O(\d)>$`)
+
 func OverrideArgs(exeName string) (int, error) {
 	argsToUse := os.Args[1:]
 
 	filename := argsToUse[0]
 	if strings.HasSuffix(filename, "cjbind.clang.bc") {
-		passes := os.Getenv("CJBIND_OPT_PASSES")
-		if passes == "" {
-			fmt.Fprintln(os.Stderr, "错误: CJBIND_OPT_PASSES 环境变量未设置")
-			os.Exit(1)
-		}
-
 		for i := range len(argsToUse) {
 			if argsToUse[i] == "--only-verify-out" {
 				argsToUse = append(argsToUse[:i], argsToUse[i+1:]...)
@@ -71,7 +68,15 @@ func OverrideArgs(exeName string) (int, error) {
 		}
 
 		for i := range len(argsToUse) {
-			if argsToUse[i] == "-passes=default<O2>" {
+			m := passesPattern.FindStringSubmatch(argsToUse[i])
+			if m != nil {
+				level := m[1]
+				envKey := "CJBIND_OPT_PASSES_O" + level
+				passes := os.Getenv(envKey)
+				if passes == "" {
+					fmt.Fprintf(os.Stderr, "错误: %s 环境变量未设置\n", envKey)
+					os.Exit(1)
+				}
 				argsToUse[i] = "-passes=" + passes
 				break
 			}
