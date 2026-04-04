@@ -81,7 +81,7 @@ jobs:
         uses: Zxilly/setup-cangjie@ff94aa01f985321ddfa5cd0973bb26b4c37e6010 # v2.1.1
         with:
           channel: "nightly"
-          version: "1.1.0-alpha.20260331010029"
+          version: "1.1.0-alpha.20260404010029"
 
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
