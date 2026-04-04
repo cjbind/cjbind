@@ -312,10 +312,6 @@ def libclang_dir():
     return os.path.join(root_dir(), 'lib', 'libclang')
 
 
-def cpp_lds():
-    return os.path.join(root_dir(), 'scripts', 'cpp.lds')
-
-
 def run_llvm_config(*args):
     llvm_config_path = os.path.join(libclang_dir(), 'bin', 'llvm-config')
     if sys.platform == "win32":
@@ -415,8 +411,6 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
             # Skip gc-sections in debug mode to preserve debug info
             if not debug:
                 builder.add("--gc-sections", "--gc-keep-exported")
-            if not dynamic:
-                builder.add(f"-T{cpp_lds()}")
 
     # Build library list for grouping (non-darwin)
     libs = []
