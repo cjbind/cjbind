@@ -154,17 +154,25 @@ jobs:
           sudo sysctl -w kern.corefile=/tmp/cores/core.%P
           echo "Core dumps enabled, pattern: /tmp/cores/core.%P"
 
-      - name: Test binary
-        id: test_binary
-        if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+      - name: Test binary (Unix)
+        id: test_binary_unix
+        if: ${{ matrix.os.sys != 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
         continue-on-error: true
         shell: bash
         run: |
           ulimit -c unlimited
           ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
 
+      - name: Test binary (Windows)
+        id: test_binary_win
+        if: ${{ matrix.os.sys == 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
+
       - name: Collect crash artifacts (Linux)
-        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'linux'
+        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'linux'
         run: |
           mkdir -p crash-artifacts
           cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
@@ -173,7 +181,7 @@ jobs:
           ls -la crash-artifacts/
 
       - name: Collect crash artifacts (macOS)
-        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'darwin'
+        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'darwin'
         run: |
           mkdir -p crash-artifacts
           cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
@@ -184,7 +192,7 @@ jobs:
           ls -la crash-artifacts/
 
       - name: Collect crash artifacts (Windows)
-        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'windows'
+        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'windows'
         shell: bash
         run: |
           mkdir -p crash-artifacts
@@ -194,7 +202,7 @@ jobs:
           ls -la crash-artifacts/
 
       - name: Upload crash artifacts
-        if: steps.test_binary.outcome == 'failure'
+        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure')
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: crash-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
@@ -209,7 +217,7 @@ jobs:
             target/${{ matrix.build.channel }}/bin/cjbind_cli*
 
       - name: Fail if test crashed
-        if: steps.test_binary.outcome == 'failure'
+        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure')
         run: exit 1
 
       - name: Rename binary
