@@ -414,6 +414,9 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
             if not dynamic:
                 # Windows uses lld which doesn't support --gc-keep-exported
                 builder.add("--gc-sections")
+                # Static builds with LLVM/libclang have many global constructors
+                # that overflow the default 1MB stack. Set to 8MB.
+                builder.add("--stack=8388608")
 
     # Build library list for grouping (non-darwin)
     libs = []
