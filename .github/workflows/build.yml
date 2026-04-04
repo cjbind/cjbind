@@ -136,11 +136,69 @@ jobs:
           fi
           uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V ${{ matrix.build.flag }}
 
+      - name: Enable core dumps (Linux)
+        if: matrix.os.sys == 'linux'
+        run: |
+          sudo mkdir -p /tmp/cores
+          sudo chmod 1777 /tmp/cores
+          sudo sysctl -w kernel.core_pattern=/tmp/cores/core.%e.%p
+          # Disable apport if present
+          sudo service apport stop 2>/dev/null || true
+          echo "Core dumps enabled, pattern: /tmp/cores/core.%e.%p"
+
+      - name: Enable core dumps (macOS)
+        if: matrix.os.sys == 'darwin'
+        run: |
+          sudo mkdir -p /tmp/cores
+          sudo chmod 1777 /tmp/cores
+          sudo sysctl -w kern.corefile=/tmp/cores/core.%P
+          echo "Core dumps enabled, pattern: /tmp/cores/core.%P"
+
       - name: Test binary
+        id: test_binary
         if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+        continue-on-error: true
         shell: bash
         run: |
+          ulimit -c unlimited
           ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
+
+      - name: Collect crash artifacts (Linux)
+        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'linux'
+        run: |
+          mkdir -p crash-artifacts
+          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
+          cp /tmp/cores/core.* crash-artifacts/ 2>/dev/null || true
+          ls -la /tmp/cores/ 2>/dev/null || echo "No cores in /tmp/cores/"
+          ls -la crash-artifacts/
+
+      - name: Collect crash artifacts (macOS)
+        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'darwin'
+        run: |
+          mkdir -p crash-artifacts
+          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
+          cp /tmp/cores/core.* crash-artifacts/ 2>/dev/null || true
+          ls -la /tmp/cores/ 2>/dev/null || echo "No cores in /tmp/cores/"
+          # macOS crash reports
+          cp ~/Library/Logs/DiagnosticReports/cjbind_cli* crash-artifacts/ 2>/dev/null || true
+          ls -la crash-artifacts/
+
+      - name: Collect crash artifacts (Windows)
+        if: steps.test_binary.outcome == 'failure' && matrix.os.sys == 'windows'
+        shell: bash
+        run: |
+          mkdir -p crash-artifacts
+          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli.exe crash-artifacts/ || true
+          # Windows minidumps
+          find /c/Users/runneradmin/AppData/Local/CrashDumps -name '*.dmp' -exec cp {} crash-artifacts/ \; 2>/dev/null || true
+          ls -la crash-artifacts/
+
+      - name: Upload crash artifacts
+        if: steps.test_binary.outcome == 'failure'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: crash-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
+          path: crash-artifacts/
 
       - name: Upload artifact
         if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
@@ -149,6 +207,10 @@ jobs:
           name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
           path: |
             target/${{ matrix.build.channel }}/bin/cjbind_cli*
+
+      - name: Fail if test crashed
+        if: steps.test_binary.outcome == 'failure'
+        run: exit 1
 
       - name: Rename binary
         if: github.event_name == 'release' && matrix.build.channel == 'release'
