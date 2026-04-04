@@ -20,3 +20,5 @@ skills-lock.json
 ref/
 
 __pycache__/
+scripts/.passes_cache
+crash-artifacts/

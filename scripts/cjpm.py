@@ -359,6 +359,15 @@ def parse_wrapper_args(args: list[str]) -> tuple[list[str], bool]:
     return forwarded_args, use_static
 
 
+def read_passes_cache() -> str | None:
+    """Read cached optimization passes from scripts/.passes_cache."""
+    cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.passes_cache')
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    return None
+
+
 def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     builder = LdFlagsBuilder()
     debug = "-g" in cjpm_args
@@ -368,6 +377,14 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     link_mode = "dynamic" if dynamic else "static"
     build_mode = "debug" if debug else "release"
     print(f"Build mode: {build_mode}, Link mode: {link_mode} (platform: {sys.platform})", flush=True)
+
+    # Set CJBIND_OPT_PASSES from cache
+    passes = read_passes_cache()
+    if passes:
+        env["CJBIND_OPT_PASSES"] = passes
+        print(f"Set CJBIND_OPT_PASSES from cache: {passes[:80]}...", flush=True)
+    else:
+        print("Warning: .passes_cache not found, opt wrapper may fail", flush=True)
 
     # Strip flag (release mode only, not on darwin)
     if not debug and sys.platform != "darwin":
