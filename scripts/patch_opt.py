@@ -17,7 +17,9 @@ if sys.platform.startswith('win'):
 
 PASSES_TO_REMOVE = {
     'BitcodeWriterPass',
-    'cangjie-ir-verifier',  # 此 pass 有 bug，需要移除
+    'cj-ir-verifier',        # 此 pass 有 bug，会报 "Need write barrier" 错误
+    'cangjie-ir-verifier',   # 旧版名称，保留兼容
+    'CoroConditionalWrapper', # 伪 pass，--print-pipeline-passes 输出但不能回传给 -passes=
 }
 
 OPT_LEVELS = ['O0', 'O2']
