@@ -170,11 +170,12 @@ def get_runtime_libs(platform_name: str, dynamic: bool) -> list[str]:
     match platform_name:
         case "win32":
             if dynamic:
-                # Dynamic Windows builds use system libclang from the MSYS2 MINGW64 environment,
-                # which is still paired with GCC runtime libraries in CI.
-                return ["-lgcc_s", "-lwinpthread", "-lmingwex", "-lmsvcrt", "-lversion"]
+                # Dynamic Windows builds use system libclang from MSYS2 CLANG64 environment.
+                return ["-lc++", "-lunwind", "-lversion"]
             # Static Windows builds use llvm-mingw-built libclang.
-            return ["-l:libc++.a", "-lclang_rt-builtins", "-lunwind", "-lucrt", "-ldbghelp", "-lshlwapi", "-lversion"]
+            # -lucrt needed for __intrinsic_setjmpex; --allow-multiple-definition
+            # avoids conflicts with Cangjie's -lmsvcrt (_exit etc.)
+            return ["-l:libc++.a", "-lclang_rt-builtins", "-lunwind", "-lucrt", "--allow-multiple-definition", "-ldbghelp", "-lshlwapi", "-lversion"]
         case "darwin":
             return ["-lc++", "-lc++abi", "-lSystem"]
         case "linux":
@@ -187,7 +188,8 @@ def get_runtime_libs(platform_name: str, dynamic: bool) -> list[str]:
 
 def should_add_gcc_lib_path(platform_name: str, dynamic: bool) -> bool:
     """Return whether the wrapper should add GCC's library directory to LDFLAGS."""
-    return platform_name == "win32" and dynamic
+    # CLANG64 environment doesn't need GCC lib path
+    return False
 
 
 def ensure_codecvt_shim(libclang_lib_dir: str) -> str | None:
@@ -495,20 +497,54 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     return env
 
 
+def patch_static_runtime_for_darwin() -> str | None:
+    """On macOS, remove --static from cjpm.toml compile-option.
+
+    Cangjie compiler bug: MachO toolchain unconditionally forces std-ast
+    (and transitive deps) to dynamic linking, even with --static. This creates
+    a dual-runtime conflict — static libcangjie-runtime.a in the executable
+    vs dynamic libcangjie-runtime.dylib pulled in by std library dylibs.
+    Workaround: don't statically link the runtime on macOS.
+    """
+    if sys.platform != "darwin":
+        return None
+
+    toml_path = os.path.join(root_dir(), "cjbind_cli", "cjpm.toml")
+    with open(toml_path, "r", encoding="utf-8") as f:
+        original = f.read()
+
+    if " --static" not in original:
+        return None
+
+    patched = original.replace(" --static", "")
+    with open(toml_path, "w", encoding="utf-8") as f:
+        f.write(patched)
+    print("macOS: removed --static from compile-option (static runtime broken on Darwin)", flush=True)
+    return original
+
+
 def main():
     base_env = os.environ.copy()
     cjpm_args, use_static = parse_wrapper_args(sys.argv[1:])
     processed_env = preprocess_environment(base_env, cjpm_args, use_static)
 
+    original_toml = patch_static_runtime_for_darwin()
+
     command = ["cjpm"] + cjpm_args
 
-    process = subprocess.run(
-        command,
-        env=processed_env,
-        stdin=sys.stdin,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-    )
+    try:
+        process = subprocess.run(
+            command,
+            env=processed_env,
+            stdin=sys.stdin,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    finally:
+        if original_toml is not None:
+            toml_path = os.path.join(root_dir(), "cjbind_cli", "cjpm.toml")
+            with open(toml_path, "w", encoding="utf-8") as f:
+                f.write(original_toml)
 
     sys.exit(process.returncode)
 

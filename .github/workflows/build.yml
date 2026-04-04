@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "debug/macos"]
   pull_request:
     branches: ["master"]
   release:
@@ -109,11 +109,10 @@ jobs:
         if: matrix.os.sys == 'windows'
         uses: msys2/setup-msys2@cafece8e6baf9247cf9b1bf95097b0b983cc558d # v2.31.0
         with:
-          msystem: MINGW64
+          msystem: CLANG64
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            ${{ matrix.linking.mode == 'dynamic' && 'mingw-w64-x86_64-clang' || '' }}
+            mingw-w64-clang-x86_64-clang
           path-type: inherit
 
       # Skip debug builds on release events
