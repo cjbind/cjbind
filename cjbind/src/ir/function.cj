@@ -1,7 +1,7 @@
 package cjbind.ir
 
 import std.collection.ArrayList
-import std.ast.{ToTokens, Tokens}
+import cjbind_token.{ToTokens, Tokens}
 
 import cjbind.clang
 import cjbind.result.Result
@@ -96,7 +96,7 @@ public enum Abi <: ToTokens {
     public func toTokens(): Tokens {
         // Cangjie currently only supports CDECL calling convention.
         // All ABIs are mapped to CDECL until Cangjie adds support for others.
-        return quote(@CallingConv[CDECL])
+        return Tokens("@CallingConv[CDECL]")
     }
 }
 

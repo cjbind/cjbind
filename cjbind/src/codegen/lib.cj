@@ -1,6 +1,6 @@
 package cjbind.codegen
 
-import std.ast.*
+import cjbind_token.*
 import std.env
 import std.collection.{ArrayList, HashSet}
 import cjbind.build.VERSION
@@ -95,7 +95,7 @@ public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
         let allItems = ArrayList<Tokens>()
         allItems.add(all: result.helpers)
         allItems.add(all: result.items)
-        let ret = joinTokens(allItems, Tokens(Token(TokenKind.NL), Token(TokenKind.NL)))
+        let ret = joinTokens(allItems, "\n\n")
         return Ok<Tokens, CodegenError>(ret)
     }
 }
@@ -145,17 +145,14 @@ extend Module <: CodeGenerator<Item, Unit> {
         }
 
         if (item.id == ctx.rootModule) {
-            // TODO: 实现Union，Complex，不透明Array，位域等类型的适配
-            let header = Tokens(Token(TokenKind.COMMENT, "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT"))
             let cliArgs = String.join(env.getCommandLine(), delimiter: " ")
-            header.append(quote(
-                // cjbind 命令行：$(cliArgs)
-            ))
-
             let pkgName = ctx.cjIdent(ctx.options.packageName)
-            header.append(quote(
-                
-                package $(pkgName)))
+
+            let header = Tokens(
+                "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT\n" +
+                "// cjbind 命令行：${cliArgs}\n\n" +
+                "package ${pkgName}"
+            )
 
             result.items.add(header, at: 0)
         }
@@ -200,25 +197,21 @@ extend Function <: CodeGenerator<Item, Unit> {
             None
         }
 
-        // TODO: 支持自动生成 ABI 注解
-        // https://gitcode.com/Cangjie/UsersForum/issues/1595
-        // let abi = signature.abi
-
         let args = Utils.fnsigArguments(ctx, signature)
         let ret = Utils.fnsigReturnTy(ctx, signature)
 
         let ident = ctx.cjIdent(name)
 
         if (signature.getIsVariadic()) {
-            args.add(quote(...))
+            args.add(Tokens("..."))
         }
 
-        let argsToken = joinTokens(args, quote(,))
+        let argsToken = joinTokens(args, ", ")
 
         let tokens = optionalComment(
             ctx,
             commentToken,
-            quote(foreign func $(ident) ( $(argsToken) ) : $(ret))
+            Tokens("foreign func ${ident} ( ${argsToken} ) : ${ret}")
         )
 
         result.items.add(tokens)
@@ -226,14 +219,15 @@ extend Function <: CodeGenerator<Item, Unit> {
         if (ctx.options.makeFuncWrapper && !signature.getIsVariadic()) {
             let wrapperName = ctx.cjIdent("${name}${ctx.options.funcWrapperSuffix}")
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
-            let argsNameToken = joinTokens(argsName, quote(,))
+            let argsNameToken = joinTokens(argsName, ", ")
             let tokens = optionalComment(
                 ctx,
                 commentToken,
-                quote(
-                    public unsafe func $(wrapperName) ( $(argsToken) ) : $(ret) {
-                    return $(ident)( $(argsNameToken) )
-                })
+                Tokens(
+                    "public unsafe func ${wrapperName} ( ${argsToken} ) : ${ret} {\n" +
+                    "return ${ident}( ${argsNameToken} )\n" +
+                    "}"
+                )
             )
 
             result.items.add(tokens)
@@ -276,7 +270,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         optionalComment(
                             ctx,
                             commentToken,
-                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
+                            Tokens("public const ${canonicalIdent} : ${ty} = ${vv}")
                         )
                     )
                 case VarType.VarInt(vv) => result
@@ -285,7 +279,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         optionalComment(
                             ctx,
                             commentToken,
-                            quote(public const $(canonicalIdent) : $(ty) = $(vv))
+                            Tokens("public const ${canonicalIdent} : ${ty} = ${vv}")
                         )
                     )
                 case VarType.VarString(vv) =>
@@ -303,11 +297,11 @@ extend Var <: CodeGenerator<Item, Unit> {
                         let dataSize = data.size
                         let dataTokens = data.toArray()
 
-                        let tokens = quote(public const $(canonicalIdent) : VArray<UInt8, \$$(dataSize)> = $(dataTokens))
+                        let tokens = Tokens("public const ${canonicalIdent} : VArray<UInt8, \$${dataSize}> = ${dataTokens}")
 
-                        let origStr = Token(TokenKind.COMMENT, "// String value: ${vv}")
+                        let origStr = "// String value: ${vv}"
                         if (let Some(v) <- commentToken) {
-                            v.append(Token(TokenKind.NL))
+                            v.append("\n")
                             v.append(origStr)
                         } else {
                             commentToken = Tokens(origStr)
@@ -322,7 +316,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         )
                     } else {
                         let str = vv.toString()
-                        let tokens = quote(public const $(canonicalIdent) : String = $(str))
+                        let tokens = Tokens("public const ${canonicalIdent} : String = ${str}")
                         result.items.add(
                             optionalComment(
                                 ctx,
@@ -333,14 +327,14 @@ extend Var <: CodeGenerator<Item, Unit> {
                     }
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
-                        let floatTokens = float64toTokens(vv)
+                        let floatStr = float64Repr(vv)
                         result
                             .items
                             .add(
                                 optionalComment(
                                     ctx,
                                     commentToken,
-                                    quote(public const $(canonicalIdent) : $(ty) = $(floatTokens))
+                                    Tokens("public const ${canonicalIdent} : ${ty} = ${floatStr}")
                                 )
                             )
                     } else {
@@ -403,7 +397,7 @@ extend Type <: CodeGenerator<Item, Unit> {
                 let tokens = optionalComment(
                     ctx,
                     commentToken,
-                    quote(public type $(cjName) = $(innerCjType))
+                    Tokens("public type ${cjName} = ${innerCjType}")
                 )
                 result.items.add(tokens)
             case TypeKind.TypeKindEnum(ei) => ei.codegen(ctx, result, item)
@@ -428,7 +422,6 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let packed = this.isPacked(ctx, layout)
         if (packed) {
-            // 仓颉当前无法创建 packed 的结构体
             eprintln("警告：${canonicalName} 是一个 packed 类型，cj 暂不支持，跳过生成")
             return
         }
@@ -443,19 +436,15 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let fields = ArrayList<Tokens>()
 
-        // (fieldName, fieldType)
         let sigs = Tokens()
         let inits = ArrayList<Tokens>()
 
         if (this.isUnion()) {
-            // Union: blob storage + getter/setter accessors
             match (layout) {
                 case Some(l) =>
                     let blobTy = Helpers.blob(ctx, l)
-                    fields.add(quote(var _storage: $(blobTy) = unsafe { zeroValue<$(blobTy)>() }))
-                    fields.add(quote(
-                        public init() {}
-                    ))
+                    fields.add(Tokens("var _storage: ${blobTy} = unsafe { zeroValue<${blobTy}>() }"))
+                    fields.add(Tokens("public init() {}"))
 
                     let fieldDecls = this.getFields()
                     for (field in fieldDecls) {
@@ -469,7 +458,6 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let fieldTy = data.ty.toCjTyOrOpaque(ctx, ())
                                 let typeName = fieldTy.toString().replace(" ", "")
 
-                                // Ensure helper functions are generated for this type
                                 if (!result.unionHelpersSeen.contains(typeName)) {
                                     result.unionHelpersSeen.add(typeName)
                                     result.helpers.add(Helpers.unionReadHelper(typeName, fieldTy))
@@ -478,21 +466,17 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                                 let readFuncName = "__cjbind_read_${typeName}"
                                 let writeFuncName = "__cjbind_write_${typeName}"
-                                let readIdent = Tokens(Token(TokenKind.IDENTIFIER, readFuncName))
-                                let writeIdent = Tokens(Token(TokenKind.IDENTIFIER, writeFuncName))
 
-                                // getter (non-mut, copy _storage then read)
-                                fields.add(quote(
-                                    public func $(fieldIdent)(): $(fieldTy) {
-                                        var s = this._storage
-                                        return unsafe { $(readIdent)(CPointer<UInt8>(inout s)) }
-                                    }
+                                fields.add(Tokens(
+                                    "public func ${fieldIdent}(): ${fieldTy} {\n" +
+                                    "    var s = this._storage\n" +
+                                    "    return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }\n" +
+                                    "}"
                                 ))
-                                // setter (mut, write in-place)
-                                fields.add(quote(
-                                    public mut func $(fieldIdent)(val!: $(fieldTy)): Unit {
-                                        unsafe { $(writeIdent)(CPointer<UInt8>(inout this._storage), val) }
-                                    }
+                                fields.add(Tokens(
+                                    "public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {\n" +
+                                    "    unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }\n" +
+                                    "}"
                                 ))
                             case _ => ()
                         }
@@ -504,7 +488,6 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             let fieldDecls = this.getFields()
 
             if (hasBitfields) {
-                // Bitfield struct: use var fields with zero defaults, empty init, getter/setter methods
                 for (field in fieldDecls) {
                     match (field) {
                         case Field.DataMember(data) =>
@@ -525,7 +508,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                quote(public var $(fieldIdent) : $(ty) = unsafe { zeroValue<$(ty)>() })
+                                Tokens("public var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
                             )
                             fields.add(fieldToken)
 
@@ -535,12 +518,10 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let storageName = "_bitfield_${unitNth}"
                             let storageIdent = ctx.cjIdent(storageName)
 
-                            // Generate storage field: var _bitfield_N: VArray<UInt8, $SIZE>
                             fields.add(
-                                quote(var $(storageIdent) : VArray<UInt8, \$$(unitSize)> = VArray<UInt8, \$$(unitSize)>(repeat: 0))
+                                Tokens("var ${storageIdent} : VArray<UInt8, \$${unitSize}> = VArray<UInt8, \$${unitSize}>(repeat: 0)")
                             )
 
-                            // Generate getter/setter for each bitfield
                             for (bf in unit.bitfields) {
                                 let bfName = match (bf.data.name) {
                                     case Some(n) => ctx.cjMangle(n)
@@ -551,34 +532,28 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let bitOffset = Int64(bf.offsetIntoUnit)
                                 let bitWidth = Int64(bf.data.bitfieldWidth.getOrThrow())
 
-                                // Determine if the bitfield type is signed and select the appropriate read helper
                                 let bfFieldItem = bf.data.ty.intoResolver().throughTypeRefs().resolve(ctx)
                                 let bfFieldTy = bfFieldItem.kind.expectType()
                                 let isSigned = match (bfFieldTy.canonicalType(ctx).kind) {
                                     case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
                                     case _ => false
                                 }
-                                let readFunc = Tokens(Token(TokenKind.IDENTIFIER,
-                                    if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
+                                let readFunc = if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
+
+                                fields.add(Tokens(
+                                    "public func ${bfIdent}(): ${bfTy} {\n" +
+                                    "    var s = this.${storageIdent}\n" +
+                                    "    return ${bfTy}(unsafe { ${readFunc}(inout s, ${bitOffset}, ${bitWidth}) })\n" +
+                                    "}"
                                 ))
 
-                                // Getter: read via appropriate helper, cast to target type
-                                fields.add(quote(
-                                    public func $(bfIdent)(): $(bfTy) {
-                                        var s = this.$(storageIdent)
-                                        return $(bfTy)(unsafe { $(readFunc)(inout s, $(bitOffset), $(bitWidth)) })
-                                    }
-                                ))
-
-                                // Setter: convert to UInt64, call __cjbind_bitfield_write
-                                fields.add(quote(
-                                    public mut func $(bfIdent)(val!: $(bfTy)): Unit {
-                                        unsafe { __cjbind_bitfield_write(inout this.$(storageIdent), $(bitOffset), $(bitWidth), UInt64(val)) }
-                                    }
+                                fields.add(Tokens(
+                                    "public mut func ${bfIdent}(val!: ${bfTy}): Unit {\n" +
+                                    "    unsafe { __cjbind_bitfield_write(inout this.${storageIdent}, ${bitOffset}, ${bitWidth}, UInt64(val)) }\n" +
+                                    "}"
                                 ))
                             }
 
-                            // Mark that we need bitfield helper functions
                             if (!result.sawBitfieldUnit) {
                                 result.sawBitfieldUnit = true
                                 result.helpers.add(Helpers.bitfieldReadHelper())
@@ -588,10 +563,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                     }
                 }
 
-                // Add empty init for bitfield struct (all fields have default values)
-                fields.add(quote(public init() {}))
+                fields.add(Tokens("public init() {}"))
             } else {
-                // Normal struct: use let fields with constructor params
                 for ((idx, field) in fieldDecls.iterator().enumerate()) {
                     let isLast = idx == fieldDecls.size - 1
 
@@ -616,15 +589,15 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                quote(public let $(fieldIdent) : $(ty))
+                                Tokens("public let ${fieldIdent} : ${ty}")
                             )
                             fields.add(fieldToken)
 
-                            sigs.append(quote($(fieldIdent) : $(ty)))
+                            sigs.append("${fieldIdent} : ${ty}")
                             if (!isLast) {
-                                sigs.append(quote(,))
+                                sigs.append(", ")
                             }
-                            inits.add(quote(this.$(fieldIdent) = $(fieldIdent)))
+                            inits.add(Tokens("this.${fieldIdent} = ${fieldIdent}"))
 
                         case _ => throw Exception("Only support normal field")
                     }
@@ -636,15 +609,15 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             match (layout) {
                 case Some(l) =>
                     let ty = Helpers.blob(ctx, l)
-                    fields.add(quote(let _cjbind_opaque_blob: $(ty)))
-                    inits.add(quote(this._cjbind_opaque_blob = unsafe { zeroValue<$(ty)>() }))
+                    fields.add(Tokens("let _cjbind_opaque_blob: ${ty}"))
+                    inits.add(Tokens("this._cjbind_opaque_blob = unsafe { zeroValue<${ty}>() }"))
 
                 case None => throw Exception("Expect layout for opaque comp")
             }
         }
 
         if (this.isForwardDeclaration) {
-            inits.add(quote(throw Exception("type should not be inited")))
+            inits.add(Tokens("throw Exception(\"type should not be inited\")"))
         }
 
         let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
@@ -654,35 +627,34 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             None
         }
 
-        let fieldsToken = joinTokens(fields, Tokens(Token(TokenKind.NL)))
+        let fieldsToken = joinTokens(fields, "\n")
 
         let initToken = Tokens()
         let initVisibility = if (this.isForwardDeclaration) {
-            Tokens()
+            ""
         } else {
-            quote(public )
+            "public "
         }
 
         if (!inits.isEmpty()) {
-            let initExpr = joinTokens(inits, Tokens(Token(TokenKind.NL)))
+            let initExpr = joinTokens(inits, "\n")
 
-            let initBody = quote(
-
-                $(initVisibility)init($(sigs)) {
-                    $(initExpr)
-                }
+            initToken.append(
+                "\n${initVisibility}init(${sigs}) {\n" +
+                "    ${initExpr}\n" +
+                "}"
             )
-            initToken.append(initBody)
         }
 
         let ret = optionalComment(
             ctx,
             commentToken,
-            quote(
-            @C
-            public struct $(canonicalIdent) {
-                $(fieldsToken)$(initToken)
-            })
+            Tokens(
+                "@C\n" +
+                "public struct ${canonicalIdent} {\n" +
+                "${fieldsToken}${initToken}\n" +
+                "}"
+            )
         )
 
         result.items.add(ret)
@@ -691,8 +663,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             if (let Some(l) <- layout) {
                 let size = l.size
                 let align = l.align
-                let sizeOfExpr = quote(sizeOf<$(canonicalIdent)>())
-                let alignOfExpr = quote(alignOf<$(canonicalIdent)>())
+                let sizeOfExpr = "sizeOf<${canonicalIdent}>()"
+                let alignOfExpr = "alignOf<${canonicalIdent}>()"
 
                 func generateErrorMsg(ty: String, num: Int32, expr: String): String {
                     return "${ty} of ${canonicalName} is not ${num} but \${${expr}} bytes"
@@ -700,22 +672,20 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                 let sizeOfErr = generateErrorMsg("Size", size, "size")
                 let alignOfErr = generateErrorMsg("Alignment", align, "align")
-                
 
-                let testToken = removePrefixNL(
-                    quote(
-                    @When[debug]
-                    let _ = {
-                    =>
-                        let size = $(sizeOfExpr)
-                        if (size != $size) {
-                            throw Exception($(sizeOfErr))
-                        }
-                        let align = $(alignOfExpr)
-                        if (align != $(align)) {
-                            throw Exception($(alignOfErr))
-                        }
-                    })
+                let testToken = Tokens(
+                    "@When[debug]\n" +
+                    "let _ = {\n" +
+                    "=>\n" +
+                    "    let size = ${sizeOfExpr}\n" +
+                    "    if (size != ${size}) {\n" +
+                    "        throw Exception(\"${sizeOfErr}\")\n" +
+                    "    }\n" +
+                    "    let align = ${alignOfExpr}\n" +
+                    "    if (align != ${align}) {\n" +
+                    "        throw Exception(\"${alignOfErr}\")\n" +
+                    "    }\n" +
+                    "}"
                 )
 
                 result.items.add(testToken)
@@ -727,9 +697,9 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
 func enumVariantExpr(val: EnumVariantValue): Tokens {
     match (val) {
-        case EnumVariantValue.Boolean(b) => quote($(b))
-        case EnumVariantValue.Signed(s) => quote($(s))
-        case EnumVariantValue.Unsigned(u) => quote($(u))
+        case EnumVariantValue.Boolean(b) => Tokens("${b}")
+        case EnumVariantValue.Signed(s) => Tokens("${s}")
+        case EnumVariantValue.Unsigned(u) => Tokens("${u}")
     }
 }
 
@@ -761,43 +731,37 @@ extend Enum <: CodeGenerator<Item, Unit> {
         let repr = reprTy.toCjTyOrOpaque(ctx, item)
 
         if (ctx.options.defaultEnumStyle == DefaultEnumStyle.NewType) {
-            // NewType style: generate @C struct wrapper
             let structFields = ArrayList<Tokens>()
 
-            // rawValue field
-            structFields.add(quote(public var rawValue: $(repr) = unsafe { zeroValue<$(repr)>() }))
+            structFields.add(Tokens("public var rawValue: ${repr} = unsafe { zeroValue<${repr}>() }"))
 
-            // Named-parameter constructor
-            structFields.add(quote(
-                public init(rawValue!: $(repr)) { this.rawValue = rawValue }
+            structFields.add(Tokens(
+                "public init(rawValue!: ${repr}) { this.rawValue = rawValue }"
             ))
 
-            // Static constants for each variant (no enum prefix since struct provides namespace)
             for (v in this.variants) {
                 let variantName = ctx.cjMangle(v.name)
                 let vIdent = ctx.cjIdent(variantName)
                 let vexpr = enumVariantExpr(v.val)
-                structFields.add(quote(
-                    public static let $(vIdent) = $(ident)(rawValue: $(vexpr))
+                structFields.add(Tokens(
+                    "public static let ${vIdent} = ${ident}(rawValue: ${vexpr})"
                 ))
             }
 
-            // == operator
-            structFields.add(quote(
-                public operator func ==(right: $(ident)): Bool { this.rawValue == right.rawValue }
+            structFields.add(Tokens(
+                "public operator func ==(right: ${ident}): Bool { this.rawValue == right.rawValue }"
             ))
 
-            // != operator
-            structFields.add(quote(
-                public operator func !=(right: $(ident)): Bool { this.rawValue != right.rawValue }
+            structFields.add(Tokens(
+                "public operator func !=(right: ${ident}): Bool { this.rawValue != right.rawValue }"
             ))
 
-            let fieldsToken = joinTokens(structFields, Tokens(Token(TokenKind.NL)))
-            result.items.add(optionalComment(ctx, commentToken, quote(
-                @C
-                public struct $(ident) {
-                    $(fieldsToken)
-                }
+            let fieldsToken = joinTokens(structFields, "\n")
+            result.items.add(optionalComment(ctx, commentToken, Tokens(
+                "@C\n" +
+                "public struct ${ident} {\n" +
+                "${fieldsToken}\n" +
+                "}"
             )))
             return
         }
@@ -831,7 +795,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
                 optionalComment(
                     ctx,
                     vComment,
-                    quote(public const $(vIdent) : $(enumCjTy) = $(vexpr))
+                    Tokens("public const ${vIdent} : ${enumCjTy} = ${vexpr}")
                 )
             )
         }
@@ -841,7 +805,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
                 optionalComment(
                     ctx,
                     commentToken,
-                    quote(public type $(ident) = $(repr))
+                    Tokens("public type ${ident} = ${repr}")
                 )
             )
         }

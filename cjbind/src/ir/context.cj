@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.ast.{Tokens, Token, TokenKind}
+import cjbind_token.{Tokens}
 import std.collection.*
 import std.fs.Path
 import cjbind.result.Result
@@ -582,12 +582,12 @@ public class CjbindContext {
         return name
     }
 
-    public func cjIdent(name: String): Token {
+    public func cjIdent(name: String): String {
         return this.cjIdentRaw(this.cjMangle(name))
     }
 
-    public func cjIdentRaw(name: String): Token {
-        return Token(TokenKind.IDENTIFIER, name)
+    public func cjIdentRaw(name: String): String {
+        return name
     }
 
     public func pointerWidth(): Int32 {
