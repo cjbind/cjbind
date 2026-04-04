@@ -12,17 +12,17 @@ public class Tokens <: ToString {
     public init() {}
 
     public init(s: String) {
-        parts.append(s)
+        parts.add(s)
     }
 
     public func append(s: String): Unit {
-        parts.append(s)
+        parts.add(s)
     }
 
     public func append(t: Tokens): Unit {
         let s = t.toString()
         if (!s.isEmpty()) {
-            parts.append(s)
+            parts.add(s)
         }
     }
 
@@ -59,7 +59,7 @@ public func joinTokens(val: Collection<Tokens>, sep: String): Tokens {
 
 public func removeSuffixNL(val: Tokens): Tokens {
     var s = val.toString()
-    while (s.size > 0 && s[s.size - 1] == '\n') {
+    while (s.endsWith("\n")) {
         s = s[0..s.size - 1]
     }
     return Tokens(s)
@@ -67,7 +67,7 @@ public func removeSuffixNL(val: Tokens): Tokens {
 
 public func removePrefixNL(val: Tokens): Tokens {
     var s = val.toString()
-    while (s.size > 0 && s[0] == '\n') {
+    while (s.startsWith("\n")) {
         s = s[1..]
     }
     return Tokens(s)
