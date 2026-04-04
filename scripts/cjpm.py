@@ -497,54 +497,20 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     return env
 
 
-def patch_static_runtime_for_darwin() -> str | None:
-    """On macOS, remove --static from cjpm.toml compile-option.
-
-    Cangjie compiler bug: MachO toolchain unconditionally forces std-ast
-    (and transitive deps) to dynamic linking, even with --static. This creates
-    a dual-runtime conflict — static libcangjie-runtime.a in the executable
-    vs dynamic libcangjie-runtime.dylib pulled in by std library dylibs.
-    Workaround: don't statically link the runtime on macOS.
-    """
-    if sys.platform != "darwin":
-        return None
-
-    toml_path = os.path.join(root_dir(), "cjbind_cli", "cjpm.toml")
-    with open(toml_path, "r", encoding="utf-8") as f:
-        original = f.read()
-
-    if " --static" not in original:
-        return None
-
-    patched = original.replace(" --static", "")
-    with open(toml_path, "w", encoding="utf-8") as f:
-        f.write(patched)
-    print("macOS: removed --static from compile-option (static runtime broken on Darwin)", flush=True)
-    return original
-
-
 def main():
     base_env = os.environ.copy()
     cjpm_args, use_static = parse_wrapper_args(sys.argv[1:])
     processed_env = preprocess_environment(base_env, cjpm_args, use_static)
 
-    original_toml = patch_static_runtime_for_darwin()
-
     command = ["cjpm"] + cjpm_args
 
-    try:
-        process = subprocess.run(
-            command,
-            env=processed_env,
-            stdin=sys.stdin,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
-    finally:
-        if original_toml is not None:
-            toml_path = os.path.join(root_dir(), "cjbind_cli", "cjpm.toml")
-            with open(toml_path, "w", encoding="utf-8") as f:
-                f.write(original_toml)
+    process = subprocess.run(
+        command,
+        env=processed_env,
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
 
     sys.exit(process.returncode)
 
