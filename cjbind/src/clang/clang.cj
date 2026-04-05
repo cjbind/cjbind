@@ -837,12 +837,6 @@ public class Index {
         }
     }
 
-    ~init() {
-        if (!_released) {
-            unsafe { clang_disposeIndex(x) }
-            _released = true
-        }
-    }
 }
 
 extend CString {
@@ -950,12 +944,6 @@ public class TranslationUnit {
         }
     }
 
-    ~init() {
-        if (!_released) {
-            unsafe { clang_disposeTranslationUnit(x) }
-            _released = true
-        }
-    }
 }
 
 public class UnsavedFile {
@@ -977,12 +965,6 @@ public class UnsavedFile {
         }
     }
 
-    ~init() {
-        unsafe {
-            LibC.free(this.name)
-            LibC.free(this.contents)
-        }
-    }
 }
 
 public class FallbackTranslationUnit {
@@ -1019,14 +1001,6 @@ public class FallbackTranslationUnit {
         if (!_released) {
             this.tu.release()
             this.idx.release()
-            try { remove(this.filePath) } catch (_: Exception) {}
-            try { remove(this.pchPath) } catch (_: Exception) {}
-            _released = true
-        }
-    }
-
-    ~init() {
-        if (!_released) {
             try { remove(this.filePath) } catch (_: Exception) {}
             try { remove(this.pchPath) } catch (_: Exception) {}
             _released = true
@@ -1093,14 +1067,6 @@ public class Diagnostic <: ToString {
     init(x: CXDiagnostic) {
         this.x = x
     }
-
-    // cjlint-ignore -start !G.NAM.04 name
-    ~init() {
-        unsafe {
-            clang_disposeDiagnostic(x)
-        }
-    }
-    // cjlint-ignore -end name
 
     public func toString(): String {
         unsafe {
@@ -1232,12 +1198,6 @@ public class EvalResult {
         unsafe {
             this.x = clang_Cursor_Evaluate(cursor.x)
             this.ty = cursor.curType().canonicalType()
-        }
-    }
-
-    ~init() {
-        unsafe {
-            clang_EvalResult_dispose(x)
         }
     }
 

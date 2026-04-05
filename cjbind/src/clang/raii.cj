@@ -2,10 +2,8 @@ package cjbind.clang
 
 // RAII wrapper types for libclang resources.
 //
-// All wrappers use `~init()` destructors (Cangjie's finalizer syntax) to
-// release resources automatically when the object is garbage-collected.
-// Because GC timing is non-deterministic, callers that need prompt release
-// must also call `release()` explicitly and wrap usage in `try/finally`.
+// Callers must call release() — no GC finalizer.
+// Wrap usage in `try/finally` to ensure prompt release.
 //
 // Example pattern:
 //
@@ -33,16 +31,6 @@ public class CStringOwned {
             this._pointer = LibC.mallocCString(s)
         }
     }
-
-    // cjlint-ignore -start !G.NAM.04 name
-    ~init() {
-        if (!_released) {
-            unsafe {
-                LibC.free(_pointer)
-            }
-        }
-    }
-    // cjlint-ignore -end name
 
     // The raw CString pointer to the null-terminated C string.
     // Valid until `release()` is called.
@@ -92,16 +80,6 @@ public class OwnedTargetInfo {
         this._released = true
     }
 
-    // cjlint-ignore -start !G.NAM.04 name
-    ~init() {
-        if (!_released) {
-            unsafe {
-                clang_TargetInfo_dispose(_handle)
-            }
-        }
-    }
-    // cjlint-ignore -end name
-
     // Frees the underlying `CXTargetInfo` handle immediately.
     // Safe to call multiple times; subsequent calls are no-ops.
     public func release(): Unit {
@@ -135,16 +113,6 @@ public class OwnedTokens {
         this._tokens = tokens
         this._count = count
     }
-
-    // cjlint-ignore -start !G.NAM.04 name
-    ~init() {
-        if (!_released) {
-            unsafe {
-                clang_disposeTokens(_tu, _tokens, _count)
-            }
-        }
-    }
-    // cjlint-ignore -end name
 
     // The translation unit this token array belongs to (non-owning reference).
     public prop tu: CXTranslationUnit {
