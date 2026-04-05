@@ -57,22 +57,7 @@ public func joinTokens(val: Collection<Tokens>, sep: String): Tokens {
     return result
 }
 
-public func removeSuffixNL(val: Tokens): Tokens {
-    var s = val.toString()
-    while (s.endsWith("\n")) {
-        s = s[0..s.size - 1]
-    }
-    return Tokens(s)
-}
-
-public func removePrefixNL(val: Tokens): Tokens {
-    var s = val.toString()
-    while (s.startsWith("\n")) {
-        s = s[1..]
-    }
-    return Tokens(s)
-}
-
 public func float64Repr(val: Float64): String {
     return "${val}".replace("+", "")
 }
+

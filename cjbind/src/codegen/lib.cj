@@ -1,6 +1,7 @@
 package cjbind.codegen
 
 import cjbind_token.*
+import cjbind_token.macros.*
 import std.env
 import std.collection.{ArrayList, HashSet}
 import cjbind.build.VERSION
@@ -148,10 +149,11 @@ extend Module <: CodeGenerator<Item, Unit> {
             let cliArgs = String.join(env.getCommandLine(), delimiter: " ")
             let pkgName = ctx.cjIdent(ctx.options.packageName)
 
-            let header = Tokens(
-                "// cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT\n" +
-                "// cjbind 命令行：${cliArgs}\n\n" +
-                "package ${pkgName}"
+            let header = @tmpl(
+                // cjbind ${VERSION} 生成，请勿编辑, DO NOT EDIT
+                // cjbind 命令行：${cliArgs}
+
+                package ${pkgName}
             )
 
             result.items.add(header, at: 0)
@@ -223,10 +225,10 @@ extend Function <: CodeGenerator<Item, Unit> {
             let tokens = optionalComment(
                 ctx,
                 commentToken,
-                Tokens(
-                    "public unsafe func ${wrapperName} ( ${argsToken} ) : ${ret} {\n" +
-                    "return ${ident}( ${argsNameToken} )\n" +
-                    "}"
+                @tmpl(
+                    public unsafe func ${wrapperName} ( ${argsToken} ) : ${ret} {
+                    return ${ident}( ${argsNameToken} )
+                    }
                 )
             )
 
@@ -467,16 +469,16 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let readFuncName = "__cjbind_read_${typeName}"
                                 let writeFuncName = "__cjbind_write_${typeName}"
 
-                                fields.add(Tokens(
-                                    "public func ${fieldIdent}(): ${fieldTy} {\n" +
-                                    "    var s = this._storage\n" +
-                                    "    return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }\n" +
-                                    "}"
+                                fields.add(@tmpl(
+                                    public func ${fieldIdent}(): ${fieldTy} {
+                                        var s = this._storage
+                                        return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
+                                    }
                                 ))
-                                fields.add(Tokens(
-                                    "public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {\n" +
-                                    "    unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }\n" +
-                                    "}"
+                                fields.add(@tmpl(
+                                    public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
+                                        unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }
+                                    }
                                 ))
                             case _ => ()
                         }
@@ -540,17 +542,17 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 }
                                 let readFunc = if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
 
-                                fields.add(Tokens(
-                                    "public func ${bfIdent}(): ${bfTy} {\n" +
-                                    "    var s = this.${storageIdent}\n" +
-                                    "    return ${bfTy}(unsafe { ${readFunc}(inout s, ${bitOffset}, ${bitWidth}) })\n" +
-                                    "}"
+                                fields.add(@tmpl(
+                                    public func ${bfIdent}(): ${bfTy} {
+                                        var s = this.${storageIdent}
+                                        return ${bfTy}(unsafe { ${readFunc}(inout s, ${bitOffset}, ${bitWidth}) })
+                                    }
                                 ))
 
-                                fields.add(Tokens(
-                                    "public mut func ${bfIdent}(val!: ${bfTy}): Unit {\n" +
-                                    "    unsafe { __cjbind_bitfield_write(inout this.${storageIdent}, ${bitOffset}, ${bitWidth}, UInt64(val)) }\n" +
-                                    "}"
+                                fields.add(@tmpl(
+                                    public mut func ${bfIdent}(val!: ${bfTy}): Unit {
+                                        unsafe { __cjbind_bitfield_write(inout this.${storageIdent}, ${bitOffset}, ${bitWidth}, UInt64(val)) }
+                                    }
                                 ))
                             }
 
@@ -639,21 +641,22 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         if (!inits.isEmpty()) {
             let initExpr = joinTokens(inits, "\n")
 
-            initToken.append(
-                "\n${initVisibility}init(${sigs}) {\n" +
-                "    ${initExpr}\n" +
-                "}"
-            )
+            initToken.append("\n")
+            initToken.append(@tmpl(
+                ${initVisibility}init(${sigs}) {
+                    ${initExpr}
+                }
+            ))
         }
 
         let ret = optionalComment(
             ctx,
             commentToken,
-            Tokens(
-                "@C\n" +
-                "public struct ${canonicalIdent} {\n" +
-                "${fieldsToken}${initToken}\n" +
-                "}"
+            @tmpl(
+                @C
+                public struct ${canonicalIdent} {
+                ${fieldsToken}${initToken}
+                }
             )
         )
 
@@ -673,19 +676,19 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 let sizeOfErr = generateErrorMsg("Size", size, "size")
                 let alignOfErr = generateErrorMsg("Alignment", align, "align")
 
-                let testToken = Tokens(
-                    "@When[debug]\n" +
-                    "let _ = {\n" +
-                    "=>\n" +
-                    "    let size = ${sizeOfExpr}\n" +
-                    "    if (size != ${size}) {\n" +
-                    "        throw Exception(\"${sizeOfErr}\")\n" +
-                    "    }\n" +
-                    "    let align = ${alignOfExpr}\n" +
-                    "    if (align != ${align}) {\n" +
-                    "        throw Exception(\"${alignOfErr}\")\n" +
-                    "    }\n" +
-                    "}"
+                let testToken = @tmpl(
+                    @When[debug]
+                    let _ = {
+                    =>
+                        let size = ${sizeOfExpr}
+                        if (size != ${size}) {
+                            throw Exception("${sizeOfErr}")
+                        }
+                        let align = ${alignOfExpr}
+                        if (align != ${align}) {
+                            throw Exception("${alignOfErr}")
+                        }
+                    }
                 )
 
                 result.items.add(testToken)
@@ -757,11 +760,11 @@ extend Enum <: CodeGenerator<Item, Unit> {
             ))
 
             let fieldsToken = joinTokens(structFields, "\n")
-            result.items.add(optionalComment(ctx, commentToken, Tokens(
-                "@C\n" +
-                "public struct ${ident} {\n" +
-                "${fieldsToken}\n" +
-                "}"
+            result.items.add(optionalComment(ctx, commentToken, @tmpl(
+                @C
+                public struct ${ident} {
+                ${fieldsToken}
+                }
             )))
             return
         }
