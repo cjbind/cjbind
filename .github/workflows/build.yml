@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: lib/libclang
-          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v3
+          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v4
 
       - name: Download libclang
         if: matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'

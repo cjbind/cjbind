@@ -25,4 +25,4 @@ crash-artifacts/
 
 # cjbind temp files (legacy, now written to system temp dir)
 .macro_eval.c
-*-precompile.h.pch
+*-precompile.h.pchtemp/
