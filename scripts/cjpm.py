@@ -172,10 +172,9 @@ def get_runtime_libs(platform_name: str, dynamic: bool) -> list[str]:
             if dynamic:
                 # Dynamic Windows builds use system libclang from MSYS2 CLANG64 environment.
                 return ["-lc++", "-lunwind", "-lversion"]
-            # Static Windows builds use llvm-mingw-built libclang.
-            # -lucrt needed for __intrinsic_setjmpex; --allow-multiple-definition
-            # avoids conflicts with Cangjie's -lmsvcrt (_exit etc.)
-            return ["-l:libc++.a", "-lclang_rt-builtins", "-lunwind", "-lucrt", "--allow-multiple-definition", "-ldbghelp", "-lshlwapi", "-lversion"]
+            # Static Windows builds use msvcrt-linked libclang (matching Cangjie runtime).
+            # --allow-multiple-definition avoids conflicts with Cangjie's -lmsvcrt.
+            return ["-l:libc++.a", "-lclang_rt-builtins", "-lunwind", "-lmsvcrt", "--allow-multiple-definition", "-ldbghelp", "-lshlwapi", "-lversion"]
         case "darwin":
             return ["-lc++", "-lc++abi", "-lSystem"]
         case "linux":
@@ -193,11 +192,12 @@ def should_add_gcc_lib_path(platform_name: str, dynamic: bool) -> bool:
 
 
 def ensure_codecvt_shim(libclang_lib_dir: str) -> str | None:
-    """Build a shim providing std::__1::codecvt<char,char,_Mbstatet>::id.
+    """Build a shim for ABI mismatches between libclang's libc++ and Cangjie's libc++.
 
-    The llvm-mingw-built libclang references this symbol, but Cangjie's libc++
-    defines mbstate_t as int so its codecvt uses <char,char,int> instead.
-    We synthesize a tiny static library with the missing symbol.
+    Provides:
+    1. std::__1::codecvt<char,char,_Mbstatet>::id (mbstate_t typedef mismatch)
+    2. Objects from libclang's libc++.a that define symbols missing from Cangjie's
+       older libc++ (e.g. __hash_memory from functional.cpp.obj).
     """
     if sys.platform != "win32":
         return None
@@ -223,7 +223,6 @@ def ensure_codecvt_shim(libclang_lib_dir: str) -> str | None:
                 "// Shim: std::__1::codecvt<char,char,_Mbstatet>::id\n"
                 "// Cangjie libc++ maps mbstate_t to int; llvm-mingw maps it to _Mbstatet.\n"
                 "// locale::id = {once_flag(4B) + int32_t(4B)} = 8 bytes, align 4, zero-init.\n"
-                "// Verified against Cangjie libc++.a: .bss section size 0x08, align 2**2.\n"
                 "__attribute__((aligned(4)))\n"
                 "char _ZNSt3__17codecvtIcc9_MbstatetE2idE[8];\n"
             )
@@ -232,7 +231,25 @@ def ensure_codecvt_shim(libclang_lib_dir: str) -> str | None:
             [clang_exe, "-c", "-target", "x86_64-w64-mingw32", src, "-o", obj],
             check=True,
         )
-        subprocess.run([ar_exe, "rcs", shim_lib, obj], check=True)
+
+        objs = [obj]
+
+        # Extract objects from libclang's libc++.a that provide symbols missing
+        # from Cangjie's older libc++ (e.g. __hash_memory).
+        libcxx_a = os.path.join(libclang_lib_dir, "libc++.a")
+        libcxx_objs_to_extract = ["functional.cpp.obj"]
+        if os.path.exists(libcxx_a):
+            for obj_name in libcxx_objs_to_extract:
+                extracted = os.path.join(tmpdir, obj_name)
+                result = subprocess.run(
+                    [ar_exe, "x", libcxx_a, obj_name],
+                    cwd=tmpdir,
+                    capture_output=True,
+                )
+                if result.returncode == 0 and os.path.exists(extracted):
+                    objs.append(extracted)
+
+        subprocess.run([ar_exe, "rcs", shim_lib] + objs, check=True)
 
     print(f"Created codecvt shim: {shim_lib}", flush=True)
     return "-l:libcjbind_codecvt_shim.a"

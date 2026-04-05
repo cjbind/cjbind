@@ -1,7 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "py7zr",
 #     "requests",
 #     "tqdm",
 # ]
@@ -9,14 +8,13 @@
 
 import platform
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional
 
 import requests
-import py7zr
-from py7zr.callbacks import ExtractCallback
 from tqdm import tqdm
 
 
@@ -24,7 +22,7 @@ class LibClangInstaller:
     """用于自动下载和安装 libclang 的安装器"""
 
     URL_MAP = {
-        "windows": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-windows-llvm-mingw_64.7z",
+        "windows": "https://github.com/cjbind/cjbind/releases/download/libclang-v20.1.0-msvcrt/libclang-20.1.0-windows-msvcrt-static-libcxx-x86_64.7z",
         "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
         "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
         "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Debian11.6-gcc10.0-arm64.7z",
@@ -34,7 +32,8 @@ class LibClangInstaller:
         self.system_key = self._detect_system()
         self.download_url = self._get_download_url()
         self.base_dir = Path(__file__).parent.resolve()
-        self.temp_archive = self.base_dir / "temp_libclang.7z"
+        self.temp_dir = Path(mkdtemp(prefix="libclang_"))
+        self.temp_archive = self.temp_dir / "libclang.7z"
         self.target_dir = self.base_dir.parent / "lib"
         self.extract_dir: Optional[Path] = None
 
@@ -58,6 +57,25 @@ class LibClangInstaller:
             raise RuntimeError(
                 f"No download URL configured for {self.system_key}")
         return url
+
+    @staticmethod
+    def _find_7z() -> str:
+        """查找 7z 可执行文件"""
+        candidates = ["7z"]
+        if sys.platform == "win32":
+            candidates.extend([
+                r"C:\Program Files\7-Zip\7z.exe",
+                r"C:\Program Files (x86)\7-Zip\7z.exe",
+            ])
+        for candidate in candidates:
+            if shutil.which(candidate):
+                return candidate
+        # Check Windows paths directly
+        for candidate in candidates[1:]:
+            if Path(candidate).is_file():
+                return candidate
+        raise RuntimeError(
+            "7z not found. Please install 7-Zip: https://7-zip.org/")
 
     def _download_file(self) -> None:
         """下载压缩文件并显示进度条"""
@@ -83,49 +101,19 @@ class LibClangInstaller:
             raise RuntimeError(f"Download failed: {str(e)}")
 
     def _extract_archive(self) -> None:
-        """解压下载的文件"""
-        try:
-            self.extract_dir = Path(mkdtemp())
-            with py7zr.SevenZipFile(self.temp_archive, 'r') as archive:
-                class TqdmExtractCallback(ExtractCallback):
-                    def __init__(self):
-                        super().__init__()
+        """使用系统 7z 命令解压（py7zr 不支持 BCJ2 过滤器）"""
+        self.extract_dir = Path(mkdtemp(prefix="libclang_extract_"))
+        seven_z = self._find_7z()
 
-                        info = archive.archiveinfo().uncompressed
-
-                        self.pendingSize = None
-                        self.pbar = tqdm(
-                            total=info,
-                            unit='B',
-                            unit_scale=True,
-                            miniters=1,
-                            desc="Extracting",
-                        )
-
-                    def report_start(self, processing_file_path, processing_bytes):
-                        pass
-
-                    def report_update(self, decompressed_bytes):
-                        self.pbar.update(int(decompressed_bytes))
-
-                    def report_end(self, processing_file_path, wrote_bytes):
-                        pass
-
-                    def report_start_preparation(self):
-                        pass
-
-                    def report_warning(self, message):
-                        print(f"Warning: {message}")
-
-                    def report_postprocess(self):
-                        pass
-
-                cb = TqdmExtractCallback()
-                archive.extractall(path=self.extract_dir, callback=cb)
-
-        except Exception as e:
+        print("Extracting...")
+        result = subprocess.run(
+            [seven_z, "x", str(self.temp_archive), f"-o{self.extract_dir}", "-y"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
             self._cleanup()
-            raise RuntimeError(f"Extraction failed: {str(e)}")
+            raise RuntimeError(f"Extraction failed: {result.stderr}")
 
     def _find_libclang_dir(self) -> Path:
         """查找解压后的 libclang 目录"""
@@ -146,11 +134,12 @@ class LibClangInstaller:
             shutil.rmtree(libclang_dest)
 
         shutil.move(str(libclang_src), str(libclang_dest))
-        print(f"\nSuccessfully installed to: {libclang_dest}")
+        print(f"Successfully installed to: {libclang_dest}")
 
     def _cleanup(self) -> None:
         """清理临时文件"""
-        self.temp_archive.unlink(missing_ok=True)
+        if self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
         if self.extract_dir and self.extract_dir.exists():
             shutil.rmtree(self.extract_dir, ignore_errors=True)
 

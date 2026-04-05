@@ -5,6 +5,7 @@
 [package]
   cjc-version = "1.1.0"
   compile-option = "-Woff unused -V"
+  link-option = "${LDFLAGS}"
   description = "A simple C binding generator for Cangjie"
   name = "cjbind"
   output-type = "static"

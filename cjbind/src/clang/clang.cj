@@ -5,15 +5,6 @@ import std.collection.{HashMap, ArrayList}
 
 import cjbind.result.Result
 
-// LLVM C API: clean up all ManagedStatic globals.
-// Must be called before Cangjie runtime shutdown to avoid heap corruption
-// when statically linking libclang (which bundles LLVM).
-foreign func LLVMShutdown(): Unit
-
-public func shutdownLLVM(): Unit {
-    unsafe { LLVMShutdown() }
-}
-
 func cxstringToString(x: CXString): String {
     if (x.data.isNull()) {
         return ""
