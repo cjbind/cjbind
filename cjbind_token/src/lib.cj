@@ -36,11 +36,7 @@ public class Tokens <: ToString {
     }
 
     public func toString(): String {
-        var result = ""
-        for (p in parts) {
-            result += p
-        }
-        return result
+        return String.join(parts.toArray(), delimiter: "")
     }
 }
 

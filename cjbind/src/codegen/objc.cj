@@ -28,7 +28,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         // Generate runtime declarations once
         if (!result.seenVar("__objc_runtime_decls__")) {
             result.sawVar("__objc_runtime_decls__")
-            result.items.add(genRuntimeDecls(ctx))
+            result.items.add(genRuntimeDecls())
         }
 
         if (let Some(_) <- this.category) {
@@ -43,7 +43,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenRuntimeClass(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         var nameTokens = Tokens(ctx.cjIdentRaw(this.name))
         // Append generic type parameters as comment (ObjC lightweight generics)
@@ -126,7 +126,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenRuntimeProtocol(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         let name = ctx.cjIdentRaw("I${this.name}")
 
@@ -166,7 +166,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenRuntimeCategory(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         let name = ctx.cjIdentRaw(this.name)
         let className = this.name
@@ -219,7 +219,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenCompilerClass(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         var nameTokens = Tokens(ctx.cjIdentRaw(this.name))
         // Append generic type parameters as comment (ObjC lightweight generics)
@@ -295,7 +295,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenCompilerProtocol(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         let name = ctx.cjIdentRaw(this.name)
         let genDefs = ctx.options.objcGenerateDefinitions
@@ -344,7 +344,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     func codegenCompilerCategory(
         ctx: CjbindContext,
         result: CodegenResult,
-        item: Item
+        item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
         let name = ctx.cjIdentRaw(this.name)
 
@@ -522,57 +522,31 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
             )
         }
     } else if (effectivelyStatic) {
-        if (ctx.options.objcGenerateDefinitions) {
+        let defBody = if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
-            if (needsForeignName || forceStaticInit) {
-                return @tmpl(
-                    ${objcInitAnnotation}
-                    ${foreignNameAnnotation}
-                    public static func ${mname}(${joinedArgs}): ${ret} { ${defVal} }
-                )
-            } else {
-                return Tokens(
-                    "public static func ${mname}(${joinedArgs}): ${ret} { ${defVal} }"
-                )
-            }
+            Tokens(" { ${defVal} }")
+        } else { Tokens() }
+        if (needsForeignName || forceStaticInit) {
+            return @tmpl(
+                ${objcInitAnnotation}
+                ${foreignNameAnnotation}
+                public static func ${mname}(${joinedArgs}): ${ret}${defBody}
+            )
         } else {
-            if (needsForeignName || forceStaticInit) {
-                return @tmpl(
-                    ${objcInitAnnotation}
-                    ${foreignNameAnnotation}
-                    public static func ${mname}(${joinedArgs}): ${ret}
-                )
-            } else {
-                return Tokens(
-                    "public static func ${mname}(${joinedArgs}): ${ret}"
-                )
-            }
+            return Tokens("public static func ${mname}(${joinedArgs}): ${ret}${defBody}")
         }
     } else {
-        // Instance method: public open func
-        if (ctx.options.objcGenerateDefinitions) {
+        let defBody = if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
-            if (needsForeignName) {
-                return @tmpl(
-                    ${foreignNameAnnotation}
-                    public open func ${mname}(${joinedArgs}): ${ret} { ${defVal} }
-                )
-            } else {
-                return Tokens(
-                    "public open func ${mname}(${joinedArgs}): ${ret} { ${defVal} }"
-                )
-            }
+            Tokens(" { ${defVal} }")
+        } else { Tokens() }
+        if (needsForeignName) {
+            return @tmpl(
+                ${foreignNameAnnotation}
+                public open func ${mname}(${joinedArgs}): ${ret}${defBody}
+            )
         } else {
-            if (needsForeignName) {
-                return @tmpl(
-                    ${foreignNameAnnotation}
-                    public open func ${mname}(${joinedArgs}): ${ret}
-                )
-            } else {
-                return Tokens(
-                    "public open func ${mname}(${joinedArgs}): ${ret}"
-                )
-            }
+            return Tokens("public open func ${mname}(${joinedArgs}): ${ret}${defBody}")
         }
     }
 }
@@ -670,7 +644,7 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
     }
 }
 
-func genRuntimeDecls(ctx: CjbindContext): Tokens {
+func genRuntimeDecls(): Tokens {
     return @tmpl(
         import std.collection.HashMap
 
@@ -736,7 +710,7 @@ func wrapNullable(ty: Tokens, isNullable: Bool): Tokens {
     return ty
 }
 
-func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isStatic: Bool): Tokens {
+func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isStatic: Bool): Tokens { // cjlint-ignore !G.FUN.02
     let sig = m.signature
     var ret = Utils.fnsigReturnTy(ctx, sig)
     ret = wrapNullable(ret, m.returnsNullable)
@@ -746,7 +720,6 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams)
     let joinedArgs = joinTokens(arguments, ", ")
 
-    // Build CFunc parameter types: (CPointer<Unit>, CPointer<Unit>, ...paramTypes) -> RetType
     let paramTypes = ArrayList<Tokens>()
     paramTypes.add(Tokens("CPointer<Unit>"))  // self/class pointer
     paramTypes.add(Tokens("CPointer<Unit>"))  // _cmd (selector)
@@ -756,54 +729,31 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     }
     let joinedParamTypes = joinTokens(paramTypes, ", ")
 
-    // Build the argument forwarding name list
     let argNames = Utils.fnsigArgumentNames(ctx, sig)
     let joinedArgNames = joinTokens(argNames, ", ")
+    let callTail = if (argNames.isEmpty()) { Tokens("") } else { Tokens(", ${joinedArgNames}") }
 
     if (isStatic) {
-        // Class method
-        if (argNames.isEmpty()) {
-            return @tmpl(
-                public static func ${mname}(${joinedArgs}): ${ret} {
-                    let cls = cachedClass("${className}")
-                    let sel = cachedSel("${sel}")
-                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(CPointer<Unit>(cls), sel) }
-                }
-            )
-        } else {
-            return @tmpl(
-                public static func ${mname}(${joinedArgs}): ${ret} {
-                    let cls = cachedClass("${className}")
-                    let sel = cachedSel("${sel}")
-                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(CPointer<Unit>(cls), sel, ${joinedArgNames}) }
-                }
-            )
-        }
+        return @tmpl(
+            public static func ${mname}(${joinedArgs}): ${ret} {
+                let cls = cachedClass("${className}")
+                let sel = cachedSel("${sel}")
+                let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                return unsafe { f(CPointer<Unit>(cls), sel${callTail}) }
+            }
+        )
     } else {
-        // Instance method
-        if (argNames.isEmpty()) {
-            return @tmpl(
-                public func ${mname}(${joinedArgs}): ${ret} {
-                    let sel = cachedSel("${sel}")
-                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(this.id, sel) }
-                }
-            )
-        } else {
-            return @tmpl(
-                public func ${mname}(${joinedArgs}): ${ret} {
-                    let sel = cachedSel("${sel}")
-                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(this.id, sel, ${joinedArgNames}) }
-                }
-            )
-        }
+        return @tmpl(
+            public func ${mname}(${joinedArgs}): ${ret} {
+                let sel = cachedSel("${sel}")
+                let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                return unsafe { f(this.id, sel${callTail}) }
+            }
+        )
     }
 }
 
-func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String): Tokens {
+func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String): Tokens { // cjlint-ignore !G.FUN.02
     let propName = ctx.cjIdent(p.name)
     var ty = p.ty.toCjTyOrOpaque(ctx, ())
     ty = wrapNullable(ty, p.isNullable)

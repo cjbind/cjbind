@@ -4,7 +4,7 @@ package cjbind.utils
 foreign func SetConsoleOutputCP(codepage: UInt32): Bool
 
 @When[os == "Windows"]
-public func updateConsole() {
+public func updateConsole(): Unit {
     unsafe {
         let ret = SetConsoleOutputCP(65001)
         if (!ret) {
@@ -14,5 +14,5 @@ public func updateConsole() {
 }
 
 @When[os != "Windows"]
-public func updateConsole() {
+public func updateConsole(): Unit {
 }
