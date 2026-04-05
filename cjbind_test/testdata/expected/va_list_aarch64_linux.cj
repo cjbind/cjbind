@@ -1,5 +1,1 @@
-package cjbind_ffi
-
-public type va_list_va_list = VArray<UInt64, $4>
-
-foreign func vprintf(format: CPointer<UInt8>, vlist: VArray<UInt64, $4>): Int32
+package cjbind_ffipublic type va_list_va_list = __builtin_va_list___builtin_va_listforeign func vprintf(format: CPointer<UInt8>, vlist: __builtin_va_list___builtin_va_list): Int32public type __builtin_va_list___builtin_va_list = CPointer<UInt8>

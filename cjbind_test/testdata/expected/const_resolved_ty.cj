@@ -1,3 +1,1 @@
-package cjbind_ffi
-
-foreign func foo(foo: CPointer<UInt8>): Unit
+package cjbind_ffiforeign func foo(foo: CPointer<UInt8>): Unit

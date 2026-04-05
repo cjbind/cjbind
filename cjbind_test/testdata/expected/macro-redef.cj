@@ -1,5 +1,1 @@
-package cjbind_ffi
-
-public const FOO_FOO: Int64 = 5
-public const BAR_BAR: Int64 = 6
-public const BAZ_BAZ: Int64 = 6
+package cjbind_ffipublic const FOO_FOO: Int64 = 5public const BAR_BAR: Int64 = 6public const BAZ_BAZ: Int64 = 6

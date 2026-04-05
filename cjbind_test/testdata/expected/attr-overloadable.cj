@@ -1,3 +1,1 @@
-package cjbind_ffi
-
-foreign func my_function(a: Int32): Unit
+package cjbind_ffiforeign func my_function(a: Int32): Unit
