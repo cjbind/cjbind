@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import cjbind_token.{Tokens}
+import cjbind_token.*
 import std.collection.*
 import std.fs.Path
 import std.env.getTempDirectory
@@ -766,7 +766,7 @@ public class CjbindContext {
     }
     // cjlint-ignore -end
 
-    public func gen<E>(cb: (CjbindContext) -> Result<Tokens, E>): Result<Tokens, E> {
+    public func gen<E>(cb: (CjbindContext) -> Result<TokenStream, E>): Result<TokenStream, E> {
         this.inCodegen = true
 
         this.resolveTypeRefs()

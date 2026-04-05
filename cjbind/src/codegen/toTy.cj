@@ -14,7 +14,7 @@ interface TryToOpaque<Extra> {
     func tryToOpaque(
         ctx: CjbindContext,
         extra: Extra
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         this.tryGetLayout(ctx, extra).map {
             layout => return Helpers.blob(ctx, layout)
         }
@@ -34,7 +34,7 @@ interface ToOpaque<Extra> <: TryToOpaque<Extra> {
     func toOpaque(
         ctx: CjbindContext,
         extra: Extra
-    ): Tokens {
+    ): TokenStream {
         let layout = this.getLayoutUnsafe(ctx, extra)
         Helpers.blob(ctx, layout)
     }
@@ -44,14 +44,14 @@ interface TryToCjTy<Extra> {
     func tryToCjTy(
         ctx: CjbindContext,
         extra: Extra
-    ): Result<Tokens, Error>
+    ): Result<TokenStream, Error>
 }
 
 interface TryToCjTyOrOpaque<Extra> <: TryToCjTy<Extra> & TryToOpaque<Extra> {
     func tryToCjTyOrOpaque(
         ctx: CjbindContext,
         extra: Extra
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         this
             .tryToCjTy(ctx, extra)
             .orElse {
@@ -68,7 +68,7 @@ interface ToCjTyOrOpaque<Extra> <: TryToCjTy<Extra> & ToOpaque<Extra> {
     func toCjTyOrOpaque(
         ctx: CjbindContext,
         extra: Extra
-    ): Tokens {
+    ): TokenStream {
         this.tryToCjTy(ctx, extra).unwrapOrElse {
             _ => this.toOpaque(ctx, extra)
         }
@@ -79,7 +79,7 @@ extend ItemId <: TryToCjTy<Unit> {
     public func tryToCjTy(
         ctx: CjbindContext,
         _: Unit
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         return ctx.resolveItem(this).tryToCjTy(ctx, ())
     }
 }
@@ -101,7 +101,7 @@ extend Item <: TryToCjTy<Unit> {
     public func tryToCjTy(
         ctx: CjbindContext,
         _: Unit
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         return this.kind.expectType().tryToCjTy(ctx, this)
     }
 }
@@ -122,7 +122,7 @@ extend Type <: TryToCjTy<Item> {
     public func tryToCjTy(
         ctx: CjbindContext,
         item: Item
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         match (this.kind) {
             case TypeKind.TypeKindVoid => return Ok(AstTy.cVoid(ctx))
             case TypeKind.TypeKindNullPtr => return Ok(AstTy.cVoid(ctx).toPtr())
@@ -145,7 +145,7 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = if (lenOk == 0) { Tokens("CPointer<${ty}>") } else { Tokens("VArray<${ty}, \$${lenOk}>") }
+                let token = if (lenOk == 0) { tokenStreamFromTemplate("CPointer<${ty}>") } else { tokenStreamFromTemplate("VArray<${ty}, \$${lenOk}>") }
                 return Ok(token)
             case TypeKind.TypeKindVector(item, len) =>
                 let ty = match (item.tryToCjTy(ctx, ())) {
@@ -153,9 +153,9 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = Tokens("VArray<${ty}, \$${lenOk}>")
+                let token = tokenStreamFromTemplate("VArray<${ty}, \$${lenOk}>")
                 return Ok(token)
-            case TypeKind.TypeKindEnum(_) => return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
+            case TypeKind.TypeKindEnum(_) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
             case TypeKind.TypeKindAlias(_) =>
                 if (let Some(n) <- this.name) {
@@ -164,8 +164,8 @@ extend Type <: TryToCjTy<Item> {
                         return Ok(nn)
                     }
                 }
-                return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
-            case TypeKind.TypeKindComp(info) => return Ok(Tokens(ctx.cjIdentRaw(item.canonicalName(ctx))))
+                return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
+            case TypeKind.TypeKindComp(info) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
             case TypeKind.TypeKindPointer(inner) =>
                 let size = this.getLayoutUnsafe(ctx, item).size
@@ -188,12 +188,12 @@ extend Type <: TryToCjTy<Item> {
                 if (innerCanonicalType.isFunction()) {
                     return Ok(ty)
                 } else if (innerCanonicalType.isChar() && ctx.options.autoCString) {
-                    return Ok(Tokens("CString"))
+                    return Ok(tokenStreamFromTemplate("CString"))
                 } else {
                     return Ok(ty.toPtr())
                 }
-            case TypeKind.TypeKindObjCId => return Ok(Tokens("CPointer<Unit>"))
-            case TypeKind.TypeKindObjCSel => return Ok(Tokens("CPointer<Unit>"))
+            case TypeKind.TypeKindObjCId => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+            case TypeKind.TypeKindObjCSel => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
             case TypeKind.TypeKindObjCBlockPointer(inner) =>
                 // Try to resolve the inner function type for a typed block
                 let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
@@ -203,14 +203,14 @@ extend Type <: TryToCjTy<Item> {
                             case TypeKind.TypeKindFunction(blockSig) =>
                                 let blockRet = Utils.fnsigReturnTy(ctx, blockSig)
                                 let blockArgs = Utils.fnsigArguments(ctx, blockSig)
-                                let joinedBlockArgs = joinTokens(blockArgs, ", ")
-                                return Ok(Tokens("CFunc<(${joinedBlockArgs}) -> ${blockRet}>"))
-                            case _ => return Ok(Tokens("CPointer<Unit>"))
+                                let joinedBlockArgs = joinStreams(blockArgs, ", ")
+                                return Ok(tokenStreamFromTemplate("CFunc<(${joinedBlockArgs}) -> ${blockRet}>"))
+                            case _ => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
                         }
-                    case None => return Ok(Tokens("CPointer<Unit>"))
+                    case None => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
                 }
             case TypeKind.TypeKindObjCInterface(iface) =>
-                return Ok(Tokens(ctx.cjIdentRaw(iface.name)))
+                return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(iface.name)))
             case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("unreachable")
         }
     }
@@ -236,7 +236,7 @@ extend FunctionSig <: TryToCjTy<Item> {
     public func tryToCjTy(
         ctx: CjbindContext,
         _: Item
-    ): Result<Tokens, Error> {
+    ): Result<TokenStream, Error> {
         if (this.getIsVariadic()) {
             return Err(Error.Unsupported("variadic func type not supported"))
         }
@@ -244,9 +244,9 @@ extend FunctionSig <: TryToCjTy<Item> {
         let ret = Utils.fnsigReturnTy(ctx, this)
         let arguments = Utils.fnsigArguments(ctx, this)
 
-        let joined = joinTokens(arguments, ", ")
+        let joined = joinStreams(arguments, ", ")
 
-        let retToken = Tokens("CFunc<(${joined}) -> ${ret}>")
+        let retToken = tokenStreamFromTemplate("CFunc<(${joined}) -> ${ret}>")
         return Ok(retToken)
     }
 }

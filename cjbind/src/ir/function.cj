@@ -1,7 +1,7 @@
 package cjbind.ir
 
 import std.collection.ArrayList
-import cjbind_token.{ToTokens, Tokens}
+import cjbind_token.*
 
 import cjbind.clang
 import cjbind.result.Result
@@ -93,10 +93,10 @@ public enum Abi <: ToTokens {
     | Aapcs
     | Win64
 
-    public func toTokens(): Tokens {
+    public func appendToStream(tokens: TokenStream): Unit {
         // Cangjie currently only supports CDECL calling convention.
         // All ABIs are mapped to CDECL until Cangjie adds support for others.
-        return Tokens("@CallingConv[CDECL]")
+        tokens.appendLiteral("@CallingConv[CDECL]")
     }
 }
 
@@ -104,12 +104,12 @@ public enum ClangAbi <: ToTokens {
     Known(Abi)
     | Unknown(clang.CXCallingConv)
 
-    public func toTokens(): Tokens {
+    public func appendToStream(tokens: TokenStream): Unit {
         match (this) {
-            case Known(v) => v.toTokens()
+            case Known(v) => v.appendToStream(tokens)
             case Unknown(_) =>
                 // Fall back to C calling convention for unknown ABIs
-                Abi.C.toTokens()
+                Abi.C.appendToStream(tokens)
         }
     }
 }

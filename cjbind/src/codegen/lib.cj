@@ -28,8 +28,8 @@ public enum CodegenError {
 }
 
 public class CodegenResult {
-    public let items: ArrayList<Tokens> = ArrayList<Tokens>()
-    public let helpers: ArrayList<Tokens> = ArrayList<Tokens>()
+    public let items: ArrayList<TokenStream> = ArrayList<TokenStream>()
+    public let helpers: ArrayList<TokenStream> = ArrayList<TokenStream>()
 
     public var sawCjbindUnion: Bool = false
     public var sawIncompleteArray: Bool = false
@@ -65,7 +65,7 @@ public class CodegenResult {
         this.varsSeen.add(name)
     }
 
-    public func inner(cb: (CodegenResult) -> Unit): ArrayList<Tokens> {
+    public func inner(cb: (CodegenResult) -> Unit): ArrayList<TokenStream> {
         let next = CodegenResult()
         cb(next)
 
@@ -82,7 +82,7 @@ public interface CodeGenerator<Extra, Return> {
     func codegen(ctx: CjbindContext, result: CodegenResult, extra: Extra): Return
 }
 
-public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
+public func codegen(tctx: CjbindContext): Result<TokenStream, CodegenError> {
     return tctx.gen<CodegenError> {
         context =>
         let result = CodegenResult()
@@ -93,11 +93,11 @@ public func codegen(tctx: CjbindContext): Result<Tokens, CodegenError> {
             ()
         )
 
-        let allItems = ArrayList<Tokens>()
+        let allItems = ArrayList<TokenStream>()
         allItems.add(all: result.helpers)
         allItems.add(all: result.items)
-        let ret = joinTokens(allItems, "\n\n")
-        return Ok<Tokens, CodegenError>(ret)
+        let ret = joinStreams(allItems, "\n\n")
+        return Ok<TokenStream, CodegenError>(ret)
     }
 }
 
@@ -192,7 +192,7 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         result.sawFunction(name)
 
-        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+        let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
             Some(Attributes.doc(pc))
         } else {
@@ -205,15 +205,15 @@ extend Function <: CodeGenerator<Item, Unit> {
         let ident = ctx.cjIdent(name)
 
         if (signature.getIsVariadic()) {
-            args.add(Tokens("..."))
+            args.add(tokenStreamFromTemplate("..."))
         }
 
-        let argsToken = joinTokens(args, ", ")
+        let argsToken = joinStreams(args, ", ")
 
         let tokens = optionalComment(
             ctx,
             commentToken,
-            Tokens("foreign func ${ident} ( ${argsToken} ) : ${ret}")
+            tokenStreamFromTemplate("foreign func ${ident} ( ${argsToken} ) : ${ret}")
         )
 
         result.items.add(tokens)
@@ -221,7 +221,7 @@ extend Function <: CodeGenerator<Item, Unit> {
         if (ctx.options.makeFuncWrapper && !signature.getIsVariadic()) {
             let wrapperName = ctx.cjIdent("${name}${ctx.options.funcWrapperSuffix}")
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
-            let argsNameToken = joinTokens(argsName, ", ")
+            let argsNameToken = joinStreams(argsName, ", ")
             let tokens = optionalComment(
                 ctx,
                 commentToken,
@@ -254,7 +254,7 @@ extend Var <: CodeGenerator<Item, Unit> {
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
-        var commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+        var commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
             Some(Attributes.doc(pc))
         } else {
@@ -272,7 +272,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         optionalComment(
                             ctx,
                             commentToken,
-                            Tokens("public const ${canonicalIdent} : ${ty} = ${vv}")
+                            tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${vv}")
                         )
                     )
                 case VarType.VarInt(vv) => result
@@ -281,7 +281,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         optionalComment(
                             ctx,
                             commentToken,
-                            Tokens("public const ${canonicalIdent} : ${ty} = ${vv}")
+                            tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${vv}")
                         )
                     )
                 case VarType.VarString(vv) =>
@@ -296,21 +296,21 @@ extend Var <: CodeGenerator<Item, Unit> {
                         }
                         let dataSize = data.size
                         let dataTokens = data.toArray()
-                        Tokens("public const ${canonicalIdent} : VArray<UInt8, \$${dataSize}> = ${dataTokens}")
+                        tokenStreamFromTemplate("public const ${canonicalIdent} : VArray<UInt8, \$${dataSize}> = ${dataTokens}")
                     }
 
                     let tokens = if (!ctx.options.makeCjString) {
                         let origStr = try { "// String value: ${vv}" } catch (_: Exception) { "// String value: <non-UTF-8>" }
                         if (let Some(v) <- commentToken) {
-                            v.append("\n")
-                            v.append(origStr)
+                            v.appendLiteral("\n")
+                            v.appendLiteral(origStr)
                         } else {
-                            commentToken = Tokens(origStr)
+                            commentToken = tokenStreamFromTemplate(origStr)
                         }
                         emitByteArray()
                     } else {
                         try {
-                            Tokens("public const ${canonicalIdent} : String = ${vv.toString()}")
+                            tokenStreamFromTemplate("public const ${canonicalIdent} : String = ${vv.toString()}")
                         } catch (_: Exception) {
                             emitByteArray()
                         }
@@ -321,14 +321,14 @@ extend Var <: CodeGenerator<Item, Unit> {
                     )
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
-                        let floatStr = float64Repr(vv)
+                        let floatStr = "${vv}".replace("+", "")
                         result
                             .items
                             .add(
                                 optionalComment(
                                     ctx,
                                     commentToken,
-                                    Tokens("public const ${canonicalIdent} : ${ty} = ${floatStr}")
+                                    tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${floatStr}")
                                 )
                             )
                     } else {
@@ -381,7 +381,7 @@ extend Type <: CodeGenerator<Item, Unit> {
                 }
 
                 let cjName = ctx.cjIdent(name)
-                let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+                let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
                     let pc = preprocessComment(c)
                     Some(Attributes.doc(pc))
                 } else {
@@ -391,7 +391,7 @@ extend Type <: CodeGenerator<Item, Unit> {
                 let tokens = optionalComment(
                     ctx,
                     commentToken,
-                    Tokens("public type ${cjName} = ${innerCjType}")
+                    tokenStreamFromTemplate("public type ${cjName} = ${innerCjType}")
                 )
                 result.items.add(tokens)
             case TypeKind.TypeKindEnum(ei) => ei.codegen(ctx, result, item)
@@ -428,17 +428,17 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
-        let fields = ArrayList<Tokens>()
+        let fields = ArrayList<TokenStream>()
 
-        let sigs = Tokens()
-        let inits = ArrayList<Tokens>()
+        let sigs = TokenStream()
+        let inits = ArrayList<TokenStream>()
 
         if (this.isUnion()) {
             match (layout) {
                 case Some(l) =>
                     let blobTy = Helpers.blob(ctx, l)
-                    fields.add(Tokens("var _storage: ${blobTy} = unsafe { zeroValue<${blobTy}>() }"))
-                    fields.add(Tokens("public init() {}"))
+                    fields.add(tokenStreamFromTemplate("var _storage: ${blobTy} = unsafe { zeroValue<${blobTy}>() }"))
+                    fields.add(tokenStreamFromTemplate("public init() {}"))
 
                     let fieldDecls = this.getFields()
                     for (field in fieldDecls) {
@@ -487,7 +487,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                         case Field.DataMember(data) =>
                             let ty = data.ty.toCjTyOrOpaque(ctx, ())
 
-                            let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
+                            let fcomment: ?TokenStream = if (let Some(c) <- data.comment) {
                                 let pc = preprocessComment(c)
                                 Some(Attributes.doc(pc))
                             } else {
@@ -502,7 +502,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                Tokens("public var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
+                                tokenStreamFromTemplate("public var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
                             )
                             fields.add(fieldToken)
 
@@ -513,7 +513,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let storageIdent = ctx.cjIdent(storageName)
 
                             fields.add(
-                                Tokens("var ${storageIdent} : VArray<UInt8, \$${unitSize}> = VArray<UInt8, \$${unitSize}>(repeat: 0)")
+                                tokenStreamFromTemplate("var ${storageIdent} : VArray<UInt8, \$${unitSize}> = VArray<UInt8, \$${unitSize}>(repeat: 0)")
                             )
 
                             for (bf in unit.bitfields) {
@@ -567,7 +567,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                     }
                 }
 
-                fields.add(Tokens("public init() {}"))
+                fields.add(tokenStreamFromTemplate("public init() {}"))
             } else {
                 for ((idx, field) in fieldDecls.iterator().enumerate()) {
                     let isLast = idx == fieldDecls.size - 1
@@ -578,7 +578,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let fieldTy = fieldItem.kind.expectType()
                             let ty = data.ty.toCjTyOrOpaque(ctx, ())
 
-                            let fcomment: ?Tokens = if (let Some(c) <- data.comment) {
+                            let fcomment: ?TokenStream = if (let Some(c) <- data.comment) {
                                 let pc = preprocessComment(c)
                                 Some(Attributes.doc(pc))
                             } else {
@@ -593,15 +593,15 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                Tokens("public let ${fieldIdent} : ${ty}")
+                                tokenStreamFromTemplate("public let ${fieldIdent} : ${ty}")
                             )
                             fields.add(fieldToken)
 
-                            sigs.append("${fieldIdent} : ${ty}")
+                            sigs.appendLiteral("${fieldIdent} : ${ty}")
                             if (!isLast) {
-                                sigs.append(", ")
+                                sigs.appendLiteral(", ")
                             }
-                            inits.add(Tokens("this.${fieldIdent} = ${fieldIdent}"))
+                            inits.add(tokenStreamFromTemplate("this.${fieldIdent} = ${fieldIdent}"))
 
                         case _ => throw Exception("Only support normal field")
                     }
@@ -613,27 +613,27 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             match (layout) {
                 case Some(l) =>
                     let ty = Helpers.blob(ctx, l)
-                    fields.add(Tokens("let _cjbind_opaque_blob: ${ty}"))
-                    inits.add(Tokens("this._cjbind_opaque_blob = unsafe { zeroValue<${ty}>() }"))
+                    fields.add(tokenStreamFromTemplate("let _cjbind_opaque_blob: ${ty}"))
+                    inits.add(tokenStreamFromTemplate("this._cjbind_opaque_blob = unsafe { zeroValue<${ty}>() }"))
 
                 case None => throw Exception("Expect layout for opaque comp")
             }
         }
 
         if (this.isForwardDeclaration) {
-            inits.add(Tokens("throw Exception(\"type should not be inited\")"))
+            inits.add(tokenStreamFromTemplate("throw Exception(\"type should not be inited\")"))
         }
 
-        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+        let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
             Some(Attributes.doc(pc))
         } else {
             None
         }
 
-        let fieldsToken = joinTokens(fields, "\n")
+        let fieldsToken = joinStreams(fields, "\n")
 
-        let initToken = Tokens()
+        let initToken = TokenStream()
         let initVisibility = if (this.isForwardDeclaration) {
             ""
         } else {
@@ -641,10 +641,10 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         }
 
         if (!inits.isEmpty()) {
-            let initExpr = joinTokens(inits, "\n")
+            let initExpr = joinStreams(inits, "\n")
 
-            initToken.append("\n")
-            initToken.append(@tmpl(
+            initToken.appendLiteral("\n")
+            initToken.`extend`(@tmpl(
                 ${initVisibility}init(${sigs}) {
                     ${initExpr}
                 }
@@ -671,8 +671,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 let sizeOfExpr = "sizeOf<${canonicalIdent}>()"
                 let alignOfExpr = "alignOf<${canonicalIdent}>()"
 
-                let sizeErr = Tokens("\"Size of ${canonicalName} is not ${size} but \${size} bytes\"")
-                let alignErr = Tokens("\"Alignment of ${canonicalName} is not ${align} but \${align} bytes\"")
+                let sizeErr = tokenStreamFromTemplate("\"Size of ${canonicalName} is not ${size} but \${size} bytes\"")
+                let alignErr = tokenStreamFromTemplate("\"Alignment of ${canonicalName} is not ${align} but \${align} bytes\"")
 
                 let testToken = @tmpl(
                     @When[debug]
@@ -696,11 +696,11 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -end
 }
 
-func enumVariantExpr(val: EnumVariantValue): Tokens {
+func enumVariantExpr(val: EnumVariantValue): TokenStream {
     match (val) {
-        case EnumVariantValue.Boolean(b) => Tokens("${b}")
-        case EnumVariantValue.Signed(s) => Tokens("${s}")
-        case EnumVariantValue.Unsigned(u) => Tokens("${u}")
+        case EnumVariantValue.Boolean(b) => tokenStreamFromTemplate("${b}")
+        case EnumVariantValue.Signed(s) => tokenStreamFromTemplate("${s}")
+        case EnumVariantValue.Unsigned(u) => tokenStreamFromTemplate("${u}")
     }
 }
 
@@ -722,7 +722,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             case None => Type(None, None, TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt), false)
         }
 
-        let commentToken: ?Tokens = if (let Some(c) <- item.comment) {
+        let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
             Some(Attributes.doc(pc))
         } else {
@@ -732,11 +732,11 @@ extend Enum <: CodeGenerator<Item, Unit> {
         let repr = reprTy.toCjTyOrOpaque(ctx, item)
 
         if (ctx.options.defaultEnumStyle == DefaultEnumStyle.NewType) {
-            let structFields = ArrayList<Tokens>()
+            let structFields = ArrayList<TokenStream>()
 
-            structFields.add(Tokens("public var rawValue: ${repr} = unsafe { zeroValue<${repr}>() }"))
+            structFields.add(tokenStreamFromTemplate("public var rawValue: ${repr} = unsafe { zeroValue<${repr}>() }"))
 
-            structFields.add(Tokens(
+            structFields.add(tokenStreamFromTemplate(
                 "public init(rawValue!: ${repr}) { this.rawValue = rawValue }"
             ))
 
@@ -744,20 +744,20 @@ extend Enum <: CodeGenerator<Item, Unit> {
                 let variantName = ctx.cjMangle(v.name)
                 let vIdent = ctx.cjIdent(variantName)
                 let vexpr = enumVariantExpr(v.val)
-                structFields.add(Tokens(
+                structFields.add(tokenStreamFromTemplate(
                     "public static let ${vIdent} = ${ident}(rawValue: ${vexpr})"
                 ))
             }
 
-            structFields.add(Tokens(
+            structFields.add(tokenStreamFromTemplate(
                 "public operator func ==(right: ${ident}): Bool { this.rawValue == right.rawValue }"
             ))
 
-            structFields.add(Tokens(
+            structFields.add(tokenStreamFromTemplate(
                 "public operator func !=(right: ${ident}): Bool { this.rawValue != right.rawValue }"
             ))
 
-            let fieldsToken = joinTokens(structFields, "\n")
+            let fieldsToken = joinStreams(structFields, "\n")
             result.items.add(optionalComment(ctx, commentToken, @tmpl(
                 @C
                 public struct ${ident} {
@@ -775,7 +775,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
             let variantName = ctx.cjMangle(v.name)
             let vexpr = enumVariantExpr(v.val)
 
-            let vComment: ?Tokens = if (let Some(c) <- v.comment) {
+            let vComment: ?TokenStream = if (let Some(c) <- v.comment) {
                 let pc = preprocessComment(c)
                 Some(Attributes.doc(pc))
             } else {
@@ -796,7 +796,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
                 optionalComment(
                     ctx,
                     vComment,
-                    Tokens("public const ${vIdent} : ${enumCjTy} = ${vexpr}")
+                    tokenStreamFromTemplate("public const ${vIdent} : ${enumCjTy} = ${vexpr}")
                 )
             )
         }
@@ -806,7 +806,7 @@ extend Enum <: CodeGenerator<Item, Unit> {
                 optionalComment(
                     ctx,
                     commentToken,
-                    Tokens("public type ${ident} = ${repr}")
+                    tokenStreamFromTemplate("public type ${ident} = ${repr}")
                 )
             )
         }
