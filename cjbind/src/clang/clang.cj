@@ -243,7 +243,8 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
             Cursor(clang_getCursorSemanticParent(x))
         }
 
-        if (pp == this || !pp.isValid()) {
+        let ppValid = pp.isValid()
+        if (pp == this || !ppValid) {
             return None
         }
         return Some(pp)
@@ -376,7 +377,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
-    public func visitContinue(visitor: (Cursor) -> Unit) {
+    public func visitContinue(visitor: (Cursor) -> Unit): Unit {
         this.visit {
             c =>
             visitor(c)
@@ -384,7 +385,7 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
-    public func visit(visitor: (Cursor) -> CXChildVisitResult) {
+    public func visit(visitor: (Cursor) -> CXChildVisitResult): Unit {
         let cbId = getNextCallbackId()
         CursorVisitCallback.add(cbId, visitor)
 

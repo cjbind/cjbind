@@ -19,7 +19,7 @@ func compileTrimIndent(s: String): String {
     for (line in lines) {
         if (line.trimAscii().isEmpty()) { continue }
         let indent = countLeading(line)
-        if (minIndent < 0 || indent < minIndent) { minIndent = indent }
+        if (minIndent < 0 || minIndent > indent) { minIndent = indent }
     }
     if (minIndent < 0) { minIndent = 0 }
 
@@ -41,17 +41,17 @@ func compileTrimIndent(s: String): String {
     while (end > start && arr[end - 1].isEmpty()) { end-- }
     if (start >= end) { return "" }
 
-    let result = ArrayList<String>()
-    var idx = start
-    while (idx < end) { result.add(arr[idx]); idx++ }
-    return String.join(result.toArray(), delimiter: "\n")
+    var joined = arr[start]
+    var idx = start + 1
+    while (idx < end) { joined += "\n" + arr[idx]; idx++ }
+    return joined
 }
 
 func repeat(ch: String, n: Int64): String {
-    let parts = ArrayList<String>()
+    var result = ""
     var i: Int64 = 0
-    while (i < n) { parts.add(ch); i++ }
-    return String.join(parts.toArray(), delimiter: "")
+    while (i < n) { result += ch; i++ }
+    return result
 }
 
 func addGap(parts: ArrayList<String>, curLine: Int64, curCol: Int64, tkLine: Int64, tkCol: Int64) {
@@ -85,11 +85,9 @@ func reconstruct(input: Tokens): String {
             continue
         }
 
-        // Detect ${...} interpolation: DOLLAR LCURL ... RCURL
         if (tk.kind == TokenKind.DOLLAR && i + 1 < input.size && input[i + 1].kind == TokenKind.LCURL) {
             addGap(parts, curLine, curCol, tkLine, tkCol)
 
-            // Reconstruct expression tokens between { and } using positions
             let lcurlCol = Int64(input[i + 1].pos.column)
             i += 2
             var exprParts = ArrayList<String>()

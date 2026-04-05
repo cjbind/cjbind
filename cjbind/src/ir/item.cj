@@ -23,7 +23,7 @@ public class ItemAncestorsIter <: Iterator<ItemId> {
         let item = this.ctx.resolveItemFallible(this.currentId)
         match (item) {
             case Some(it) =>
-                if (it.parentId == this.currentId) {
+                if (this.currentId == it.parentId) {
                     return None
                 }
                 let oldId = this.currentId
