@@ -1,6 +1,7 @@
 package cjbind.codegen
 
 import cjbind_token.*
+import cjbind_token.macros.*
 import std.collection.{ArrayList, HashMap, HashSet}
 import cjbind.ir.*
 import cjbind.options.ObjcCodegenMode
@@ -77,13 +78,13 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         // Generate alloc() if not already defined as a class method
         let hasAlloc = this.classMethods.iterator().any { m => m.selector == "alloc" }
         if (!hasAlloc) {
-            methodTokens.add(Tokens(
-                "public static func alloc(): ${name} {\n" +
-                "    let cls = cachedClass(\"${className}\")\n" +
-                "    let sel = cachedSel(\"alloc\")\n" +
-                "    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> CPointer<Unit>>(CPointer<Unit>(objc_msgSend))\n" +
-                "    return ${name}(unsafe { f(CPointer<Unit>(cls), sel) })\n" +
-                "}"
+            methodTokens.add(@tmpl(
+                public static func alloc(): ${name} {
+                    let cls = cachedClass("${className}")
+                    let sel = cachedSel("alloc")
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> CPointer<Unit>>(CPointer<Unit>(objc_msgSend))
+                    return ${name}(unsafe { f(CPointer<Unit>(cls), sel) })
+                }
             ))
         }
 
@@ -111,12 +112,12 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
 
         let body = joinTokens(methodTokens, "\n")
 
-        let classTokens = Tokens(
-            "public class ${name} {\n" +
-            "    public let id: CPointer<Unit>\n" +
-            "    public init(id: CPointer<Unit>) { this.id = id }\n" +
-            "    ${body}\n" +
-            "}"
+        let classTokens = @tmpl(
+            public class ${name} {
+                public let id: CPointer<Unit>
+                public init(id: CPointer<Unit>) { this.id = id }
+                ${body}
+            }
         )
 
         result.items.add(classTokens)
@@ -153,10 +154,10 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
 
         let body = joinTokens(methodTokens, "\n")
 
-        let protoTokens = Tokens(
-            "public interface ${name} {\n" +
-            "    ${body}\n" +
-            "}"
+        let protoTokens = @tmpl(
+            public interface ${name} {
+                ${body}
+            }
         )
 
         result.items.add(protoTokens)
@@ -183,10 +184,10 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
 
         let body = joinTokens(methodTokens, "\n")
 
-        let extTokens = Tokens(
-            "extend ${name} {\n" +
-            "    ${body}\n" +
-            "}"
+        let extTokens = @tmpl(
+            extend ${name} {
+                ${body}
+            }
         )
         result.items.add(extTokens)
     }
@@ -199,9 +200,9 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         // Emit compiler mode imports once
         if (!result.seenVar("__objc_compiler_decls__")) {
             result.sawVar("__objc_compiler_decls__")
-            result.items.add(Tokens(
-                "import interoplib.objc.*\n" +
-                "import objc.lang.*"
+            result.items.add(@tmpl(
+                import interoplib.objc.*
+                import objc.lang.*
             ))
         }
 
@@ -272,20 +273,20 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         }
 
         if (superTypes.isEmpty()) {
-            let classTokens = Tokens(
-                "${atObjCMirror}\n" +
-                "public open class ${name} {\n" +
-                "    ${body}\n" +
-                "}"
+            let classTokens = @tmpl(
+                ${atObjCMirror}
+                public open class ${name} {
+                    ${body}
+                }
             )
             result.items.add(classTokens)
         } else {
             let inheritance = joinTokens(superTypes, " & ")
-            let classTokens = Tokens(
-                "${atObjCMirror}\n" +
-                "public open class ${name} <: ${inheritance} {\n" +
-                "    ${body}\n" +
-                "}"
+            let classTokens = @tmpl(
+                ${atObjCMirror}
+                public open class ${name} <: ${inheritance} {
+                    ${body}
+                }
             )
             result.items.add(classTokens)
         }
@@ -321,20 +322,20 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         }
 
         if (superTypes.isEmpty()) {
-            let protoTokens = Tokens(
-                "${atObjCMirror}\n" +
-                "public interface ${name} {\n" +
-                "    ${body}\n" +
-                "}"
+            let protoTokens = @tmpl(
+                ${atObjCMirror}
+                public interface ${name} {
+                    ${body}
+                }
             )
             result.items.add(protoTokens)
         } else {
             let inheritance = joinTokens(superTypes, " & ")
-            let protoTokens = Tokens(
-                "${atObjCMirror}\n" +
-                "public interface ${name} <: ${inheritance} {\n" +
-                "    ${body}\n" +
-                "}"
+            let protoTokens = @tmpl(
+                ${atObjCMirror}
+                public interface ${name} <: ${inheritance} {
+                    ${body}
+                }
             )
             result.items.add(protoTokens)
         }
@@ -361,10 +362,10 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
 
         let body = joinTokens(methodTokens, "\n")
 
-        let extTokens = Tokens(
-            "extend ${name} {\n" +
-            "    ${body}\n" +
-            "}"
+        let extTokens = @tmpl(
+            extend ${name} {
+                ${body}
+            }
         )
         result.items.add(extTokens)
     }
@@ -468,15 +469,15 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
             var foreignName = Tokens("@${ctx.cjIdentRaw("ForeignName")}")
             foreignName.append("[\"${sel}\"]")
             foreignName = commentizeAnnotation(foreignName, genDefs)
-            return Tokens(
-                "${objcInitAnnotation}\n" +
-                "${foreignName}\n" +
-                "public init(${joinedArgs}) {}"
+            return @tmpl(
+                ${objcInitAnnotation}
+                ${foreignName}
+                public init(${joinedArgs}) {}
             )
         } else {
-            return Tokens(
-                "${objcInitAnnotation}\n" +
-                "public init(${joinedArgs}) {}"
+            return @tmpl(
+                ${objcInitAnnotation}
+                public init(${joinedArgs}) {}
             )
         }
     }
@@ -509,25 +510,25 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
         } else { Tokens() }
         optionalAnnotation = commentizeAnnotation(optionalAnnotation, genDefs)
         if (needsForeignName) {
-            return Tokens(
-                "${optionalAnnotation}\n" +
-                "${foreignNameAnnotation}\n" +
-                "func ${mname}(${joinedArgs}): ${ret}"
+            return @tmpl(
+                ${optionalAnnotation}
+                ${foreignNameAnnotation}
+                func ${mname}(${joinedArgs}): ${ret}
             )
         } else {
-            return Tokens(
-                "${optionalAnnotation}\n" +
-                "func ${mname}(${joinedArgs}): ${ret}"
+            return @tmpl(
+                ${optionalAnnotation}
+                func ${mname}(${joinedArgs}): ${ret}
             )
         }
     } else if (effectivelyStatic) {
         if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
             if (needsForeignName || forceStaticInit) {
-                return Tokens(
-                    "${objcInitAnnotation}\n" +
-                    "${foreignNameAnnotation}\n" +
-                    "public static func ${mname}(${joinedArgs}): ${ret} { ${defVal} }"
+                return @tmpl(
+                    ${objcInitAnnotation}
+                    ${foreignNameAnnotation}
+                    public static func ${mname}(${joinedArgs}): ${ret} { ${defVal} }
                 )
             } else {
                 return Tokens(
@@ -536,10 +537,10 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
             }
         } else {
             if (needsForeignName || forceStaticInit) {
-                return Tokens(
-                    "${objcInitAnnotation}\n" +
-                    "${foreignNameAnnotation}\n" +
-                    "public static func ${mname}(${joinedArgs}): ${ret}"
+                return @tmpl(
+                    ${objcInitAnnotation}
+                    ${foreignNameAnnotation}
+                    public static func ${mname}(${joinedArgs}): ${ret}
                 )
             } else {
                 return Tokens(
@@ -552,9 +553,9 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
         if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
             if (needsForeignName) {
-                return Tokens(
-                    "${foreignNameAnnotation}\n" +
-                    "public open func ${mname}(${joinedArgs}): ${ret} { ${defVal} }"
+                return @tmpl(
+                    ${foreignNameAnnotation}
+                    public open func ${mname}(${joinedArgs}): ${ret} { ${defVal} }
                 )
             } else {
                 return Tokens(
@@ -563,9 +564,9 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
             }
         } else {
             if (needsForeignName) {
-                return Tokens(
-                    "${foreignNameAnnotation}\n" +
-                    "public open func ${mname}(${joinedArgs}): ${ret}"
+                return @tmpl(
+                    ${foreignNameAnnotation}
+                    public open func ${mname}(${joinedArgs}): ${ret}
                 )
             } else {
                 return Tokens(
@@ -644,67 +645,67 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
             annotations.append("\n")
         }
         if (hasSetter) {
-            return Tokens(
-                "${annotations}\n" +
-                "${staticMod}mut prop ${propName}: ${ty}"
+            return @tmpl(
+                ${annotations}
+                ${staticMod}mut prop ${propName}: ${ty}
             )
         } else {
-            return Tokens(
-                "${annotations}\n" +
-                "${staticMod}prop ${propName}: ${ty}"
+            return @tmpl(
+                ${annotations}
+                ${staticMod}prop ${propName}: ${ty}
             )
         }
     } else {
         if (hasSetter) {
-            return Tokens(
-                "${annotations}\n" +
-                "public ${staticMod}open mut prop ${propName}: ${ty}"
+            return @tmpl(
+                ${annotations}
+                public ${staticMod}open mut prop ${propName}: ${ty}
             )
         } else {
-            return Tokens(
-                "${annotations}\n" +
-                "public ${staticMod}open prop ${propName}: ${ty}"
+            return @tmpl(
+                ${annotations}
+                public ${staticMod}open prop ${propName}: ${ty}
             )
         }
     }
 }
 
 func genRuntimeDecls(ctx: CjbindContext): Tokens {
-    return Tokens(
-        "import std.collection.HashMap\n" +
-        "\n" +
-        "// ObjC Runtime declarations\n" +
-        "foreign func objc_getClass(name: CString): CPointer<Unit>\n" +
-        "foreign func sel_registerName(name: CString): CPointer<Unit>\n" +
-        "foreign func objc_msgSend(): Unit\n" +
-        "foreign func objc_msgSend_stret(): Unit\n" +
-        "foreign func objc_retain(obj: CPointer<Unit>): CPointer<Unit>\n" +
-        "foreign func objc_release(obj: CPointer<Unit>): Unit\n" +
-        "foreign func objc_autorelease(obj: CPointer<Unit>): CPointer<Unit>\n" +
-        "\n" +
-        "// Selector and class caching to avoid repeated allocation\n" +
-        "var _objcSelCache = HashMap<String, CPointer<Unit>>()\n" +
-        "func cachedSel(name: String): CPointer<Unit> {\n" +
-        "    if (let Some(sel) <- _objcSelCache.get(name)) {\n" +
-        "        return sel\n" +
-        "    }\n" +
-        "    let cs = unsafe { LibC.mallocCString(name) }\n" +
-        "    let sel = unsafe { sel_registerName(cs) }\n" +
-        "    unsafe { LibC.free(cs) }\n" +
-        "    _objcSelCache[name] = sel\n" +
-        "    return sel\n" +
-        "}\n" +
-        "var _objcClsCache = HashMap<String, CPointer<Unit>>()\n" +
-        "func cachedClass(name: String): CPointer<Unit> {\n" +
-        "    if (let Some(cls) <- _objcClsCache.get(name)) {\n" +
-        "        return cls\n" +
-        "    }\n" +
-        "    let cs = unsafe { LibC.mallocCString(name) }\n" +
-        "    let cls = unsafe { objc_getClass(cs) }\n" +
-        "    unsafe { LibC.free(cs) }\n" +
-        "    _objcClsCache[name] = cls\n" +
-        "    return cls\n" +
-        "}"
+    return @tmpl(
+        import std.collection.HashMap
+
+        // ObjC Runtime declarations
+        foreign func objc_getClass(name: CString): CPointer<Unit>
+        foreign func sel_registerName(name: CString): CPointer<Unit>
+        foreign func objc_msgSend(): Unit
+        foreign func objc_msgSend_stret(): Unit
+        foreign func objc_retain(obj: CPointer<Unit>): CPointer<Unit>
+        foreign func objc_release(obj: CPointer<Unit>): Unit
+        foreign func objc_autorelease(obj: CPointer<Unit>): CPointer<Unit>
+
+        // Selector and class caching to avoid repeated allocation
+        var _objcSelCache = HashMap<String, CPointer<Unit>>()
+        func cachedSel(name: String): CPointer<Unit> {
+            if (let Some(sel) <- _objcSelCache.get(name)) {
+                return sel
+            }
+            let cs = unsafe { LibC.mallocCString(name) }
+            let sel = unsafe { sel_registerName(cs) }
+            unsafe { LibC.free(cs) }
+            _objcSelCache[name] = sel
+            return sel
+        }
+        var _objcClsCache = HashMap<String, CPointer<Unit>>()
+        func cachedClass(name: String): CPointer<Unit> {
+            if (let Some(cls) <- _objcClsCache.get(name)) {
+                return cls
+            }
+            let cs = unsafe { LibC.mallocCString(name) }
+            let cls = unsafe { objc_getClass(cs) }
+            unsafe { LibC.free(cs) }
+            _objcClsCache[name] = cls
+            return cls
+        }
     )
 }
 
@@ -762,41 +763,41 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     if (isStatic) {
         // Class method
         if (argNames.isEmpty()) {
-            return Tokens(
-                "public static func ${mname}(${joinedArgs}): ${ret} {\n" +
-                "    let cls = cachedClass(\"${className}\")\n" +
-                "    let sel = cachedSel(\"${sel}\")\n" +
-                "    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))\n" +
-                "    return unsafe { f(CPointer<Unit>(cls), sel) }\n" +
-                "}"
+            return @tmpl(
+                public static func ${mname}(${joinedArgs}): ${ret} {
+                    let cls = cachedClass("${className}")
+                    let sel = cachedSel("${sel}")
+                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(CPointer<Unit>(cls), sel) }
+                }
             )
         } else {
-            return Tokens(
-                "public static func ${mname}(${joinedArgs}): ${ret} {\n" +
-                "    let cls = cachedClass(\"${className}\")\n" +
-                "    let sel = cachedSel(\"${sel}\")\n" +
-                "    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))\n" +
-                "    return unsafe { f(CPointer<Unit>(cls), sel, ${joinedArgNames}) }\n" +
-                "}"
+            return @tmpl(
+                public static func ${mname}(${joinedArgs}): ${ret} {
+                    let cls = cachedClass("${className}")
+                    let sel = cachedSel("${sel}")
+                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(CPointer<Unit>(cls), sel, ${joinedArgNames}) }
+                }
             )
         }
     } else {
         // Instance method
         if (argNames.isEmpty()) {
-            return Tokens(
-                "public func ${mname}(${joinedArgs}): ${ret} {\n" +
-                "    let sel = cachedSel(\"${sel}\")\n" +
-                "    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))\n" +
-                "    return unsafe { f(this.id, sel) }\n" +
-                "}"
+            return @tmpl(
+                public func ${mname}(${joinedArgs}): ${ret} {
+                    let sel = cachedSel("${sel}")
+                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(this.id, sel) }
+                }
             )
         } else {
-            return Tokens(
-                "public func ${mname}(${joinedArgs}): ${ret} {\n" +
-                "    let sel = cachedSel(\"${sel}\")\n" +
-                "    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))\n" +
-                "    return unsafe { f(this.id, sel, ${joinedArgNames}) }\n" +
-                "}"
+            return @tmpl(
+                public func ${mname}(${joinedArgs}): ${ret} {
+                    let sel = cachedSel("${sel}")
+                    let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(this.id, sel, ${joinedArgNames}) }
+                }
             )
         }
     }
@@ -810,67 +811,61 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
 
     if (p.isClassProperty) {
         // Static property -- use class pointer instead of this.id
-        let getterBody =
-            "    let cls = cachedClass(\"${className}\")\n" +
-            "    let sel = cachedSel(\"${getterSel}\")\n" +
-            "    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))\n" +
-            "    return unsafe { f(CPointer<Unit>(cls), sel) }"
-
         if (let Some(setterSel) <- p.setterName) {
-            let setterBody =
-                "    let cls = cachedClass(\"${className}\")\n" +
-                "    let sel = cachedSel(\"${setterSel}\")\n" +
-                "    let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))\n" +
-                "    unsafe { f(CPointer<Unit>(cls), sel, value) }"
-            return Tokens(
-                "public static mut prop ${propName}: ${ty} {\n" +
-                "    get() {\n" +
-                "${getterBody}\n" +
-                "    }\n" +
-                "    set(value) {\n" +
-                "${setterBody}\n" +
-                "    }\n" +
-                "}"
+            return @tmpl(
+                public static mut prop ${propName}: ${ty} {
+                    get() {
+                        let cls = cachedClass("${className}")
+                        let sel = cachedSel("${getterSel}")
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
+                        return unsafe { f(CPointer<Unit>(cls), sel) }
+                    }
+                    set(value) {
+                        let cls = cachedClass("${className}")
+                        let sel = cachedSel("${setterSel}")
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))
+                        unsafe { f(CPointer<Unit>(cls), sel, value) }
+                    }
+                }
             )
         } else {
-            return Tokens(
-                "public static prop ${propName}: ${ty} {\n" +
-                "    get() {\n" +
-                "${getterBody}\n" +
-                "    }\n" +
-                "}"
+            return @tmpl(
+                public static prop ${propName}: ${ty} {
+                    get() {
+                        let cls = cachedClass("${className}")
+                        let sel = cachedSel("${getterSel}")
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
+                        return unsafe { f(CPointer<Unit>(cls), sel) }
+                    }
+                }
             )
         }
     }
 
-    let getterBody =
-        "    let sel = cachedSel(\"${getterSel}\")\n" +
-        "    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))\n" +
-        "    return unsafe { f(this.id, sel) }"
-
     if (let Some(setterSel) <- p.setterName) {
-        let setterBody =
-            "    let sel = cachedSel(\"${setterSel}\")\n" +
-            "    let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))\n" +
-            "    unsafe { f(this.id, sel, value) }"
-
-        return Tokens(
-            "public mut prop ${propName}: ${ty} {\n" +
-            "    get() {\n" +
-            "${getterBody}\n" +
-            "    }\n" +
-            "    set(value) {\n" +
-            "${setterBody}\n" +
-            "    }\n" +
-            "}"
+        return @tmpl(
+            public mut prop ${propName}: ${ty} {
+                get() {
+                    let sel = cachedSel("${getterSel}")
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(this.id, sel) }
+                }
+                set(value) {
+                    let sel = cachedSel("${setterSel}")
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))
+                    unsafe { f(this.id, sel, value) }
+                }
+            }
         )
     } else {
-        return Tokens(
-            "public prop ${propName}: ${ty} {\n" +
-            "    get() {\n" +
-            "${getterBody}\n" +
-            "    }\n" +
-            "}"
+        return @tmpl(
+            public prop ${propName}: ${ty} {
+                get() {
+                    let sel = cachedSel("${getterSel}")
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
+                    return unsafe { f(this.id, sel) }
+                }
+            }
         )
     }
 }

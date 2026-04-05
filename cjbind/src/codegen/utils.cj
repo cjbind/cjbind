@@ -138,9 +138,10 @@ public class Utils {
 
 func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
     if (let Some(v) <- comment && !ctx.options.noComment) {
-        let tokens = removeSuffixNL(v)
+        let tokens = Tokens()
+        tokens.append(v)
         tokens.append("\n")
-        tokens.append(removePrefixNL(body))
+        tokens.append(body)
         return tokens
     } else {
         return body
