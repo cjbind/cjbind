@@ -2,14 +2,15 @@ name: Build libclang (msvcrt + static libc++)
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["ci/build-libclang-msvcrt"]
+
+permissions:
+  contents: write
 
 env:
   LLVM_VERSION: "20.1.0"
   LLVM_TAG: "llvmorg-20.1.0"
-  # llvm-mingw msvcrt toolchain for cross-compilation
   LLVM_MINGW_TAG: "20260324"
+  ASSET_NAME: "libclang-20.1.0-windows-msvcrt-static-libcxx-x86_64.7z"
 
 jobs:
   build-libclang:
@@ -31,15 +32,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build p7zip-full
 
-      - name: Cache built libclang
-        id: cache-result
-        uses: actions/cache@v4
-        with:
-          path: install/libclang
-          key: libclang-msvcrt-${{ env.LLVM_VERSION }}-${{ env.LLVM_MINGW_TAG }}-v1
-
       - name: Download llvm-mingw toolchain (msvcrt)
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
           TOOLCHAIN="llvm-mingw-${LLVM_MINGW_TAG}-msvcrt-ubuntu-22.04-x86_64"
           URL="https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_TAG}/${TOOLCHAIN}.tar.xz"
@@ -50,12 +43,10 @@ jobs:
           echo "TOOLCHAIN_DIR=$(pwd)/${TOOLCHAIN}" >> "$GITHUB_ENV"
 
       - name: Checkout LLVM source (shallow)
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git
 
       - name: Build native tools (llvm-tblgen, clang-tblgen)
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
           cmake -G Ninja -S llvm-project/llvm -B build-native \
             -DCMAKE_BUILD_TYPE=Release \
@@ -64,7 +55,6 @@ jobs:
           ninja -C build-native -j$(nproc) llvm-tblgen clang-tblgen llvm-config
 
       - name: Cross-compile libclang for Windows x64 (msvcrt)
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
           export PATH="${TOOLCHAIN_DIR}/bin:$PATH"
           SYSROOT="${TOOLCHAIN_DIR}/x86_64-w64-mingw32"
@@ -97,12 +87,10 @@ jobs:
           ninja -C build-cross -j$(nproc)
 
       - name: Install libclang
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
           DESTDIR="" cmake --install build-cross --strip
 
-          # Also copy static libc++ and related libs from the toolchain sysroot
-          # so consumers can link against them
+          # Copy static libc++ and related libs from the toolchain sysroot
           cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libc++.a" install/libclang/lib/ || true
           cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libc++abi.a" install/libclang/lib/ || true
           cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libunwind.a" install/libclang/lib/ || true
@@ -120,8 +108,9 @@ jobs:
           echo "Total size: $(du -sh install/libclang | cut -f1)"
 
       - name: Verify CRT linkage
-        if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
+          export PATH="${TOOLCHAIN_DIR}/bin:$PATH"
+
           echo "=== Checking llvm-config.exe imports ==="
           x86_64-w64-mingw32-objdump -p install/libclang/bin/llvm-config.exe 2>/dev/null | grep -i "DLL Name" || echo "No DLL imports (static)"
 
@@ -131,17 +120,40 @@ jobs:
             echo "--- $(basename $lib) ---"
             x86_64-w64-mingw32-strings "$lib" 2>/dev/null | grep -iE "msvcrt|ucrt" | sort -u | head -5 || true
           done
-        env:
-          PATH: "${{ env.TOOLCHAIN_DIR }}/bin:$PATH"
 
       - name: Package as 7z
         run: |
           cd install
-          7z a -mx9 "../libclang-${LLVM_VERSION}-windows-msvcrt-static-libcxx-x86_64.7z" libclang/
+          7z a -mx9 "../${ASSET_NAME}" libclang/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: libclang-msvcrt-x86_64
-          path: libclang-${{ env.LLVM_VERSION }}-windows-msvcrt-static-libcxx-x86_64.7z
-          retention-days: 90
+          path: ${{ env.ASSET_NAME }}
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="libclang-v${LLVM_VERSION}-msvcrt"
+
+          # Create release (or update if exists)
+          gh release create "$TAG" \
+            --title "libclang ${LLVM_VERSION} (msvcrt + static libc++)" \
+            --notes "$(cat <<'NOTES'
+          Pre-built libclang ${LLVM_VERSION} for Windows x64, cross-compiled with llvm-mingw (msvcrt).
+
+          - **CRT**: msvcrt (matches Cangjie runtime)
+          - **libc++**: statically linked
+          - **Target**: x86_64-w64-mingw32
+          - **Toolchain**: llvm-mingw ${LLVM_MINGW_TAG}
+
+          Built to resolve CRT heap mismatch between libcangjie-runtime.dll (msvcrt) and libclang (ucrt).
+          NOTES
+          )" \
+            --prerelease \
+            2>/dev/null || true
+
+          # Upload asset (overwrite if exists)
+          gh release upload "$TAG" "${ASSET_NAME}" --clobber
