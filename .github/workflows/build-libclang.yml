@@ -41,7 +41,7 @@ jobs:
       - name: Download llvm-mingw toolchain (msvcrt)
         if: steps.cache-result.outputs.cache-hit != 'true'
         run: |
-          TOOLCHAIN="llvm-mingw-${LLVM_MINGW_TAG}-msvcrt-ubuntu-20.04-x86_64"
+          TOOLCHAIN="llvm-mingw-${LLVM_MINGW_TAG}-msvcrt-ubuntu-22.04-x86_64"
           URL="https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_TAG}/${TOOLCHAIN}.tar.xz"
           echo "Downloading: $URL"
           wget -q "$URL"
