@@ -1,0 +1,147 @@
+name: Build libclang (msvcrt + static libc++)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["ci/build-libclang-msvcrt"]
+
+env:
+  LLVM_VERSION: "20.1.0"
+  LLVM_TAG: "llvmorg-20.1.0"
+  # llvm-mingw msvcrt toolchain for cross-compilation
+  LLVM_MINGW_TAG: "20260324"
+
+jobs:
+  build-libclang:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost
+          sudo apt-get clean
+          df -h /
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build p7zip-full
+
+      - name: Cache built libclang
+        id: cache-result
+        uses: actions/cache@v4
+        with:
+          path: install/libclang
+          key: libclang-msvcrt-${{ env.LLVM_VERSION }}-${{ env.LLVM_MINGW_TAG }}-v1
+
+      - name: Download llvm-mingw toolchain (msvcrt)
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          TOOLCHAIN="llvm-mingw-${LLVM_MINGW_TAG}-msvcrt-ubuntu-20.04-x86_64"
+          URL="https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_TAG}/${TOOLCHAIN}.tar.xz"
+          echo "Downloading: $URL"
+          wget -q "$URL"
+          tar xf "${TOOLCHAIN}.tar.xz"
+          rm "${TOOLCHAIN}.tar.xz"
+          echo "TOOLCHAIN_DIR=$(pwd)/${TOOLCHAIN}" >> "$GITHUB_ENV"
+
+      - name: Checkout LLVM source (shallow)
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git
+
+      - name: Build native tools (llvm-tblgen, clang-tblgen)
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          cmake -G Ninja -S llvm-project/llvm -B build-native \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_PROJECTS=clang \
+            -DLLVM_TARGETS_TO_BUILD=X86
+          ninja -C build-native -j$(nproc) llvm-tblgen clang-tblgen llvm-config
+
+      - name: Cross-compile libclang for Windows x64 (msvcrt)
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          export PATH="${TOOLCHAIN_DIR}/bin:$PATH"
+          SYSROOT="${TOOLCHAIN_DIR}/x86_64-w64-mingw32"
+
+          cmake -G Ninja -S llvm-project/llvm -B build-cross \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-clang \
+            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-clang++ \
+            -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
+            -DCMAKE_FIND_ROOT_PATH="$SYSROOT" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+            -DLLVM_HOST_TRIPLE=x86_64-w64-mingw32 \
+            -DLLVM_NATIVE_TOOL_DIR="$(pwd)/build-native/bin" \
+            -DLLVM_ENABLE_PROJECTS=clang \
+            -DLLVM_TARGETS_TO_BUILD=X86 \
+            -DLLVM_LINK_LLVM_DYLIB=OFF \
+            -DLLVM_BUILD_LLVM_DYLIB=OFF \
+            -DLLVM_ENABLE_ASSERTIONS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_DOCS=OFF \
+            -DLLVM_PARALLEL_LINK_JOBS=2 \
+            -DCMAKE_INSTALL_PREFIX="$(pwd)/install/libclang" \
+            -DCMAKE_CXX_FLAGS="-static"
+
+          ninja -C build-cross -j$(nproc)
+
+      - name: Install libclang
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          DESTDIR="" cmake --install build-cross --strip
+
+          # Also copy static libc++ and related libs from the toolchain sysroot
+          # so consumers can link against them
+          cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libc++.a" install/libclang/lib/ || true
+          cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libc++abi.a" install/libclang/lib/ || true
+          cp "${TOOLCHAIN_DIR}/x86_64-w64-mingw32/lib/libunwind.a" install/libclang/lib/ || true
+
+          # Copy compiler-rt builtins
+          BUILTINS=$(find "${TOOLCHAIN_DIR}" -name "libclang_rt.builtins-x86_64.a" 2>/dev/null | head -1)
+          if [ -n "$BUILTINS" ]; then
+            cp "$BUILTINS" install/libclang/lib/libclang_rt-builtins.a
+          fi
+
+          echo "=== Installed files ==="
+          find install/libclang -type f | head -50
+          echo "..."
+          echo "Total files: $(find install/libclang -type f | wc -l)"
+          echo "Total size: $(du -sh install/libclang | cut -f1)"
+
+      - name: Verify CRT linkage
+        if: steps.cache-result.outputs.cache-hit != 'true'
+        run: |
+          echo "=== Checking llvm-config.exe imports ==="
+          x86_64-w64-mingw32-objdump -p install/libclang/bin/llvm-config.exe 2>/dev/null | grep -i "DLL Name" || echo "No DLL imports (static)"
+
+          echo ""
+          echo "=== Checking for msvcrt vs ucrt references in .a files ==="
+          for lib in install/libclang/lib/libclang*.a; do
+            echo "--- $(basename $lib) ---"
+            x86_64-w64-mingw32-strings "$lib" 2>/dev/null | grep -iE "msvcrt|ucrt" | sort -u | head -5 || true
+          done
+        env:
+          PATH: "${{ env.TOOLCHAIN_DIR }}/bin:$PATH"
+
+      - name: Package as 7z
+        run: |
+          cd install
+          7z a -mx9 "../libclang-${LLVM_VERSION}-windows-msvcrt-static-libcxx-x86_64.7z" libclang/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libclang-msvcrt-x86_64
+          path: libclang-${{ env.LLVM_VERSION }}-windows-msvcrt-static-libcxx-x86_64.7z
+          retention-days: 90
