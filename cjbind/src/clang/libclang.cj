@@ -1975,7 +1975,7 @@ public const CXCursorKind_CXCursor_ParenExpr: CXCursorKind = 111
 // alignof).
 public const CXCursorKind_CXCursor_UnaryOperator: CXCursorKind = 112
 
-// [C99 6.5.2.1] Array Subscripting.
+// [C99 6.5.2.1] Array Subscripting. // cjlint-ignore !G.OTH.03
 public const CXCursorKind_CXCursor_ArraySubscriptExpr: CXCursorKind = 113
 
 // A builtin binary operation expression such as "x + y" or
@@ -1994,7 +1994,7 @@ public const CXCursorKind_CXCursor_ConditionalOperator: CXCursorKind = 116
 // For example: (int)f.
 public const CXCursorKind_CXCursor_CStyleCastExpr: CXCursorKind = 117
 
-// [C99 6.5.2.5]
+// [C99 6.5.2.5] // cjlint-ignore !G.OTH.03
 public const CXCursorKind_CXCursor_CompoundLiteralExpr: CXCursorKind = 118
 
 // Describes an C or C++ initializer list.
@@ -7242,7 +7242,7 @@ public const CXCommentKind_CXComment_InlineCommand: CXCommentKind = 2
 //
 // For example:
 // \verbatim
-// <br> <br /> <a href="http://example.org/">
+// <br> <br /> <a href="http://example.org/"> // cjlint-ignore !G.OTH.03
 // \endverbatim
 public const CXCommentKind_CXComment_HTMLStartTag: CXCommentKind = 3
 
