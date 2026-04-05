@@ -1,1 +1,3 @@
-package cjbind_ffiforeign func f(a: CPointer<Int32>): Unit
+package cjbind_ffi
+
+foreign func f(a: CPointer<Int32>): Unit

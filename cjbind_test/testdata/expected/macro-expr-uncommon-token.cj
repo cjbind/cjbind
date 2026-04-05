@@ -1,1 +1,5 @@
-package cjbind_ffipublic const MODBUS_WOOT_MODBUS_WOOT: Int64 = 3foreign func foo(): Unit
+package cjbind_ffi
+
+public const MODBUS_WOOT_MODBUS_WOOT: Int64 = 3
+
+foreign func foo(): Unit

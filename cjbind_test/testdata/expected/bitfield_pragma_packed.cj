@@ -1,1 +1,43 @@
-package cjbind_ffi@Cpublic struct Struct_Struct {    let _cjbind_opaque_blob: VArray<UInt8, $4>    public init() {        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }    }}@When[debug]let _ = {    =>        let size = sizeOf<Struct_Struct>()        if (size != 4) {            throw Exception("Size of Struct_Struct is not 4 but ${size} bytes")        }        let align = alignOf<Struct_Struct>()        if (align != 1) {            throw Exception("Alignment of Struct_Struct is not 1 but ${align} bytes")        }}@Cpublic struct Inner_Inner {    let _cjbind_opaque_blob: VArray<UInt16, $2>    public init() {        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $2>>() }    }}@When[debug]let _ = {    =>        let size = sizeOf<Inner_Inner>()        if (size != 4) {            throw Exception("Size of Inner_Inner is not 4 but ${size} bytes")        }        let align = alignOf<Inner_Inner>()        if (align != 2) {            throw Exception("Alignment of Inner_Inner is not 2 but ${align} bytes")        }}
+package cjbind_ffi
+
+@C
+public struct Struct_Struct {
+    let _cjbind_opaque_blob: VArray<UInt8, $4>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Struct_Struct>()
+        if (size != 4) {
+            throw Exception("Size of Struct_Struct is not 4 but ${size} bytes")
+        }
+        let align = alignOf<Struct_Struct>()
+        if (align != 1) {
+            throw Exception("Alignment of Struct_Struct is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct Inner_Inner {
+    let _cjbind_opaque_blob: VArray<UInt16, $2>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $2>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Inner_Inner>()
+        if (size != 4) {
+            throw Exception("Size of Inner_Inner is not 4 but ${size} bytes")
+        }
+        let align = alignOf<Inner_Inner>()
+        if (align != 2) {
+            throw Exception("Alignment of Inner_Inner is not 2 but ${align} bytes")
+        }
+}

@@ -1,1 +1,24 @@
-package cjbind_ffipublic type baz_baz = Int32@Cpublic struct Foo_Foo {    public let bar: CFunc<(x: Int32, y: Int32) -> baz_baz>    public init(bar: CFunc<(x: Int32, y: Int32) -> baz_baz>) {        this.bar = bar    }}@When[debug]let _ = {    =>        let size = sizeOf<Foo_Foo>()        if (size != 8) {            throw Exception("Size of Foo_Foo is not 8 but ${size} bytes")        }        let align = alignOf<Foo_Foo>()        if (align != 8) {            throw Exception("Alignment of Foo_Foo is not 8 but ${align} bytes")        }}
+package cjbind_ffi
+
+public type baz_baz = Int32
+
+@C
+public struct Foo_Foo {
+    public let bar: CFunc<(x: Int32, y: Int32) -> baz_baz>
+    public init(bar: CFunc<(x: Int32, y: Int32) -> baz_baz>) {
+        this.bar = bar
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Foo_Foo>()
+        if (size != 8) {
+            throw Exception("Size of Foo_Foo is not 8 but ${size} bytes")
+        }
+        let align = alignOf<Foo_Foo>()
+        if (align != 8) {
+            throw Exception("Alignment of Foo_Foo is not 8 but ${align} bytes")
+        }
+}

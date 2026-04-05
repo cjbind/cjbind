@@ -89,11 +89,13 @@ func processTestCase(testcase: String): Unit {
     let args = getCommandLine()
     let shouldUpdate = args.any { arg: String => arg == "update" }
 
+    let normalizedOutput = output.replace("\r\n", "\n")
+
     if (shouldUpdate) {
-        File.writeTo(expectedPath, output.toArray())
+        File.writeTo(expectedPath, normalizedOutput.toArray())
     } else {
-        let expected = String.fromUtf8(File.readFrom(expectedPath))
-        @Assert(output, expected)
+        let expected = String.fromUtf8(File.readFrom(expectedPath)).replace("\r\n", "\n")
+        @Assert(normalizedOutput, expected)
     }
 }
 

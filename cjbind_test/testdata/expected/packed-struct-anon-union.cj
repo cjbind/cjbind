@@ -1,1 +1,54 @@
-@Cfunc __cjbind_read_CPointer<Unit>(ptr: CPointer<UInt8>): CPointer<Unit> {    return unsafe { CPointer<CPointer<Unit>>(ptr).read() }}@Cfunc __cjbind_write_CPointer<Unit>(ptr: CPointer<UInt8>, val: CPointer<Unit>): Unit {    unsafe { CPointer<CPointer<Unit>>(ptr).write(val) }}@Cfunc __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {    return unsafe { CPointer<UInt64>(ptr).read() }}@Cfunc __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {    unsafe { CPointer<UInt64>(ptr).write(val) }}package cjbind_ffi@Cpublic struct rte_memseg__cjbind_ty_1 {var _storage: UInt64 = unsafe { zeroValue<UInt64>() }public init() {}public func addr(): CPointer<Unit> {    var s = this._storage    return unsafe { __cjbind_read_CPointer<Unit>(CPointer<UInt8>(inout s)) }}public mut func addr(val!: CPointer<Unit>): Unit {    unsafe { __cjbind_write_CPointer<Unit>(CPointer<UInt8>(inout this._storage), val) }}public func addr_64(): UInt64 {    var s = this._storage    return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }}public mut func addr_64(val!: UInt64): Unit {    unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }}}@When[debug]let _ = {=>    let size = sizeOf<rte_memseg__cjbind_ty_1>()    if (size != 8) {        throw Exception("Size of rte_memseg__cjbind_ty_1 is not 8 but ${size} bytes")    }    let align = alignOf<rte_memseg__cjbind_ty_1>()    if (align != 8) {        throw Exception("Alignment of rte_memseg__cjbind_ty_1 is not 8 but ${align} bytes")    }}
+@C
+func __cjbind_read_CPointer<Unit>(ptr: CPointer<UInt8>): CPointer<Unit> {
+    return unsafe { CPointer<CPointer<Unit>>(ptr).read() }
+}
+
+@C
+func __cjbind_write_CPointer<Unit>(ptr: CPointer<UInt8>, val: CPointer<Unit>): Unit {
+    unsafe { CPointer<CPointer<Unit>>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
+    return unsafe { CPointer<UInt64>(ptr).read() }
+}
+
+@C
+func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
+    unsafe { CPointer<UInt64>(ptr).write(val) }
+}
+
+package cjbind_ffi
+
+@C
+public struct rte_memseg__cjbind_ty_1 {
+var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
+public init() {}
+public func addr(): CPointer<Unit> {
+    var s = this._storage
+    return unsafe { __cjbind_read_CPointer<Unit>(CPointer<UInt8>(inout s)) }
+}
+public mut func addr(val!: CPointer<Unit>): Unit {
+    unsafe { __cjbind_write_CPointer<Unit>(CPointer<UInt8>(inout this._storage), val) }
+}
+public func addr_64(): UInt64 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+}
+public mut func addr_64(val!: UInt64): Unit {
+    unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_memseg__cjbind_ty_1>()
+    if (size != 8) {
+        throw Exception("Size of rte_memseg__cjbind_ty_1 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_memseg__cjbind_ty_1>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_memseg__cjbind_ty_1 is not 8 but ${align} bytes")
+    }
+}

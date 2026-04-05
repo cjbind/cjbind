@@ -1,1 +1,1083 @@
-@Cfunc __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {    let startByte = bitOffset / 8    let bitShift = bitOffset % 8    let bytesNeeded = (bitWidth + bitShift + 7) / 8    var val: UInt64 = 0    var i: Int64 = 0    while (i < bytesNeeded) {        val = val | (UInt64(unsafe { ptr.read(startByte + i) }) << UInt64(i * 8))        i++    }    val = val >> UInt64(bitShift)    if (bitWidth < 64) {        val = val & ((UInt64(1) << UInt64(bitWidth)) - 1)    }    return val}@Cfunc __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64, val: UInt64): Unit {    let startByte = bitOffset / 8    let bitShift = bitOffset % 8    let bytesNeeded = (bitWidth + bitShift + 7) / 8    var maskVal = val    if (bitWidth < 64) {        maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)    }    maskVal = maskVal << UInt64(bitShift)    var fieldMask: UInt64 = if (bitWidth < 64) {        ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)    } else {        !UInt64(0)    }    var i: Int64 = 0    while (i < bytesNeeded) {        let byteVal = UInt8((maskVal >> UInt64(i * 8)) & 0xFF)        let byteMask = UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)        let old = unsafe { ptr.read(startByte + i) }        unsafe { ptr.write(startByte + i, (old & !byteMask) | (byteVal & byteMask)) }        i++    }}@Cfunc __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {    let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)    if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))    }    return Int64(raw)}@Cfunc __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).read() }}@Cfunc __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).write(val) }}@Cfunc __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {    return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).read() }}@Cfunc __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {    unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).write(val) }}@Cfunc __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {    return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).read() }}@Cfunc __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {    unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).write(val) }}package cjbind_ffipublic const ETH_MQ_RX_RSS_FLAG_ETH_MQ_RX_RSS_FLAG : Int64 = 1public const ETH_MQ_RX_DCB_FLAG_ETH_MQ_RX_DCB_FLAG : Int64 = 2public const ETH_MQ_RX_VMDQ_FLAG_ETH_MQ_RX_VMDQ_FLAG : Int64 = 4public const ETH_VMDQ_MAX_VLAN_FILTERS_ETH_VMDQ_MAX_VLAN_FILTERS : Int64 = 64public const ETH_DCB_NUM_USER_PRIORITIES_ETH_DCB_NUM_USER_PRIORITIES : Int64 = 8public const ETH_VMDQ_DCB_NUM_QUEUES_ETH_VMDQ_DCB_NUM_QUEUES : Int64 = 128public const ETH_DCB_NUM_QUEUES_ETH_DCB_NUM_QUEUES : Int64 = 128public const RTE_ETH_FDIR_MAX_FLEXLEN_RTE_ETH_FDIR_MAX_FLEXLEN : Int64 = 16public const RTE_ETH_INSET_SIZE_MAX_RTE_ETH_INSET_SIZE_MAX : Int64 = 128public const RTE_ETH_FLOW_UNKNOWN_RTE_ETH_FLOW_UNKNOWN : Int64 = 0public const RTE_ETH_FLOW_RAW_RTE_ETH_FLOW_RAW : Int64 = 1public const RTE_ETH_FLOW_IPV4_RTE_ETH_FLOW_IPV4 : Int64 = 2public const RTE_ETH_FLOW_FRAG_IPV4_RTE_ETH_FLOW_FRAG_IPV4 : Int64 = 3public const RTE_ETH_FLOW_NONFRAG_IPV4_TCP_RTE_ETH_FLOW_NONFRAG_IPV4_TCP : Int64 = 4public const RTE_ETH_FLOW_NONFRAG_IPV4_UDP_RTE_ETH_FLOW_NONFRAG_IPV4_UDP : Int64 = 5public const RTE_ETH_FLOW_NONFRAG_IPV4_SCTP_RTE_ETH_FLOW_NONFRAG_IPV4_SCTP : Int64 = 6public const RTE_ETH_FLOW_NONFRAG_IPV4_OTHER_RTE_ETH_FLOW_NONFRAG_IPV4_OTHER : Int64 = 7public const RTE_ETH_FLOW_IPV6_RTE_ETH_FLOW_IPV6 : Int64 = 8public const RTE_ETH_FLOW_FRAG_IPV6_RTE_ETH_FLOW_FRAG_IPV6 : Int64 = 9public const RTE_ETH_FLOW_NONFRAG_IPV6_TCP_RTE_ETH_FLOW_NONFRAG_IPV6_TCP : Int64 = 10public const RTE_ETH_FLOW_NONFRAG_IPV6_UDP_RTE_ETH_FLOW_NONFRAG_IPV6_UDP : Int64 = 11public const RTE_ETH_FLOW_NONFRAG_IPV6_SCTP_RTE_ETH_FLOW_NONFRAG_IPV6_SCTP : Int64 = 12public const RTE_ETH_FLOW_NONFRAG_IPV6_OTHER_RTE_ETH_FLOW_NONFRAG_IPV6_OTHER : Int64 = 13public const RTE_ETH_FLOW_L2_PAYLOAD_RTE_ETH_FLOW_L2_PAYLOAD : Int64 = 14public const RTE_ETH_FLOW_IPV6_EX_RTE_ETH_FLOW_IPV6_EX : Int64 = 15public const RTE_ETH_FLOW_IPV6_TCP_EX_RTE_ETH_FLOW_IPV6_TCP_EX : Int64 = 16public const RTE_ETH_FLOW_IPV6_UDP_EX_RTE_ETH_FLOW_IPV6_UDP_EX : Int64 = 17public const RTE_ETH_FLOW_PORT_RTE_ETH_FLOW_PORT : Int64 = 18public const RTE_ETH_FLOW_VXLAN_RTE_ETH_FLOW_VXLAN : Int64 = 19public const RTE_ETH_FLOW_GENEVE_RTE_ETH_FLOW_GENEVE : Int64 = 20public const RTE_ETH_FLOW_NVGRE_RTE_ETH_FLOW_NVGRE : Int64 = 21public const RTE_ETH_FLOW_MAX_RTE_ETH_FLOW_MAX : Int64 = 22// None of DCB,RSS or VMDQ mode *public const rte_eth_rx_mq_mode_ETH_MQ_RX_NONE : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 0// For RX side, only RSS is on *public const rte_eth_rx_mq_mode_ETH_MQ_RX_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 1// For RX side,only DCB is on. *public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 2// Both DCB and RSS enable *public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 3// Only VMDQ, no RSS nor DCB *public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_ONLY : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 4// RSS mode with VMDQ *public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 5// Use VMDQ+DCB to route traffic to queues *public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 6// Enable both VMDQ and DCB in VMDq *public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 7//  A set of values to identify what method is to be used to route//  packets to multiple queues.public type rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = UInt32// A structure used to configure the RX features of an Ethernet port.@Cpublic struct rte_eth_rxmode_rte_eth_rxmode {// The multi-queue packet distribution mode to be used, e.g. RSS. *public var mq_mode : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = unsafe { zeroValue<rte_eth_rx_mq_mode_rte_eth_rx_mq_mode>() }//< Only used if jumbo_frame enabled. *public var max_rx_pkt_len : UInt32 = unsafe { zeroValue<UInt32>() }//< hdr buf size (header_split enabled).*public var split_hdr_size : UInt16 = unsafe { zeroValue<UInt16>() }var _bitfield_1 : VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)public func header_split(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })}public mut func header_split(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }}public func hw_ip_checksum(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })}public mut func hw_ip_checksum(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }}public func hw_vlan_filter(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })}public mut func hw_vlan_filter(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }}public func hw_vlan_strip(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 3, 1) })}public mut func hw_vlan_strip(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 3, 1, UInt64(val)) }}public func hw_vlan_extend(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 4, 1) })}public mut func hw_vlan_extend(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 4, 1, UInt64(val)) }}public func jumbo_frame(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 5, 1) })}public mut func jumbo_frame(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 5, 1, UInt64(val)) }}public func hw_strip_crc(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 6, 1) })}public mut func hw_strip_crc(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 6, 1, UInt64(val)) }}public func enable_scatter(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 7, 1) })}public mut func enable_scatter(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 1, UInt64(val)) }}public func enable_lro(): UInt16 {    var s = this._bitfield_1    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 8, 1) })}public mut func enable_lro(val!: UInt16): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 1, UInt64(val)) }}public init() {}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_rxmode_rte_eth_rxmode>()    if (size != 12) {        throw Exception("Size of rte_eth_rxmode_rte_eth_rxmode is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_rxmode_rte_eth_rxmode>()    if (align != 4) {        throw Exception("Alignment of rte_eth_rxmode_rte_eth_rxmode is not 4 but ${align} bytes")    }}//< It is in neither DCB nor VT mode. *public const rte_eth_tx_mq_mode_ETH_MQ_TX_NONE : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 0//< For TX side,only DCB is on. *public const rte_eth_tx_mq_mode_ETH_MQ_TX_DCB : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 1//< For TX side,both DCB and VT is on. *public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_DCB : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 2//< Only VT on, no DCB *public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_ONLY : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 3// A set of values to identify what method is to be used to transmit// packets using multi-TCs.public type rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = UInt32// A structure used to configure the TX features of an Ethernet port.@Cpublic struct rte_eth_txmode_rte_eth_txmode {//< TX multi-queues mode. *public var mq_mode : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = unsafe { zeroValue<rte_eth_tx_mq_mode_rte_eth_tx_mq_mode>() }public var pvid : UInt16 = unsafe { zeroValue<UInt16>() }var _bitfield_1 : VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)public func hw_vlan_reject_tagged(): UInt8 {    var s = this._bitfield_1    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })}public mut func hw_vlan_reject_tagged(val!: UInt8): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }}public func hw_vlan_reject_untagged(): UInt8 {    var s = this._bitfield_1    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })}public mut func hw_vlan_reject_untagged(val!: UInt8): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }}public func hw_vlan_insert_pvid(): UInt8 {    var s = this._bitfield_1    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })}public mut func hw_vlan_insert_pvid(val!: UInt8): Unit {    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }}public init() {}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_txmode_rte_eth_txmode>()    if (size != 8) {        throw Exception("Size of rte_eth_txmode_rte_eth_txmode is not 8 but ${size} bytes")    }    let align = alignOf<rte_eth_txmode_rte_eth_txmode>()    if (align != 4) {        throw Exception("Alignment of rte_eth_txmode_rte_eth_txmode is not 4 but ${align} bytes")    }}// A structure used to configure the Receive Side Scaling (RSS) feature// of an Ethernet port.// If not NULL, the *rss_key* pointer of the *rss_conf* structure points// to an array holding the RSS key to use for hashing specific header// fields of received packets. The length of this array should be indicated// by *rss_key_len* below. Otherwise, a default random hash key is used by// the device driver.//// The *rss_key_len* field of the *rss_conf* structure indicates the length// in bytes of the array pointed by *rss_key*. To be compatible, this length// will be checked in i40e only. Others assume 40 bytes to be used as before.//// The *rss_hf* field of the *rss_conf* structure indicates the different// types of IPv4/IPv6 packets to which the RSS hashing must be applied.// Supplying an *rss_hf* equal to zero disables the RSS feature.@Cpublic struct rte_eth_rss_conf_rte_eth_rss_conf {//< If not NULL, 40-byte hash key. *public let rss_key : CPointer<UInt8>//< hash key length in bytes. *public let rss_key_len : UInt8//< Hash functions to apply - see below. *public let rss_hf : UInt64public init(rss_key : CPointer<UInt8> , rss_key_len : UInt8 , rss_hf : UInt64) {    this.rss_key = rss_keythis.rss_key_len = rss_key_lenthis.rss_hf = rss_hf}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_rss_conf_rte_eth_rss_conf>()    if (size != 24) {        throw Exception("Size of rte_eth_rss_conf_rte_eth_rss_conf is not 24 but ${size} bytes")    }    let align = alignOf<rte_eth_rss_conf_rte_eth_rss_conf>()    if (align != 8) {        throw Exception("Alignment of rte_eth_rss_conf_rte_eth_rss_conf is not 8 but ${align} bytes")    }}//< 4 TCs with DCB. *public const rte_eth_nb_tcs_ETH_4_TCS : rte_eth_nb_tcs_rte_eth_nb_tcs = 4//< 8 TCs with DCB. *public const rte_eth_nb_tcs_ETH_8_TCS : rte_eth_nb_tcs_rte_eth_nb_tcs = 8// This enum indicates the possible number of traffic classes// in DCB configratioinspublic type rte_eth_nb_tcs_rte_eth_nb_tcs = UInt32//< 8 VMDq pools. *public const rte_eth_nb_pools_ETH_8_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 8//< 16 VMDq pools. *public const rte_eth_nb_pools_ETH_16_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 16//< 32 VMDq pools. *public const rte_eth_nb_pools_ETH_32_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 32//< 64 VMDq pools. *public const rte_eth_nb_pools_ETH_64_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 64// This enum indicates the possible number of queue pools// in VMDQ configurations.public type rte_eth_nb_pools_rte_eth_nb_pools = UInt32@Cpublic struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {//< The vlan ID of the received frame *public let vlan_id : UInt16//< Bitmask of pools for packet rx *public let pools : UInt64public init(vlan_id : UInt16 , pools : UInt64) {    this.vlan_id = vlan_idthis.pools = pools}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()    if (size != 16) {        throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 16 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()    if (align != 8) {        throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 8 but ${align} bytes")    }}// A structure used to configure the VMDQ+DCB feature// of an Ethernet port.//// Using this feature, packets are routed to a pool of queues, based// on the vlan ID in the vlan tag, and then to a specific queue within// that pool, using the user priority vlan tag field.//// A default pool may be used, if desired, to route all traffic which// does not match the vlan filter rules.@Cpublic struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {//< With DCB, 16 or 32 pools *public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools//< If non-zero, use a default pool *public let enable_default_pool : UInt8//< The default pool, if applicable *public let default_pool : UInt8//< We can have up to 64 filters/mappings *public let nb_pool_maps : UInt8//< VMDq vlan pool maps. *public let pool_map : VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>public let __cjbind_anon_1 : rte_eth_vmdq_dcb_conf__cjbind_ty_1public let dcb_tc : VArray<UInt8, $8>public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , enable_default_pool : UInt8 , default_pool : UInt8 , nb_pool_maps : UInt8 , pool_map : VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64> , __cjbind_anon_1 : rte_eth_vmdq_dcb_conf__cjbind_ty_1 , dcb_tc : VArray<UInt8, $8>) {    this.nb_queue_pools = nb_queue_poolsthis.enable_default_pool = enable_default_poolthis.default_pool = default_poolthis.nb_pool_maps = nb_pool_mapsthis.pool_map = pool_mapthis.__cjbind_anon_1 = __cjbind_anon_1this.dcb_tc = dcb_tc}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()    if (size != 1040) {        throw Exception("Size of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 1040 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()    if (align != 8) {        throw Exception("Alignment of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 8 but ${align} bytes")    }}@Cpublic struct rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {//< Possible DCB TCs, 4 or 8 TCs *public let nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs// Traffic class each UP mapped to. *public let dcb_tc : VArray<UInt8, $8>public init(nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs , dcb_tc : VArray<UInt8, $8>) {    this.nb_tcs = nb_tcsthis.dcb_tc = dcb_tc}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()    if (size != 12) {        throw Exception("Size of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()    if (align != 4) {        throw Exception("Alignment of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 4 but ${align} bytes")    }}@Cpublic struct rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {//< With DCB, 16 or 32 pools. *public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools// Traffic class each UP mapped to. *public let dcb_tc : VArray<UInt8, $8>public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , dcb_tc : VArray<UInt8, $8>) {    this.nb_queue_pools = nb_queue_poolsthis.dcb_tc = dcb_tc}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()    if (size != 12) {        throw Exception("Size of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()    if (align != 4) {        throw Exception("Alignment of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 4 but ${align} bytes")    }}@Cpublic struct rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {//< Possible DCB TCs, 4 or 8 TCs. *public let nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs// Traffic class each UP mapped to. *public let dcb_tc : VArray<UInt8, $8>public init(nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs , dcb_tc : VArray<UInt8, $8>) {    this.nb_tcs = nb_tcsthis.dcb_tc = dcb_tc}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()    if (size != 12) {        throw Exception("Size of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()    if (align != 4) {        throw Exception("Alignment of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 4 but ${align} bytes")    }}@Cpublic struct rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {//< VMDq mode, 64 pools. *public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_poolspublic init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools) {    this.nb_queue_pools = nb_queue_pools}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()    if (size != 4) {        throw Exception("Size of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()    if (align != 4) {        throw Exception("Alignment of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${align} bytes")    }}@Cpublic struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {//< The vlan ID of the received frame *public let vlan_id : UInt16//< Bitmask of pools for packet rx *public let pools : UInt64public init(vlan_id : UInt16 , pools : UInt64) {    this.vlan_id = vlan_idthis.pools = pools}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()    if (size != 16) {        throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 16 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()    if (align != 8) {        throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 8 but ${align} bytes")    }}@Cpublic struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {//< VMDq only mode, 8 or 64 pools *public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools//< If non-zero, use a default pool *public let enable_default_pool : UInt8//< The default pool, if applicable *public let default_pool : UInt8//< Enable VT loop back *public let enable_loop_back : UInt8//< We can have up to 64 filters/mappings *public let nb_pool_maps : UInt8//< Flags from ETH_VMDQ_ACCEPT_* *public let rx_mode : UInt32//< VMDq vlan pool maps. *public let pool_map : VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>public let __cjbind_anon_1 : rte_eth_vmdq_rx_conf__cjbind_ty_1public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , enable_default_pool : UInt8 , default_pool : UInt8 , enable_loop_back : UInt8 , nb_pool_maps : UInt8 , rx_mode : UInt32 , pool_map : VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64> , __cjbind_anon_1 : rte_eth_vmdq_rx_conf__cjbind_ty_1) {    this.nb_queue_pools = nb_queue_poolsthis.enable_default_pool = enable_default_poolthis.default_pool = default_poolthis.enable_loop_back = enable_loop_backthis.nb_pool_maps = nb_pool_mapsthis.rx_mode = rx_modethis.pool_map = pool_mapthis.__cjbind_anon_1 = __cjbind_anon_1}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()    if (size != 1040) {        throw Exception("Size of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 1040 but ${size} bytes")    }    let align = alignOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()    if (align != 8) {        throw Exception("Alignment of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 8 but ${align} bytes")    }}//< Disable FDIR support. *public const rte_fdir_mode_RTE_FDIR_MODE_NONE : rte_fdir_mode_rte_fdir_mode = 0//< Enable FDIR signature filter mode. *public const rte_fdir_mode_RTE_FDIR_MODE_SIGNATURE : rte_fdir_mode_rte_fdir_mode = 1//< Enable FDIR perfect filter mode. *public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT : rte_fdir_mode_rte_fdir_mode = 2//< Enable FDIR filter mode - MAC VLAN. *public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_MAC_VLAN : rte_fdir_mode_rte_fdir_mode = 3//< Enable FDIR filter mode - tunnel. *public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_TUNNEL : rte_fdir_mode_rte_fdir_mode = 4//  Flow Director setting modes: none, signature or perfect.public type rte_fdir_mode_rte_fdir_mode = UInt32//< 64k. *public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_64K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 0//< 128k. *public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_128K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 1//< 256k. *public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_256K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 2//  Memory space that can be configured to store Flow Director filters//  in the board memory.public type rte_fdir_pballoc_type_rte_fdir_pballoc_type = UInt32//< Never report FDIR hash. *public const rte_fdir_status_mode_RTE_FDIR_NO_REPORT_STATUS : rte_fdir_status_mode_rte_fdir_status_mode = 0//< Only report FDIR hash for matching pkts. *public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS : rte_fdir_status_mode_rte_fdir_status_mode = 1//< Always report FDIR hash. *public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS_ALWAYS : rte_fdir_status_mode_rte_fdir_status_mode = 2//  Select report mode of FDIR hash information in RX descriptors.public type rte_fdir_status_mode_rte_fdir_status_mode = UInt32// A structure used to define the input for IPV4 flow@Cpublic struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {//< IPv4 source address in big endian. *public let src_ip : UInt32//< IPv4 destination address in big endian. *public let dst_ip : UInt32//< Type of service to match. *public let tos : UInt8//< Time to live to match. *public let ttl : UInt8//< Protocol, next header in big endian. *public let proto : UInt8public init(src_ip : UInt32 , dst_ip : UInt32 , tos : UInt8 , ttl : UInt8 , proto : UInt8) {    this.src_ip = src_ipthis.dst_ip = dst_ipthis.tos = tosthis.ttl = ttlthis.proto = proto}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()    if (size != 12) {        throw Exception("Size of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()    if (align != 4) {        throw Exception("Alignment of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 4 but ${align} bytes")    }}// A structure used to define the input for IPV6 flow@Cpublic struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {//< IPv6 source address in big endian. *public let src_ip : VArray<UInt32, $4>//< IPv6 destination address in big endian. *public let dst_ip : VArray<UInt32, $4>//< Traffic class to match. *public let tc : UInt8//< Protocol, next header to match. *public let proto : UInt8//< Hop limits to match. *public let hop_limits : UInt8public init(src_ip : VArray<UInt32, $4> , dst_ip : VArray<UInt32, $4> , tc : UInt8 , proto : UInt8 , hop_limits : UInt8) {    this.src_ip = src_ipthis.dst_ip = dst_ipthis.tc = tcthis.proto = protothis.hop_limits = hop_limits}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()    if (size != 36) {        throw Exception("Size of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 36 but ${size} bytes")    }    let align = alignOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()    if (align != 4) {        throw Exception("Alignment of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 4 but ${align} bytes")    }}//  A structure used to configure FDIR masks that are used by the device//  to match the various fields of RX packet headers.@Cpublic struct rte_eth_fdir_masks_rte_eth_fdir_masks {//< Bit mask for vlan_tci in big endian *public let vlan_tci_mask : UInt16// Bit mask for ipv4 flow in big endian. *public let ipv4_mask : rte_eth_ipv4_flow_rte_eth_ipv4_flow// Bit maks for ipv6 flow in big endian. *public let ipv6_mask : rte_eth_ipv6_flow_rte_eth_ipv6_flow// Bit mask for L4 source port in big endian. *public let src_port_mask : UInt16// Bit mask for L4 destination port in big endian. *public let dst_port_mask : UInt16// 6 bit mask for proper 6 bytes of Mac address, bit 0 matches the//first byte on the wire *public let mac_addr_byte_mask : UInt8// Bit mask for tunnel ID in big endian. *public let tunnel_id_mask : UInt32//< 1 - Match tunnel type,//0 - Ignore tunnel type. *public let tunnel_type_mask : UInt8public init(vlan_tci_mask : UInt16 , ipv4_mask : rte_eth_ipv4_flow_rte_eth_ipv4_flow , ipv6_mask : rte_eth_ipv6_flow_rte_eth_ipv6_flow , src_port_mask : UInt16 , dst_port_mask : UInt16 , mac_addr_byte_mask : UInt8 , tunnel_id_mask : UInt32 , tunnel_type_mask : UInt8) {    this.vlan_tci_mask = vlan_tci_maskthis.ipv4_mask = ipv4_maskthis.ipv6_mask = ipv6_maskthis.src_port_mask = src_port_maskthis.dst_port_mask = dst_port_maskthis.mac_addr_byte_mask = mac_addr_byte_maskthis.tunnel_id_mask = tunnel_id_maskthis.tunnel_type_mask = tunnel_type_mask}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()    if (size != 68) {        throw Exception("Size of rte_eth_fdir_masks_rte_eth_fdir_masks is not 68 but ${size} bytes")    }    let align = alignOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()    if (align != 4) {        throw Exception("Alignment of rte_eth_fdir_masks_rte_eth_fdir_masks is not 4 but ${align} bytes")    }}public const rte_eth_payload_type_RTE_ETH_PAYLOAD_UNKNOWN : rte_eth_payload_type_rte_eth_payload_type = 0public const rte_eth_payload_type_RTE_ETH_RAW_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 1public const rte_eth_payload_type_RTE_ETH_L2_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 2public const rte_eth_payload_type_RTE_ETH_L3_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 3public const rte_eth_payload_type_RTE_ETH_L4_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 4public const rte_eth_payload_type_RTE_ETH_PAYLOAD_MAX : rte_eth_payload_type_rte_eth_payload_type = 8// Payload typepublic type rte_eth_payload_type_rte_eth_payload_type = UInt32// A structure used to select bytes extracted from the protocol layers to// flexible payload for filter@Cpublic struct rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {//< Payload type *public let type_ : rte_eth_payload_type_rte_eth_payload_typepublic let src_offset : VArray<UInt16, $16>public init(type_ : rte_eth_payload_type_rte_eth_payload_type , src_offset : VArray<UInt16, $16>) {    this.type_ = type_this.src_offset = src_offset}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()    if (size != 36) {        throw Exception("Size of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 36 but ${size} bytes")    }    let align = alignOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()    if (align != 4) {        throw Exception("Alignment of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 4 but ${align} bytes")    }}// A structure used to define FDIR masks for flexible payload// for each flow type@Cpublic struct rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {public let flow_type : UInt16public let mask : VArray<UInt8, $16>public init(flow_type : UInt16 , mask : VArray<UInt8, $16>) {    this.flow_type = flow_typethis.mask = mask}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()    if (size != 18) {        throw Exception("Size of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 18 but ${size} bytes")    }    let align = alignOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()    if (align != 2) {        throw Exception("Alignment of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 2 but ${align} bytes")    }}// A structure used to define all flexible payload related setting// include flex payload and flex mask@Cpublic struct rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {//< The number of following payload cfg *public let nb_payloads : UInt16//< The number of following mask *public let nb_flexmasks : UInt16public let flex_set : VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>public let flex_mask : VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>public init(nb_payloads : UInt16 , nb_flexmasks : UInt16 , flex_set : VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8> , flex_mask : VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>) {    this.nb_payloads = nb_payloadsthis.nb_flexmasks = nb_flexmasksthis.flex_set = flex_setthis.flex_mask = flex_mask}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()    if (size != 688) {        throw Exception("Size of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 688 but ${size} bytes")    }    let align = alignOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()    if (align != 4) {        throw Exception("Alignment of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 4 but ${align} bytes")    }}// A structure used to configure the Flow Director (FDIR) feature// of an Ethernet port.//// If mode is RTE_FDIR_DISABLE, the pballoc value is ignored.@Cpublic struct rte_fdir_conf_rte_fdir_conf {//< Flow Director mode. *public let mode : rte_fdir_mode_rte_fdir_mode//< Space for FDIR filters. *public let pballoc : rte_fdir_pballoc_type_rte_fdir_pballoc_type//< How to report FDIR hash. *public let status : rte_fdir_status_mode_rte_fdir_status_mode// RX queue of packets matching a "drop" filter in perfect mode. *public let drop_queue : UInt8public let mask : rte_eth_fdir_masks_rte_eth_fdir_maskspublic let flex_conf : rte_eth_fdir_flex_conf_rte_eth_fdir_flex_confpublic init(mode : rte_fdir_mode_rte_fdir_mode , pballoc : rte_fdir_pballoc_type_rte_fdir_pballoc_type , status : rte_fdir_status_mode_rte_fdir_status_mode , drop_queue : UInt8 , mask : rte_eth_fdir_masks_rte_eth_fdir_masks , flex_conf : rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf) {    this.mode = modethis.pballoc = pballocthis.status = statusthis.drop_queue = drop_queuethis.mask = maskthis.flex_conf = flex_conf}}@When[debug]let _ = {=>    let size = sizeOf<rte_fdir_conf_rte_fdir_conf>()    if (size != 772) {        throw Exception("Size of rte_fdir_conf_rte_fdir_conf is not 772 but ${size} bytes")    }    let align = alignOf<rte_fdir_conf_rte_fdir_conf>()    if (align != 4) {        throw Exception("Alignment of rte_fdir_conf_rte_fdir_conf is not 4 but ${align} bytes")    }}// A structure used to enable/disable specific device interrupts.@Cpublic struct rte_intr_conf_rte_intr_conf {// enable/disable lsc interrupt. 0 (default) - disable, 1 enable *public let lsc : UInt16// enable/disable rxq interrupt. 0 (default) - disable, 1 enable *public let rxq : UInt16public init(lsc : UInt16 , rxq : UInt16) {    this.lsc = lscthis.rxq = rxq}}@When[debug]let _ = {=>    let size = sizeOf<rte_intr_conf_rte_intr_conf>()    if (size != 4) {        throw Exception("Size of rte_intr_conf_rte_intr_conf is not 4 but ${size} bytes")    }    let align = alignOf<rte_intr_conf_rte_intr_conf>()    if (align != 2) {        throw Exception("Alignment of rte_intr_conf_rte_intr_conf is not 2 but ${align} bytes")    }}@Cpublic struct rte_eth_conf__cjbind_ty_1 {//< Port RSS configuration *public let rss_conf : rte_eth_rss_conf_rte_eth_rss_confpublic let vmdq_dcb_conf : rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_confpublic let dcb_rx_conf : rte_eth_dcb_rx_conf_rte_eth_dcb_rx_confpublic let vmdq_rx_conf : rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_confpublic init(rss_conf : rte_eth_rss_conf_rte_eth_rss_conf , vmdq_dcb_conf : rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf , dcb_rx_conf : rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf , vmdq_rx_conf : rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf) {    this.rss_conf = rss_confthis.vmdq_dcb_conf = vmdq_dcb_confthis.dcb_rx_conf = dcb_rx_confthis.vmdq_rx_conf = vmdq_rx_conf}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_conf__cjbind_ty_1>()    if (size != 2120) {        throw Exception("Size of rte_eth_conf__cjbind_ty_1 is not 2120 but ${size} bytes")    }    let align = alignOf<rte_eth_conf__cjbind_ty_1>()    if (align != 8) {        throw Exception("Alignment of rte_eth_conf__cjbind_ty_1 is not 8 but ${align} bytes")    }}@Cpublic struct rte_eth_conf__cjbind_ty_2 {var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }public init() {}public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {    var s = this._storage    return unsafe { __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout s)) }}public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {    unsafe { __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout this._storage), val) }}public func dcb_tx_conf(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {    var s = this._storage    return unsafe { __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout s)) }}public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {    unsafe { __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout this._storage), val) }}public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {    var s = this._storage    return unsafe { __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout s)) }}public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {    unsafe { __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout this._storage), val) }}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_conf__cjbind_ty_2>()    if (size != 12) {        throw Exception("Size of rte_eth_conf__cjbind_ty_2 is not 12 but ${size} bytes")    }    let align = alignOf<rte_eth_conf__cjbind_ty_2>()    if (align != 4) {        throw Exception("Alignment of rte_eth_conf__cjbind_ty_2 is not 4 but ${align} bytes")    }}// A structure used to configure an Ethernet port.// Depending upon the RX multi-queue mode, extra advanced// configuration settings may be needed.@Cpublic struct rte_eth_conf_rte_eth_conf {//< bitmap of ETH_LINK_SPEED_XXX of speeds to be//used. ETH_LINK_SPEED_FIXED disables link//autonegotiation, and a unique speed shall be//set. Otherwise, the bitmap defines the set of//speeds to be advertised. If the special value//ETH_LINK_SPEED_AUTONEG (0) is used, all speeds//supported are advertised. *public let link_speeds : UInt32//< Port RX configuration. *public let rxmode : rte_eth_rxmode_rte_eth_rxmode//< Port TX configuration. *public let txmode : rte_eth_txmode_rte_eth_txmode//< Loopback operation mode. By default the value//is 0, meaning the loopback mode is disabled.//Read the datasheet of given ethernet controller//for details. The possible values of this field//are defined in implementation of each driver. *public let lpbk_mode : UInt32//< Port RX filtering configuration (union). *public let rx_adv_conf : rte_eth_conf__cjbind_ty_1public let __cjbind_anon_1 : rte_eth_conf__cjbind_ty_1//< Port TX DCB configuration (union). *public let tx_adv_conf : rte_eth_conf__cjbind_ty_2public let __cjbind_anon_2 : rte_eth_conf__cjbind_ty_2// Currently,Priority Flow Control(PFC) are supported,if DCB with PFC//is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *public let dcb_capability_en : UInt32//< FDIR configuration. *public let fdir_conf : rte_fdir_conf_rte_fdir_conf//< Interrupt mode configuration. *public let intr_conf : rte_intr_conf_rte_intr_confpublic init(link_speeds : UInt32 , rxmode : rte_eth_rxmode_rte_eth_rxmode , txmode : rte_eth_txmode_rte_eth_txmode , lpbk_mode : UInt32 , rx_adv_conf : rte_eth_conf__cjbind_ty_1 , __cjbind_anon_1 : rte_eth_conf__cjbind_ty_1 , tx_adv_conf : rte_eth_conf__cjbind_ty_2 , __cjbind_anon_2 : rte_eth_conf__cjbind_ty_2 , dcb_capability_en : UInt32 , fdir_conf : rte_fdir_conf_rte_fdir_conf , intr_conf : rte_intr_conf_rte_intr_conf) {    this.link_speeds = link_speedsthis.rxmode = rxmodethis.txmode = txmodethis.lpbk_mode = lpbk_modethis.rx_adv_conf = rx_adv_confthis.__cjbind_anon_1 = __cjbind_anon_1this.tx_adv_conf = tx_adv_confthis.__cjbind_anon_2 = __cjbind_anon_2this.dcb_capability_en = dcb_capability_enthis.fdir_conf = fdir_confthis.intr_conf = intr_conf}}@When[debug]let _ = {=>    let size = sizeOf<rte_eth_conf_rte_eth_conf>()    if (size != 2944) {        throw Exception("Size of rte_eth_conf_rte_eth_conf is not 2944 but ${size} bytes")    }    let align = alignOf<rte_eth_conf_rte_eth_conf>()    if (align != 8) {        throw Exception("Alignment of rte_eth_conf_rte_eth_conf is not 8 but ${align} bytes")    }}
+@C
+func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
+    let startByte = bitOffset / 8
+    let bitShift = bitOffset % 8
+    let bytesNeeded = (bitWidth + bitShift + 7) / 8
+    var val: UInt64 = 0
+    var i: Int64 = 0
+    while (i < bytesNeeded) {
+        val = val | (UInt64(unsafe { ptr.read(startByte + i) }) << UInt64(i * 8))
+        i++
+    }
+    val = val >> UInt64(bitShift)
+    if (bitWidth < 64) {
+        val = val & ((UInt64(1) << UInt64(bitWidth)) - 1)
+    }
+    return val
+}
+
+@C
+func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64, val: UInt64): Unit {
+    let startByte = bitOffset / 8
+    let bitShift = bitOffset % 8
+    let bytesNeeded = (bitWidth + bitShift + 7) / 8
+    var maskVal = val
+    if (bitWidth < 64) {
+        maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
+    }
+    maskVal = maskVal << UInt64(bitShift)
+    var fieldMask: UInt64 = if (bitWidth < 64) {
+        ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
+    } else {
+        !UInt64(0)
+    }
+    var i: Int64 = 0
+    while (i < bytesNeeded) {
+        let byteVal = UInt8((maskVal >> UInt64(i * 8)) & 0xFF)
+        let byteMask = UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)
+        let old = unsafe { ptr.read(startByte + i) }
+        unsafe { ptr.write(startByte + i, (old & !byteMask) | (byteVal & byteMask)) }
+        i++
+    }
+}
+
+@C
+func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
+    let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+    if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
+        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+    }
+    return Int64(raw)
+}
+
+@C
+func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
+    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+    return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
+    unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+    return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>, val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
+    unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).write(val) }
+}
+
+package cjbind_ffi
+
+public const ETH_MQ_RX_RSS_FLAG_ETH_MQ_RX_RSS_FLAG : Int64 = 1
+
+public const ETH_MQ_RX_DCB_FLAG_ETH_MQ_RX_DCB_FLAG : Int64 = 2
+
+public const ETH_MQ_RX_VMDQ_FLAG_ETH_MQ_RX_VMDQ_FLAG : Int64 = 4
+
+public const ETH_VMDQ_MAX_VLAN_FILTERS_ETH_VMDQ_MAX_VLAN_FILTERS : Int64 = 64
+
+public const ETH_DCB_NUM_USER_PRIORITIES_ETH_DCB_NUM_USER_PRIORITIES : Int64 = 8
+
+public const ETH_VMDQ_DCB_NUM_QUEUES_ETH_VMDQ_DCB_NUM_QUEUES : Int64 = 128
+
+public const ETH_DCB_NUM_QUEUES_ETH_DCB_NUM_QUEUES : Int64 = 128
+
+public const RTE_ETH_FDIR_MAX_FLEXLEN_RTE_ETH_FDIR_MAX_FLEXLEN : Int64 = 16
+
+public const RTE_ETH_INSET_SIZE_MAX_RTE_ETH_INSET_SIZE_MAX : Int64 = 128
+
+public const RTE_ETH_FLOW_UNKNOWN_RTE_ETH_FLOW_UNKNOWN : Int64 = 0
+
+public const RTE_ETH_FLOW_RAW_RTE_ETH_FLOW_RAW : Int64 = 1
+
+public const RTE_ETH_FLOW_IPV4_RTE_ETH_FLOW_IPV4 : Int64 = 2
+
+public const RTE_ETH_FLOW_FRAG_IPV4_RTE_ETH_FLOW_FRAG_IPV4 : Int64 = 3
+
+public const RTE_ETH_FLOW_NONFRAG_IPV4_TCP_RTE_ETH_FLOW_NONFRAG_IPV4_TCP : Int64 = 4
+
+public const RTE_ETH_FLOW_NONFRAG_IPV4_UDP_RTE_ETH_FLOW_NONFRAG_IPV4_UDP : Int64 = 5
+
+public const RTE_ETH_FLOW_NONFRAG_IPV4_SCTP_RTE_ETH_FLOW_NONFRAG_IPV4_SCTP : Int64 = 6
+
+public const RTE_ETH_FLOW_NONFRAG_IPV4_OTHER_RTE_ETH_FLOW_NONFRAG_IPV4_OTHER : Int64 = 7
+
+public const RTE_ETH_FLOW_IPV6_RTE_ETH_FLOW_IPV6 : Int64 = 8
+
+public const RTE_ETH_FLOW_FRAG_IPV6_RTE_ETH_FLOW_FRAG_IPV6 : Int64 = 9
+
+public const RTE_ETH_FLOW_NONFRAG_IPV6_TCP_RTE_ETH_FLOW_NONFRAG_IPV6_TCP : Int64 = 10
+
+public const RTE_ETH_FLOW_NONFRAG_IPV6_UDP_RTE_ETH_FLOW_NONFRAG_IPV6_UDP : Int64 = 11
+
+public const RTE_ETH_FLOW_NONFRAG_IPV6_SCTP_RTE_ETH_FLOW_NONFRAG_IPV6_SCTP : Int64 = 12
+
+public const RTE_ETH_FLOW_NONFRAG_IPV6_OTHER_RTE_ETH_FLOW_NONFRAG_IPV6_OTHER : Int64 = 13
+
+public const RTE_ETH_FLOW_L2_PAYLOAD_RTE_ETH_FLOW_L2_PAYLOAD : Int64 = 14
+
+public const RTE_ETH_FLOW_IPV6_EX_RTE_ETH_FLOW_IPV6_EX : Int64 = 15
+
+public const RTE_ETH_FLOW_IPV6_TCP_EX_RTE_ETH_FLOW_IPV6_TCP_EX : Int64 = 16
+
+public const RTE_ETH_FLOW_IPV6_UDP_EX_RTE_ETH_FLOW_IPV6_UDP_EX : Int64 = 17
+
+public const RTE_ETH_FLOW_PORT_RTE_ETH_FLOW_PORT : Int64 = 18
+
+public const RTE_ETH_FLOW_VXLAN_RTE_ETH_FLOW_VXLAN : Int64 = 19
+
+public const RTE_ETH_FLOW_GENEVE_RTE_ETH_FLOW_GENEVE : Int64 = 20
+
+public const RTE_ETH_FLOW_NVGRE_RTE_ETH_FLOW_NVGRE : Int64 = 21
+
+public const RTE_ETH_FLOW_MAX_RTE_ETH_FLOW_MAX : Int64 = 22
+
+// None of DCB,RSS or VMDQ mode *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_NONE : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 0
+
+// For RX side, only RSS is on *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 1
+
+// For RX side,only DCB is on. *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 2
+
+// Both DCB and RSS enable *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 3
+
+// Only VMDQ, no RSS nor DCB *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_ONLY : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 4
+
+// RSS mode with VMDQ *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 5
+
+// Use VMDQ+DCB to route traffic to queues *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 6
+
+// Enable both VMDQ and DCB in VMDq *
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB_RSS : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 7
+
+//  A set of values to identify what method is to be used to route
+//  packets to multiple queues.
+public type rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = UInt32
+
+// A structure used to configure the RX features of an Ethernet port.
+@C
+public struct rte_eth_rxmode_rte_eth_rxmode {
+// The multi-queue packet distribution mode to be used, e.g. RSS. *
+public var mq_mode : rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = unsafe { zeroValue<rte_eth_rx_mq_mode_rte_eth_rx_mq_mode>() }
+//< Only used if jumbo_frame enabled. *
+public var max_rx_pkt_len : UInt32 = unsafe { zeroValue<UInt32>() }
+//< hdr buf size (header_split enabled).*
+public var split_hdr_size : UInt16 = unsafe { zeroValue<UInt16>() }
+var _bitfield_1 : VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
+public func header_split(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+}
+public mut func header_split(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+}
+public func hw_ip_checksum(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+}
+public mut func hw_ip_checksum(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
+}
+public func hw_vlan_filter(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
+}
+public mut func hw_vlan_filter(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
+}
+public func hw_vlan_strip(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 3, 1) })
+}
+public mut func hw_vlan_strip(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 3, 1, UInt64(val)) }
+}
+public func hw_vlan_extend(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 4, 1) })
+}
+public mut func hw_vlan_extend(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 4, 1, UInt64(val)) }
+}
+public func jumbo_frame(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 5, 1) })
+}
+public mut func jumbo_frame(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 5, 1, UInt64(val)) }
+}
+public func hw_strip_crc(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 6, 1) })
+}
+public mut func hw_strip_crc(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 6, 1, UInt64(val)) }
+}
+public func enable_scatter(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 7, 1) })
+}
+public mut func enable_scatter(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 1, UInt64(val)) }
+}
+public func enable_lro(): UInt16 {
+    var s = this._bitfield_1
+    return UInt16(unsafe { __cjbind_bitfield_read(inout s, 8, 1) })
+}
+public mut func enable_lro(val!: UInt16): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 1, UInt64(val)) }
+}
+public init() {}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_rxmode_rte_eth_rxmode>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_rxmode_rte_eth_rxmode is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_rxmode_rte_eth_rxmode>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_rxmode_rte_eth_rxmode is not 4 but ${align} bytes")
+    }
+}
+
+//< It is in neither DCB nor VT mode. *
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_NONE : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 0
+
+//< For TX side,only DCB is on. *
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_DCB : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 1
+
+//< For TX side,both DCB and VT is on. *
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_DCB : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 2
+
+//< Only VT on, no DCB *
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_ONLY : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 3
+
+// A set of values to identify what method is to be used to transmit
+// packets using multi-TCs.
+public type rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = UInt32
+
+// A structure used to configure the TX features of an Ethernet port.
+@C
+public struct rte_eth_txmode_rte_eth_txmode {
+//< TX multi-queues mode. *
+public var mq_mode : rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = unsafe { zeroValue<rte_eth_tx_mq_mode_rte_eth_tx_mq_mode>() }
+public var pvid : UInt16 = unsafe { zeroValue<UInt16>() }
+var _bitfield_1 : VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
+public func hw_vlan_reject_tagged(): UInt8 {
+    var s = this._bitfield_1
+    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+}
+public mut func hw_vlan_reject_tagged(val!: UInt8): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+}
+public func hw_vlan_reject_untagged(): UInt8 {
+    var s = this._bitfield_1
+    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+}
+public mut func hw_vlan_reject_untagged(val!: UInt8): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
+}
+public func hw_vlan_insert_pvid(): UInt8 {
+    var s = this._bitfield_1
+    return UInt8(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
+}
+public mut func hw_vlan_insert_pvid(val!: UInt8): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
+}
+public init() {}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_txmode_rte_eth_txmode>()
+    if (size != 8) {
+        throw Exception("Size of rte_eth_txmode_rte_eth_txmode is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_txmode_rte_eth_txmode>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_txmode_rte_eth_txmode is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to configure the Receive Side Scaling (RSS) feature
+// of an Ethernet port.
+// If not NULL, the *rss_key* pointer of the *rss_conf* structure points
+// to an array holding the RSS key to use for hashing specific header
+// fields of received packets. The length of this array should be indicated
+// by *rss_key_len* below. Otherwise, a default random hash key is used by
+// the device driver.
+//
+// The *rss_key_len* field of the *rss_conf* structure indicates the length
+// in bytes of the array pointed by *rss_key*. To be compatible, this length
+// will be checked in i40e only. Others assume 40 bytes to be used as before.
+//
+// The *rss_hf* field of the *rss_conf* structure indicates the different
+// types of IPv4/IPv6 packets to which the RSS hashing must be applied.
+// Supplying an *rss_hf* equal to zero disables the RSS feature.
+@C
+public struct rte_eth_rss_conf_rte_eth_rss_conf {
+//< If not NULL, 40-byte hash key. *
+public let rss_key : CPointer<UInt8>
+//< hash key length in bytes. *
+public let rss_key_len : UInt8
+//< Hash functions to apply - see below. *
+public let rss_hf : UInt64
+public init(rss_key : CPointer<UInt8> , rss_key_len : UInt8 , rss_hf : UInt64) {
+    this.rss_key = rss_key
+this.rss_key_len = rss_key_len
+this.rss_hf = rss_hf
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_rss_conf_rte_eth_rss_conf>()
+    if (size != 24) {
+        throw Exception("Size of rte_eth_rss_conf_rte_eth_rss_conf is not 24 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_rss_conf_rte_eth_rss_conf>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_rss_conf_rte_eth_rss_conf is not 8 but ${align} bytes")
+    }
+}
+
+//< 4 TCs with DCB. *
+public const rte_eth_nb_tcs_ETH_4_TCS : rte_eth_nb_tcs_rte_eth_nb_tcs = 4
+
+//< 8 TCs with DCB. *
+public const rte_eth_nb_tcs_ETH_8_TCS : rte_eth_nb_tcs_rte_eth_nb_tcs = 8
+
+// This enum indicates the possible number of traffic classes
+// in DCB configratioins
+public type rte_eth_nb_tcs_rte_eth_nb_tcs = UInt32
+
+//< 8 VMDq pools. *
+public const rte_eth_nb_pools_ETH_8_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 8
+
+//< 16 VMDq pools. *
+public const rte_eth_nb_pools_ETH_16_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 16
+
+//< 32 VMDq pools. *
+public const rte_eth_nb_pools_ETH_32_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 32
+
+//< 64 VMDq pools. *
+public const rte_eth_nb_pools_ETH_64_POOLS : rte_eth_nb_pools_rte_eth_nb_pools = 64
+
+// This enum indicates the possible number of queue pools
+// in VMDQ configurations.
+public type rte_eth_nb_pools_rte_eth_nb_pools = UInt32
+
+@C
+public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {
+//< The vlan ID of the received frame *
+public let vlan_id : UInt16
+//< Bitmask of pools for packet rx *
+public let pools : UInt64
+public init(vlan_id : UInt16 , pools : UInt64) {
+    this.vlan_id = vlan_id
+this.pools = pools
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
+    if (size != 16) {
+        throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 16 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+    }
+}
+
+// A structure used to configure the VMDQ+DCB feature
+// of an Ethernet port.
+//
+// Using this feature, packets are routed to a pool of queues, based
+// on the vlan ID in the vlan tag, and then to a specific queue within
+// that pool, using the user priority vlan tag field.
+//
+// A default pool may be used, if desired, to route all traffic which
+// does not match the vlan filter rules.
+@C
+public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
+//< With DCB, 16 or 32 pools *
+public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools
+//< If non-zero, use a default pool *
+public let enable_default_pool : UInt8
+//< The default pool, if applicable *
+public let default_pool : UInt8
+//< We can have up to 64 filters/mappings *
+public let nb_pool_maps : UInt8
+//< VMDq vlan pool maps. *
+public let pool_map : VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>
+public let __cjbind_anon_1 : rte_eth_vmdq_dcb_conf__cjbind_ty_1
+public let dcb_tc : VArray<UInt8, $8>
+public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , enable_default_pool : UInt8 , default_pool : UInt8 , nb_pool_maps : UInt8 , pool_map : VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64> , __cjbind_anon_1 : rte_eth_vmdq_dcb_conf__cjbind_ty_1 , dcb_tc : VArray<UInt8, $8>) {
+    this.nb_queue_pools = nb_queue_pools
+this.enable_default_pool = enable_default_pool
+this.default_pool = default_pool
+this.nb_pool_maps = nb_pool_maps
+this.pool_map = pool_map
+this.__cjbind_anon_1 = __cjbind_anon_1
+this.dcb_tc = dcb_tc
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()
+    if (size != 1040) {
+        throw Exception("Size of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 1040 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 8 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
+//< Possible DCB TCs, 4 or 8 TCs *
+public let nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs
+// Traffic class each UP mapped to. *
+public let dcb_tc : VArray<UInt8, $8>
+public init(nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs , dcb_tc : VArray<UInt8, $8>) {
+    this.nb_tcs = nb_tcs
+this.dcb_tc = dcb_tc
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+//< With DCB, 16 or 32 pools. *
+public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools
+// Traffic class each UP mapped to. *
+public let dcb_tc : VArray<UInt8, $8>
+public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , dcb_tc : VArray<UInt8, $8>) {
+    this.nb_queue_pools = nb_queue_pools
+this.dcb_tc = dcb_tc
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+//< Possible DCB TCs, 4 or 8 TCs. *
+public let nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs
+// Traffic class each UP mapped to. *
+public let dcb_tc : VArray<UInt8, $8>
+public init(nb_tcs : rte_eth_nb_tcs_rte_eth_nb_tcs , dcb_tc : VArray<UInt8, $8>) {
+    this.nb_tcs = nb_tcs
+this.dcb_tc = dcb_tc
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+//< VMDq mode, 64 pools. *
+public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools
+public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools) {
+    this.nb_queue_pools = nb_queue_pools
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()
+    if (size != 4) {
+        throw Exception("Size of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
+//< The vlan ID of the received frame *
+public let vlan_id : UInt16
+//< Bitmask of pools for packet rx *
+public let pools : UInt64
+public init(vlan_id : UInt16 , pools : UInt64) {
+    this.vlan_id = vlan_id
+this.pools = pools
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
+    if (size != 16) {
+        throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 16 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
+//< VMDq only mode, 8 or 64 pools *
+public let nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools
+//< If non-zero, use a default pool *
+public let enable_default_pool : UInt8
+//< The default pool, if applicable *
+public let default_pool : UInt8
+//< Enable VT loop back *
+public let enable_loop_back : UInt8
+//< We can have up to 64 filters/mappings *
+public let nb_pool_maps : UInt8
+//< Flags from ETH_VMDQ_ACCEPT_* *
+public let rx_mode : UInt32
+//< VMDq vlan pool maps. *
+public let pool_map : VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>
+public let __cjbind_anon_1 : rte_eth_vmdq_rx_conf__cjbind_ty_1
+public init(nb_queue_pools : rte_eth_nb_pools_rte_eth_nb_pools , enable_default_pool : UInt8 , default_pool : UInt8 , enable_loop_back : UInt8 , nb_pool_maps : UInt8 , rx_mode : UInt32 , pool_map : VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64> , __cjbind_anon_1 : rte_eth_vmdq_rx_conf__cjbind_ty_1) {
+    this.nb_queue_pools = nb_queue_pools
+this.enable_default_pool = enable_default_pool
+this.default_pool = default_pool
+this.enable_loop_back = enable_loop_back
+this.nb_pool_maps = nb_pool_maps
+this.rx_mode = rx_mode
+this.pool_map = pool_map
+this.__cjbind_anon_1 = __cjbind_anon_1
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()
+    if (size != 1040) {
+        throw Exception("Size of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 1040 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 8 but ${align} bytes")
+    }
+}
+
+//< Disable FDIR support. *
+public const rte_fdir_mode_RTE_FDIR_MODE_NONE : rte_fdir_mode_rte_fdir_mode = 0
+
+//< Enable FDIR signature filter mode. *
+public const rte_fdir_mode_RTE_FDIR_MODE_SIGNATURE : rte_fdir_mode_rte_fdir_mode = 1
+
+//< Enable FDIR perfect filter mode. *
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT : rte_fdir_mode_rte_fdir_mode = 2
+
+//< Enable FDIR filter mode - MAC VLAN. *
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_MAC_VLAN : rte_fdir_mode_rte_fdir_mode = 3
+
+//< Enable FDIR filter mode - tunnel. *
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_TUNNEL : rte_fdir_mode_rte_fdir_mode = 4
+
+//  Flow Director setting modes: none, signature or perfect.
+public type rte_fdir_mode_rte_fdir_mode = UInt32
+
+//< 64k. *
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_64K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 0
+
+//< 128k. *
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_128K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 1
+
+//< 256k. *
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_256K : rte_fdir_pballoc_type_rte_fdir_pballoc_type = 2
+
+//  Memory space that can be configured to store Flow Director filters
+//  in the board memory.
+public type rte_fdir_pballoc_type_rte_fdir_pballoc_type = UInt32
+
+//< Never report FDIR hash. *
+public const rte_fdir_status_mode_RTE_FDIR_NO_REPORT_STATUS : rte_fdir_status_mode_rte_fdir_status_mode = 0
+
+//< Only report FDIR hash for matching pkts. *
+public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS : rte_fdir_status_mode_rte_fdir_status_mode = 1
+
+//< Always report FDIR hash. *
+public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS_ALWAYS : rte_fdir_status_mode_rte_fdir_status_mode = 2
+
+//  Select report mode of FDIR hash information in RX descriptors.
+public type rte_fdir_status_mode_rte_fdir_status_mode = UInt32
+
+// A structure used to define the input for IPV4 flow
+@C
+public struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {
+//< IPv4 source address in big endian. *
+public let src_ip : UInt32
+//< IPv4 destination address in big endian. *
+public let dst_ip : UInt32
+//< Type of service to match. *
+public let tos : UInt8
+//< Time to live to match. *
+public let ttl : UInt8
+//< Protocol, next header in big endian. *
+public let proto : UInt8
+public init(src_ip : UInt32 , dst_ip : UInt32 , tos : UInt8 , ttl : UInt8 , proto : UInt8) {
+    this.src_ip = src_ip
+this.dst_ip = dst_ip
+this.tos = tos
+this.ttl = ttl
+this.proto = proto
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to define the input for IPV6 flow
+@C
+public struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {
+//< IPv6 source address in big endian. *
+public let src_ip : VArray<UInt32, $4>
+//< IPv6 destination address in big endian. *
+public let dst_ip : VArray<UInt32, $4>
+//< Traffic class to match. *
+public let tc : UInt8
+//< Protocol, next header to match. *
+public let proto : UInt8
+//< Hop limits to match. *
+public let hop_limits : UInt8
+public init(src_ip : VArray<UInt32, $4> , dst_ip : VArray<UInt32, $4> , tc : UInt8 , proto : UInt8 , hop_limits : UInt8) {
+    this.src_ip = src_ip
+this.dst_ip = dst_ip
+this.tc = tc
+this.proto = proto
+this.hop_limits = hop_limits
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()
+    if (size != 36) {
+        throw Exception("Size of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 36 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 4 but ${align} bytes")
+    }
+}
+
+//  A structure used to configure FDIR masks that are used by the device
+//  to match the various fields of RX packet headers.
+@C
+public struct rte_eth_fdir_masks_rte_eth_fdir_masks {
+//< Bit mask for vlan_tci in big endian *
+public let vlan_tci_mask : UInt16
+// Bit mask for ipv4 flow in big endian. *
+public let ipv4_mask : rte_eth_ipv4_flow_rte_eth_ipv4_flow
+// Bit maks for ipv6 flow in big endian. *
+public let ipv6_mask : rte_eth_ipv6_flow_rte_eth_ipv6_flow
+// Bit mask for L4 source port in big endian. *
+public let src_port_mask : UInt16
+// Bit mask for L4 destination port in big endian. *
+public let dst_port_mask : UInt16
+// 6 bit mask for proper 6 bytes of Mac address, bit 0 matches the
+//first byte on the wire *
+public let mac_addr_byte_mask : UInt8
+// Bit mask for tunnel ID in big endian. *
+public let tunnel_id_mask : UInt32
+//< 1 - Match tunnel type,
+//0 - Ignore tunnel type. *
+public let tunnel_type_mask : UInt8
+public init(vlan_tci_mask : UInt16 , ipv4_mask : rte_eth_ipv4_flow_rte_eth_ipv4_flow , ipv6_mask : rte_eth_ipv6_flow_rte_eth_ipv6_flow , src_port_mask : UInt16 , dst_port_mask : UInt16 , mac_addr_byte_mask : UInt8 , tunnel_id_mask : UInt32 , tunnel_type_mask : UInt8) {
+    this.vlan_tci_mask = vlan_tci_mask
+this.ipv4_mask = ipv4_mask
+this.ipv6_mask = ipv6_mask
+this.src_port_mask = src_port_mask
+this.dst_port_mask = dst_port_mask
+this.mac_addr_byte_mask = mac_addr_byte_mask
+this.tunnel_id_mask = tunnel_id_mask
+this.tunnel_type_mask = tunnel_type_mask
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()
+    if (size != 68) {
+        throw Exception("Size of rte_eth_fdir_masks_rte_eth_fdir_masks is not 68 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_fdir_masks_rte_eth_fdir_masks is not 4 but ${align} bytes")
+    }
+}
+
+public const rte_eth_payload_type_RTE_ETH_PAYLOAD_UNKNOWN : rte_eth_payload_type_rte_eth_payload_type = 0
+
+public const rte_eth_payload_type_RTE_ETH_RAW_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 1
+
+public const rte_eth_payload_type_RTE_ETH_L2_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 2
+
+public const rte_eth_payload_type_RTE_ETH_L3_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 3
+
+public const rte_eth_payload_type_RTE_ETH_L4_PAYLOAD : rte_eth_payload_type_rte_eth_payload_type = 4
+
+public const rte_eth_payload_type_RTE_ETH_PAYLOAD_MAX : rte_eth_payload_type_rte_eth_payload_type = 8
+
+// Payload type
+public type rte_eth_payload_type_rte_eth_payload_type = UInt32
+
+// A structure used to select bytes extracted from the protocol layers to
+// flexible payload for filter
+@C
+public struct rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
+//< Payload type *
+public let type_ : rte_eth_payload_type_rte_eth_payload_type
+public let src_offset : VArray<UInt16, $16>
+public init(type_ : rte_eth_payload_type_rte_eth_payload_type , src_offset : VArray<UInt16, $16>) {
+    this.type_ = type_
+this.src_offset = src_offset
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()
+    if (size != 36) {
+        throw Exception("Size of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 36 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to define FDIR masks for flexible payload
+// for each flow type
+@C
+public struct rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
+public let flow_type : UInt16
+public let mask : VArray<UInt8, $16>
+public init(flow_type : UInt16 , mask : VArray<UInt8, $16>) {
+    this.flow_type = flow_type
+this.mask = mask
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()
+    if (size != 18) {
+        throw Exception("Size of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 18 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()
+    if (align != 2) {
+        throw Exception("Alignment of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 2 but ${align} bytes")
+    }
+}
+
+// A structure used to define all flexible payload related setting
+// include flex payload and flex mask
+@C
+public struct rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
+//< The number of following payload cfg *
+public let nb_payloads : UInt16
+//< The number of following mask *
+public let nb_flexmasks : UInt16
+public let flex_set : VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>
+public let flex_mask : VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>
+public init(nb_payloads : UInt16 , nb_flexmasks : UInt16 , flex_set : VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8> , flex_mask : VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>) {
+    this.nb_payloads = nb_payloads
+this.nb_flexmasks = nb_flexmasks
+this.flex_set = flex_set
+this.flex_mask = flex_mask
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()
+    if (size != 688) {
+        throw Exception("Size of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 688 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to configure the Flow Director (FDIR) feature
+// of an Ethernet port.
+//
+// If mode is RTE_FDIR_DISABLE, the pballoc value is ignored.
+@C
+public struct rte_fdir_conf_rte_fdir_conf {
+//< Flow Director mode. *
+public let mode : rte_fdir_mode_rte_fdir_mode
+//< Space for FDIR filters. *
+public let pballoc : rte_fdir_pballoc_type_rte_fdir_pballoc_type
+//< How to report FDIR hash. *
+public let status : rte_fdir_status_mode_rte_fdir_status_mode
+// RX queue of packets matching a "drop" filter in perfect mode. *
+public let drop_queue : UInt8
+public let mask : rte_eth_fdir_masks_rte_eth_fdir_masks
+public let flex_conf : rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf
+public init(mode : rte_fdir_mode_rte_fdir_mode , pballoc : rte_fdir_pballoc_type_rte_fdir_pballoc_type , status : rte_fdir_status_mode_rte_fdir_status_mode , drop_queue : UInt8 , mask : rte_eth_fdir_masks_rte_eth_fdir_masks , flex_conf : rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf) {
+    this.mode = mode
+this.pballoc = pballoc
+this.status = status
+this.drop_queue = drop_queue
+this.mask = mask
+this.flex_conf = flex_conf
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_fdir_conf_rte_fdir_conf>()
+    if (size != 772) {
+        throw Exception("Size of rte_fdir_conf_rte_fdir_conf is not 772 but ${size} bytes")
+    }
+    let align = alignOf<rte_fdir_conf_rte_fdir_conf>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_fdir_conf_rte_fdir_conf is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to enable/disable specific device interrupts.
+@C
+public struct rte_intr_conf_rte_intr_conf {
+// enable/disable lsc interrupt. 0 (default) - disable, 1 enable *
+public let lsc : UInt16
+// enable/disable rxq interrupt. 0 (default) - disable, 1 enable *
+public let rxq : UInt16
+public init(lsc : UInt16 , rxq : UInt16) {
+    this.lsc = lsc
+this.rxq = rxq
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_intr_conf_rte_intr_conf>()
+    if (size != 4) {
+        throw Exception("Size of rte_intr_conf_rte_intr_conf is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_intr_conf_rte_intr_conf>()
+    if (align != 2) {
+        throw Exception("Alignment of rte_intr_conf_rte_intr_conf is not 2 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_conf__cjbind_ty_1 {
+//< Port RSS configuration *
+public let rss_conf : rte_eth_rss_conf_rte_eth_rss_conf
+public let vmdq_dcb_conf : rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf
+public let dcb_rx_conf : rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf
+public let vmdq_rx_conf : rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf
+public init(rss_conf : rte_eth_rss_conf_rte_eth_rss_conf , vmdq_dcb_conf : rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf , dcb_rx_conf : rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf , vmdq_rx_conf : rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf) {
+    this.rss_conf = rss_conf
+this.vmdq_dcb_conf = vmdq_dcb_conf
+this.dcb_rx_conf = dcb_rx_conf
+this.vmdq_rx_conf = vmdq_rx_conf
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_conf__cjbind_ty_1>()
+    if (size != 2120) {
+        throw Exception("Size of rte_eth_conf__cjbind_ty_1 is not 2120 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_conf__cjbind_ty_1>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_eth_conf__cjbind_ty_2 {
+var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }
+public init() {}
+public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout s)) }
+}
+public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
+    unsafe { __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout this._storage), val) }
+}
+public func dcb_tx_conf(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout s)) }
+}
+public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
+    unsafe { __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout this._storage), val) }
+}
+public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout s)) }
+}
+public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
+    unsafe { __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_conf__cjbind_ty_2>()
+    if (size != 12) {
+        throw Exception("Size of rte_eth_conf__cjbind_ty_2 is not 12 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_conf__cjbind_ty_2>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_eth_conf__cjbind_ty_2 is not 4 but ${align} bytes")
+    }
+}
+
+// A structure used to configure an Ethernet port.
+// Depending upon the RX multi-queue mode, extra advanced
+// configuration settings may be needed.
+@C
+public struct rte_eth_conf_rte_eth_conf {
+//< bitmap of ETH_LINK_SPEED_XXX of speeds to be
+//used. ETH_LINK_SPEED_FIXED disables link
+//autonegotiation, and a unique speed shall be
+//set. Otherwise, the bitmap defines the set of
+//speeds to be advertised. If the special value
+//ETH_LINK_SPEED_AUTONEG (0) is used, all speeds
+//supported are advertised. *
+public let link_speeds : UInt32
+//< Port RX configuration. *
+public let rxmode : rte_eth_rxmode_rte_eth_rxmode
+//< Port TX configuration. *
+public let txmode : rte_eth_txmode_rte_eth_txmode
+//< Loopback operation mode. By default the value
+//is 0, meaning the loopback mode is disabled.
+//Read the datasheet of given ethernet controller
+//for details. The possible values of this field
+//are defined in implementation of each driver. *
+public let lpbk_mode : UInt32
+//< Port RX filtering configuration (union). *
+public let rx_adv_conf : rte_eth_conf__cjbind_ty_1
+public let __cjbind_anon_1 : rte_eth_conf__cjbind_ty_1
+//< Port TX DCB configuration (union). *
+public let tx_adv_conf : rte_eth_conf__cjbind_ty_2
+public let __cjbind_anon_2 : rte_eth_conf__cjbind_ty_2
+// Currently,Priority Flow Control(PFC) are supported,if DCB with PFC
+//is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *
+public let dcb_capability_en : UInt32
+//< FDIR configuration. *
+public let fdir_conf : rte_fdir_conf_rte_fdir_conf
+//< Interrupt mode configuration. *
+public let intr_conf : rte_intr_conf_rte_intr_conf
+public init(link_speeds : UInt32 , rxmode : rte_eth_rxmode_rte_eth_rxmode , txmode : rte_eth_txmode_rte_eth_txmode , lpbk_mode : UInt32 , rx_adv_conf : rte_eth_conf__cjbind_ty_1 , __cjbind_anon_1 : rte_eth_conf__cjbind_ty_1 , tx_adv_conf : rte_eth_conf__cjbind_ty_2 , __cjbind_anon_2 : rte_eth_conf__cjbind_ty_2 , dcb_capability_en : UInt32 , fdir_conf : rte_fdir_conf_rte_fdir_conf , intr_conf : rte_intr_conf_rte_intr_conf) {
+    this.link_speeds = link_speeds
+this.rxmode = rxmode
+this.txmode = txmode
+this.lpbk_mode = lpbk_mode
+this.rx_adv_conf = rx_adv_conf
+this.__cjbind_anon_1 = __cjbind_anon_1
+this.tx_adv_conf = tx_adv_conf
+this.__cjbind_anon_2 = __cjbind_anon_2
+this.dcb_capability_en = dcb_capability_en
+this.fdir_conf = fdir_conf
+this.intr_conf = intr_conf
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_eth_conf_rte_eth_conf>()
+    if (size != 2944) {
+        throw Exception("Size of rte_eth_conf_rte_eth_conf is not 2944 but ${size} bytes")
+    }
+    let align = alignOf<rte_eth_conf_rte_eth_conf>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_eth_conf_rte_eth_conf is not 8 but ${align} bytes")
+    }
+}

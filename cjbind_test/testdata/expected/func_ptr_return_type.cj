@@ -1,1 +1,3 @@
-package cjbind_ffiforeign func func_(): CFunc<() -> Int32>
+package cjbind_ffi
+
+foreign func func_(): CFunc<() -> Int32>

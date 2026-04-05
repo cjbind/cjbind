@@ -1,1 +1,7 @@
-package cjbind_ffipublic type float4_float4 = VArray<UInt8, $16>public type float2_float2 = UInt64foreign func foo(a: float2_float2, b: float2_float2): float4_float4
+package cjbind_ffi
+
+public type float4_float4 = VArray<UInt8, $16>
+
+public type float2_float2 = UInt64
+
+foreign func foo(a: float2_float2, b: float2_float2): float4_float4

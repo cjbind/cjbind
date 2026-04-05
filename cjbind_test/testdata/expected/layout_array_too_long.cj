@@ -1,1 +1,146 @@
-package cjbind_ffipublic const RTE_CACHE_LINE_SIZE_RTE_CACHE_LINE_SIZE: Int64 = 64public const RTE_LIBRTE_IP_FRAG_MAX_FRAG_RTE_LIBRTE_IP_FRAG_MAX_FRAG: Int64 = 4//< index of last fragment *public const IP_LAST_FRAG_IDX: _cjbind_ty_1 = 0//< index of first fragment *public const IP_FIRST_FRAG_IDX: _cjbind_ty_1 = 1//< minimum number of fragments *public const IP_MIN_FRAG_NUM: _cjbind_ty_1 = 2public const IP_MAX_FRAG_NUM: _cjbind_ty_1 = 4public type _cjbind_ty_1 = UInt32// @internal fragmented mbuf *@Cpublic struct ip_frag_ip_frag {    //< offset into the packet *    public let ofs: UInt16    //< length of fragment *    public let len: UInt16    //< fragment mbuf *    public let mb: CPointer<rte_mbuf_rte_mbuf>    public init(ofs: UInt16, len: UInt16, mb: CPointer<rte_mbuf_rte_mbuf>) {        this.ofs = ofs        this.len = len        this.mb = mb    }}@When[debug]let _ = {    =>        let size = sizeOf<ip_frag_ip_frag>()        if (size != 16) {            throw Exception("Size of ip_frag_ip_frag is not 16 but ${size} bytes")        }        let align = alignOf<ip_frag_ip_frag>()        if (align != 8) {            throw Exception("Alignment of ip_frag_ip_frag is not 8 but ${align} bytes")        }}// @internal <src addr, dst_addr, id> to uniquely indetify fragmented datagram. *@Cpublic struct ip_frag_key_ip_frag_key {    //< src address, first 8 bytes used for IPv4 *    public let src_dst: VArray<UInt64, $4>    //< dst address *    public let id: UInt32    //< src/dst key length *    public let key_len: UInt32    public init(src_dst: VArray<UInt64, $4>, id: UInt32, key_len: UInt32) {        this.src_dst = src_dst        this.id = id        this.key_len = key_len    }}@When[debug]let _ = {    =>        let size = sizeOf<ip_frag_key_ip_frag_key>()        if (size != 40) {            throw Exception("Size of ip_frag_key_ip_frag_key is not 40 but ${size} bytes")        }        let align = alignOf<ip_frag_key_ip_frag_key>()        if (align != 8) {            throw Exception("Alignment of ip_frag_key_ip_frag_key is not 8 but ${align} bytes")        }}@Cpublic struct ip_frag_pkt__cjbind_ty_1 {    public let tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>    public let tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>    public init(tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>, tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>) {        this.tqe_next = tqe_next        this.tqe_prev = tqe_prev    }}@When[debug]let _ = {    =>        let size = sizeOf<ip_frag_pkt__cjbind_ty_1>()        if (size != 16) {            throw Exception("Size of ip_frag_pkt__cjbind_ty_1 is not 16 but ${size} bytes")        }        let align = alignOf<ip_frag_pkt__cjbind_ty_1>()        if (align != 8) {            throw Exception("Alignment of ip_frag_pkt__cjbind_ty_1 is not 8 but ${align} bytes")        }}// @internal Fragmented packet to reassemble.// First two entries in the frags[] array are for the last and first fragments.@Cpublic struct ip_frag_pkt_ip_frag_pkt {    //< LRU list *    public let lru: ip_frag_pkt__cjbind_ty_1    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1    //< fragmentation key *    public let key: ip_frag_key_ip_frag_key    //< creation timestamp *    public let start: UInt64    //< expected reassembled size *    public let total_size: UInt32    //< size of fragments received *    public let frag_size: UInt32    //< index of next entry to fill *    public let last_idx: UInt32    //< fragments *    public let frags: VArray<ip_frag_ip_frag, $4>    public init(lru: ip_frag_pkt__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1, key: ip_frag_key_ip_frag_key,        start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32, frags: VArray<ip_frag_ip_frag, $4>) {        this.lru = lru        this.__cjbind_anon_1 = __cjbind_anon_1        this.key = key        this.start = start        this.total_size = total_size        this.frag_size = frag_size        this.last_idx = last_idx        this.frags = frags    }}@When[debug]let _ = {    =>        let size = sizeOf<ip_frag_pkt_ip_frag_pkt>()        if (size != 192) {            throw Exception("Size of ip_frag_pkt_ip_frag_pkt is not 192 but ${size} bytes")        }        let align = alignOf<ip_frag_pkt_ip_frag_pkt>()        if (align != 64) {            throw Exception("Alignment of ip_frag_pkt_ip_frag_pkt is not 64 but ${align} bytes")        }}//< fragment mbuf *@Cpublic struct rte_mbuf_rte_mbuf {}
+package cjbind_ffi
+
+public const RTE_CACHE_LINE_SIZE_RTE_CACHE_LINE_SIZE: Int64 = 64
+public const RTE_LIBRTE_IP_FRAG_MAX_FRAG_RTE_LIBRTE_IP_FRAG_MAX_FRAG: Int64 = 4
+
+//< index of last fragment *
+public const IP_LAST_FRAG_IDX: _cjbind_ty_1 = 0
+
+//< index of first fragment *
+public const IP_FIRST_FRAG_IDX: _cjbind_ty_1 = 1
+
+//< minimum number of fragments *
+public const IP_MIN_FRAG_NUM: _cjbind_ty_1 = 2
+public const IP_MAX_FRAG_NUM: _cjbind_ty_1 = 4
+
+public type _cjbind_ty_1 = UInt32
+
+// @internal fragmented mbuf *
+@C
+public struct ip_frag_ip_frag {
+    //< offset into the packet *
+    public let ofs: UInt16
+    //< length of fragment *
+    public let len: UInt16
+    //< fragment mbuf *
+    public let mb: CPointer<rte_mbuf_rte_mbuf>
+    public init(ofs: UInt16, len: UInt16, mb: CPointer<rte_mbuf_rte_mbuf>) {
+        this.ofs = ofs
+        this.len = len
+        this.mb = mb
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<ip_frag_ip_frag>()
+        if (size != 16) {
+            throw Exception("Size of ip_frag_ip_frag is not 16 but ${size} bytes")
+        }
+        let align = alignOf<ip_frag_ip_frag>()
+        if (align != 8) {
+            throw Exception("Alignment of ip_frag_ip_frag is not 8 but ${align} bytes")
+        }
+}
+
+// @internal <src addr, dst_addr, id> to uniquely indetify fragmented datagram. *
+@C
+public struct ip_frag_key_ip_frag_key {
+    //< src address, first 8 bytes used for IPv4 *
+    public let src_dst: VArray<UInt64, $4>
+    //< dst address *
+    public let id: UInt32
+    //< src/dst key length *
+    public let key_len: UInt32
+    public init(src_dst: VArray<UInt64, $4>, id: UInt32, key_len: UInt32) {
+        this.src_dst = src_dst
+        this.id = id
+        this.key_len = key_len
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<ip_frag_key_ip_frag_key>()
+        if (size != 40) {
+            throw Exception("Size of ip_frag_key_ip_frag_key is not 40 but ${size} bytes")
+        }
+        let align = alignOf<ip_frag_key_ip_frag_key>()
+        if (align != 8) {
+            throw Exception("Alignment of ip_frag_key_ip_frag_key is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct ip_frag_pkt__cjbind_ty_1 {
+    public let tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>
+    public let tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>
+    public init(tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>, tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>) {
+        this.tqe_next = tqe_next
+        this.tqe_prev = tqe_prev
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<ip_frag_pkt__cjbind_ty_1>()
+        if (size != 16) {
+            throw Exception("Size of ip_frag_pkt__cjbind_ty_1 is not 16 but ${size} bytes")
+        }
+        let align = alignOf<ip_frag_pkt__cjbind_ty_1>()
+        if (align != 8) {
+            throw Exception("Alignment of ip_frag_pkt__cjbind_ty_1 is not 8 but ${align} bytes")
+        }
+}
+
+// @internal Fragmented packet to reassemble.
+// First two entries in the frags[] array are for the last and first fragments.
+@C
+public struct ip_frag_pkt_ip_frag_pkt {
+    //< LRU list *
+    public let lru: ip_frag_pkt__cjbind_ty_1
+    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1
+    //< fragmentation key *
+    public let key: ip_frag_key_ip_frag_key
+    //< creation timestamp *
+    public let start: UInt64
+    //< expected reassembled size *
+    public let total_size: UInt32
+    //< size of fragments received *
+    public let frag_size: UInt32
+    //< index of next entry to fill *
+    public let last_idx: UInt32
+    //< fragments *
+    public let frags: VArray<ip_frag_ip_frag, $4>
+    public init(lru: ip_frag_pkt__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1, key: ip_frag_key_ip_frag_key,
+        start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32, frags: VArray<ip_frag_ip_frag, $4>) {
+        this.lru = lru
+        this.__cjbind_anon_1 = __cjbind_anon_1
+        this.key = key
+        this.start = start
+        this.total_size = total_size
+        this.frag_size = frag_size
+        this.last_idx = last_idx
+        this.frags = frags
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<ip_frag_pkt_ip_frag_pkt>()
+        if (size != 192) {
+            throw Exception("Size of ip_frag_pkt_ip_frag_pkt is not 192 but ${size} bytes")
+        }
+        let align = alignOf<ip_frag_pkt_ip_frag_pkt>()
+        if (align != 64) {
+            throw Exception("Alignment of ip_frag_pkt_ip_frag_pkt is not 64 but ${align} bytes")
+        }
+}
+
+//< fragment mbuf *
+@C
+public struct rte_mbuf_rte_mbuf {}
