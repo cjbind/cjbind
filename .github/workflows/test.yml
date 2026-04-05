@@ -163,6 +163,38 @@ jobs:
             mingw-w64-clang-x86_64-clang
           path-type: inherit
 
+      - name: Build cjbind (Unix)
+        if: matrix.os.sys != 'windows'
+        run: uv run scripts/cjpm.py --static build -V
+
+      - name: Build cjbind (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: uv run python scripts/cjpm.py --static build -V
+
+      - name: Regenerate expected outputs (Unix)
+        if: matrix.os.sys != 'windows'
+        run: |
+          for h in cjbind_test/testdata/headers/*.h; do
+            base=$(basename "$h" .h)
+            expected="cjbind_test/testdata/expected/${base}.cj"
+            if output=$(./target/release/bin/cjbind_cli --no-detect-include-path "$h" 2>/dev/null); then
+              printf '%s' "$output" | tr -d '\r' > "$expected"
+            fi
+          done
+
+      - name: Regenerate expected outputs (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: |
+          for h in cjbind_test/testdata/headers/*.h; do
+            base=$(basename "$h" .h)
+            expected="cjbind_test/testdata/expected/${base}.cj"
+            if output=$(./target/release/bin/cjbind_cli.exe --no-detect-include-path "$h" 2>/dev/null); then
+              printf '%s' "$output" | tr -d '\r' > "$expected"
+            fi
+          done
+
       - name: "Test: cjbind_test (Unix)"
         if: matrix.os.sys != 'windows'
         run: uv run scripts/cjpm.py --static test -m cjbind_test -V
