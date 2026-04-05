@@ -69,6 +69,46 @@ func addGap(parts: ArrayList<String>, curLine: Int64, curCol: Int64, tkLine: Int
     }
 }
 
+func extractExpr(input: Tokens, start: Int64, end: Int64): String {
+    var exprParts = ArrayList<String>()
+    var k = start
+    while (k < end) {
+        if (input[k].kind == TokenKind.NL) { k++; continue }
+        if (input[k].kind == TokenKind.DOLLAR && k + 1 < end && input[k + 1].kind == TokenKind.LCURL) {
+            k += 2
+            var eCurCol2 = Int64(input[k].pos.column)
+            var braceDepth: Int64 = 1
+            while (k < end && braceDepth > 0) {
+                if (input[k].kind == TokenKind.LCURL) { braceDepth++ }
+                if (input[k].kind == TokenKind.RCURL) {
+                    braceDepth--
+                    if (braceDepth == 0) { break }
+                }
+                let eCol2 = Int64(input[k].pos.column)
+                let eGap2 = eCol2 - eCurCol2
+                if (eGap2 > 0) { exprParts.add(repeat(" ", eGap2)) }
+                exprParts.add(input[k].value)
+                eCurCol2 = eCol2 + Int64(input[k].value.size)
+                k++
+            }
+            k++
+        } else {
+            k++
+        }
+    }
+    return String.join(exprParts.toArray(), delimiter: "")
+}
+
+func sepForToken(tk: Token): String {
+    match (tk.kind) {
+        case TokenKind.COMMA => ", "
+        case TokenKind.NL => "\\n"
+        case _ =>
+            if (tk.value == ";") { return "; " }
+            tk.value
+    }
+}
+
 func reconstruct(input: Tokens): String {
     let parts = ArrayList<String>()
     var curLine: Int64 = -1
@@ -85,6 +125,50 @@ func reconstruct(input: Tokens): String {
             continue
         }
 
+        // Handle $(${expr})sep* repetition pattern
+        if (tk.kind == TokenKind.DOLLAR && i + 1 < input.size && input[i + 1].kind == TokenKind.LPAREN) {
+            addGap(parts, curLine, curCol, tkLine, tkCol)
+
+            i += 2
+            let repInnerStart = i
+            var parenDepth: Int64 = 1
+            while (i < input.size && parenDepth > 0) {
+                if (input[i].kind == TokenKind.LPAREN) { parenDepth++ }
+                if (input[i].kind == TokenKind.RPAREN) {
+                    parenDepth--
+                    if (parenDepth == 0) { break }
+                }
+                i++
+            }
+            let repInnerEnd = i
+            i++
+
+            let exprText = extractExpr(input, repInnerStart, repInnerEnd)
+
+            var sepStr = ""
+            if (i < input.size && input[i].kind == TokenKind.MUL) {
+                sepStr = ""
+                i++
+            } else if (i + 1 < input.size && input[i + 1].kind == TokenKind.MUL) {
+                sepStr = sepForToken(input[i])
+                i += 2
+            } else {
+                diagReport(DiagReportLevel.ERROR, input[repInnerStart..repInnerEnd],
+                    "Expected * after repetition pattern",
+                    "Missing *")
+            }
+
+            let escapedSep = sepStr.replace("\\", "\\\\").replace("\"", "\\\"")
+            parts.add("\${joinStreams(${exprText}, \"${escapedSep}\")}")
+
+            if (i < input.size) {
+                curLine = Int64(input[i - 1].pos.line)
+                curCol = Int64(input[i - 1].pos.column) + Int64(input[i - 1].value.size)
+            }
+            continue
+        }
+
+        // Handle ${expr} interpolation
         if (tk.kind == TokenKind.DOLLAR && i + 1 < input.size && input[i + 1].kind == TokenKind.LCURL) {
             addGap(parts, curLine, curCol, tkLine, tkCol)
 
@@ -131,7 +215,7 @@ public macro tmpl(input: Tokens): Tokens {
     let trimmed = compileTrimIndent(template)
 
     let result = Tokens()
-    result.append(Token(TokenKind.IDENTIFIER, "Tokens"))
+    result.append(Token(TokenKind.IDENTIFIER, "tokenStreamFromTemplate"))
     result.append(Token(TokenKind.LPAREN))
     result.append(Token(TokenKind.MULTILINE_STRING, trimmed))
     result.append(Token(TokenKind.RPAREN))

@@ -3,7 +3,7 @@ package cjbind.ir
 import std.collection.ArrayList
 import cjbind.clang
 import cjbind.result.Result
-import cjbind_token.{Tokens, ToTokens}
+import cjbind_token.*
 
 public class Var <: ClangSubItemParser<Var> {
     public let name: String
@@ -235,8 +235,8 @@ public enum Ints <: ToTokens & ToString {
     Int(Int64) |
     UInt(UInt64)
 
-    public func toTokens(): Tokens {
-        return Tokens(this.toString())
+    public func appendToStream(tokens: TokenStream): Unit {
+        tokens.append(TokenTree.Literal(this.toString()))
     }
 
     public func toString(): String {

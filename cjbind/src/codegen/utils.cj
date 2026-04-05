@@ -8,7 +8,7 @@ public class Utils {
     public static func fnsigArguments(
         ctx: CjbindContext,
         sig: FunctionSig
-    ): ArrayList<Tokens> {
+    ): ArrayList<TokenStream> {
         let unnamedArguments = Box(0)
 
         let argsIter = sig.argumentTypes.iterator()
@@ -29,7 +29,7 @@ public class Utils {
 
             let argIdent = ctx.cjIdent(argName)
 
-            return Tokens("${argIdent}: ${argTy}")
+            return tokenStreamFromTemplate("${argIdent}: ${argTy}")
         } |> collectArrayList
 
         return args
@@ -38,7 +38,7 @@ public class Utils {
     public static func fnsigArgumentNames(
         ctx: CjbindContext,
         sig: FunctionSig
-    ): ArrayList<Tokens> {
+    ): ArrayList<TokenStream> {
         let unnamedArguments = Box(0)
 
         let argsIter = sig.argumentTypes.iterator()
@@ -55,7 +55,7 @@ public class Utils {
 
             let argIdent = ctx.cjIdent(argName)
 
-            return Tokens(argIdent)
+            return tokenStreamFromTemplate(argIdent)
         } |> collectArrayList
 
         return args
@@ -64,7 +64,7 @@ public class Utils {
     public static func fnsigArgumentType(
         ctx: CjbindContext,
         ty: TypeId
-    ): Tokens {
+    ): TokenStream {
         let argItem = ctx.resolveItem(ty)
         let argTy = argItem.kind.expectType()
 
@@ -84,7 +84,7 @@ public class Utils {
     public static func fnsigReturnTy(
         ctx: CjbindContext,
         sig: FunctionSig
-    ): Tokens {
+    ): TokenStream {
         let canonicalTypeKind = sig
             .returnType
             .intoResolver()
@@ -96,19 +96,19 @@ public class Utils {
             .kind
 
         match (canonicalTypeKind) {
-            case TypeKind.TypeKindVoid => Tokens("Unit")
+            case TypeKind.TypeKindVoid => tokenStreamFromTemplate("Unit")
             case _ => sig.returnType.toCjTyOrOpaque(ctx, ())
         }
     }
 
-    static func primitiveTy(_: CjbindContext, name: String): Tokens {
-        return Tokens(name)
+    static func primitiveTy(_: CjbindContext, name: String): TokenStream {
+        return tokenStreamFromTemplate(name)
     }
 
     public static func typeFromNamed(
         ctx: CjbindContext,
         name: String
-    ): ?Tokens {
+    ): ?TokenStream {
         match (name) {
             case "int8_t" => primitiveTy(ctx, "Int8")
             case "uint8_t" => primitiveTy(ctx, "UInt8")
@@ -136,12 +136,12 @@ public class Utils {
     }
 }
 
-func optionalComment(ctx: CjbindContext, comment: ?Tokens, body: Tokens): Tokens {
+func optionalComment(ctx: CjbindContext, comment: ?TokenStream, body: TokenStream): TokenStream {
     if (let Some(v) <- comment && !ctx.options.noComment) {
-        let tokens = Tokens()
-        tokens.append(v)
-        tokens.append("\n")
-        tokens.append(body)
+        let tokens = TokenStream()
+        tokens.`extend`(v)
+        tokens.appendLiteral("\n")
+        tokens.`extend`(body)
         return tokens
     } else {
         return body

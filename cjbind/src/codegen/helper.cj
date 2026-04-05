@@ -7,22 +7,22 @@ import std.collection.collectArray
 import cjbind.ir.*
 import cjbind.result.Result
 
-extend Tokens {
-    func toPtr(): Tokens {
-        return Tokens("CPointer<${this}>")
+extend TokenStream {
+    func toPtr(): TokenStream {
+        return tokenStreamFromTemplate("CPointer<${this}>")
     }
 }
 
 public class Attributes {
-    public static func doc(comment: String): Tokens {
+    public static func doc(comment: String): TokenStream {
         let lines = comment.lines() |> collectArray
 
-        let ret = Tokens()
+        let ret = TokenStream()
 
         for ((idx, line) in lines.iterator().enumerate()) {
-            ret.append("//${line}")
+            ret.appendLiteral("//${line}")
             if (idx != lines.size - 1) {
-                ret.append("\n")
+                ret.appendLiteral("\n")
             }
         }
 
@@ -34,13 +34,13 @@ public class Helpers {
     public static func blob(
         _: CjbindContext,
         layout: Layout
-    ): Tokens {
+    ): TokenStream {
         let opaque = layout.opaque()
 
         let ty = opaque.knownCjTypeForArray().getOrDefault {
             =>
             eprintln("Found unknown alignment on codegen")
-            return Tokens("UInt8")
+            return tokenStreamFromTemplate("UInt8")
         }
 
         let dataLen = opaque.arraySize().getOrDefault {=> layout.size}
@@ -48,11 +48,11 @@ public class Helpers {
         if (dataLen == 1) {
             return ty
         } else {
-            return Tokens("VArray<${ty}, \$${dataLen}>")
+            return tokenStreamFromTemplate("VArray<${ty}, \$${dataLen}>")
         }
     }
 
-    public static func unionReadHelper(typeName: String, cjType: Tokens): Tokens {
+    public static func unionReadHelper(typeName: String, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_read_${typeName}"
         return @tmpl(
             @C
@@ -62,7 +62,7 @@ public class Helpers {
         )
     }
 
-    public static func unionWriteHelper(typeName: String, cjType: Tokens): Tokens {
+    public static func unionWriteHelper(typeName: String, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_write_${typeName}"
         return @tmpl(
             @C
@@ -72,7 +72,7 @@ public class Helpers {
         )
     }
 
-    public static func bitfieldReadHelper(): Tokens {
+    public static func bitfieldReadHelper(): TokenStream {
         return @tmpl(
             @C
             func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
@@ -94,7 +94,7 @@ public class Helpers {
         )
     }
 
-    public static func bitfieldWriteHelper(): Tokens {
+    public static func bitfieldWriteHelper(): TokenStream {
         return @tmpl(
             @C
             func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64, val: UInt64): Unit {
@@ -123,7 +123,7 @@ public class Helpers {
         )
     }
 
-    public static func bitfieldReadSignedHelper(): Tokens {
+    public static func bitfieldReadSignedHelper(): TokenStream {
         return @tmpl(
             @C
             func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
@@ -138,21 +138,21 @@ public class Helpers {
 }
 
 public class AstTy {
-    public static func cVoid(_: CjbindContext): Tokens {
-        return Tokens("Unit")
+    public static func cVoid(_: CjbindContext): TokenStream {
+        return tokenStreamFromTemplate("Unit")
     }
 
-    public static func rawType(_: CjbindContext, name: String): Tokens {
-        return Tokens(name)
+    public static func rawType(_: CjbindContext, name: String): TokenStream {
+        return tokenStreamFromTemplate(name)
     }
 
     public static func intKindCjType(
         ctx: CjbindContext,
         ik: TypeKindIntKind,
         layout: ?Layout
-    ): Tokens {
+    ): TokenStream {
         return match (ik) {
-            case TypeKindIntKind.IntKindBool => Tokens("Bool")
+            case TypeKindIntKind.IntKindBool => tokenStreamFromTemplate("Bool")
             case TypeKindIntKind.IntKindChar(_) => rawType(ctx, "UInt8")
             case TypeKindIntKind.IntKindSChar => rawType(ctx, "Int8")
             case TypeKindIntKind.IntKindUChar => rawType(ctx, "UInt8")
@@ -194,20 +194,20 @@ public class AstTy {
                         Layout(8, 8)
                 }
                 Layout.knownCjTypeForSize(wcharLayout.size).getOrThrow()
-            case TypeKindIntKind.IntKindI8 => Tokens("Int8")
-            case TypeKindIntKind.IntKindU8 => Tokens("UInt8")
-            case TypeKindIntKind.IntKindI16 => Tokens("Int16")
-            case TypeKindIntKind.IntKindU16 => Tokens("UInt16")
-            case TypeKindIntKind.IntKindI32 => Tokens("Int32")
-            case TypeKindIntKind.IntKindU32 => Tokens("UInt32")
-            case TypeKindIntKind.IntKindI64 => Tokens("Int64")
-            case TypeKindIntKind.IntKindU64 => Tokens("UInt64")
+            case TypeKindIntKind.IntKindI8 => tokenStreamFromTemplate("Int8")
+            case TypeKindIntKind.IntKindU8 => tokenStreamFromTemplate("UInt8")
+            case TypeKindIntKind.IntKindI16 => tokenStreamFromTemplate("Int16")
+            case TypeKindIntKind.IntKindU16 => tokenStreamFromTemplate("UInt16")
+            case TypeKindIntKind.IntKindI32 => tokenStreamFromTemplate("Int32")
+            case TypeKindIntKind.IntKindU32 => tokenStreamFromTemplate("UInt32")
+            case TypeKindIntKind.IntKindI64 => tokenStreamFromTemplate("Int64")
+            case TypeKindIntKind.IntKindU64 => tokenStreamFromTemplate("UInt64")
             case TypeKindIntKind.IntKindCustom(val) =>
-                Tokens(val.name)
+                tokenStreamFromTemplate(val.name)
             case TypeKindIntKind.IntKindI128 =>
-                Tokens("VArray<Int64, \$2>")
+                tokenStreamFromTemplate("VArray<Int64, \$2>")
             case TypeKindIntKind.IntKindU128 =>
-                Tokens("VArray<UInt64, \$2>")
+                tokenStreamFromTemplate("VArray<UInt64, \$2>")
         }
     }
 
@@ -215,32 +215,32 @@ public class AstTy {
         _: CjbindContext,
         fk: TypeKindFloatKind,
         layout: ?Layout
-    ): Tokens {
+    ): TokenStream {
         return match (fk) {
-            case TypeKindFloatKind.FloatKindFloat16 => Tokens("Float16")
-            case TypeKindFloatKind.FloatKindFloat => Tokens("Float32")
-            case TypeKindFloatKind.FloatKindDouble => Tokens("Float64")
+            case TypeKindFloatKind.FloatKindFloat16 => tokenStreamFromTemplate("Float16")
+            case TypeKindFloatKind.FloatKindFloat => tokenStreamFromTemplate("Float32")
+            case TypeKindFloatKind.FloatKindDouble => tokenStreamFromTemplate("Float64")
             case TypeKindFloatKind.FloatKindLongDouble =>
                 let l = layout.getOrThrow()
                 match (l.size) {
-                    case 4 => Tokens("Float32")
-                    case 8 => Tokens("Float64")
+                    case 4 => tokenStreamFromTemplate("Float32")
+                    case 8 => tokenStreamFromTemplate("Float64")
                     case _ => Layout.knownCjTypeForSize(l.size).getOrDefault {
                         =>
-                        Tokens("Float64")
+                        tokenStreamFromTemplate("Float64")
                     }
                 }
             case TypeKindFloatKind.FloatKindFloat128 =>
-                Tokens("VArray<UInt64, \$2>")
+                tokenStreamFromTemplate("VArray<UInt64, \$2>")
         }
     }
 
     public static func floatExpr(
         _: CjbindContext,
         f: Float64
-    ): Result<Tokens, Unit> {
+    ): Result<TokenStream, Unit> {
         if (f.isNormal()) {
-            return Ok(Tokens(float64Repr(f)))
+            return Ok(tokenStreamFromTemplate("${f}".replace("+", "")))
         }
 
         return Err(())
