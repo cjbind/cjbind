@@ -1,0 +1,190 @@
+package cjbind_ffi
+
+public const RTE_CACHE_LINE_SIZE_RTE_CACHE_LINE_SIZE: Int64 = 64
+public const RTE_MEMPOOL_OPS_NAMESIZE_RTE_MEMPOOL_OPS_NAMESIZE: Int64 = 32
+public const RTE_MEMPOOL_MAX_OPS_IDX_RTE_MEMPOOL_MAX_OPS_IDX: Int64 = 16
+public const RTE_HEAP_NUM_FREELISTS_RTE_HEAP_NUM_FREELISTS: Int64 = 13
+
+@C
+public struct rte_mempool_rte_mempool {
+    init() {
+        throw Exception("type should not be inited")
+    }
+}
+
+// Prototype for implementation specific data provisioning function.
+//
+// The function should provide the implementation specific memory for
+// for use by the other mempool ops functions in a given mempool ops struct.
+// E.g. the default ops provides an instance of the rte_ring for this purpose.
+// it will most likely point to a different type of data structure, and
+// will be transparent to the application programmer.
+// This function should set mp->pool_data.
+public type rte_mempool_alloc_t_rte_mempool_alloc_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> Int32>
+
+// Free the opaque private data pointed to by mp->pool_data pointer.
+public type rte_mempool_free_t_rte_mempool_free_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> Unit>
+
+// Enqueue an object into the external pool.
+public type rte_mempool_enqueue_t_rte_mempool_enqueue_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>, obj_table: CPointer<CPointer<Unit>>,
+    n: UInt32) -> Int32>
+
+// Dequeue an object from the external pool.
+public type rte_mempool_dequeue_t_rte_mempool_dequeue_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>, obj_table: CPointer<CPointer<Unit>>,
+    n: UInt32) -> Int32>
+
+// Return the number of available objects in the external pool.
+public type rte_mempool_get_count_rte_mempool_get_count = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> UInt32>
+
+// Structure defining mempool operations structure *
+@C
+public struct rte_mempool_ops_rte_mempool_ops {
+    //< Name of mempool ops struct. *
+    public let name: VArray<UInt8, $32>
+    //< Allocate private data. *
+    public let alloc: rte_mempool_alloc_t_rte_mempool_alloc_t
+    //< Free the external pool. *
+    public let free: rte_mempool_free_t_rte_mempool_free_t
+    //< Enqueue an object. *
+    public let enqueue: rte_mempool_enqueue_t_rte_mempool_enqueue_t
+    //< Dequeue an object. *
+    public let dequeue: rte_mempool_dequeue_t_rte_mempool_dequeue_t
+    //< Get qty of available objs. *
+    public let get_count: rte_mempool_get_count_rte_mempool_get_count
+    public init(name: VArray<UInt8, $32>, alloc: rte_mempool_alloc_t_rte_mempool_alloc_t,
+        free: rte_mempool_free_t_rte_mempool_free_t, enqueue: rte_mempool_enqueue_t_rte_mempool_enqueue_t,
+        dequeue: rte_mempool_dequeue_t_rte_mempool_dequeue_t, get_count: rte_mempool_get_count_rte_mempool_get_count) {
+        this.name = name
+        this.alloc = alloc
+        this.free = free
+        this.enqueue = enqueue
+        this.dequeue = dequeue
+        this.get_count = get_count
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<rte_mempool_ops_rte_mempool_ops>()
+        if (size != 128) {
+            throw Exception("Size of rte_mempool_ops_rte_mempool_ops is not 128 but ${size} bytes")
+        }
+        let align = alignOf<rte_mempool_ops_rte_mempool_ops>()
+        if (align != 64) {
+            throw Exception("Alignment of rte_mempool_ops_rte_mempool_ops is not 64 but ${align} bytes")
+        }
+}
+
+// The rte_spinlock_t type.
+@C
+public struct rte_spinlock_t_rte_spinlock_t {
+    //< lock status 0 = unlocked, 1 = locked *
+    public let locked: Int32
+    public init(locked: Int32) {
+        this.locked = locked
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<rte_spinlock_t_rte_spinlock_t>()
+        if (size != 4) {
+            throw Exception("Size of rte_spinlock_t_rte_spinlock_t is not 4 but ${size} bytes")
+        }
+        let align = alignOf<rte_spinlock_t_rte_spinlock_t>()
+        if (align != 4) {
+            throw Exception("Alignment of rte_spinlock_t_rte_spinlock_t is not 4 but ${align} bytes")
+        }
+}
+
+// Structure storing the table of registered ops structs, each of which contain
+// the function pointers for the mempool ops functions.
+// Each process has its own storage for this ops struct array so that
+// the mempools can be shared across primary and secondary processes.
+// The indices used to access the array are valid across processes, whereas
+// any function pointers stored directly in the mempool struct would not be.
+// This results in us simply having "ops_index" in the mempool struct.
+@C
+public struct rte_mempool_ops_table_rte_mempool_ops_table {
+    //< Spinlock for add/delete. *
+    public let sl: rte_spinlock_t_rte_spinlock_t
+    //< Number of used ops structs in the table. *
+    public let num_ops: UInt32
+    // Storage for all possible ops structs.
+    public let ops: VArray<rte_mempool_ops_rte_mempool_ops, $16>
+    public init(sl: rte_spinlock_t_rte_spinlock_t, num_ops: UInt32, ops: VArray<rte_mempool_ops_rte_mempool_ops, $16>) {
+        this.sl = sl
+        this.num_ops = num_ops
+        this.ops = ops
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<rte_mempool_ops_table_rte_mempool_ops_table>()
+        if (size != 2112) {
+            throw Exception("Size of rte_mempool_ops_table_rte_mempool_ops_table is not 2112 but ${size} bytes")
+        }
+        let align = alignOf<rte_mempool_ops_table_rte_mempool_ops_table>()
+        if (align != 64) {
+            throw Exception("Alignment of rte_mempool_ops_table_rte_mempool_ops_table is not 64 but ${align} bytes")
+        }
+}
+
+@C
+public struct malloc_heap__cjbind_ty_1 {
+    public let lh_first: CPointer<malloc_elem_malloc_elem>
+    public init(lh_first: CPointer<malloc_elem_malloc_elem>) {
+        this.lh_first = lh_first
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<malloc_heap__cjbind_ty_1>()
+        if (size != 8) {
+            throw Exception("Size of malloc_heap__cjbind_ty_1 is not 8 but ${size} bytes")
+        }
+        let align = alignOf<malloc_heap__cjbind_ty_1>()
+        if (align != 8) {
+            throw Exception("Alignment of malloc_heap__cjbind_ty_1 is not 8 but ${align} bytes")
+        }
+}
+
+// Structure to hold malloc heap
+@C
+public struct malloc_heap_malloc_heap {
+    public let lock: rte_spinlock_t_rte_spinlock_t
+    public let free_head: VArray<malloc_heap__cjbind_ty_1, $13>
+    public let __cjbind_anon_1: malloc_heap__cjbind_ty_1
+    public let alloc_count: UInt32
+    public let total_size: UIntNative
+    public init(lock: rte_spinlock_t_rte_spinlock_t, free_head: VArray<malloc_heap__cjbind_ty_1, $13>,
+        __cjbind_anon_1: malloc_heap__cjbind_ty_1, alloc_count: UInt32, total_size: UIntNative) {
+        this.lock = lock
+        this.free_head = free_head
+        this.__cjbind_anon_1 = __cjbind_anon_1
+        this.alloc_count = alloc_count
+        this.total_size = total_size
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<malloc_heap_malloc_heap>()
+        if (size != 128) {
+            throw Exception("Size of malloc_heap_malloc_heap is not 128 but ${size} bytes")
+        }
+        let align = alignOf<malloc_heap_malloc_heap>()
+        if (align != 64) {
+            throw Exception("Alignment of malloc_heap_malloc_heap is not 64 but ${align} bytes")
+        }
+}
+
+@C
+public struct malloc_elem_malloc_elem {}

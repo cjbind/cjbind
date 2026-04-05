@@ -326,7 +326,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                                 return true
                             }
                             let bfLayout = maybeLayout.getOrThrow()
-                            return bf.data.bitfieldWidth.getOrThrow() > UInt32(bfLayout.size) * 8
+                            return bf.data.bitfieldWidth.getOrThrow() >= UInt32(bfLayout.size) * 8
                         }
                 }
             }

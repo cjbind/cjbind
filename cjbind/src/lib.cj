@@ -4,6 +4,7 @@ import std.collection.*
 import cjbind.options.CjbindOptions
 import cjbind.clang
 import cjbind.codegen
+import cjbind.codegen.{CodegenError}
 import cjbind.ir.*
 
 func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ItemId): Unit {
@@ -146,15 +147,23 @@ public func generate(opts: CjbindOptions): String {
 
     let ctx = CjbindContext(ctxOpts)
 
-    parse(ctx)
+    try {
+        parse(ctx)
 
-    let module = match (codegen.codegen(ctx)) {
-        case Ok(v) => v
-        case Err(e) =>
-            throw Exception("Failed to generate code")
+        let module = match (codegen.codegen(ctx)) {
+            case Ok(v) => v
+            case Err(e) =>
+                let detail = match (e) {
+                    case CodegenError.Serialize(se) => "${se.msg} at ${se.loc}"
+                    case CodegenError.Io(msg) => "IO: ${msg}"
+                }
+                throw Exception("Failed to generate code: ${detail}")
+        }
+
+        return module.toString()
+    } finally {
+        ctx.release()
     }
-
-    return module.toString()
 }
 
 func registerObjCInterface(ctx: CjbindContext, name: String, iface: ObjCInterface): ItemId {

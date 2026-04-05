@@ -377,6 +377,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     case None => None
                 }
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
+            case TypeKind.TypeKindEnum(en) =>
+                match (en.repr) {
+                    case Some(reprId) => ctx.resolveType(reprId).getLayout(ctx)
+                    case None => None
+                }
             case TypeKind.TypeKindPointer(_) |
                 TypeKind.TypeKindObjCInterface(_) |
                 TypeKind.TypeKindObjCId |
