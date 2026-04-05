@@ -1,0 +1,10 @@
+package cjbind_ffi
+
+public const ETHER_ADDR_LEN_ETHER_ADDR_LEN: Int64 = 6
+public const ARP_HRD_ETHER_ARP_HRD_ETHER: Int64 = 1
+public const ARP_OP_REQUEST_ARP_OP_REQUEST: Int64 = 1
+public const ARP_OP_REPLY_ARP_OP_REPLY: Int64 = 2
+public const ARP_OP_REVREQUEST_ARP_OP_REVREQUEST: Int64 = 3
+public const ARP_OP_REVREPLY_ARP_OP_REVREPLY: Int64 = 4
+public const ARP_OP_INVREQUEST_ARP_OP_INVREQUEST: Int64 = 8
+public const ARP_OP_INVREPLY_ARP_OP_INVREPLY: Int64 = 9

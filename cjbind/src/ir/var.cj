@@ -207,11 +207,8 @@ func parseMacroClangFallback(
         }
     } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
         match (evalutated.asLiteralString()) {
-            case Some(v) => unsafe {
-                // copy to prevent ref to freed memory
-                let vv = LibC.mallocCString(v.toString())
-                return Some((cursor.spelling(), MacroEvalResult.EvalStr(vv)))
-            }
+            // asLiteralString() already returns a malloc'd copy, safe to use directly
+            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalStr(v)))
             case None => return None
         }
     }

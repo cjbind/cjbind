@@ -22,3 +22,7 @@ ref/
 __pycache__/
 scripts/.passes_cache
 crash-artifacts/
+
+# cjbind temp files (legacy, now written to system temp dir)
+.macro_eval.c
+*-precompile.h.pch

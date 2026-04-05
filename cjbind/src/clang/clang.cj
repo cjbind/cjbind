@@ -811,6 +811,14 @@ public class File {
 
 public class Index {
     let x: CXIndex
+    var _released: Bool = false
+
+    public func release(): Unit {
+        if (!_released) {
+            unsafe { clang_disposeIndex(x) }
+            _released = true
+        }
+    }
 
     public init(pch: Bool, diag: Bool) {
         let pch_c: Int32 = if (pch) {
@@ -830,8 +838,9 @@ public class Index {
     }
 
     ~init() {
-        unsafe {
-            clang_disposeIndex(x)
+        if (!_released) {
+            unsafe { clang_disposeIndex(x) }
+            _released = true
         }
     }
 }
@@ -843,7 +852,15 @@ extend CString {
 }
 
 public class TranslationUnit {
-    let x: CXTranslationUnit
+    var x: CXTranslationUnit
+    var _released: Bool = false
+
+    public func release(): Unit {
+        if (!_released) {
+            unsafe { clang_disposeTranslationUnit(x) }
+            _released = true
+        }
+    }
 
     public init(
         ix: Index,
@@ -934,8 +951,9 @@ public class TranslationUnit {
     }
 
     ~init() {
-        unsafe {
-            clang_disposeTranslationUnit(x)
+        if (!_released) {
+            unsafe { clang_disposeTranslationUnit(x) }
+            _released = true
         }
     }
 }
@@ -995,9 +1013,24 @@ public class FallbackTranslationUnit {
         this.tu = fTranslationUnit
     }
 
+    var _released: Bool = false
+
+    public func release(): Unit {
+        if (!_released) {
+            this.tu.release()
+            this.idx.release()
+            try { remove(this.filePath) } catch (_: Exception) {}
+            try { remove(this.pchPath) } catch (_: Exception) {}
+            _released = true
+        }
+    }
+
     ~init() {
-        remove(this.filePath)
-        remove(this.pchPath)
+        if (!_released) {
+            try { remove(this.filePath) } catch (_: Exception) {}
+            try { remove(this.pchPath) } catch (_: Exception) {}
+            _released = true
+        }
     }
 
     public func reparse(
@@ -1006,9 +1039,8 @@ public class FallbackTranslationUnit {
         let content = CStringOwned(unsavedContents)
         try {
             unsafe {
-                var unsaved: VArray<CXUnsavedFile, $1> = [
-                    UnsavedFile(this.filePath, unsavedContents).x
-                ]
+                let uf = UnsavedFile(this.filePath, unsavedContents)
+                var unsaved: VArray<CXUnsavedFile, $1> = [uf.x]
 
                 let ret = clang_reparseTranslationUnit(
                     this.tu.x,
@@ -1256,14 +1288,23 @@ public class EvalResult {
         }
         let charTy = charTyO.getOrThrow()
         let k = charTy.kind()
-        if (k == CXTypeKind_CXType_Char_S || 
+        if (k == CXTypeKind_CXType_Char_S ||
         k == CXTypeKind_CXType_SChar ||
         k == CXTypeKind_CXType_Char_U ||
         k == CXTypeKind_CXType_UChar
         ) {
             unsafe {
                 let ret = clang_EvalResult_getAsStr(x)
-                return Some(ret)
+                // Copy the string to prevent use-after-free when EvalResult is disposed.
+                // Cannot use LibC.mallocCString(ret.toString()) because the string may contain invalid UTF-8.
+                let len = ret.size()
+                let buf = LibC.malloc<UInt8>(count: Int64(len) + 1)
+                for (i in 0..len) {
+                    (buf + i).write((ret.getChars() + i).read())
+                }
+                (buf + len).write(0u8)
+                let copied = CString(buf)
+                return Some(copied)
             }
         }
 

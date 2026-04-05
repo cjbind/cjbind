@@ -1,0 +1,11 @@
+package cjbind_ffi
+
+foreign func test_fn(a: Float32, arr: CPointer<Int32>): Int32
+
+foreign func test_fn2(arr: CPointer<Float32>, b: Int32): Int32
+
+public type defArr_defArr = VArray<UInt8, $20>
+
+public type foo_foo = CFunc<(a: CPointer<UInt8>) -> Unit>
+
+foreign func bar(a: CPointer<UInt8>): Unit

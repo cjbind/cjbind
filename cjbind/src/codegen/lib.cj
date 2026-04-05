@@ -285,48 +285,40 @@ extend Var <: CodeGenerator<Item, Unit> {
                         )
                     )
                 case VarType.VarString(vv) =>
-                    if (!ctx.options.makeCjString) {
+                    let emitByteArray = {=>
+                        // Intentionally includes null terminator for C string FFI compatibility
                         let data = ArrayList<UInt8>()
-
                         let ptr = vv.getChars()
                         let size = vv.size()
-                        // Intentionally includes null terminator for C string FFI compatibility
                         for (i in 0..=size) {
                             let d = unsafe { (ptr + i).read() }
                             data.add(d)
                         }
-
                         let dataSize = data.size
                         let dataTokens = data.toArray()
+                        Tokens("public const ${canonicalIdent} : VArray<UInt8, \$${dataSize}> = ${dataTokens}")
+                    }
 
-                        let tokens = Tokens("public const ${canonicalIdent} : VArray<UInt8, \$${dataSize}> = ${dataTokens}")
-
-                        let origStr = "// String value: ${vv}"
+                    let tokens = if (!ctx.options.makeCjString) {
+                        let origStr = try { "// String value: ${vv}" } catch (_: Exception) { "// String value: <non-UTF-8>" }
                         if (let Some(v) <- commentToken) {
                             v.append("\n")
                             v.append(origStr)
                         } else {
                             commentToken = Tokens(origStr)
                         }
-
-                        result.items.add(
-                            optionalComment(
-                                ctx,
-                                commentToken,
-                                tokens
-                            )
-                        )
+                        emitByteArray()
                     } else {
-                        let str = vv.toString()
-                        let tokens = Tokens("public const ${canonicalIdent} : String = ${str}")
-                        result.items.add(
-                            optionalComment(
-                                ctx,
-                                commentToken,
-                                tokens
-                            )
-                        )
+                        try {
+                            Tokens("public const ${canonicalIdent} : String = ${vv.toString()}")
+                        } catch (_: Exception) {
+                            emitByteArray()
+                        }
                     }
+
+                    result.items.add(
+                        optionalComment(ctx, commentToken, tokens)
+                    )
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
                         let floatStr = float64Repr(vv)
@@ -538,6 +530,16 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let bfFieldTy = bfFieldItem.kind.expectType()
                                 let isSigned = match (bfFieldTy.canonicalType(ctx).kind) {
                                     case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
+                                    case TypeKind.TypeKindEnum(en) =>
+                                        match (en.repr) {
+                                            case Some(reprId) =>
+                                                let reprTy = ctx.resolveType(reprId)
+                                                match (reprTy.canonicalType(ctx).kind) {
+                                                    case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
+                                                    case _ => false
+                                                }
+                                            case None => false
+                                        }
                                     case _ => false
                                 }
                                 let readFunc = if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
@@ -669,12 +671,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 let sizeOfExpr = "sizeOf<${canonicalIdent}>()"
                 let alignOfExpr = "alignOf<${canonicalIdent}>()"
 
-                func generateErrorMsg(ty: String, num: Int32, expr: String): String {
-                    return "${ty} of ${canonicalName} is not ${num} but \${${expr}} bytes"
-                }
-
-                let sizeOfErr = generateErrorMsg("Size", size, "size")
-                let alignOfErr = generateErrorMsg("Alignment", align, "align")
+                let sizeErr = Tokens("\"Size of ${canonicalName} is not ${size} but \${size} bytes\"")
+                let alignErr = Tokens("\"Alignment of ${canonicalName} is not ${align} but \${align} bytes\"")
 
                 let testToken = @tmpl(
                     @When[debug]
@@ -682,11 +680,11 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                     =>
                         let size = ${sizeOfExpr}
                         if (size != ${size}) {
-                            throw Exception("${sizeOfErr}")
+                            throw Exception(${sizeErr})
                         }
                         let align = ${alignOfExpr}
                         if (align != ${align}) {
-                            throw Exception("${alignOfErr}")
+                            throw Exception(${alignErr})
                         }
                     }
                 )
