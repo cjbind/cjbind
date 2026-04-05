@@ -100,7 +100,7 @@ let _ = {
 public struct foo__cjbind_ty_1 {
 public let __cjbind_anon_1 : foo__cjbind_ty_1
 public let __cjbind_anon_2 : foo__cjbind_ty_2
-public init(__cjbind_anon_1 : foo__cjbind_ty_1, __cjbind_anon_2 : foo__cjbind_ty_2) {
+public init(__cjbind_anon_1 : foo__cjbind_ty_1 , __cjbind_anon_2 : foo__cjbind_ty_2) {
     this.__cjbind_anon_1 = __cjbind_anon_1
 this.__cjbind_anon_2 = __cjbind_anon_2
 }

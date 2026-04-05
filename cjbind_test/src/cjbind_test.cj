@@ -1,6 +1,6 @@
 package cjbind_test
 
-import std.fs.{File, Path}
+import std.fs.{File, Path, exists}
 import std.collection.collectArray
 import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
@@ -10,8 +10,14 @@ import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.utils.formatString
 import std.env.{getCommandLine}
 
+let testdataDir: String = if (exists("cjbind_test/testdata")) {
+    "cjbind_test/testdata"
+} else {
+    "testdata"
+}
+
 func searchTestCases(): Array<String> {
-    let paths = glob.glob("testdata/headers/*.h")
+    let paths = glob.glob("${testdataDir}/headers/*.h")
     return paths.map {p => p.toString()} |> collectArray
 }
 
@@ -78,7 +84,7 @@ func processTestCase(testcase: String): Unit {
         di -= 1
     }
     let baseName = headerName[0..dotIdx]
-    let expectedPath = Path("testdata/expected/${baseName}.cj")
+    let expectedPath = Path("${testdataDir}/expected/${baseName}.cj")
 
     let args = getCommandLine()
     let shouldUpdate = args.any { arg => arg == "update" }

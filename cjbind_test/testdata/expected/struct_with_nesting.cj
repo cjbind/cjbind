@@ -34,7 +34,7 @@ package cjbind_ffi
 public struct foo__cjbind_ty_1 {
 public let c1 : UInt16
 public let c2 : UInt16
-public init(c1 : UInt16, c2 : UInt16) {
+public init(c1 : UInt16 , c2 : UInt16) {
     this.c1 = c1
 this.c2 = c2
 }
@@ -59,7 +59,7 @@ public let d1 : UInt8
 public let d2 : UInt8
 public let d3 : UInt8
 public let d4 : UInt8
-public init(d1 : UInt8, d2 : UInt8, d3 : UInt8, d4 : UInt8) {
+public init(d1 : UInt8 , d2 : UInt8 , d3 : UInt8 , d4 : UInt8) {
     this.d1 = d1
 this.d2 = d2
 this.d3 = d3
@@ -124,7 +124,7 @@ let _ = {
 public struct foo_foo {
 public let a : UInt32
 public let __cjbind_anon_1 : foo__cjbind_ty_1
-public init(a : UInt32, __cjbind_anon_1 : foo__cjbind_ty_1) {
+public init(a : UInt32 , __cjbind_anon_1 : foo__cjbind_ty_1) {
     this.a = a
 this.__cjbind_anon_1 = __cjbind_anon_1
 }

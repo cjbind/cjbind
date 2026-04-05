@@ -26,7 +26,7 @@ public let r : UInt8
 public let g : UInt8
 public let b : UInt8
 public let a : UInt8
-public init(r : UInt8, g : UInt8, b : UInt8, a : UInt8) {
+public init(r : UInt8 , g : UInt8 , b : UInt8 , a : UInt8) {
     this.r = r
 this.g = g
 this.b = b
