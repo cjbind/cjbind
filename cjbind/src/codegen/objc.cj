@@ -45,11 +45,11 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
-        var nameTokens = Tokens(ctx.cjIdentRaw(this.name))
+        var nameTokens = tokenStreamFromTemplate(ctx.cjIdentRaw(this.name))
         // Append generic type parameters as comment (ObjC lightweight generics)
         if (!this.templateNames.isEmpty()) {
             let tpNames = String.join(this.templateNames.toArray(), delimiter: ", ")
-            nameTokens.append("/*<${tpNames}>*/")
+            nameTokens.appendLiteral("/*<${tpNames}>*/")
         }
         let name = nameTokens
         let className = this.name
@@ -58,7 +58,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         let clashNames = this.staticClashNames()
 
         // Generate methods
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
 
         for (m in this.methods) {
             if (!propertySelectors.contains(m.selector)) {
@@ -95,7 +95,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             let ancestorName = ancestorItem.canonicalName(ctx)
             let ancestorIdent = ctx.cjIdentRaw(ancestorName)
             let castMethodName = ctx.cjIdentRaw("as${ancestorName}")
-            methodTokens.add(Tokens(
+            methodTokens.add(tokenStreamFromTemplate(
                 "public func ${castMethodName}(): ${ancestorIdent} { ${ancestorIdent}(this.id) }"
             ))
             // Walk up the chain
@@ -110,7 +110,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             }
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         let classTokens = @tmpl(
             public class ${name} {
@@ -130,14 +130,14 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     ): Unit {
         let name = ctx.cjIdentRaw("I${this.name}")
 
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
         for (m in this.methods) {
             let sig = m.signature
             let ret = Utils.fnsigReturnTy(ctx, sig)
             let arguments = Utils.fnsigArguments(ctx, sig)
-            let joined = joinTokens(arguments, ", ")
+            let joined = joinStreams(arguments, ", ")
             let mname = ctx.cjIdent(m.name)
-            methodTokens.add(Tokens(
+            methodTokens.add(tokenStreamFromTemplate(
                 "func ${mname}(${joined}): ${ret}"
             ))
         }
@@ -145,14 +145,14 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             let sig = m.signature
             let ret = Utils.fnsigReturnTy(ctx, sig)
             let arguments = Utils.fnsigArguments(ctx, sig)
-            let joined = joinTokens(arguments, ", ")
+            let joined = joinStreams(arguments, ", ")
             let mname = ctx.cjIdent(m.name)
-            methodTokens.add(Tokens(
+            methodTokens.add(tokenStreamFromTemplate(
                 "static func ${mname}(${joined}): ${ret}"
             ))
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         let protoTokens = @tmpl(
             public interface ${name} {
@@ -171,7 +171,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         let name = ctx.cjIdentRaw(this.name)
         let className = this.name
 
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
         for (m in this.methods) {
             methodTokens.add(genRuntimeMethod(ctx, m, className, false))
         }
@@ -182,7 +182,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             methodTokens.add(genRuntimeProperty(ctx, p, className))
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         let extTokens = @tmpl(
             extend ${name} {
@@ -221,22 +221,22 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item // cjlint-ignore !G.FUN.02
     ): Unit {
-        var nameTokens = Tokens(ctx.cjIdentRaw(this.name))
+        var nameTokens = tokenStreamFromTemplate(ctx.cjIdentRaw(this.name))
         // Append generic type parameters as comment (ObjC lightweight generics)
         if (!this.templateNames.isEmpty()) {
             let tpNames = String.join(this.templateNames.toArray(), delimiter: ", ")
-            nameTokens.append("/*<${tpNames}>*/")
+            nameTokens.appendLiteral("/*<${tpNames}>*/")
         }
         let name = nameTokens
         let genDefs = ctx.options.objcGenerateDefinitions
-        var atObjCMirror = Tokens("@${ctx.cjIdentRaw("ObjCMirror")}")
+        var atObjCMirror = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCMirror")}")
         atObjCMirror = commentizeAnnotation(atObjCMirror, genDefs)
 
         let propertySelectors = this.propertySelectors()
         let clashNames = this.staticClashNames()
 
         // Build method tokens
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
 
         // Detect init overloads (same param count -> must become static func)
         let overloadedInits = detectOverloadedInits(this.methods)
@@ -257,19 +257,19 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             methodTokens.add(genCompilerProperty(ctx, p, isProtocol: false))
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         // Build inheritance clause: <: Parent & Proto1 & Proto2
-        let superTypes = ArrayList<Tokens>()
+        let superTypes = ArrayList<TokenStream>()
         if (let Some(parentId) <- this.parentClass) {
             let parentItem = ctx.resolveItem(parentId)
             let parentName = parentItem.canonicalName(ctx)
-            superTypes.add(Tokens(ctx.cjIdentRaw(parentName)))
+            superTypes.add(tokenStreamFromTemplate(ctx.cjIdentRaw(parentName)))
         }
         for (protoId in this.conformsTo) {
             let protoItem = ctx.resolveItem(protoId)
             let protoName = protoItem.canonicalName(ctx)
-            superTypes.add(Tokens(ctx.cjIdentRaw(protoName)))
+            superTypes.add(tokenStreamFromTemplate(ctx.cjIdentRaw(protoName)))
         }
 
         if (superTypes.isEmpty()) {
@@ -281,7 +281,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             )
             result.items.add(classTokens)
         } else {
-            let inheritance = joinTokens(superTypes, " & ")
+            let inheritance = joinStreams(superTypes, " & ")
             let classTokens = @tmpl(
                 ${atObjCMirror}
                 public open class ${name} <: ${inheritance} {
@@ -299,10 +299,10 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     ): Unit {
         let name = ctx.cjIdentRaw(this.name)
         let genDefs = ctx.options.objcGenerateDefinitions
-        var atObjCMirror = Tokens("@${ctx.cjIdentRaw("ObjCMirror")}")
+        var atObjCMirror = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCMirror")}")
         atObjCMirror = commentizeAnnotation(atObjCMirror, genDefs)
 
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
 
         for (m in this.methods) {
             methodTokens.add(genCompilerMethod(ctx, m, isStatic: false, isProtocol: true))
@@ -311,14 +311,14 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             methodTokens.add(genCompilerProperty(ctx, p, isProtocol: true))
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         // Build super-protocol list
-        let superTypes = ArrayList<Tokens>()
+        let superTypes = ArrayList<TokenStream>()
         for (protoId in this.conformsTo) {
             let protoItem = ctx.resolveItem(protoId)
             let protoName = protoItem.canonicalName(ctx)
-            superTypes.add(Tokens(ctx.cjIdentRaw(protoName)))
+            superTypes.add(tokenStreamFromTemplate(ctx.cjIdentRaw(protoName)))
         }
 
         if (superTypes.isEmpty()) {
@@ -330,7 +330,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             )
             result.items.add(protoTokens)
         } else {
-            let inheritance = joinTokens(superTypes, " & ")
+            let inheritance = joinStreams(superTypes, " & ")
             let protoTokens = @tmpl(
                 ${atObjCMirror}
                 public interface ${name} <: ${inheritance} {
@@ -348,7 +348,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
     ): Unit {
         let name = ctx.cjIdentRaw(this.name)
 
-        let methodTokens = ArrayList<Tokens>()
+        let methodTokens = ArrayList<TokenStream>()
 
         for (m in this.methods) {
             methodTokens.add(genCompilerMethod(ctx, m, isStatic: false, isProtocol: false))
@@ -360,7 +360,7 @@ extend ObjCInterface <: CodeGenerator<Item, Unit> {
             methodTokens.add(genCompilerProperty(ctx, p, isProtocol: false))
         }
 
-        let body = joinTokens(methodTokens, "\n")
+        let body = joinStreams(methodTokens, "\n")
 
         let extTokens = @tmpl(
             extend ${name} {
@@ -389,34 +389,34 @@ func capitalizeFirst(s: String): String {
     return result
 }
 
-func defaultReturnValue(ctx: CjbindContext, sig: FunctionSig): Tokens {
+func defaultReturnValue(ctx: CjbindContext, sig: FunctionSig): TokenStream {
     let retItem = ctx.resolveItem(sig.returnType)
     match (retItem.kind.asType()) {
         case Some(retTy) =>
             match (retTy.kind) {
-                case TypeKind.TypeKindVoid => return Tokens()
-                case TypeKind.TypeKindInt(_) => return Tokens("0")
-                case TypeKind.TypeKindFloat(_) => return Tokens("0.0")
-                case TypeKind.TypeKindPointer(_) => return Tokens("CPointer<Unit>()")
-                case TypeKind.TypeKindObjCId => return Tokens("CPointer<Unit>()")
-                case TypeKind.TypeKindObjCSel => return Tokens("CPointer<Unit>()")
-                case TypeKind.TypeKindObjCBlockPointer(_) => return Tokens("CPointer<Unit>()")
-                case TypeKind.TypeKindEnum(_) => return Tokens("0")
+                case TypeKind.TypeKindVoid => return TokenStream()
+                case TypeKind.TypeKindInt(_) => return tokenStreamFromTemplate("0")
+                case TypeKind.TypeKindFloat(_) => return tokenStreamFromTemplate("0.0")
+                case TypeKind.TypeKindPointer(_) => return tokenStreamFromTemplate("CPointer<Unit>()")
+                case TypeKind.TypeKindObjCId => return tokenStreamFromTemplate("CPointer<Unit>()")
+                case TypeKind.TypeKindObjCSel => return tokenStreamFromTemplate("CPointer<Unit>()")
+                case TypeKind.TypeKindObjCBlockPointer(_) => return tokenStreamFromTemplate("CPointer<Unit>()")
+                case TypeKind.TypeKindEnum(_) => return tokenStreamFromTemplate("0")
                 case TypeKind.TypeKindObjCInterface(_) =>
                     let retName = retItem.canonicalName(ctx)
                     let retIdent = ctx.cjIdentRaw(retName)
-                    return Tokens("${retIdent}(unsafe { zeroValue() })")
+                    return tokenStreamFromTemplate("${retIdent}(unsafe { zeroValue() })")
                 case _ =>
                     let retTokens = Utils.fnsigReturnTy(ctx, sig)
-                    return Tokens("unsafe { zeroValue<${retTokens}>() }")
+                    return tokenStreamFromTemplate("unsafe { zeroValue<${retTokens}>() }")
             }
-        case None => return Tokens("unsafe { zeroValue() }")
+        case None => return tokenStreamFromTemplate("unsafe { zeroValue() }")
     }
 }
 
-func commentizeAnnotation(tokens: Tokens, generateDefinitions: Bool): Tokens {
+func commentizeAnnotation(tokens: TokenStream, generateDefinitions: Bool): TokenStream {
     if (generateDefinitions && !tokens.isEmpty()) {
-        return Tokens("/* ${tokens} */")
+        return tokenStreamFromTemplate("/* ${tokens} */")
     }
     return tokens
 }
@@ -445,7 +445,7 @@ func detectOverloadedInits(methods: ArrayList<ObjCMethod>): HashSet<String> {
     return overloaded
 }
 
-func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isProtocol!: Bool, forceStaticInit!: Bool = false): Tokens {
+func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isProtocol!: Bool, forceStaticInit!: Bool = false): TokenStream {
     let sig = m.signature
     var ret = Utils.fnsigReturnTy(ctx, sig)
     ret = wrapNullable(ret, m.returnsNullable)
@@ -454,20 +454,20 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
     let genDefs = ctx.options.objcGenerateDefinitions
 
     let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams)
-    let joinedArgs = joinTokens(arguments, ", ")
+    let joinedArgs = joinStreams(arguments, ", ")
 
     // Handle init methods as constructors (unless overloaded -- then generate static func)
     if (m.isInitMethod && !isProtocol && !forceStaticInit) {
         // Determine if this is a non-standard init (needs @ObjCInit)
         let isStandardInit = sel == "init" || sel.startsWith("initWith")
         var objcInitAnnotation = if (!isStandardInit) {
-            Tokens("@${ctx.cjIdentRaw("ObjCInit")}\n")
-        } else { Tokens() }
+            tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCInit")}\n")
+        } else { TokenStream() }
         objcInitAnnotation = commentizeAnnotation(objcInitAnnotation, genDefs)
 
         if (sel != m.name) {
-            var foreignName = Tokens("@${ctx.cjIdentRaw("ForeignName")}")
-            foreignName.append("[\"${sel}\"]")
+            var foreignName = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ForeignName")}")
+            foreignName.appendLiteral("[\"${sel}\"]")
             foreignName = commentizeAnnotation(foreignName, genDefs)
             return @tmpl(
                 ${objcInitAnnotation}
@@ -488,26 +488,26 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
     let needsForeignName = (sel != m.name)
 
     var foreignNameAnnotation = if (needsForeignName || forceStaticInit) {
-        let foreignName = Tokens("@${ctx.cjIdentRaw("ForeignName")}")
-        foreignName.append("[\"${sel}\"]")
+        let foreignName = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ForeignName")}")
+        foreignName.appendLiteral("[\"${sel}\"]")
         foreignName
     } else {
-        Tokens()
+        TokenStream()
     }
     foreignNameAnnotation = commentizeAnnotation(foreignNameAnnotation, genDefs)
 
     var objcInitAnnotation = if (forceStaticInit) {
-        Tokens("@${ctx.cjIdentRaw("ObjCInit")}\n")
+        tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCInit")}\n")
     } else {
-        Tokens()
+        TokenStream()
     }
     objcInitAnnotation = commentizeAnnotation(objcInitAnnotation, genDefs)
 
     if (isProtocol) {
         // Protocol methods: no public/open modifiers
         var optionalAnnotation = if (m.isOptional) {
-            Tokens("@${ctx.cjIdentRaw("ObjCOptional")}\n")
-        } else { Tokens() }
+            tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCOptional")}\n")
+        } else { TokenStream() }
         optionalAnnotation = commentizeAnnotation(optionalAnnotation, genDefs)
         if (needsForeignName) {
             return @tmpl(
@@ -524,8 +524,8 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
     } else if (effectivelyStatic) {
         let defBody = if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
-            Tokens(" { ${defVal} }")
-        } else { Tokens() }
+            tokenStreamFromTemplate(" { ${defVal} }")
+        } else { TokenStream() }
         if (needsForeignName || forceStaticInit) {
             return @tmpl(
                 ${objcInitAnnotation}
@@ -533,25 +533,25 @@ func genCompilerMethod(ctx: CjbindContext, m: ObjCMethod, isStatic!: Bool, isPro
                 public static func ${mname}(${joinedArgs}): ${ret}${defBody}
             )
         } else {
-            return Tokens("public static func ${mname}(${joinedArgs}): ${ret}${defBody}")
+            return tokenStreamFromTemplate("public static func ${mname}(${joinedArgs}): ${ret}${defBody}")
         }
     } else {
         let defBody = if (ctx.options.objcGenerateDefinitions) {
             let defVal = defaultReturnValue(ctx, sig)
-            Tokens(" { ${defVal} }")
-        } else { Tokens() }
+            tokenStreamFromTemplate(" { ${defVal} }")
+        } else { TokenStream() }
         if (needsForeignName) {
             return @tmpl(
                 ${foreignNameAnnotation}
                 public open func ${mname}(${joinedArgs}): ${ret}${defBody}
             )
         } else {
-            return Tokens("public open func ${mname}(${joinedArgs}): ${ret}${defBody}")
+            return tokenStreamFromTemplate("public open func ${mname}(${joinedArgs}): ${ret}${defBody}")
         }
     }
 }
 
-func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool): Tokens {
+func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool): TokenStream {
     let propName = ctx.cjIdent(p.name)
     var ty = p.ty.toCjTyOrOpaque(ctx, ())
     ty = wrapNullable(ty, p.isNullable)
@@ -560,11 +560,11 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
     // Check if getter name differs from default (property name)
     let needsGetterAnnotation = (p.getterName != p.name)
     var getterAnnotation = if (needsGetterAnnotation) {
-        let ann = Tokens("@${ctx.cjIdentRaw("ForeignGetterName")}")
-        ann.append("[\"${p.getterName}\"]")
+        let ann = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ForeignGetterName")}")
+        ann.appendLiteral("[\"${p.getterName}\"]")
         ann
     } else {
-        Tokens()
+        TokenStream()
     }
     getterAnnotation = commentizeAnnotation(getterAnnotation, genDefs)
 
@@ -578,25 +578,25 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
     }
     var setterAnnotation = if (let Some(setter) <- p.setterName) {
         if (needsSetterAnnotation) {
-            let ann = Tokens("@${ctx.cjIdentRaw("ForeignSetterName")}")
-            ann.append("[\"${setter}\"]")
+            let ann = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ForeignSetterName")}")
+            ann.appendLiteral("[\"${setter}\"]")
             ann
         } else {
-            Tokens()
+            TokenStream()
         }
     } else {
-        Tokens()
+        TokenStream()
     }
     setterAnnotation = commentizeAnnotation(setterAnnotation, genDefs)
 
-    let annotations = Tokens()
+    let annotations = TokenStream()
     if (needsGetterAnnotation) {
-        annotations.append(getterAnnotation)
-        annotations.append("\n")
+        annotations.`extend`(getterAnnotation)
+        annotations.appendLiteral("\n")
     }
     if (needsSetterAnnotation) {
-        annotations.append(setterAnnotation)
-        annotations.append("\n")
+        annotations.`extend`(setterAnnotation)
+        annotations.appendLiteral("\n")
     }
 
     let hasSetter = match (p.setterName) {
@@ -613,10 +613,10 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
 
     if (isProtocol) {
         if (p.isOptional) {
-            var optAnn = Tokens("@${ctx.cjIdentRaw("ObjCOptional")}")
+            var optAnn = tokenStreamFromTemplate("@${ctx.cjIdentRaw("ObjCOptional")}")
             optAnn = commentizeAnnotation(optAnn, genDefs)
-            annotations.append(optAnn)
-            annotations.append("\n")
+            annotations.`extend`(optAnn)
+            annotations.appendLiteral("\n")
         }
         if (hasSetter) {
             return @tmpl(
@@ -644,7 +644,7 @@ func genCompilerProperty(ctx: CjbindContext, p: ObjCProperty, isProtocol!: Bool)
     }
 }
 
-func genRuntimeDecls(): Tokens {
+func genRuntimeDecls(): TokenStream {
     return @tmpl(
         import std.collection.HashMap
 
@@ -683,8 +683,8 @@ func genRuntimeDecls(): Tokens {
     )
 }
 
-func fnsigArgumentsWithNullability(ctx: CjbindContext, sig: FunctionSig, nullableParams: ArrayList<Bool>): ArrayList<Tokens> {
-    let args = ArrayList<Tokens>()
+func fnsigArgumentsWithNullability(ctx: CjbindContext, sig: FunctionSig, nullableParams: ArrayList<Bool>): ArrayList<TokenStream> {
+    let args = ArrayList<TokenStream>()
     let unnamedArgs = Box(0)
     for ((i, arg) in sig.argumentTypes.iterator().enumerate()) {
         let argName = if (let Some(n) <- arg[0]) {
@@ -698,19 +698,19 @@ func fnsigArgumentsWithNullability(ctx: CjbindContext, sig: FunctionSig, nullabl
         if (i < nullableParams.size && nullableParams[i]) {
             argTy = wrapNullable(argTy, true)
         }
-        args.add(Tokens("${argIdent} : ${argTy}"))
+        args.add(tokenStreamFromTemplate("${argIdent} : ${argTy}"))
     }
     return args
 }
 
-func wrapNullable(ty: Tokens, isNullable: Bool): Tokens {
+func wrapNullable(ty: TokenStream, isNullable: Bool): TokenStream {
     if (isNullable) {
-        return Tokens("?${ty}")
+        return tokenStreamFromTemplate("?${ty}")
     }
     return ty
 }
 
-func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isStatic: Bool): Tokens { // cjlint-ignore !G.FUN.02
+func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isStatic: Bool): TokenStream { // cjlint-ignore !G.FUN.02
     let sig = m.signature
     var ret = Utils.fnsigReturnTy(ctx, sig)
     ret = wrapNullable(ret, m.returnsNullable)
@@ -718,20 +718,20 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     let sel = m.selector
 
     let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams)
-    let joinedArgs = joinTokens(arguments, ", ")
+    let joinedArgs = joinStreams(arguments, ", ")
 
-    let paramTypes = ArrayList<Tokens>()
-    paramTypes.add(Tokens("CPointer<Unit>"))  // self/class pointer
-    paramTypes.add(Tokens("CPointer<Unit>"))  // _cmd (selector)
+    let paramTypes = ArrayList<TokenStream>()
+    paramTypes.add(tokenStreamFromTemplate("CPointer<Unit>"))  // self/class pointer
+    paramTypes.add(tokenStreamFromTemplate("CPointer<Unit>"))  // _cmd (selector)
     for (arg in sig.argumentTypes) {
         let ty = arg[1].toCjTyOrOpaque(ctx, ())
         paramTypes.add(ty)
     }
-    let joinedParamTypes = joinTokens(paramTypes, ", ")
+    let joinedParamTypes = joinStreams(paramTypes, ", ")
 
     let argNames = Utils.fnsigArgumentNames(ctx, sig)
-    let joinedArgNames = joinTokens(argNames, ", ")
-    let callTail = if (argNames.isEmpty()) { Tokens("") } else { Tokens(", ${joinedArgNames}") }
+    let joinedArgNames = joinStreams(argNames, ", ")
+    let callTail = if (argNames.isEmpty()) { tokenStreamFromTemplate("") } else { tokenStreamFromTemplate(", ${joinedArgNames}") }
 
     if (isStatic) {
         return @tmpl(
@@ -753,7 +753,7 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     }
 }
 
-func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String): Tokens { // cjlint-ignore !G.FUN.02
+func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String): TokenStream { // cjlint-ignore !G.FUN.02
     let propName = ctx.cjIdent(p.name)
     var ty = p.ty.toCjTyOrOpaque(ctx, ())
     ty = wrapNullable(ty, p.isNullable)

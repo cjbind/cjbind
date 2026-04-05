@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import cjbind_token.Tokens
+import cjbind_token.*
 
 import cjbind.clang
 
@@ -37,12 +37,12 @@ public open class Layout {
         return Layout.forSizeInternal(ctx.pointerWidth(), size)
     }
 
-    public static func knownCjTypeForSize(size: Int32): ?Tokens {
+    public static func knownCjTypeForSize(size: Int32): ?TokenStream {
         return match (size) {
-            case 1 => Tokens("UInt8")
-            case 2 => Tokens("UInt16")
-            case 4 => Tokens("UInt32")
-            case 8 => Tokens("UInt64")
+            case 1 => tokenStreamFromTemplate("UInt8")
+            case 2 => tokenStreamFromTemplate("UInt16")
+            case 4 => tokenStreamFromTemplate("UInt32")
+            case 8 => tokenStreamFromTemplate("UInt64")
             case _ => None
         }
     }
@@ -65,7 +65,7 @@ public class Opaque <: Layout {
         return Type(None, layout, TypeKind.TypeKindOpaque, ty.isConst())   
     }
 
-    public func knownCjTypeForArray(): ?Tokens {
+    public func knownCjTypeForArray(): ?TokenStream {
         return Layout.knownCjTypeForSize(this.align)
     }
 
