@@ -3,6 +3,7 @@ package cjbind.ir
 import cjbind_token.{Tokens}
 import std.collection.*
 import std.fs.Path
+import std.env.getTempDirectory
 import cjbind.result.Result
 import cjbind.clang
 import cjbind.options.CjbindOptions
@@ -87,6 +88,7 @@ public class CjbindContext {
     public var collectedTyperefs: Bool = false
     public var inCodegen: Bool = false
 
+    public let index: clang.Index
     public let translationUnit: clang.TranslationUnit
     public var fallbackTu: Option<clang.FallbackTranslationUnit> = None
     public let targetInfo: clang.TargetInfo
@@ -100,10 +102,10 @@ public class CjbindContext {
     public init(options: CjbindOptions) {
         this.options = options
 
-        let index = clang.Index(false, true)
+        this.index = clang.Index(false, true)
 
         this.translationUnit = clang.TranslationUnit(
-            index,
+            this.index,
             "",
             options.clangArgs.toArray(),
             clang.CXTranslationUnit_Flags_CXTranslationUnit_DetailedPreprocessingRecord
@@ -124,6 +126,14 @@ public class CjbindContext {
         this.currentModule = 0
     }
 
+    public func release(): Unit {
+        if (let Some(ftu) <- this.fallbackTu) {
+            ftu.release()
+        }
+        this.translationUnit.release()
+        this.index.release()
+    }
+
     // cjlint-ignore -start !G.FUN.01
     public func tryEnsureFallbackTranslationUnit(
     ): Option<clang.FallbackTranslationUnit> {
@@ -131,7 +141,8 @@ public class CjbindContext {
             return this.fallbackTu
         }
 
-        let file = "./.macro_eval.c"
+        let tmpDir = getTempDirectory().toString()
+        let file = "${tmpDir}/.macro_eval.c"
 
         let index = clang.Index(false, false)
 
@@ -163,7 +174,8 @@ public class CjbindContext {
 
             headerNamesToCompile.add(compileName)
         }
-        let pch = "./" + String.join(headerNamesToCompile.toArray(), delimiter: "-") + "-precompile.h.pch"
+        let pchName = String.join(headerNamesToCompile.toArray(), delimiter: "-") + "-precompile.h.pch"
+        let pch = "${tmpDir}/${pchName}"
 
         var cArgs = ArrayList<String>()
         cArgs.add("-x")
@@ -181,7 +193,10 @@ public class CjbindContext {
             cArgs.toArray(),
             clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
         )
-        if (let None <- tu.save(pch).ok()) {
+        let saveResult = tu.save(pch)
+        tu.release()
+        index.release()
+        if (let None <- saveResult.ok()) {
             return None
         }
 

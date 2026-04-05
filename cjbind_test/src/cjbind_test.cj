@@ -6,13 +6,12 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.CjbindOptions
+import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.utils.formatString
 import std.env.{getCommandLine}
 
 func searchTestCases(): Array<String> {
-    let testdataDir = glob.Pattern.escape("testdata/headers/*.h")
-    let paths = glob.glob(testdataDir)
+    let paths = glob.glob("testdata/headers/*.h")
     return paths.map {p => p.toString()} |> collectArray
 }
 
@@ -27,7 +26,10 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
             while (i < parts.size) {
                 let part = parts[i].trimAscii()
                 if (part == "--default-enum-style" && i + 1 < parts.size) {
-                    opt.defaultEnumStyle = parts[i + 1].trimAscii()
+                    opt.defaultEnumStyle = match (parts[i + 1].trimAscii()) {
+                        case "newtype" => DefaultEnumStyle.NewType
+                        case _ => DefaultEnumStyle.Consts
+                    }
                     i += 2
                 } else if (part == "--objc") {
                     opt.objc = true
@@ -38,6 +40,9 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                 } else if (part == "--fit-macro-constants") {
                     opt.fitMacroConstants = true
                     i += 1
+                } else if (part == "--clang-arg" && i + 1 < parts.size) {
+                    opt.clangArgs.add(parts[i + 1].trimAscii())
+                    i += 2
                 } else {
                     eprintln("Warning: unrecognized test option: ${part}")
                     i += 1
@@ -50,6 +55,7 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
 func generateOutput(testcase: String): String {
     let opt = CjbindOptions()
     opt.headers.add(testcase)
+    opt.noDetectIncludePath = true
     applyTestOptions(opt, testcase)
     return formatString(generate(opt))
 }
@@ -65,7 +71,7 @@ func processTestCase(testcase: String): Unit {
     var dotIdx = headerName.size
     var di = headerName.size - 1
     while (di >= 0) {
-        if (headerName[di] == r'.') {
+        if (headerName[di] == 46u8) {
             dotIdx = di
             break
         }

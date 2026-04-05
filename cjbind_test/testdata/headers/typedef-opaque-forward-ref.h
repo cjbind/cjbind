@@ -1,0 +1,2 @@
+
+typedef struct MyType MyTypeT;

@@ -1,0 +1,683 @@
+@C
+func __cjbind_read_rte_atomic16_t_rte_atomic16_t(ptr: CPointer<UInt8>): rte_atomic16_t_rte_atomic16_t {
+    return unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_atomic16_t_rte_atomic16_t(ptr: CPointer<UInt8>, val: rte_atomic16_t_rte_atomic16_t): Unit {
+    unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_UInt16(ptr: CPointer<UInt8>): UInt16 {
+    return unsafe { CPointer<UInt16>(ptr).read() }
+}
+
+@C
+func __cjbind_write_UInt16(ptr: CPointer<UInt8>, val: UInt16): Unit {
+    unsafe { CPointer<UInt16>(ptr).write(val) }
+}
+
+@C
+func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
+    let startByte = bitOffset / 8
+    let bitShift = bitOffset % 8
+    let bytesNeeded = (bitWidth + bitShift + 7) / 8
+    var val: UInt64 = 0
+    var i: Int64 = 0
+    while (i < bytesNeeded) {
+        val = val | (UInt64(unsafe { ptr.read(startByte + i) }) << UInt64(i * 8))
+        i++
+    }
+    val = val >> UInt64(bitShift)
+    if (bitWidth < 64) {
+        val = val & ((UInt64(1) << UInt64(bitWidth)) - 1)
+    }
+    return val
+}
+
+@C
+func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64, val: UInt64): Unit {
+    let startByte = bitOffset / 8
+    let bitShift = bitOffset % 8
+    let bytesNeeded = (bitWidth + bitShift + 7) / 8
+    var maskVal = val
+    if (bitWidth < 64) {
+        maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
+    }
+    maskVal = maskVal << UInt64(bitShift)
+    var fieldMask: UInt64 = if (bitWidth < 64) {
+        ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
+    } else {
+        !UInt64(0)
+    }
+    var i: Int64 = 0
+    while (i < bytesNeeded) {
+        let byteVal = UInt8((maskVal >> UInt64(i * 8)) & 0xFF)
+        let byteMask = UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)
+        let old = unsafe { ptr.read(startByte + i) }
+        unsafe { ptr.write(startByte + i, (old & !byteMask) | (byteVal & byteMask)) }
+        i++
+    }
+}
+
+@C
+func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
+    let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+    if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
+        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+    }
+    return Int64(raw)
+}
+
+@C
+func __cjbind_read_UInt32(ptr: CPointer<UInt8>): UInt32 {
+    return unsafe { CPointer<UInt32>(ptr).read() }
+}
+
+@C
+func __cjbind_write_UInt32(ptr: CPointer<UInt8>, val: UInt32): Unit {
+    unsafe { CPointer<UInt32>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_rte_mbuf__cjbind_ty_1(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_1 {
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_1>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_mbuf__cjbind_ty_1(ptr: CPointer<UInt8>, val: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { CPointer<rte_mbuf__cjbind_ty_1>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_rte_mbuf__cjbind_ty_2(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_2 {
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_2>(ptr).read() }
+}
+
+@C
+func __cjbind_write_rte_mbuf__cjbind_ty_2(ptr: CPointer<UInt8>, val: rte_mbuf__cjbind_ty_2): Unit {
+    unsafe { CPointer<rte_mbuf__cjbind_ty_2>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_CPointer<Unit>(ptr: CPointer<UInt8>): CPointer<Unit> {
+    return unsafe { CPointer<CPointer<Unit>>(ptr).read() }
+}
+
+@C
+func __cjbind_write_CPointer<Unit>(ptr: CPointer<UInt8>, val: CPointer<Unit>): Unit {
+    unsafe { CPointer<CPointer<Unit>>(ptr).write(val) }
+}
+
+@C
+func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
+    return unsafe { CPointer<UInt64>(ptr).read() }
+}
+
+@C
+func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
+    unsafe { CPointer<UInt64>(ptr).write(val) }
+}
+
+package cjbind_ffi
+
+public const RTE_CACHE_LINE_MIN_SIZE_RTE_CACHE_LINE_MIN_SIZE : Int64 = 64
+
+public const RTE_CACHE_LINE_SIZE_RTE_CACHE_LINE_SIZE : Int64 = 64
+
+public type phys_addr_t_phys_addr_t = UInt64
+
+public type MARKER_MARKER = CPointer<CPointer<Unit>>
+
+public type MARKER8_MARKER8 = CPointer<UInt8>
+
+public type MARKER64_MARKER64 = CPointer<UInt64>
+
+// The atomic counter structure.
+@C
+public struct rte_atomic16_t_rte_atomic16_t {
+//< An internal counter value. *
+public let cnt : Int16
+public init(cnt : Int16) {
+    this.cnt = cnt
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_atomic16_t_rte_atomic16_t>()
+    if (size != 2) {
+        throw Exception("Size of rte_atomic16_t_rte_atomic16_t is not 2 but ${size} bytes")
+    }
+    let align = alignOf<rte_atomic16_t_rte_atomic16_t>()
+    if (align != 2) {
+        throw Exception("Alignment of rte_atomic16_t_rte_atomic16_t is not 2 but ${align} bytes")
+    }
+}
+
+// 16-bit Reference counter.
+// It should only be accessed using the following functions:
+// rte_mbuf_refcnt_update(), rte_mbuf_refcnt_read(), and
+// rte_mbuf_refcnt_set(). The functionality of these functions (atomic,
+// or non-atomic) is controlled by the CONFIG_RTE_MBUF_REFCNT_ATOMIC
+// config option.
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+var _storage: UInt16 = unsafe { zeroValue<UInt16>() }
+public init() {}
+public func refcnt_atomic(): rte_atomic16_t_rte_atomic16_t {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_atomic16_t_rte_atomic16_t(CPointer<UInt8>(inout s)) }
+}
+public mut func refcnt_atomic(val!: rte_atomic16_t_rte_atomic16_t): Unit {
+    unsafe { __cjbind_write_rte_atomic16_t_rte_atomic16_t(CPointer<UInt8>(inout this._storage), val) }
+}
+public func refcnt(): UInt16 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt16(CPointer<UInt8>(inout s)) }
+}
+public mut func refcnt(val!: UInt16): Unit {
+    unsafe { __cjbind_write_UInt16(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 2) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 2 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 2) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 2 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+var _bitfield_1 : VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
+public func l2_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 4) })
+}
+public mut func l2_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 4, UInt64(val)) }
+}
+public func l3_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 4, 4) })
+}
+public mut func l3_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 4, 4, UInt64(val)) }
+}
+public func l4_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 8, 4) })
+}
+public mut func l4_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 4, UInt64(val)) }
+}
+public func tun_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 12, 4) })
+}
+public mut func tun_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 12, 4, UInt64(val)) }
+}
+public func inner_l2_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 16, 4) })
+}
+public mut func inner_l2_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 4, UInt64(val)) }
+}
+public func inner_l3_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 20, 4) })
+}
+public mut func inner_l3_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 20, 4, UInt64(val)) }
+}
+public func inner_l4_type(): UInt32 {
+    var s = this._bitfield_1
+    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 24, 4) })
+}
+public mut func inner_l4_type(val!: UInt32): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 4, UInt64(val)) }
+}
+public init() {}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 4) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_2 {
+var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
+public init() {}
+public func packet_type(): UInt32 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+}
+public mut func packet_type(val!: UInt32): Unit {
+    unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+}
+public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_1 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+}
+public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_2>()
+    if (size != 4) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_2 is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_2>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_2 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+public let hash : UInt16
+public let id : UInt16
+public init(hash : UInt16, id : UInt16) {
+    this.hash = hash
+this.id = id
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 4) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 2) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 2 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
+public init() {}
+public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_1 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+}
+public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+}
+public func lo(): UInt32 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+}
+public mut func lo(val!: UInt32): Unit {
+    unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 4) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 4 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+public let __cjbind_anon_1 : rte_mbuf__cjbind_ty_1
+public let hi : UInt32
+public init(__cjbind_anon_1 : rte_mbuf__cjbind_ty_1, hi : UInt32) {
+    this.__cjbind_anon_1 = __cjbind_anon_1
+this.hi = hi
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_2 {
+public let lo : UInt32
+public let hi : UInt32
+public init(lo : UInt32, hi : UInt32) {
+    this.lo = lo
+this.hi = hi
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_2>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_2 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_2>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_2 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_3 {
+var _storage: VArray<UInt32, $2> = unsafe { zeroValue<VArray<UInt32, $2>>() }
+public init() {}
+public func rss(): UInt32 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+}
+public mut func rss(val!: UInt32): Unit {
+    unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+}
+public func fdir(): rte_mbuf__cjbind_ty_1 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+}
+public mut func fdir(val!: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+}
+public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_1 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+}
+public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+}
+public func sched(): rte_mbuf__cjbind_ty_2 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+}
+public mut func sched(val!: rte_mbuf__cjbind_ty_2): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_2(CPointer<UInt8>(inout this._storage), val) }
+}
+public func __cjbind_anon_2(): rte_mbuf__cjbind_ty_2 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+}
+public mut func __cjbind_anon_2(val!: rte_mbuf__cjbind_ty_2): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_2(CPointer<UInt8>(inout this._storage), val) }
+}
+public func usr(): UInt32 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+}
+public mut func usr(val!: UInt32): Unit {
+    unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_3>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_3 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_3>()
+    if (align != 4) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_3 is not 4 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_4 {
+var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
+public init() {}
+public func userdata(): CPointer<Unit> {
+    var s = this._storage
+    return unsafe { __cjbind_read_CPointer<Unit>(CPointer<UInt8>(inout s)) }
+}
+public mut func userdata(val!: CPointer<Unit>): Unit {
+    unsafe { __cjbind_write_CPointer<Unit>(CPointer<UInt8>(inout this._storage), val) }
+}
+public func udata64(): UInt64 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+}
+public mut func udata64(val!: UInt64): Unit {
+    unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_4>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_4 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_4>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_4 is not 8 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_1 {
+var _bitfield_1 : VArray<UInt8, $7> = VArray<UInt8, $7>(repeat: 0)
+public func l2_len(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 0, 7) })
+}
+public mut func l2_len(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 7, UInt64(val)) }
+}
+public func l3_len(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 7, 9) })
+}
+public mut func l3_len(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 9, UInt64(val)) }
+}
+public func l4_len(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 16, 8) })
+}
+public mut func l4_len(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 8, UInt64(val)) }
+}
+public func tso_segsz(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 24, 16) })
+}
+public mut func tso_segsz(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 16, UInt64(val)) }
+}
+public func outer_l3_len(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 40, 9) })
+}
+public mut func outer_l3_len(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 40, 9, UInt64(val)) }
+}
+public func outer_l2_len(): UInt64 {
+    var s = this._bitfield_1
+    return UInt64(unsafe { __cjbind_bitfield_read(inout s, 49, 7) })
+}
+public mut func outer_l2_len(val!: UInt64): Unit {
+    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 49, 7, UInt64(val)) }
+}
+public init() {}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_1>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_1 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_1>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 8 but ${align} bytes")
+    }
+}
+
+@C
+public struct rte_mbuf__cjbind_ty_5 {
+var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
+public init() {}
+public func tx_offload(): UInt64 {
+    var s = this._storage
+    return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+}
+public mut func tx_offload(val!: UInt64): Unit {
+    unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+}
+public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_1 {
+    var s = this._storage
+    return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+}
+public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_1): Unit {
+    unsafe { __cjbind_write_rte_mbuf__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf__cjbind_ty_5>()
+    if (size != 8) {
+        throw Exception("Size of rte_mbuf__cjbind_ty_5 is not 8 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf__cjbind_ty_5>()
+    if (align != 8) {
+        throw Exception("Alignment of rte_mbuf__cjbind_ty_5 is not 8 but ${align} bytes")
+    }
+}
+
+// The generic rte_mbuf, containing a packet mbuf.
+@C
+public struct rte_mbuf_rte_mbuf {
+public let cacheline0 : MARKER_MARKER
+//< Virtual address of segment buffer. *
+public let buf_addr : CPointer<Unit>
+//< Physical address of segment buffer. *
+public let buf_physaddr : phys_addr_t_phys_addr_t
+//< Length of segment buffer. *
+public let buf_len : UInt16
+public let rearm_data : MARKER8_MARKER8
+public let data_off : UInt16
+public let __cjbind_anon_1 : rte_mbuf__cjbind_ty_1
+//< Number of segments. *
+public let nb_segs : UInt8
+//< Input port. *
+public let port : UInt8
+//< Offload features. *
+public let ol_flags : UInt64
+public let rx_descriptor_fields1 : MARKER_MARKER
+public let __cjbind_anon_2 : rte_mbuf__cjbind_ty_2
+//< Total pkt len: sum of all segments. *
+public let pkt_len : UInt32
+//< Amount of data in segment buffer. *
+public let data_len : UInt16
+// VLAN TCI (CPU order), valid if PKT_RX_VLAN_STRIPPED is set. *
+public let vlan_tci : UInt16
+//< hash information *
+public let hash : rte_mbuf__cjbind_ty_3
+public let __cjbind_anon_3 : rte_mbuf__cjbind_ty_3
+//< Sequence number. See also rte_reorder_insert() *
+public let seqn : UInt32
+// Outer VLAN TCI (CPU order), valid if PKT_RX_QINQ_STRIPPED is set. *
+public let vlan_tci_outer : UInt16
+public let cacheline1 : MARKER_MARKER
+public let __cjbind_anon_4 : rte_mbuf__cjbind_ty_4
+//< Pool from which mbuf was allocated. *
+public let pool : CPointer<rte_mempool_rte_mempool>
+//< Next segment of scattered packet. *
+public let next : CPointer<rte_mbuf_rte_mbuf>
+public let __cjbind_anon_5 : rte_mbuf__cjbind_ty_5
+// Size of the application private data. In case of an indirect
+// mbuf, it stores the direct mbuf private data size. *
+public let priv_size : UInt16
+// Timesync flags for use with IEEE1588. *
+public let timesync : UInt16
+public init(cacheline0 : MARKER_MARKER, buf_addr : CPointer<Unit>, buf_physaddr : phys_addr_t_phys_addr_t, buf_len : UInt16, rearm_data : MARKER8_MARKER8, data_off : UInt16, __cjbind_anon_1 : rte_mbuf__cjbind_ty_1, nb_segs : UInt8, port : UInt8, ol_flags : UInt64, rx_descriptor_fields1 : MARKER_MARKER, __cjbind_anon_2 : rte_mbuf__cjbind_ty_2, pkt_len : UInt32, data_len : UInt16, vlan_tci : UInt16, hash : rte_mbuf__cjbind_ty_3, __cjbind_anon_3 : rte_mbuf__cjbind_ty_3, seqn : UInt32, vlan_tci_outer : UInt16, cacheline1 : MARKER_MARKER, __cjbind_anon_4 : rte_mbuf__cjbind_ty_4, pool : CPointer<rte_mempool_rte_mempool>, next : CPointer<rte_mbuf_rte_mbuf>, __cjbind_anon_5 : rte_mbuf__cjbind_ty_5, priv_size : UInt16, timesync : UInt16) {
+    this.cacheline0 = cacheline0
+this.buf_addr = buf_addr
+this.buf_physaddr = buf_physaddr
+this.buf_len = buf_len
+this.rearm_data = rearm_data
+this.data_off = data_off
+this.__cjbind_anon_1 = __cjbind_anon_1
+this.nb_segs = nb_segs
+this.port = port
+this.ol_flags = ol_flags
+this.rx_descriptor_fields1 = rx_descriptor_fields1
+this.__cjbind_anon_2 = __cjbind_anon_2
+this.pkt_len = pkt_len
+this.data_len = data_len
+this.vlan_tci = vlan_tci
+this.hash = hash
+this.__cjbind_anon_3 = __cjbind_anon_3
+this.seqn = seqn
+this.vlan_tci_outer = vlan_tci_outer
+this.cacheline1 = cacheline1
+this.__cjbind_anon_4 = __cjbind_anon_4
+this.pool = pool
+this.next = next
+this.__cjbind_anon_5 = __cjbind_anon_5
+this.priv_size = priv_size
+this.timesync = timesync
+}
+}
+
+@When[debug]
+let _ = {
+=>
+    let size = sizeOf<rte_mbuf_rte_mbuf>()
+    if (size != 128) {
+        throw Exception("Size of rte_mbuf_rte_mbuf is not 128 but ${size} bytes")
+    }
+    let align = alignOf<rte_mbuf_rte_mbuf>()
+    if (align != 64) {
+        throw Exception("Alignment of rte_mbuf_rte_mbuf is not 64 but ${align} bytes")
+    }
+}
+
+//< Pool from which mbuf was allocated. *
+@C
+public struct rte_mempool_rte_mempool {
+
+}
