@@ -6,6 +6,7 @@
 # ]
 # ///
 
+import json
 import platform
 import shutil
 import subprocess
@@ -21,21 +22,22 @@ from tqdm import tqdm
 class LibClangInstaller:
     """用于自动下载和安装 libclang 的安装器"""
 
-    URL_MAP = {
-        "windows": "https://github.com/cjbind/cjbind/releases/download/libclang-v20.1.0-msvcrt/libclang-20.1.0-windows-msvcrt-static-libcxx-x86_64.7z",
-        "macos": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-macos-universal.7z",
-        "linux-x86_64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Ubuntu22.04-gcc11.2-x86_64.7z",
-        "linux-arm64": "https://download.qt.io/development_releases/prebuilt/libclang/qt/libclang-llvmorg-20.1.0-linux-Debian11.6-gcc10.0-arm64.7z",
-    }
-
     def __init__(self):
+        self.base_dir = Path(__file__).parent.resolve()
+        self.url_map = self._load_url_map()
         self.system_key = self._detect_system()
         self.download_url = self._get_download_url()
-        self.base_dir = Path(__file__).parent.resolve()
         self.temp_dir = Path(mkdtemp(prefix="libclang_"))
         self.temp_archive = self.temp_dir / "libclang.7z"
         self.target_dir = self.base_dir.parent / "lib"
         self.extract_dir: Optional[Path] = None
+
+    def _load_url_map(self) -> dict[str, str]:
+        """从 libclang.json 加载下载地址"""
+        json_path = self.base_dir / "libclang.json"
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data["urls"]
 
     def _detect_system(self) -> str:
         """检测操作系统和架构"""
@@ -52,7 +54,7 @@ class LibClangInstaller:
 
     def _get_download_url(self) -> str:
         """获取对应系统的下载地址"""
-        url = self.URL_MAP.get(self.system_key)
+        url = self.url_map.get(self.system_key)
         if not url:
             raise RuntimeError(
                 f"No download URL configured for {self.system_key}")
