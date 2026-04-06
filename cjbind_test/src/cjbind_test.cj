@@ -58,11 +58,27 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
     }
 }
 
+let defaultTarget = "--target=x86_64-unknown-linux-gnu"
+
+func hasTargetFlag(opt: CjbindOptions): Bool {
+    for (arg in opt.clangArgs) {
+        if (arg.startsWith("--target=")) {
+            return true
+        }
+    }
+    return false
+}
+
 func generateOutput(testcase: String): String {
     let opt = CjbindOptions()
     opt.headers.add(testcase)
     opt.noDetectIncludePath = true
     applyTestOptions(opt, testcase)
+    // Pin to a default target so that expected outputs are platform-independent,
+    // like rust-bindgen does.
+    if (!hasTargetFlag(opt)) {
+        opt.clangArgs.add(defaultTarget)
+    }
     return formatString(generate(opt))
 }
 

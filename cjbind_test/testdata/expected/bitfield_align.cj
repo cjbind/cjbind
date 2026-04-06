@@ -134,8 +134,8 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<A_A>()
-    if (size != 12) {
-        throw Exception("Size of A_A is not 12 but ${size} bytes")
+    if (size != 4) {
+        throw Exception("Size of A_A is not 4 but ${size} bytes")
     }
     let align = alignOf<A_A>()
     if (align != 4) {
@@ -167,8 +167,8 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<B_B>()
-    if (size != 8) {
-        throw Exception("Size of B_B is not 8 but ${size} bytes")
+    if (size != 4) {
+        throw Exception("Size of B_B is not 4 but ${size} bytes")
     }
     let align = alignOf<B_B>()
     if (align != 4) {
@@ -202,8 +202,8 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<C_C>()
-    if (size != 12) {
-        throw Exception("Size of C_C is not 12 but ${size} bytes")
+    if (size != 8) {
+        throw Exception("Size of C_C is not 8 but ${size} bytes")
     }
     let align = alignOf<C_C>()
     if (align != 4) {
@@ -260,9 +260,9 @@ let _ = {
 
 @C
 public struct Date2_Date2 {
-let _cjbind_opaque_blob: VArray<UInt16, $3>
+let _cjbind_opaque_blob: VArray<UInt16, $2>
 public init() {
-    this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $3>>() }
+    this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $2>>() }
 }
 }
 
@@ -270,8 +270,8 @@ public init() {
 let _ = {
 =>
     let size = sizeOf<Date2_Date2>()
-    if (size != 6) {
-        throw Exception("Size of Date2_Date2 is not 6 but ${size} bytes")
+    if (size != 4) {
+        throw Exception("Size of Date2_Date2 is not 4 but ${size} bytes")
     }
     let align = alignOf<Date2_Date2>()
     if (align != 2) {
@@ -318,8 +318,8 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<Date3_Date3>()
-    if (size != 6) {
-        throw Exception("Size of Date3_Date3 is not 6 but ${size} bytes")
+    if (size != 4) {
+        throw Exception("Size of Date3_Date3 is not 4 but ${size} bytes")
     }
     let align = alignOf<Date3_Date3>()
     if (align != 2) {

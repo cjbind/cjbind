@@ -111,12 +111,12 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<OnlyUnnamedBitfield_OnlyUnnamedBitfield>()
-    if (size != 4) {
-        throw Exception("Size of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 4 but ${size} bytes")
+    if (size != 2) {
+        throw Exception("Size of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 2 but ${size} bytes")
     }
     let align = alignOf<OnlyUnnamedBitfield_OnlyUnnamedBitfield>()
-    if (align != 4) {
-        throw Exception("Alignment of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 4 but ${align} bytes")
+    if (align != 1) {
+        throw Exception("Alignment of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 1 but ${align} bytes")
     }
 }
 
@@ -130,12 +130,12 @@ public init() {}
 let _ = {
 =>
     let size = sizeOf<MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield>()
-    if (size != 4) {
-        throw Exception("Size of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 4 but ${size} bytes")
+    if (size != 3) {
+        throw Exception("Size of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 3 but ${size} bytes")
     }
     let align = alignOf<MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield>()
-    if (align != 4) {
-        throw Exception("Alignment of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 4 but ${align} bytes")
+    if (align != 1) {
+        throw Exception("Alignment of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 1 but ${align} bytes")
     }
 }
 
