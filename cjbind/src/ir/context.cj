@@ -64,7 +64,8 @@ public class PartialType <: Equatable<PartialType> {
     }
 }
 
-public class CjbindContext {
+public class CjbindContext <: Resource {
+    var _released: Bool = false
     public let options: CjbindOptions
 
     public let items: ArrayList<?Item>
@@ -126,13 +127,19 @@ public class CjbindContext {
         this.currentModule = 0
     }
 
-    public func release(): Unit {
-        if (let Some(ftu) <- this.fallbackTu) {
-            ftu.release()
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
+        if (!_released) {
+            _released = true
+            if (let Some(ftu) <- this.fallbackTu) {
+                ftu.close()
+            }
+            this.translationUnit.close()
+            this.index.close()
         }
-        this.translationUnit.release()
-        this.index.release()
     }
+
 
     // cjlint-ignore -start !G.FUN.01
     public func tryEnsureFallbackTranslationUnit(
@@ -194,8 +201,8 @@ public class CjbindContext {
             clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
         )
         let saveResult = tu.save(pch)
-        tu.release()
-        index.release()
+        tu.close()
+        index.close()
         if (let None <- saveResult.ok()) {
             return None
         }

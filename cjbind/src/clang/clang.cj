@@ -809,14 +809,16 @@ public class File {
     }
 }
 
-public class Index {
+public class Index <: Resource {
     let x: CXIndex
     var _released: Bool = false
 
-    public func release(): Unit {
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
         if (!_released) {
-            unsafe { clang_disposeIndex(x) }
             _released = true
+            unsafe { clang_disposeIndex(x) }
         }
     }
 
@@ -845,16 +847,19 @@ extend CString {
     }
 }
 
-public class TranslationUnit {
+public class TranslationUnit <: Resource {
     var x: CXTranslationUnit
     var _released: Bool = false
 
-    public func release(): Unit {
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
         if (!_released) {
-            unsafe { clang_disposeTranslationUnit(x) }
             _released = true
+            unsafe { clang_disposeTranslationUnit(x) }
         }
     }
+
 
     public init(
         ix: Index,
@@ -866,7 +871,7 @@ public class TranslationUnit {
             let fname = CStringOwned(file)
 
             let releaser = ArrayList<() -> Unit>()
-            releaser.add({=> fname.release()})
+            releaser.add({=> fname.close()})
 
             let c_args = LibC.malloc<CString>(count: cmdArgs.size)
             releaser.add({=> LibC.free(c_args)})
@@ -940,7 +945,7 @@ public class TranslationUnit {
                 }
             }
         } finally {
-            fs.release()
+            fs.close()
         }
     }
 
@@ -967,11 +972,12 @@ public class UnsavedFile {
 
 }
 
-public class FallbackTranslationUnit {
+public class FallbackTranslationUnit <: Resource {
     public let filePath: String
     public let pchPath: String
     public let idx: Index
     public let tu: TranslationUnit
+    var _released: Bool = false
 
     public init(
         file: String,
@@ -995,17 +1001,18 @@ public class FallbackTranslationUnit {
         this.tu = fTranslationUnit
     }
 
-    var _released: Bool = false
+    public func isClosed(): Bool { _released }
 
-    public func release(): Unit {
+    public func close(): Unit {
         if (!_released) {
-            this.tu.release()
-            this.idx.release()
+            _released = true
+            this.tu.close()
+            this.idx.close()
             try { remove(this.filePath) } catch (_: Exception) {}
             try { remove(this.pchPath) } catch (_: Exception) {}
-            _released = true
         }
     }
+
 
     public func reparse(
         unsavedContents: String
@@ -1030,7 +1037,7 @@ public class FallbackTranslationUnit {
                 }
             }
         } finally {
-            content.release()
+            content.close()
         }
     }
 }
@@ -1061,11 +1068,21 @@ public class TargetInfo {
     }
 }
 
-public class Diagnostic <: ToString {
+public class Diagnostic <: ToString & Resource {
     public let x: CXDiagnostic
+    var _released: Bool = false
 
     init(x: CXDiagnostic) {
         this.x = x
+    }
+
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
+        if (!_released) {
+            _released = true
+            unsafe { clang_disposeDiagnostic(x) }
+        }
     }
 
     public func toString(): String {
@@ -1095,9 +1112,10 @@ public class CanonicalTypeDeclaration {
     }
 }
 
-public class RawTokens <: Iterable<ClangToken> {
+public class RawTokens <: Iterable<ClangToken> & Resource {
     public let cursor: Cursor
     let _owned: OwnedTokens
+    var _released: Bool = false
 
     public init(cursor: Cursor) {
         var tokens = CPointer<CXToken>()
@@ -1114,6 +1132,15 @@ public class RawTokens <: Iterable<ClangToken> {
 
             this.cursor = cursor
             this._owned = OwnedTokens(tu, tokens, tokenCount)
+        }
+    }
+
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
+        if (!_released) {
+            _released = true
+            _owned.close()
         }
     }
 
@@ -1190,14 +1217,24 @@ public enum EvalResultInt {
     UInt(UInt64)
 }
 
-public class EvalResult {
+public class EvalResult <: Resource {
     let x: CXEvalResult
     let ty: Type
+    var _released: Bool = false
 
     public init(cursor: Cursor) {
         unsafe {
             this.x = clang_Cursor_Evaluate(cursor.x)
             this.ty = cursor.curType().canonicalType()
+        }
+    }
+
+    public func isClosed(): Bool { _released }
+
+    public func close(): Unit {
+        if (!_released) {
+            _released = true
+            unsafe { clang_EvalResult_dispose(x) }
         }
     }
 

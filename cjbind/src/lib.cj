@@ -39,6 +39,7 @@ func parse(context: CjbindContext) {
     for (d in context.translationUnit.diags()) {
         let msg = d.toString()
         let isError = d.severity() >= clang.CXDiagnosticSeverity_CXDiagnostic_Error
+        d.close()
 
         if (isError) {
             error = match (error) {
@@ -162,7 +163,7 @@ public func generate(opts: CjbindOptions): String {
 
         return module.toString()
     } finally {
-        ctx.release()
+        ctx.close()
     }
 }
 

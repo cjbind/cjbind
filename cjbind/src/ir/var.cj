@@ -189,31 +189,35 @@ func parseMacroClangFallback(
     }
 
     let evalutated = paren.evalutate()
-    let evalutatedKind = evalutated.kind()
+    try {
+        let evalutatedKind = evalutated.kind()
 
-    if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
-        match (evalutated.asInt()) {
-            case Some(v) => 
-            match (v) {
-                case clang.EvalResultInt.Int(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.Int(v))))
-                case clang.EvalResultInt.UInt(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.UInt(v))))
+        if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
+            match (evalutated.asInt()) {
+                case Some(v) =>
+                match (v) {
+                    case clang.EvalResultInt.Int(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.Int(v))))
+                    case clang.EvalResultInt.UInt(v) => return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.UInt(v))))
+                }
+                case None => return None
             }
-            case None => return None
+        } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
+            match (evalutated.asDouble()) {
+                case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
+                case None => return None
+            }
+        } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
+            match (evalutated.asLiteralString()) {
+                // asLiteralString() already returns a malloc'd copy, safe to use directly
+                case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalStr(v)))
+                case None => return None
+            }
         }
-    } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
-        match (evalutated.asDouble()) {
-            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
-            case None => return None
-        }
-    } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
-        match (evalutated.asLiteralString()) {
-            // asLiteralString() already returns a malloc'd copy, safe to use directly
-            case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalStr(v)))
-            case None => return None
-        }
-    }
 
-    return None
+        return None
+    } finally {
+        evalutated.close()
+    }
 }
 // cjlint-ignore -end
 

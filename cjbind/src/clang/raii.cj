@@ -2,16 +2,10 @@ package cjbind.clang
 
 // RAII wrapper types for libclang resources.
 //
-// Callers must call release() — no GC finalizer.
-// Wrap usage in `try/finally` to ensure prompt release.
+// All types implement Resource, so use try-with-resources:
 //
-// Example pattern:
-//
-//   let owned = CStringOwned(myString)
-//   try {
+//   try (owned = CStringOwned(myString)) {
 //       someFFICall(owned.pointer)
-//   } finally {
-//       owned.release()
 //   }
 
 // ---------------------------------------------------------------------------
@@ -22,7 +16,7 @@ package cjbind.clang
 //
 // Callers must call `release()` when done, or let the destructor handle it
 // at GC time. The `pointer` field is valid until `release()` is called.
-public class CStringOwned {
+public class CStringOwned <: Resource {
     private var _pointer: CString
     private var _released: Bool = false
 
@@ -33,16 +27,18 @@ public class CStringOwned {
     }
 
     // The raw CString pointer to the null-terminated C string.
-    // Valid until `release()` is called.
+    // Valid until `close()` is called.
     public prop pointer: CString {
         get() {
             return _pointer
         }
     }
 
+    public func isClosed(): Bool { _released }
+
     // Frees the underlying C string immediately.
     // Safe to call multiple times; subsequent calls are no-ops.
-    public func release(): Unit {
+    public func close(): Unit {
         if (!_released) {
             _released = true
             unsafe {
@@ -50,6 +46,7 @@ public class CStringOwned {
             }
         }
     }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -61,7 +58,7 @@ public class CStringOwned {
 //
 // Because the `CXTargetInfo` object cannot outlive the `CXTranslationUnit`
 // that produced it, eager extraction is the safest strategy.
-public class OwnedTargetInfo {
+public class OwnedTargetInfo <: Resource {
     public let triple: String
     public let pointerWidth: Int32
     private var _handle: CXTargetInfo
@@ -80,9 +77,11 @@ public class OwnedTargetInfo {
         this._released = true
     }
 
+    public func isClosed(): Bool { _released }
+
     // Frees the underlying `CXTargetInfo` handle immediately.
     // Safe to call multiple times; subsequent calls are no-ops.
-    public func release(): Unit {
+    public func close(): Unit {
         if (!_released) {
             _released = true
             unsafe {
@@ -90,6 +89,7 @@ public class OwnedTargetInfo {
             }
         }
     }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ public class OwnedTargetInfo {
 //
 // The `tu` reference is non-owning: this class does NOT dispose the
 // translation unit. The translation unit must outlive this object.
-public class OwnedTokens {
+public class OwnedTokens <: Resource {
     private let _tu: CXTranslationUnit
     private let _tokens: CPointer<CXToken>
     private let _count: UInt32
@@ -113,6 +113,8 @@ public class OwnedTokens {
         this._tokens = tokens
         this._count = count
     }
+
+    public func isClosed(): Bool { _released }
 
     // The translation unit this token array belongs to (non-owning reference).
     public prop tu: CXTranslationUnit {
@@ -137,7 +139,7 @@ public class OwnedTokens {
 
     // Frees the token array immediately via `clang_disposeTokens`.
     // Safe to call multiple times; subsequent calls are no-ops.
-    public func release(): Unit {
+    public func close(): Unit {
         if (!_released) {
             _released = true
             unsafe {
@@ -145,4 +147,5 @@ public class OwnedTokens {
             }
         }
     }
+
 }
