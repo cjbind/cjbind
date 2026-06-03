@@ -64,6 +64,12 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
         --auto-cstring                   把 char* 转换为 CString 而不是 CPointer<UInt8>
         --array-pointers-in-args         把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>
         --make-cjstring                  把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致
+        --objc                           启用 Objective-C 绑定生成模式
+        --objc-codegen-mode <MODE>       ObjC 代码生成模式: runtime (默认) 或 compiler
+        --objc-generate-definitions      在 compiler 模式下生成带默认返回值的方法桩体
+        --default-enum-style <STYLE>     默认枚举生成风格: consts (默认) 或 newtype
+        --fit-macro-constants            根据值范围选择最小适配整数类型
+        --no-union-accessor-workaround   禁用 union accessor 的编译器 verifier workaround
     -o, --output <FILE>                  把生成的绑定输出到文件
     -p, --package <PACKAGE>              生成的绑定中的包名
     -v, --version                        显示版本号并退出
