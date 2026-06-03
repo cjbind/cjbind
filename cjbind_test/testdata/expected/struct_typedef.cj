@@ -22,7 +22,7 @@ let _ = {
 }
 
 @C
-public struct _cjbind_ty_1 {
+public struct _cjbind_ty_1__cjbind_ty_1 {
     public let no_name: CPointer<Unit>
     public init(no_name: CPointer<Unit>) {
         this.no_name = no_name
@@ -32,28 +32,28 @@ public struct _cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<_cjbind_ty_1>()
+        let size = sizeOf<_cjbind_ty_1__cjbind_ty_1>()
         if (size != 8) {
-            throw Exception("Size of _cjbind_ty_1 is not 8 but ${size} bytes")
+            throw Exception("Size of _cjbind_ty_1__cjbind_ty_1 is not 8 but ${size} bytes")
         }
-        let align = alignOf<_cjbind_ty_1>()
+        let align = alignOf<_cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of _cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of _cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
-public type struct_ptr_t_struct_ptr_t = CPointer<_cjbind_ty_1>
+public type struct_ptr_t_struct_ptr_t = CPointer<_cjbind_ty_1__cjbind_ty_1>
 
-public type struct_ptr_ptr_t_struct_ptr_ptr_t = CPointer<CPointer<_cjbind_ty_1>>
+public type struct_ptr_ptr_t_struct_ptr_ptr_t = CPointer<CPointer<_cjbind_ty_1__cjbind_ty_1>>
 
 public const typedef_named_enum_ENUM_HAS_NAME: typedef_named_enum_typedef_named_enum = 1
 
 public type typedef_named_enum_typedef_named_enum = UInt32
 
-public const ENUM_IS_ANON: _cjbind_ty_2 = 0
+public const ENUM_IS_ANON: _cjbind_ty_2__cjbind_ty_2 = 0
 
-public type _cjbind_ty_2 = UInt32
+public type _cjbind_ty_2__cjbind_ty_2 = UInt32
 
-public type enum_ptr_t_enum_ptr_t = CPointer<_cjbind_ty_2>
+public type enum_ptr_t_enum_ptr_t = CPointer<_cjbind_ty_2__cjbind_ty_2>
 
-public type enum_ptr_ptr_t_enum_ptr_ptr_t = CPointer<CPointer<_cjbind_ty_2>>
+public type enum_ptr_ptr_t_enum_ptr_ptr_t = CPointer<CPointer<_cjbind_ty_2__cjbind_ty_2>>

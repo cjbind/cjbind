@@ -135,7 +135,7 @@ let _ = {
 }
 
 @C
-public struct malloc_heap__cjbind_ty_1 {
+public struct malloc_heap__cjbind_ty_1__cjbind_ty_1 {
     public let lh_first: CPointer<malloc_elem_malloc_elem>
     public init(lh_first: CPointer<malloc_elem_malloc_elem>) {
         this.lh_first = lh_first
@@ -145,13 +145,13 @@ public struct malloc_heap__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<malloc_heap__cjbind_ty_1>()
+        let size = sizeOf<malloc_heap__cjbind_ty_1__cjbind_ty_1>()
         if (size != 8) {
-            throw Exception("Size of malloc_heap__cjbind_ty_1 is not 8 but ${size} bytes")
+            throw Exception("Size of malloc_heap__cjbind_ty_1__cjbind_ty_1 is not 8 but ${size} bytes")
         }
-        let align = alignOf<malloc_heap__cjbind_ty_1>()
+        let align = alignOf<malloc_heap__cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of malloc_heap__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of malloc_heap__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
@@ -159,12 +159,12 @@ let _ = {
 @C
 public struct malloc_heap_malloc_heap {
     public let lock: rte_spinlock_t_rte_spinlock_t
-    public let free_head: VArray<malloc_heap__cjbind_ty_1, $13>
-    public let __cjbind_anon_1: malloc_heap__cjbind_ty_1
+    public let free_head: VArray<malloc_heap__cjbind_ty_1__cjbind_ty_1, $13>
+    public let __cjbind_anon_1: malloc_heap__cjbind_ty_1__cjbind_ty_1
     public let alloc_count: UInt32
     public let total_size: UIntNative
-    public init(lock: rte_spinlock_t_rte_spinlock_t, free_head: VArray<malloc_heap__cjbind_ty_1, $13>,
-        __cjbind_anon_1: malloc_heap__cjbind_ty_1, alloc_count: UInt32, total_size: UIntNative) {
+    public init(lock: rte_spinlock_t_rte_spinlock_t, free_head: VArray<malloc_heap__cjbind_ty_1__cjbind_ty_1, $13>,
+        __cjbind_anon_1: malloc_heap__cjbind_ty_1__cjbind_ty_1, alloc_count: UInt32, total_size: UIntNative) {
         this.lock = lock
         this.free_head = free_head
         this.__cjbind_anon_1 = __cjbind_anon_1

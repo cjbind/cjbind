@@ -1,37 +1,31 @@
 package cjbind_ffi
 
-@C
 func __cjbind_read_UInt32(ptr: CPointer<UInt8>): UInt32 {
     return unsafe { CPointer<UInt32>(ptr).read() }
 }
 
-@C
 func __cjbind_write_UInt32(ptr: CPointer<UInt8>, val: UInt32): Unit {
     unsafe { CPointer<UInt32>(ptr).write(val) }
 }
 
-@C
 func __cjbind_read_UInt16(ptr: CPointer<UInt8>): UInt16 {
     return unsafe { CPointer<UInt16>(ptr).read() }
 }
 
-@C
 func __cjbind_write_UInt16(ptr: CPointer<UInt8>, val: UInt16): Unit {
     unsafe { CPointer<UInt16>(ptr).write(val) }
 }
 
-@C
-func __cjbind_read_foo__cjbind_ty_1(ptr: CPointer<UInt8>): foo__cjbind_ty_1 {
-    return unsafe { CPointer<foo__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): foo__cjbind_ty_1__cjbind_ty_1 {
+    return unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+}
+
+func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1__cjbind_ty_1): Unit {
+    unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
 }
 
 @C
-func __cjbind_write_foo__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1): Unit {
-    unsafe { CPointer<foo__cjbind_ty_1>(ptr).write(val) }
-}
-
-@C
-public struct foo__cjbind_ty_1 {
+public struct foo__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func a(): UInt32 {
@@ -53,13 +47,13 @@ public struct foo__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1>()
+        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (size != 4) {
-            throw Exception("Size of foo__cjbind_ty_1 is not 4 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1>()
+        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (align != 4) {
-            throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${align} bytes")
         }
 }
 
@@ -67,19 +61,19 @@ let _ = {
 public struct foo_foo {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func bar(): foo__cjbind_ty_1 {
+    public func bar(): foo__cjbind_ty_1__cjbind_ty_1 {
         var s = this._storage
-        return unsafe { __cjbind_read_foo__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return unsafe { __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
     }
-    public mut func bar(val!: foo__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_foo__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+    public mut func bar(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
+        unsafe { __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
     }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
+    public func __cjbind_anon_1(): foo__cjbind_ty_1__cjbind_ty_1 {
         var s = this._storage
-        return unsafe { __cjbind_read_foo__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return unsafe { __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
     }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_foo__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
+        unsafe { __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
     }
 }
 

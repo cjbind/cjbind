@@ -169,7 +169,11 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         for (id in ancestorIds) {
             let item = ctx.resolveItem(id)
             let name = item.baseName(ctx)
-            if (!name.isEmpty() && !name.startsWith("_cjbind_")) {
+            var shouldAddName = !name.startsWith("_cjbind_")
+            if (!shouldAddName && item.kind.isType()) {
+                shouldAddName = name.startsWith("_cjbind_ty_")
+            }
+            if (!name.isEmpty() && shouldAddName) {
                 names.add(name)
             }
         }

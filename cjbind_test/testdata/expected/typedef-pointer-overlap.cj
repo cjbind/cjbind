@@ -1,11 +1,9 @@
 package cjbind_ffi
 
-@C
 func __cjbind_read_Int32(ptr: CPointer<UInt8>): Int32 {
     return unsafe { CPointer<Int32>(ptr).read() }
 }
 
-@C
 func __cjbind_write_Int32(ptr: CPointer<UInt8>, val: Int32): Unit {
     unsafe { CPointer<Int32>(ptr).write(val) }
 }

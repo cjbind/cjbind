@@ -52,10 +52,26 @@ public class Helpers {
         }
     }
 
+    public static func unionHelperSuffix(_: CjbindContext, cjType: TokenStream): String {
+        let compact = cjType.toString().replace(" ", "")
+        return compact
+            .replace("<", "_")
+            .replace(">", "_")
+            .replace(",", "_")
+            .replace("$", "_")
+            .replace(".", "_")
+            .replace(":", "_")
+            .replace("[", "_")
+            .replace("]", "_")
+            .replace("(", "_")
+            .replace(")", "_")
+            .replace("@", "_")
+            .replace("?", "_")
+    }
+
     public static func unionReadHelper(typeName: String, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_read_${typeName}"
         return @tmpl(
-            @C
             func ${funcName}(ptr: CPointer<UInt8>): ${cjType} {
                 return unsafe { CPointer<${cjType}>(ptr).read() }
             }
@@ -65,7 +81,6 @@ public class Helpers {
     public static func unionWriteHelper(typeName: String, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_write_${typeName}"
         return @tmpl(
-            @C
             func ${funcName}(ptr: CPointer<UInt8>, val: ${cjType}): Unit {
                 unsafe { CPointer<${cjType}>(ptr).write(val) }
             }

@@ -52,28 +52,24 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-@C
 func __cjbind_read_Int32(ptr: CPointer<UInt8>): Int32 {
     return unsafe { CPointer<Int32>(ptr).read() }
 }
 
-@C
 func __cjbind_write_Int32(ptr: CPointer<UInt8>, val: Int32): Unit {
     unsafe { CPointer<Int32>(ptr).write(val) }
 }
 
-@C
-func __cjbind_read_foo__cjbind_ty_1(ptr: CPointer<UInt8>): foo__cjbind_ty_1 {
-    return unsafe { CPointer<foo__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): foo__cjbind_ty_1__cjbind_ty_1 {
+    return unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+}
+
+func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1__cjbind_ty_1): Unit {
+    unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
 }
 
 @C
-func __cjbind_write_foo__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1): Unit {
-    unsafe { CPointer<foo__cjbind_ty_1>(ptr).write(val) }
-}
-
-@C
-public struct foo__cjbind_ty_1 {
+public struct foo__cjbind_ty_1__cjbind_ty_1 {
     var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
     public func b(): Int32 {
         var s = this._bitfield_1
@@ -95,13 +91,13 @@ public struct foo__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1>()
+        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (size != 4) {
-            throw Exception("Size of foo__cjbind_ty_1 is not 4 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1>()
+        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (align != 4) {
-            throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${align} bytes")
         }
 }
 
@@ -116,12 +112,12 @@ public struct foo_foo {
     public mut func a(val!: Int32): Unit {
         unsafe { __cjbind_write_Int32(CPointer<UInt8>(inout this._storage), val) }
     }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
+    public func __cjbind_anon_1(): foo__cjbind_ty_1__cjbind_ty_1 {
         var s = this._storage
-        return unsafe { __cjbind_read_foo__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return unsafe { __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
     }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_foo__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
+        unsafe { __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
     }
 }
 

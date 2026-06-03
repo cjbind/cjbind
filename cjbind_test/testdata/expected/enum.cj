@@ -1,14 +1,14 @@
 package cjbind_ffi
 
-public const FOO_A: foo__cjbind_ty_1 = 0
-public const FOO_B: foo__cjbind_ty_1 = 1
+public const FOO_A: foo__cjbind_ty_1__cjbind_ty_1 = 0
+public const FOO_B: foo__cjbind_ty_1__cjbind_ty_1 = 1
 
-public type foo__cjbind_ty_1 = UInt32
+public type foo__cjbind_ty_1__cjbind_ty_1 = UInt32
 
 @C
 public struct foo_foo {
-    public let member: foo__cjbind_ty_1
-    public init(member: foo__cjbind_ty_1) {
+    public let member: foo__cjbind_ty_1__cjbind_ty_1
+    public init(member: foo__cjbind_ty_1__cjbind_ty_1) {
         this.member = member
     }
 }

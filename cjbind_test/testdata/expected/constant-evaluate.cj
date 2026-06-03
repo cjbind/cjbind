@@ -1,9 +1,9 @@
 package cjbind_ffi
 
-public const foo: _cjbind_ty_1 = 4
-public const bar: _cjbind_ty_1 = 8
+public const foo: _cjbind_ty_1__cjbind_ty_1 = 4
+public const bar: _cjbind_ty_1__cjbind_ty_1 = 8
 
-public type _cjbind_ty_1 = UInt32
+public type _cjbind_ty_1__cjbind_ty_1 = UInt32
 
 public type EasyToOverflow_EasyToOverflow = UInt64
 

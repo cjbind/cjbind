@@ -4,16 +4,16 @@ public const RTE_CACHE_LINE_SIZE_RTE_CACHE_LINE_SIZE: Int64 = 64
 public const RTE_LIBRTE_IP_FRAG_MAX_FRAG_RTE_LIBRTE_IP_FRAG_MAX_FRAG: Int64 = 4
 
 //< index of last fragment *
-public const IP_LAST_FRAG_IDX: _cjbind_ty_1 = 0
+public const IP_LAST_FRAG_IDX: _cjbind_ty_1__cjbind_ty_1 = 0
 
 //< index of first fragment *
-public const IP_FIRST_FRAG_IDX: _cjbind_ty_1 = 1
+public const IP_FIRST_FRAG_IDX: _cjbind_ty_1__cjbind_ty_1 = 1
 
 //< minimum number of fragments *
-public const IP_MIN_FRAG_NUM: _cjbind_ty_1 = 2
-public const IP_MAX_FRAG_NUM: _cjbind_ty_1 = 4
+public const IP_MIN_FRAG_NUM: _cjbind_ty_1__cjbind_ty_1 = 2
+public const IP_MAX_FRAG_NUM: _cjbind_ty_1__cjbind_ty_1 = 4
 
-public type _cjbind_ty_1 = UInt32
+public type _cjbind_ty_1__cjbind_ty_1 = UInt32
 
 // @internal fragmented mbuf *
 @C
@@ -74,7 +74,7 @@ let _ = {
 }
 
 @C
-public struct ip_frag_pkt__cjbind_ty_1 {
+public struct ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 {
     public let tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>
     public let tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>
     public init(tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>, tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>) {
@@ -86,13 +86,13 @@ public struct ip_frag_pkt__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ip_frag_pkt__cjbind_ty_1>()
+        let size = sizeOf<ip_frag_pkt__cjbind_ty_1__cjbind_ty_1>()
         if (size != 16) {
-            throw Exception("Size of ip_frag_pkt__cjbind_ty_1 is not 16 but ${size} bytes")
+            throw Exception("Size of ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 is not 16 but ${size} bytes")
         }
-        let align = alignOf<ip_frag_pkt__cjbind_ty_1>()
+        let align = alignOf<ip_frag_pkt__cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of ip_frag_pkt__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
@@ -101,8 +101,8 @@ let _ = {
 @C
 public struct ip_frag_pkt_ip_frag_pkt {
     //< LRU list *
-    public let lru: ip_frag_pkt__cjbind_ty_1
-    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1
+    public let lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
+    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
     //< fragmentation key *
     public let key: ip_frag_key_ip_frag_key
     //< creation timestamp *
@@ -115,8 +115,9 @@ public struct ip_frag_pkt_ip_frag_pkt {
     public let last_idx: UInt32
     //< fragments *
     public let frags: VArray<ip_frag_ip_frag, $4>
-    public init(lru: ip_frag_pkt__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1, key: ip_frag_key_ip_frag_key,
-        start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32, frags: VArray<ip_frag_ip_frag, $4>) {
+    public init(lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1,
+        key: ip_frag_key_ip_frag_key, start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32,
+        frags: VArray<ip_frag_ip_frag, $4>) {
         this.lru = lru
         this.__cjbind_anon_1 = __cjbind_anon_1
         this.key = key

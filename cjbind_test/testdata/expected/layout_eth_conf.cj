@@ -52,34 +52,28 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-@C
 func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
     return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).read() }
 }
 
-@C
 func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>,
     val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
     unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).write(val) }
 }
 
-@C
 func __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
     return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).read() }
 }
 
-@C
 func __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>,
     val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
     unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).write(val) }
 }
 
-@C
 func __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
     return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).read() }
 }
 
-@C
 func __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>,
     val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
     unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).write(val) }
@@ -365,7 +359,7 @@ public const rte_eth_nb_pools_ETH_64_POOLS: rte_eth_nb_pools_rte_eth_nb_pools = 
 public type rte_eth_nb_pools_rte_eth_nb_pools = UInt32
 
 @C
-public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {
+public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
     //< The vlan ID of the received frame *
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
@@ -379,13 +373,13 @@ public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1>()
         if (size != 16) {
-            throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 16 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 is not 16 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
+        let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
@@ -409,12 +403,12 @@ public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
     //< We can have up to 64 filters/mappings *
     public let nb_pool_maps: UInt8
     //< VMDq vlan pool maps. *
-    public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>
-    public let __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1
+    public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>
+    public let __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1
     public let dcb_tc: VArray<UInt8, $8>
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
-        nb_pool_maps: UInt8, pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>,
-        __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1, dcb_tc: VArray<UInt8, $8>) {
+        nb_pool_maps: UInt8, pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>,
+        __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, dcb_tc: VArray<UInt8, $8>) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
@@ -537,7 +531,7 @@ let _ = {
 }
 
 @C
-public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
+public struct rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
     //< The vlan ID of the received frame *
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
@@ -551,13 +545,13 @@ public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1>()
         if (size != 16) {
-            throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 16 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 is not 16 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
+        let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
@@ -576,11 +570,12 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
     //< Flags from ETH_VMDQ_ACCEPT_* *
     public let rx_mode: UInt32
     //< VMDq vlan pool maps. *
-    public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>
-    public let __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1
+    public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>
+    public let __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         enable_loop_back: UInt8, nb_pool_maps: UInt8, rx_mode: UInt32,
-        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>, __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1) {
+        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>,
+        __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
@@ -930,7 +925,7 @@ let _ = {
 }
 
 @C
-public struct rte_eth_conf__cjbind_ty_1 {
+public struct rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
     //< Port RSS configuration *
     public let rss_conf: rte_eth_rss_conf_rte_eth_rss_conf
     public let vmdq_dcb_conf: rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf
@@ -948,18 +943,18 @@ public struct rte_eth_conf__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_conf__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_conf__cjbind_ty_1__cjbind_ty_1>()
         if (size != 2120) {
-            throw Exception("Size of rte_eth_conf__cjbind_ty_1 is not 2120 but ${size} bytes")
+            throw Exception("Size of rte_eth_conf__cjbind_ty_1__cjbind_ty_1 is not 2120 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_conf__cjbind_ty_1>()
+        let align = alignOf<rte_eth_conf__cjbind_ty_1__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_conf__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_conf__cjbind_ty_2 {
+public struct rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
     var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }
     public init() {}
     public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
@@ -989,13 +984,13 @@ public struct rte_eth_conf__cjbind_ty_2 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_conf__cjbind_ty_2>()
+        let size = sizeOf<rte_eth_conf__cjbind_ty_2__cjbind_ty_2>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_conf__cjbind_ty_2 is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_conf__cjbind_ty_2__cjbind_ty_2 is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_conf__cjbind_ty_2>()
+        let align = alignOf<rte_eth_conf__cjbind_ty_2__cjbind_ty_2>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_conf__cjbind_ty_2 is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_conf__cjbind_ty_2__cjbind_ty_2 is not 4 but ${align} bytes")
         }
 }
 
@@ -1023,11 +1018,11 @@ public struct rte_eth_conf_rte_eth_conf {
     //are defined in implementation of each driver. *
     public let lpbk_mode: UInt32
     //< Port RX filtering configuration (union). *
-    public let rx_adv_conf: rte_eth_conf__cjbind_ty_1
-    public let __cjbind_anon_1: rte_eth_conf__cjbind_ty_1
+    public let rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1
+    public let __cjbind_anon_1: rte_eth_conf__cjbind_ty_1__cjbind_ty_1
     //< Port TX DCB configuration (union). *
-    public let tx_adv_conf: rte_eth_conf__cjbind_ty_2
-    public let __cjbind_anon_2: rte_eth_conf__cjbind_ty_2
+    public let tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2
+    public let __cjbind_anon_2: rte_eth_conf__cjbind_ty_2__cjbind_ty_2
     // Currently,Priority Flow Control(PFC) are supported,if DCB with PFC
     //is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *
     public let dcb_capability_en: UInt32
@@ -1036,8 +1031,9 @@ public struct rte_eth_conf_rte_eth_conf {
     //< Interrupt mode configuration. *
     public let intr_conf: rte_intr_conf_rte_intr_conf
     public init(link_speeds: UInt32, rxmode: rte_eth_rxmode_rte_eth_rxmode, txmode: rte_eth_txmode_rte_eth_txmode,
-        lpbk_mode: UInt32, rx_adv_conf: rte_eth_conf__cjbind_ty_1, __cjbind_anon_1: rte_eth_conf__cjbind_ty_1,
-        tx_adv_conf: rte_eth_conf__cjbind_ty_2, __cjbind_anon_2: rte_eth_conf__cjbind_ty_2, dcb_capability_en: UInt32,
+        lpbk_mode: UInt32, rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1,
+        __cjbind_anon_1: rte_eth_conf__cjbind_ty_1__cjbind_ty_1, tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2,
+        __cjbind_anon_2: rte_eth_conf__cjbind_ty_2__cjbind_ty_2, dcb_capability_en: UInt32,
         fdir_conf: rte_fdir_conf_rte_fdir_conf, intr_conf: rte_intr_conf_rte_intr_conf) {
         this.link_speeds = link_speeds
         this.rxmode = rxmode

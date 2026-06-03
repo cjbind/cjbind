@@ -1,21 +1,17 @@
 package cjbind_ffi
 
-@C
 func __cjbind_read_UInt8(ptr: CPointer<UInt8>): UInt8 {
     return unsafe { CPointer<UInt8>(ptr).read() }
 }
 
-@C
 func __cjbind_write_UInt8(ptr: CPointer<UInt8>, val: UInt8): Unit {
     unsafe { CPointer<UInt8>(ptr).write(val) }
 }
 
-@C
 func __cjbind_read_Bar_Bar(ptr: CPointer<UInt8>): Bar_Bar {
     return unsafe { CPointer<Bar_Bar>(ptr).read() }
 }
 
-@C
 func __cjbind_write_Bar_Bar(ptr: CPointer<UInt8>, val: Bar_Bar): Unit {
     unsafe { CPointer<Bar_Bar>(ptr).write(val) }
 }

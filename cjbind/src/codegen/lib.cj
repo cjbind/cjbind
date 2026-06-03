@@ -453,7 +453,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 }
                                 let fieldIdent = ctx.cjIdent(fieldName)
                                 let fieldTy = data.ty.toCjTyOrOpaque(ctx, ())
-                                let typeName = fieldTy.toString().replace(" ", "")
+                                let typeName = Helpers.unionHelperSuffix(ctx, fieldTy)
 
                                 if (!result.unionHelpersSeen.contains(typeName)) {
                                     result.unionHelpersSeen.add(typeName)
