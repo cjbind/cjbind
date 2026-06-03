@@ -1,11 +1,15 @@
 package cjbind_ffi
 
-func __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): foo__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>): foo__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>,
+    val: foo__cjbind_ty_1__cjbind_ty_1): VArray<UInt32, $2> {
+    var s = storage
+    unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -36,18 +40,16 @@ public struct foo_foo {
     var _storage: VArray<UInt32, $2> = unsafe { zeroValue<VArray<UInt32, $2>>() }
     public init() {}
     public func bar(): foo__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
     }
     public mut func bar(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
     }
     public func __cjbind_anon_1(): foo__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
     }
     public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
     }
 }
 

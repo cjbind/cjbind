@@ -1,19 +1,25 @@
 package cjbind_ffi
 
-func __cjbind_read_CPointer_Unit_(ptr: CPointer<UInt8>): CPointer<Unit> {
-    return unsafe { CPointer<CPointer<Unit>>(ptr).read() }
+func __cjbind_read_CPointer_Unit__from_UInt64(storage: UInt64): CPointer<Unit> {
+    var s = storage
+    return unsafe { CPointer<CPointer<Unit>>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_CPointer_Unit_(ptr: CPointer<UInt8>, val: CPointer<Unit>): Unit {
-    unsafe { CPointer<CPointer<Unit>>(ptr).write(val) }
+func __cjbind_write_CPointer_Unit__from_UInt64(storage: UInt64, val: CPointer<Unit>): UInt64 {
+    var s = storage
+    unsafe { CPointer<CPointer<Unit>>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
-    return unsafe { CPointer<UInt64>(ptr).read() }
+func __cjbind_read_UInt64_from_UInt64(storage: UInt64): UInt64 {
+    var s = storage
+    return unsafe { CPointer<UInt64>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
-    unsafe { CPointer<UInt64>(ptr).write(val) }
+func __cjbind_write_UInt64_from_UInt64(storage: UInt64, val: UInt64): UInt64 {
+    var s = storage
+    unsafe { CPointer<UInt64>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -21,18 +27,16 @@ public struct rte_memseg__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
     public init() {}
     public func addr(): CPointer<Unit> {
-        var s = this._storage
-        return unsafe { __cjbind_read_CPointer_Unit_(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
     }
     public mut func addr(val!: CPointer<Unit>): Unit {
-        unsafe { __cjbind_write_CPointer_Unit_(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, val)
     }
     public func addr_64(): UInt64 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt64_from_UInt64(this._storage)
     }
     public mut func addr_64(val!: UInt64): Unit {
-        unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
     }
 }
 

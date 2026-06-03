@@ -1,11 +1,14 @@
 package cjbind_ffi
 
-func __cjbind_read_Int32(ptr: CPointer<UInt8>): Int32 {
-    return unsafe { CPointer<Int32>(ptr).read() }
+func __cjbind_read_Int32_from_UInt32(storage: UInt32): Int32 {
+    var s = storage
+    return unsafe { CPointer<Int32>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_Int32(ptr: CPointer<UInt8>, val: Int32): Unit {
-    unsafe { CPointer<Int32>(ptr).write(val) }
+func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
+    var s = storage
+    unsafe { CPointer<Int32>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -68,11 +71,10 @@ public struct cat_cat {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func standard_issue(): Int32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_Int32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_Int32_from_UInt32(this._storage)
     }
     public mut func standard_issue(val!: Int32): Unit {
-        unsafe { __cjbind_write_Int32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
     }
 }
 

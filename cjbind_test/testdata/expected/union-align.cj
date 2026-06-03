@@ -1,19 +1,25 @@
 package cjbind_ffi
 
-func __cjbind_read_UInt8(ptr: CPointer<UInt8>): UInt8 {
-    return unsafe { CPointer<UInt8>(ptr).read() }
+func __cjbind_read_UInt8_from_VArray_UInt8__16_(storage: VArray<UInt8, $16>): UInt8 {
+    var s = storage
+    return unsafe { CPointer<UInt8>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt8(ptr: CPointer<UInt8>, val: UInt8): Unit {
-    unsafe { CPointer<UInt8>(ptr).write(val) }
+func __cjbind_write_UInt8_from_VArray_UInt8__16_(storage: VArray<UInt8, $16>, val: UInt8): VArray<UInt8, $16> {
+    var s = storage
+    unsafe { CPointer<UInt8>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_Bar_Bar(ptr: CPointer<UInt8>): Bar_Bar {
-    return unsafe { CPointer<Bar_Bar>(ptr).read() }
+func __cjbind_read_Bar_Bar_from_VArray_UInt8__16_(storage: VArray<UInt8, $16>): Bar_Bar {
+    var s = storage
+    return unsafe { CPointer<Bar_Bar>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_Bar_Bar(ptr: CPointer<UInt8>, val: Bar_Bar): Unit {
-    unsafe { CPointer<Bar_Bar>(ptr).write(val) }
+func __cjbind_write_Bar_Bar_from_VArray_UInt8__16_(storage: VArray<UInt8, $16>, val: Bar_Bar): VArray<UInt8, $16> {
+    var s = storage
+    unsafe { CPointer<Bar_Bar>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -21,11 +27,10 @@ public struct Bar_Bar {
     var _storage: VArray<UInt8, $16> = unsafe { zeroValue<VArray<UInt8, $16>>() }
     public init() {}
     public func foo(): UInt8 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt8(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt8_from_VArray_UInt8__16_(this._storage)
     }
     public mut func foo(val!: UInt8): Unit {
-        unsafe { __cjbind_write_UInt8(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt8_from_VArray_UInt8__16_(this._storage, val)
     }
 }
 
@@ -47,11 +52,10 @@ public struct Baz_Baz {
     var _storage: VArray<UInt8, $16> = unsafe { zeroValue<VArray<UInt8, $16>>() }
     public init() {}
     public func bar(): Bar_Bar {
-        var s = this._storage
-        return unsafe { __cjbind_read_Bar_Bar(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_Bar_Bar_from_VArray_UInt8__16_(this._storage)
     }
     public mut func bar(val!: Bar_Bar): Unit {
-        unsafe { __cjbind_write_Bar_Bar(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_Bar_Bar_from_VArray_UInt8__16_(this._storage, val)
     }
 }
 

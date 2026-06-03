@@ -1,27 +1,38 @@
 package cjbind_ffi
 
-func __cjbind_read_color__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): color__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<color__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_color__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__3_(storage: VArray<UInt8, $3>): color__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<color__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_color__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>, val: color__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<color__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_color__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__3_(storage: VArray<UInt8, $3>,
+    val: color__cjbind_ty_1__cjbind_ty_1): VArray<UInt8, $3> {
+    var s = storage
+    unsafe { CPointer<color__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_color__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>): color__cjbind_ty_2__cjbind_ty_2 {
-    return unsafe { CPointer<color__cjbind_ty_2__cjbind_ty_2>(ptr).read() }
+func __cjbind_read_color__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt8__3_(storage: VArray<UInt8, $3>): color__cjbind_ty_2__cjbind_ty_2 {
+    var s = storage
+    return unsafe { CPointer<color__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_color__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>, val: color__cjbind_ty_2__cjbind_ty_2): Unit {
-    unsafe { CPointer<color__cjbind_ty_2__cjbind_ty_2>(ptr).write(val) }
+func __cjbind_write_color__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt8__3_(storage: VArray<UInt8, $3>,
+    val: color__cjbind_ty_2__cjbind_ty_2): VArray<UInt8, $3> {
+    var s = storage
+    unsafe { CPointer<color__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_VArray_UInt8__3_(ptr: CPointer<UInt8>): VArray<UInt8, $3> {
-    return unsafe { CPointer<VArray<UInt8, $3>>(ptr).read() }
+func __cjbind_read_VArray_UInt8__3__from_VArray_UInt8__3_(storage: VArray<UInt8, $3>): VArray<UInt8, $3> {
+    var s = storage
+    return unsafe { CPointer<VArray<UInt8, $3>>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_VArray_UInt8__3_(ptr: CPointer<UInt8>, val: VArray<UInt8, $3>): Unit {
-    unsafe { CPointer<VArray<UInt8, $3>>(ptr).write(val) }
+func __cjbind_write_VArray_UInt8__3__from_VArray_UInt8__3_(storage: VArray<UInt8, $3>, val: VArray<UInt8, $3>): VArray<UInt8, $3> {
+    var s = storage
+    unsafe { CPointer<VArray<UInt8, $3>>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -79,25 +90,22 @@ public struct color_color {
     var _storage: VArray<UInt8, $3> = unsafe { zeroValue<VArray<UInt8, $3>>() }
     public init() {}
     public func __cjbind_anon_1(): color__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_color__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_color__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__3_(this._storage)
     }
     public mut func __cjbind_anon_1(val!: color__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_color__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_color__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__3_(this._storage, val)
     }
     public func __cjbind_anon_2(): color__cjbind_ty_2__cjbind_ty_2 {
-        var s = this._storage
-        return unsafe { __cjbind_read_color__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_color__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt8__3_(this._storage)
     }
     public mut func __cjbind_anon_2(val!: color__cjbind_ty_2__cjbind_ty_2): Unit {
-        unsafe { __cjbind_write_color__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_color__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt8__3_(this._storage, val)
     }
     public func v3(): VArray<UInt8, $3> {
-        var s = this._storage
-        return unsafe { __cjbind_read_VArray_UInt8__3_(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_VArray_UInt8__3__from_VArray_UInt8__3_(this._storage)
     }
     public mut func v3(val!: VArray<UInt8, $3>): Unit {
-        unsafe { __cjbind_write_VArray_UInt8__3_(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_VArray_UInt8__3__from_VArray_UInt8__3_(this._storage, val)
     }
 }
 

@@ -453,12 +453,14 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 }
                                 let fieldIdent = ctx.cjIdent(fieldName)
                                 let fieldTy = data.ty.toCjTyOrOpaque(ctx, ())
-                                let typeName = Helpers.unionHelperSuffix(ctx, fieldTy)
+                                let fieldTypeName = Helpers.unionHelperSuffix(ctx, fieldTy)
+                                let storageTypeName = Helpers.unionHelperSuffix(ctx, blobTy)
+                                let typeName = "${fieldTypeName}_from_${storageTypeName}"
 
                                 if (!result.unionHelpersSeen.contains(typeName)) {
                                     result.unionHelpersSeen.add(typeName)
-                                    result.helpers.add(Helpers.unionReadHelper(typeName, fieldTy))
-                                    result.helpers.add(Helpers.unionWriteHelper(typeName, fieldTy))
+                                    result.helpers.add(Helpers.unionReadHelper(typeName, blobTy, fieldTy))
+                                    result.helpers.add(Helpers.unionWriteHelper(typeName, blobTy, fieldTy))
                                 }
 
                                 let readFuncName = "__cjbind_read_${typeName}"
@@ -466,13 +468,12 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                                 fields.add(@tmpl(
                                     public func ${fieldIdent}(): ${fieldTy} {
-                                        var s = this._storage
-                                        return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
+                                        return ${readFuncName}(this._storage)
                                     }
                                 ))
                                 fields.add(@tmpl(
                                     public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
-                                        unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }
+                                        this._storage = ${writeFuncName}(this._storage, val)
                                     }
                                 ))
                             case _ => ()

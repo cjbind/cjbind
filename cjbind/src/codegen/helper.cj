@@ -69,20 +69,23 @@ public class Helpers {
             .replace("?", "_")
     }
 
-    public static func unionReadHelper(typeName: String, cjType: TokenStream): TokenStream {
+    public static func unionReadHelper(typeName: String, storageTy: TokenStream, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_read_${typeName}"
         return @tmpl(
-            func ${funcName}(ptr: CPointer<UInt8>): ${cjType} {
-                return unsafe { CPointer<${cjType}>(ptr).read() }
+            func ${funcName}(storage: ${storageTy}): ${cjType} {
+                var s = storage
+                return unsafe { CPointer<${cjType}>(CPointer<UInt8>(inout s)).read() }
             }
         )
     }
 
-    public static func unionWriteHelper(typeName: String, cjType: TokenStream): TokenStream {
+    public static func unionWriteHelper(typeName: String, storageTy: TokenStream, cjType: TokenStream): TokenStream {
         let funcName = "__cjbind_write_${typeName}"
         return @tmpl(
-            func ${funcName}(ptr: CPointer<UInt8>, val: ${cjType}): Unit {
-                unsafe { CPointer<${cjType}>(ptr).write(val) }
+            func ${funcName}(storage: ${storageTy}, val: ${cjType}): ${storageTy} {
+                var s = storage
+                unsafe { CPointer<${cjType}>(CPointer<UInt8>(inout s)).write(val) }
+                return s
             }
         )
     }

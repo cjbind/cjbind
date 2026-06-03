@@ -52,31 +52,40 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
-    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).read() }
+func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+    var s = storage
+    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(ptr: CPointer<UInt8>,
-    val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
-    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(ptr).write(val) }
+func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(
+    storage: VArray<UInt32, $3>, val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): VArray<UInt32, $3> {
+    var s = storage
+    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
-    return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).read() }
+func __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+    var s = storage
+    return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(ptr: CPointer<UInt8>,
-    val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
-    unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(ptr).write(val) }
+func __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
+    val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): VArray<UInt32, $3> {
+    var s = storage
+    unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
-    return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).read() }
+func __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+    var s = storage
+    return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(ptr: CPointer<UInt8>,
-    val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
-    unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(ptr).write(val) }
+func __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
+    val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): VArray<UInt32, $3> {
+    var s = storage
+    unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 public const ETH_MQ_RX_RSS_FLAG_ETH_MQ_RX_RSS_FLAG: Int64 = 1
@@ -958,26 +967,24 @@ public struct rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
     var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }
     public init() {}
     public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
     public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
-        unsafe { __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(
+            this._storage, val)
     }
     public func dcb_tx_conf(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
     public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
-        unsafe { __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
     }
     public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
     public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
-        unsafe { __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage,
+            val)
     }
 }
 

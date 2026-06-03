@@ -1,45 +1,62 @@
 package cjbind_ffi
 
-func __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32,
+    val: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): UInt32 {
+    var s = storage
+    unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_UInt32(ptr: CPointer<UInt8>): UInt32 {
-    return unsafe { CPointer<UInt32>(ptr).read() }
+func __cjbind_read_UInt32_from_UInt32(storage: UInt32): UInt32 {
+    var s = storage
+    return unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt32(ptr: CPointer<UInt8>, val: UInt32): Unit {
-    unsafe { CPointer<UInt32>(ptr).write(val) }
+func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
+    var s = storage
+    unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32,
+    val: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): UInt32 {
+    var s = storage
+    unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple(ptr: CPointer<UInt8>): rte_ipv4_tuple_rte_ipv4_tuple {
-    return unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(ptr).read() }
+func __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>): rte_ipv4_tuple_rte_ipv4_tuple {
+    var s = storage
+    return unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple(ptr: CPointer<UInt8>, val: rte_ipv4_tuple_rte_ipv4_tuple): Unit {
-    unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(ptr).write(val) }
+func __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>,
+    val: rte_ipv4_tuple_rte_ipv4_tuple): VArray<UInt8, $48> {
+    var s = storage
+    unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple(ptr: CPointer<UInt8>): rte_ipv6_tuple_rte_ipv6_tuple {
-    return unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(ptr).read() }
+func __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>): rte_ipv6_tuple_rte_ipv6_tuple {
+    var s = storage
+    return unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple(ptr: CPointer<UInt8>, val: rte_ipv6_tuple_rte_ipv6_tuple): Unit {
-    unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(ptr).write(val) }
+func __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>,
+    val: rte_ipv6_tuple_rte_ipv6_tuple): VArray<UInt8, $48> {
+    var s = storage
+    unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -71,19 +88,17 @@ public struct rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func __cjbind_anon_1(): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage,
+            val)
     }
     public func sctp_tag(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_UInt32(this._storage)
     }
     public mut func sctp_tag(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
 }
 
@@ -154,19 +169,17 @@ public struct rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func __cjbind_anon_1(): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage,
+            val)
     }
     public func sctp_tag(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_UInt32(this._storage)
     }
     public mut func sctp_tag(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
 }
 
@@ -214,18 +227,16 @@ public struct rte_thash_tuple_rte_thash_tuple {
     var _storage: VArray<UInt8, $48> = unsafe { zeroValue<VArray<UInt8, $48>>() }
     public init() {}
     public func v4(): rte_ipv4_tuple_rte_ipv4_tuple {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(this._storage)
     }
     public mut func v4(val!: rte_ipv4_tuple_rte_ipv4_tuple): Unit {
-        unsafe { __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(this._storage, val)
     }
     public func v6(): rte_ipv6_tuple_rte_ipv6_tuple {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(this._storage)
     }
     public mut func v6(val!: rte_ipv6_tuple_rte_ipv6_tuple): Unit {
-        unsafe { __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(this._storage, val)
     }
 }
 

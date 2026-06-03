@@ -1,19 +1,25 @@
 package cjbind_ffi
 
-func __cjbind_read_rte_atomic16_t_rte_atomic16_t(ptr: CPointer<UInt8>): rte_atomic16_t_rte_atomic16_t {
-    return unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(ptr).read() }
+func __cjbind_read_rte_atomic16_t_rte_atomic16_t_from_UInt16(storage: UInt16): rte_atomic16_t_rte_atomic16_t {
+    var s = storage
+    return unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_atomic16_t_rte_atomic16_t(ptr: CPointer<UInt8>, val: rte_atomic16_t_rte_atomic16_t): Unit {
-    unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(ptr).write(val) }
+func __cjbind_write_rte_atomic16_t_rte_atomic16_t_from_UInt16(storage: UInt16, val: rte_atomic16_t_rte_atomic16_t): UInt16 {
+    var s = storage
+    unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_UInt16(ptr: CPointer<UInt8>): UInt16 {
-    return unsafe { CPointer<UInt16>(ptr).read() }
+func __cjbind_read_UInt16_from_UInt16(storage: UInt16): UInt16 {
+    var s = storage
+    return unsafe { CPointer<UInt16>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt16(ptr: CPointer<UInt8>, val: UInt16): Unit {
-    unsafe { CPointer<UInt16>(ptr).write(val) }
+func __cjbind_write_UInt16_from_UInt16(storage: UInt16, val: UInt16): UInt16 {
+    var s = storage
+    unsafe { CPointer<UInt16>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -68,73 +74,111 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-func __cjbind_read_UInt32(ptr: CPointer<UInt8>): UInt32 {
-    return unsafe { CPointer<UInt32>(ptr).read() }
+func __cjbind_read_UInt32_from_UInt32(storage: UInt32): UInt32 {
+    var s = storage
+    return unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt32(ptr: CPointer<UInt8>, val: UInt32): Unit {
-    unsafe { CPointer<UInt32>(ptr).write(val) }
+func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
+    var s = storage
+    unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32,
+    val: rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1): UInt32 {
+    var s = storage
+    unsafe { CPointer<rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(
+    storage: UInt32): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(
+        CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(
+    storage: UInt32, val: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): UInt32 {
+    var s = storage
+    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(
+        CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_UInt32_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>): UInt32 {
+    var s = storage
+    return unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_UInt32_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>, val: UInt32): VArray<UInt32, $2> {
+    var s = storage
+    unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
-    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2>(ptr).read() }
+func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>,
-    val: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): Unit {
-    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2>(ptr).write(val) }
+func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>,
+    val: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1): VArray<UInt32, $2> {
+    var s = storage
+    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_CPointer_Unit_(ptr: CPointer<UInt8>): CPointer<Unit> {
-    return unsafe { CPointer<CPointer<Unit>>(ptr).read() }
+func __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
+    var s = storage
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_CPointer_Unit_(ptr: CPointer<UInt8>, val: CPointer<Unit>): Unit {
-    unsafe { CPointer<CPointer<Unit>>(ptr).write(val) }
+func __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>,
+    val: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): VArray<UInt32, $2> {
+    var s = storage
+    unsafe { CPointer<rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
-    return unsafe { CPointer<UInt64>(ptr).read() }
+func __cjbind_read_CPointer_Unit__from_UInt64(storage: UInt64): CPointer<Unit> {
+    var s = storage
+    return unsafe { CPointer<CPointer<Unit>>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
-    unsafe { CPointer<UInt64>(ptr).write(val) }
+func __cjbind_write_CPointer_Unit__from_UInt64(storage: UInt64, val: CPointer<Unit>): UInt64 {
+    var s = storage
+    unsafe { CPointer<CPointer<Unit>>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_UInt64_from_UInt64(storage: UInt64): UInt64 {
+    var s = storage
+    return unsafe { CPointer<UInt64>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_UInt64_from_UInt64(storage: UInt64, val: UInt64): UInt64 {
+    var s = storage
+    unsafe { CPointer<UInt64>(CPointer<UInt8>(inout s)).write(val) }
+    return s
+}
+
+func __cjbind_read_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1_from_UInt64(storage: UInt64): rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
+}
+
+func __cjbind_write_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1_from_UInt64(storage: UInt64,
+    val: rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1): UInt64 {
+    var s = storage
+    unsafe { CPointer<rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 public const RTE_CACHE_LINE_MIN_SIZE_RTE_CACHE_LINE_MIN_SIZE: Int64 = 64
@@ -182,18 +226,16 @@ public struct rte_mbuf__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt16 = unsafe { zeroValue<UInt16>() }
     public init() {}
     public func refcnt_atomic(): rte_atomic16_t_rte_atomic16_t {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_atomic16_t_rte_atomic16_t(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_atomic16_t_rte_atomic16_t_from_UInt16(this._storage)
     }
     public mut func refcnt_atomic(val!: rte_atomic16_t_rte_atomic16_t): Unit {
-        unsafe { __cjbind_write_rte_atomic16_t_rte_atomic16_t(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_atomic16_t_rte_atomic16_t_from_UInt16(this._storage, val)
     }
     public func refcnt(): UInt16 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt16(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt16_from_UInt16(this._storage)
     }
     public mut func refcnt(val!: UInt16): Unit {
-        unsafe { __cjbind_write_UInt16(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
     }
 }
 
@@ -283,19 +325,16 @@ public struct rte_mbuf__cjbind_ty_2__cjbind_ty_2 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func packet_type(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_UInt32(this._storage)
     }
     public mut func packet_type(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
     public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
     }
 }
 
@@ -342,20 +381,18 @@ public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(
+            this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_UInt32(
+            this._storage, val)
     }
     public func lo(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_UInt32(this._storage)
     }
     public mut func lo(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
 }
 
@@ -425,50 +462,44 @@ public struct rte_mbuf__cjbind_ty_3__cjbind_ty_3 {
     var _storage: VArray<UInt32, $2> = unsafe { zeroValue<VArray<UInt32, $2>>() }
     public init() {}
     public func rss(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_VArray_UInt32__2_(this._storage)
     }
     public mut func rss(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_VArray_UInt32__2_(this._storage, val)
     }
     public func fdir(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
     }
     public mut func fdir(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(
+            this._storage, val)
     }
     public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(
+            this._storage, val)
     }
     public func sched(): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(this._storage)
     }
     public mut func sched(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(
+            this._storage, val)
     }
     public func __cjbind_anon_2(): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(this._storage)
     }
     public mut func __cjbind_anon_2(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(
+            this._storage, val)
     }
     public func usr(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt32_from_VArray_UInt32__2_(this._storage)
     }
     public mut func usr(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt32_from_VArray_UInt32__2_(this._storage, val)
     }
 }
 
@@ -490,18 +521,16 @@ public struct rte_mbuf__cjbind_ty_4__cjbind_ty_4 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
     public init() {}
     public func userdata(): CPointer<Unit> {
-        var s = this._storage
-        return unsafe { __cjbind_read_CPointer_Unit_(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
     }
     public mut func userdata(val!: CPointer<Unit>): Unit {
-        unsafe { __cjbind_write_CPointer_Unit_(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, val)
     }
     public func udata64(): UInt64 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt64_from_UInt64(this._storage)
     }
     public mut func udata64(val!: UInt64): Unit {
-        unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
     }
 }
 
@@ -584,19 +613,16 @@ public struct rte_mbuf__cjbind_ty_5__cjbind_ty_5 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
     public init() {}
     public func tx_offload(): UInt64 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt64(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_UInt64_from_UInt64(this._storage)
     }
     public mut func tx_offload(val!: UInt64): Unit {
-        unsafe { __cjbind_write_UInt64(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
     }
     public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1_from_UInt64(this._storage)
     }
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout this._storage),
-            val) }
+        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1_from_UInt64(this._storage, val)
     }
 }
 

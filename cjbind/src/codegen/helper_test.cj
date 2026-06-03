@@ -134,10 +134,11 @@ public class HelpersBlobTest {
 public class UnionHelperTest {
     @TestCase
     func readHelperContainsFuncDecl(): Unit {
-        let ts = Helpers.unionReadHelper("myField", tokenStreamFromTemplate("Int32"))
+        let ts = Helpers.unionReadHelper("myField", tokenStreamFromTemplate("UInt32"), tokenStreamFromTemplate("Int32"))
         let result = ts.toString()
-        @Expect(result.contains("@C"), true)
+        @Expect(result.contains("@C"), false)
         @Expect(result.contains("func __cjbind_read_myField"), true)
+        @Expect(result.contains("storage: UInt32"), true)
         @Expect(result.contains("CPointer<UInt8>"), true)
         @Expect(result.contains("Int32"), true)
         @Expect(result.contains("CPointer<Int32>"), true)
@@ -146,10 +147,11 @@ public class UnionHelperTest {
 
     @TestCase
     func writeHelperContainsFuncDecl(): Unit {
-        let ts = Helpers.unionWriteHelper("myField", tokenStreamFromTemplate("Float64"))
+        let ts = Helpers.unionWriteHelper("myField", tokenStreamFromTemplate("UInt64"), tokenStreamFromTemplate("Float64"))
         let result = ts.toString()
-        @Expect(result.contains("@C"), true)
+        @Expect(result.contains("@C"), false)
         @Expect(result.contains("func __cjbind_write_myField"), true)
+        @Expect(result.contains("storage: UInt64"), true)
         @Expect(result.contains("CPointer<UInt8>"), true)
         @Expect(result.contains("val: Float64"), true)
         @Expect(result.contains("CPointer<Float64>"), true)
@@ -158,16 +160,17 @@ public class UnionHelperTest {
 
     @TestCase
     func readHelperReturnType(): Unit {
-        let ts = Helpers.unionReadHelper("u64val", tokenStreamFromTemplate("UInt64"))
+        let ts = Helpers.unionReadHelper("u64val", tokenStreamFromTemplate("UInt64"), tokenStreamFromTemplate("UInt64"))
         let result = ts.toString()
         @Expect(result.contains("): UInt64"), true)
     }
 
     @TestCase
-    func writeHelperReturnUnit(): Unit {
-        let ts = Helpers.unionWriteHelper("u64val", tokenStreamFromTemplate("UInt64"))
+    func writeHelperReturnStorage(): Unit {
+        let ts = Helpers.unionWriteHelper("u64val", tokenStreamFromTemplate("UInt64"), tokenStreamFromTemplate("UInt16"))
         let result = ts.toString()
-        @Expect(result.contains("): Unit"), true)
+        @Expect(result.contains("): UInt64"), true)
+        @Expect(result.contains("return s"), true)
     }
 }
 

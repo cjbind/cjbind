@@ -1,38 +1,53 @@
 package cjbind_ffi
 
-func __cjbind_read_CPointer_UInt8_(ptr: CPointer<UInt8>): CPointer<UInt8> {
-    return unsafe { CPointer<CPointer<UInt8>>(ptr).read() }
+func __cjbind_read_CPointer_UInt8__from_VArray_UInt64__4_(storage: VArray<UInt64, $4>): CPointer<UInt8> {
+    var s = storage
+    return unsafe { CPointer<CPointer<UInt8>>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_CPointer_UInt8_(ptr: CPointer<UInt8>, val: CPointer<UInt8>): Unit {
-    unsafe { CPointer<CPointer<UInt8>>(ptr).write(val) }
+func __cjbind_write_CPointer_UInt8__from_VArray_UInt64__4_(storage: VArray<UInt64, $4>, val: CPointer<UInt8>): VArray<UInt64, $4> {
+    var s = storage
+    unsafe { CPointer<CPointer<UInt8>>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).read() }
+func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+    var s = storage
+    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(ptr: CPointer<UInt8>,
-    val: toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(ptr).write(val) }
+func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>, val: toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): VArray<UInt64, $4> {
+    var s = storage
+    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
-    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>(ptr).read() }
+func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
+    var s = storage
+    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(ptr: CPointer<UInt8>,
-    val: toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): Unit {
-    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>(ptr).write(val) }
+func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>, val: toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): VArray<UInt64, $4> {
+    var s = storage
+    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
-func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(ptr: CPointer<UInt8>): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
-    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3>(ptr).read() }
+func __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
+    var s = storage
+    return unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(ptr: CPointer<UInt8>,
-    val: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): Unit {
-    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3>(ptr).write(val) }
+func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
+    storage: VArray<UInt64, $4>, val: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): VArray<UInt64, $4> {
+    var s = storage
+    unsafe { CPointer<toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3>(CPointer<UInt8>(inout s)).write(val) }
+    return s
 }
 
 @C
@@ -117,59 +132,52 @@ public struct toml_datum_t__cjbind_ty_1__cjbind_ty_1 {
     var _storage: VArray<UInt64, $4> = unsafe { zeroValue<VArray<UInt64, $4>>() }
     public init() {}
     public func s(): CPointer<UInt8> {
-        var s = this._storage
-        return unsafe { __cjbind_read_CPointer_UInt8_(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_CPointer_UInt8__from_VArray_UInt64__4_(this._storage)
     }
     public mut func s(val!: CPointer<UInt8>): Unit {
-        unsafe { __cjbind_write_CPointer_UInt8_(CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_CPointer_UInt8__from_VArray_UInt64__4_(this._storage, val)
     }
     public func str(): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(this._storage)
     }
     public mut func str(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
+            this._storage, val)
     }
     public func __cjbind_anon_1(): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(this._storage)
     }
     public mut func __cjbind_anon_1(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
+            this._storage, val)
     }
     public func arr(): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(this._storage)
     }
     public mut func arr(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
+            this._storage, val)
     }
     public func __cjbind_anon_2(): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(this._storage)
     }
     public mut func __cjbind_anon_2(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
+            this._storage, val)
     }
     public func tab(): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(this._storage)
     }
     public mut func tab(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
+            this._storage, val)
     }
     public func __cjbind_anon_3(): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
-        var s = this._storage
-        return unsafe { __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(CPointer<UInt8>(inout s)) }
+        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(this._storage)
     }
     public mut func __cjbind_anon_3(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): Unit {
-        unsafe { __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3(
-            CPointer<UInt8>(inout this._storage), val) }
+        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
+            this._storage, val)
     }
 }
 
