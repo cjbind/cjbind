@@ -166,6 +166,10 @@ jobs:
         shell: msys2 {0}
         run: uv run python scripts/cjpm.py --static test -m cjbind_test -V
 
+      - name: "Smoke: generated bindings compile"
+        if: matrix.os.sys == 'linux'
+        run: uv run python scripts/compile_generated.py
+
       - name: Save libclang cache
         if: always() && steps.cache-libclang-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4

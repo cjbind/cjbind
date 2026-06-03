@@ -8,7 +8,7 @@ import glob
 import cjbind.{generate}
 import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.utils.formatString
-import std.env.getCommandLine
+import std.env.{getCommandLine, getVariable}
 
 let testdataDir: String = if (exists("cjbind_test/testdata")) {
     "cjbind_test/testdata"
@@ -103,7 +103,7 @@ func processTestCase(testcase: String): Unit {
     let expectedPath = Path("${testdataDir}/expected/${baseName}.cj")
 
     let args = getCommandLine()
-    let shouldUpdate = args.any { arg: String => arg == "update" }
+    let shouldUpdate = getVariable("CJBIND_UPDATE_EXPECTED").isSome() || args.any { arg: String => arg == "update" }
 
     let normalizedOutput = output.replace("\r\n", "\n")
 
