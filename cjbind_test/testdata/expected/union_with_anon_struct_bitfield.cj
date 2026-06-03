@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -70,70 +72,68 @@ func __cjbind_write_foo__cjbind_ty_1(ptr: CPointer<UInt8>, val: foo__cjbind_ty_1
     unsafe { CPointer<foo__cjbind_ty_1>(ptr).write(val) }
 }
 
-package cjbind_ffi
-
 @C
 public struct foo__cjbind_ty_1 {
-var _bitfield_1 : VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
-public func b(): Int32 {
-    var s = this._bitfield_1
-    return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 7) })
-}
-public mut func b(val!: Int32): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 7, UInt64(val)) }
-}
-public func c(): Int32 {
-    var s = this._bitfield_1
-    return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 7, 25) })
-}
-public mut func c(val!: Int32): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 25, UInt64(val)) }
-}
-public init() {}
+    var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
+    public func b(): Int32 {
+        var s = this._bitfield_1
+        return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 7) })
+    }
+    public mut func b(val!: Int32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 7, UInt64(val)) }
+    }
+    public func c(): Int32 {
+        var s = this._bitfield_1
+        return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 7, 25) })
+    }
+    public mut func c(val!: Int32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 25, UInt64(val)) }
+    }
+    public init() {}
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<foo__cjbind_ty_1>()
-    if (size != 4) {
-        throw Exception("Size of foo__cjbind_ty_1 is not 4 but ${size} bytes")
-    }
-    let align = alignOf<foo__cjbind_ty_1>()
-    if (align != 4) {
-        throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<foo__cjbind_ty_1>()
+        if (size != 4) {
+            throw Exception("Size of foo__cjbind_ty_1 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<foo__cjbind_ty_1>()
+        if (align != 4) {
+            throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
+        }
 }
 
 @C
 public struct foo_foo {
-var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
-public init() {}
-public func a(): Int32 {
-    var s = this._storage
-    return unsafe { __cjbind_read_Int32(CPointer<UInt8>(inout s)) }
-}
-public mut func a(val!: Int32): Unit {
-    unsafe { __cjbind_write_Int32(CPointer<UInt8>(inout this._storage), val) }
-}
-public func __cjbind_anon_1(): foo__cjbind_ty_1 {
-    var s = this._storage
-    return unsafe { __cjbind_read_foo__cjbind_ty_1(CPointer<UInt8>(inout s)) }
-}
-public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
-    unsafe { __cjbind_write_foo__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
-}
+    var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
+    public init() {}
+    public func a(): Int32 {
+        var s = this._storage
+        return unsafe { __cjbind_read_Int32(CPointer<UInt8>(inout s)) }
+    }
+    public mut func a(val!: Int32): Unit {
+        unsafe { __cjbind_write_Int32(CPointer<UInt8>(inout this._storage), val) }
+    }
+    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
+        var s = this._storage
+        return unsafe { __cjbind_read_foo__cjbind_ty_1(CPointer<UInt8>(inout s)) }
+    }
+    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
+        unsafe { __cjbind_write_foo__cjbind_ty_1(CPointer<UInt8>(inout this._storage), val) }
+    }
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<foo_foo>()
-    if (size != 4) {
-        throw Exception("Size of foo_foo is not 4 but ${size} bytes")
-    }
-    let align = alignOf<foo_foo>()
-    if (align != 4) {
-        throw Exception("Alignment of foo_foo is not 4 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<foo_foo>()
+        if (size != 4) {
+            throw Exception("Size of foo_foo is not 4 but ${size} bytes")
+        }
+        let align = alignOf<foo_foo>()
+        if (align != 4) {
+            throw Exception("Alignment of foo_foo is not 4 but ${align} bytes")
+        }
 }

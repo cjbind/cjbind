@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_read_CPointer<UInt8>(ptr: CPointer<UInt8>): CPointer<UInt8> {
     return unsafe { CPointer<CPointer<UInt8>>(ptr).read() }
@@ -27,8 +29,6 @@ func __cjbind_read_VArray<UInt8,$2>(ptr: CPointer<UInt8>): VArray<UInt8, $2> {
 func __cjbind_write_VArray<UInt8,$2>(ptr: CPointer<UInt8>, val: VArray<UInt8, $2>): Unit {
     unsafe { CPointer<VArray<UInt8, $2>>(ptr).write(val) }
 }
-
-package cjbind_ffi
 
 @C
 public struct U_U {

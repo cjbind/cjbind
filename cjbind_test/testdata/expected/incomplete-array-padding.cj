@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -50,31 +52,29 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-package cjbind_ffi
-
 @C
 public struct foo_foo {
-var _bitfield_1 : VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-public func a(): UInt8 {
-    var s = this._bitfield_1
-    return UInt8(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 1) })
-}
-public mut func a(val!: UInt8): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
-}
-public var b : CPointer<CPointer<Unit>> = unsafe { zeroValue<CPointer<CPointer<Unit>>>() }
-public init() {}
+    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
+    public func a(): UInt8 {
+        var s = this._bitfield_1
+        return UInt8(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 1) })
+    }
+    public mut func a(val!: UInt8): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    }
+    public var b: CPointer<CPointer<Unit>> = unsafe { zeroValue<CPointer<CPointer<Unit>>>() }
+    public init() {}
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<foo_foo>()
-    if (size != 8) {
-        throw Exception("Size of foo_foo is not 8 but ${size} bytes")
-    }
-    let align = alignOf<foo_foo>()
-    if (align != 8) {
-        throw Exception("Alignment of foo_foo is not 8 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<foo_foo>()
+        if (size != 8) {
+            throw Exception("Size of foo_foo is not 8 but ${size} bytes")
+        }
+        let align = alignOf<foo_foo>()
+        if (align != 8) {
+            throw Exception("Alignment of foo_foo is not 8 but ${align} bytes")
+        }
 }

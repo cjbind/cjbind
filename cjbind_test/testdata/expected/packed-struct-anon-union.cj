@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_read_CPointer<Unit>(ptr: CPointer<UInt8>): CPointer<Unit> {
     return unsafe { CPointer<CPointer<Unit>>(ptr).read() }
@@ -17,8 +19,6 @@ func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
 func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
     unsafe { CPointer<UInt64>(ptr).write(val) }
 }
-
-package cjbind_ffi
 
 @C
 public struct rte_memseg__cjbind_ty_1 {

@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -50,37 +52,36 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-package cjbind_ffi
-
 @C
 public struct mach_msg_type_descriptor_t_mach_msg_type_descriptor_t {
-var _bitfield_1 : VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
-public func pad3(): UInt32 {
-    var s = this._bitfield_1
-    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 24) })
-}
-public mut func pad3(val!: UInt32): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 24, UInt64(val)) }
-}
-public func type_(): UInt32 {
-    var s = this._bitfield_1
-    return UInt32(unsafe { __cjbind_bitfield_read(inout s, 24, 8) })
-}
-public mut func type_(val!: UInt32): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
-}
-public init() {}
+    var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
+    public func pad3(): UInt32 {
+        var s = this._bitfield_1
+        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 24) })
+    }
+    public mut func pad3(val!: UInt32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 24, UInt64(val)) }
+    }
+    public func type_(): UInt32 {
+        var s = this._bitfield_1
+        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 24, 8) })
+    }
+    public mut func type_(val!: UInt32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
+    }
+    public init() {}
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<mach_msg_type_descriptor_t_mach_msg_type_descriptor_t>()
-    if (size != 4) {
-        throw Exception("Size of mach_msg_type_descriptor_t_mach_msg_type_descriptor_t is not 4 but ${size} bytes")
-    }
-    let align = alignOf<mach_msg_type_descriptor_t_mach_msg_type_descriptor_t>()
-    if (align != 4) {
-        throw Exception("Alignment of mach_msg_type_descriptor_t_mach_msg_type_descriptor_t is not 4 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<mach_msg_type_descriptor_t_mach_msg_type_descriptor_t>()
+        if (size != 4) {
+            throw Exception("Size of mach_msg_type_descriptor_t_mach_msg_type_descriptor_t is not 4 but ${size} bytes")
+        }
+        let align = alignOf<mach_msg_type_descriptor_t_mach_msg_type_descriptor_t>()
+        if (align != 4) {
+            throw Exception(
+                "Alignment of mach_msg_type_descriptor_t_mach_msg_type_descriptor_t is not 4 but ${align} bytes")
+        }
 }

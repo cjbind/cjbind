@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -50,24 +52,22 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-package cjbind_ffi
-
 @C
 public struct WithBitfield_WithBitfield {
-var _bitfield_1 : VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-public var a : UInt32 = unsafe { zeroValue<UInt32>() }
-public init() {}
+    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
+    public var a: UInt32 = unsafe { zeroValue<UInt32>() }
+    public init() {}
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<WithBitfield_WithBitfield>()
-    if (size != 8) {
-        throw Exception("Size of WithBitfield_WithBitfield is not 8 but ${size} bytes")
-    }
-    let align = alignOf<WithBitfield_WithBitfield>()
-    if (align != 4) {
-        throw Exception("Alignment of WithBitfield_WithBitfield is not 4 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<WithBitfield_WithBitfield>()
+        if (size != 8) {
+            throw Exception("Size of WithBitfield_WithBitfield is not 8 but ${size} bytes")
+        }
+        let align = alignOf<WithBitfield_WithBitfield>()
+        if (align != 4) {
+            throw Exception("Alignment of WithBitfield_WithBitfield is not 4 but ${align} bytes")
+        }
 }

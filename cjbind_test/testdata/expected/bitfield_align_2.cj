@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -50,47 +52,42 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-package cjbind_ffi
-
-public const MyEnum_ONE : MyEnum_MyEnum = 0
-
-public const MyEnum_TWO : MyEnum_MyEnum = 1
-
-public const MyEnum_THREE : MyEnum_MyEnum = 2
-
-public const MyEnum_FOUR : MyEnum_MyEnum = 3
+public const MyEnum_ONE: MyEnum_MyEnum = 0
+public const MyEnum_TWO: MyEnum_MyEnum = 1
+public const MyEnum_THREE: MyEnum_MyEnum = 2
+public const MyEnum_FOUR: MyEnum_MyEnum = 3
 
 public type MyEnum_MyEnum = UInt32
 
 @C
 public struct TaggedPtr_TaggedPtr {
-var _bitfield_1 : VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
-public func tag(): MyEnum_MyEnum {
-    var s = this._bitfield_1
-    return MyEnum_MyEnum(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
-}
-public mut func tag(val!: MyEnum_MyEnum): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 2, UInt64(val)) }
-}
-public func ptr(): Int64 {
-    var s = this._bitfield_1
-    return Int64(unsafe { __cjbind_bitfield_read_signed(inout s, 2, 62) })
-}
-public mut func ptr(val!: Int64): Unit {
-    unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 62, UInt64(val)) }
-}
-public init() {}
+    var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
+    public func tag(): MyEnum_MyEnum {
+        var s = this._bitfield_1
+        return MyEnum_MyEnum(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
+    }
+    public mut func tag(val!: MyEnum_MyEnum): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 2, UInt64(val)) }
+    }
+    public func ptr(): Int64 {
+        var s = this._bitfield_1
+        return Int64(unsafe { __cjbind_bitfield_read_signed(inout s, 2, 62) })
+    }
+    public mut func ptr(val!: Int64): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 62, UInt64(val)) }
+    }
+    public init() {}
 }
 
 @When[debug]
 let _ = {
-=>
-    let size = sizeOf<TaggedPtr_TaggedPtr>()
-    if (size != 8) {
-        throw Exception("Size of TaggedPtr_TaggedPtr is not 8 but ${size} bytes")
-    }
-    let align = alignOf<TaggedPtr_TaggedPtr>()
-    if (align != 8) {
-        throw Exception("Alignment of TaggedPtr_TaggedPtr is not 8 but ${align} bytes")
-    }
+    =>
+        let size = sizeOf<TaggedPtr_TaggedPtr>()
+        if (size != 8) {
+            throw Exception("Size of TaggedPtr_TaggedPtr is not 8 but ${size} bytes")
+        }
+        let align = alignOf<TaggedPtr_TaggedPtr>()
+        if (align != 8) {
+            throw Exception("Alignment of TaggedPtr_TaggedPtr is not 8 but ${align} bytes")
+        }
 }

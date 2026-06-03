@@ -1,3 +1,5 @@
+package cjbind_ffi
+
 @C
 func __cjbind_read_rte_atomic16_t_rte_atomic16_t(ptr: CPointer<UInt8>): rte_atomic16_t_rte_atomic16_t {
     return unsafe { CPointer<rte_atomic16_t_rte_atomic16_t>(ptr).read() }
@@ -119,8 +121,6 @@ func __cjbind_read_UInt64(ptr: CPointer<UInt8>): UInt64 {
 func __cjbind_write_UInt64(ptr: CPointer<UInt8>, val: UInt64): Unit {
     unsafe { CPointer<UInt64>(ptr).write(val) }
 }
-
-package cjbind_ffi
 
 public const RTE_CACHE_LINE_MIN_SIZE_RTE_CACHE_LINE_MIN_SIZE : Int64 = 64
 

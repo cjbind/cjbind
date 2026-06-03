@@ -28,6 +28,7 @@ public enum CodegenError {
 }
 
 public class CodegenResult {
+    public let headers: ArrayList<TokenStream> = ArrayList<TokenStream>()
     public let items: ArrayList<TokenStream> = ArrayList<TokenStream>()
     public let helpers: ArrayList<TokenStream> = ArrayList<TokenStream>()
 
@@ -72,6 +73,7 @@ public class CodegenResult {
         this.sawIncompleteArray ||= next.sawIncompleteArray
         this.sawCjbindUnion ||= next.sawCjbindUnion
         this.sawBitfieldUnit ||= next.sawBitfieldUnit
+        this.headers.add(all: next.headers)
         this.helpers.add(all: next.helpers)
 
         return next.items
@@ -94,6 +96,7 @@ public func codegen(tctx: CjbindContext): Result<TokenStream, CodegenError> {
         )
 
         let allItems = ArrayList<TokenStream>()
+        allItems.add(all: result.headers)
         allItems.add(all: result.helpers)
         allItems.add(all: result.items)
         let ret = joinStreams(allItems, "\n\n")
@@ -156,7 +159,7 @@ extend Module <: CodeGenerator<Item, Unit> {
                 package ${pkgName}
             )
 
-            result.items.add(header, at: 0)
+            result.headers.add(header)
         }
     }
 }
