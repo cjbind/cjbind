@@ -78,14 +78,10 @@ jobs:
           cache: true
 
       - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@ff94aa01f985321ddfa5cd0973bb26b4c37e6010 # v2.1.1
+        uses: Zxilly/setup-cangjie@91463316b1c359f216c2ac49e35900f9341c1571 # v3.2.0
         with:
           channel: "nightly"
-          version: "1.1.0-alpha.20260404010029"
-
-      - name: Patch Cangjie
-        run: |
-          uv run scripts/patch_opt.py
+          version: "1.1.0-alpha.20260603010036"
 
       - name: Install system libclang (dynamic, Linux)
         if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
