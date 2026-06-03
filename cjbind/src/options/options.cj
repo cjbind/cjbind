@@ -46,6 +46,7 @@ public class CjbindOptions {
     public var objcGenerateDefinitions: Bool = false
     public var defaultEnumStyle: DefaultEnumStyle = DefaultEnumStyle.Consts
     public var fitMacroConstants: Bool = false
+    public var useUnionAccessorWorkaround: Bool = true
 
     public init() {}
 

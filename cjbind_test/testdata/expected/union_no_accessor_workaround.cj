@@ -1,0 +1,52 @@
+package cjbind_ffi
+
+func __cjbind_read_UInt32_from_UInt32(ptr: CPointer<UInt8>): UInt32 {
+    return unsafe { CPointer<UInt32>(ptr).read() }
+}
+
+func __cjbind_write_UInt32_from_UInt32(ptr: CPointer<UInt8>, val: UInt32): Unit {
+    unsafe { CPointer<UInt32>(ptr).write(val) }
+}
+
+func __cjbind_read_UInt16_from_UInt32(ptr: CPointer<UInt8>): UInt16 {
+    return unsafe { CPointer<UInt16>(ptr).read() }
+}
+
+func __cjbind_write_UInt16_from_UInt32(ptr: CPointer<UInt8>, val: UInt16): Unit {
+    unsafe { CPointer<UInt16>(ptr).write(val) }
+}
+
+@C
+public struct simple_union_simple_union {
+    var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
+    public init() {}
+    public func u32(): UInt32 {
+        var s = this._storage
+        return unsafe { __cjbind_read_UInt32_from_UInt32(CPointer<UInt8>(inout s)) }
+    }
+    public mut func u32(val!: UInt32): Unit {
+        unsafe { __cjbind_write_UInt32_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
+    }
+    public func u16(): UInt16 {
+        var s = this._storage
+        return unsafe { __cjbind_read_UInt16_from_UInt32(CPointer<UInt8>(inout s)) }
+    }
+    public mut func u16(val!: UInt16): Unit {
+        unsafe { __cjbind_write_UInt16_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<simple_union_simple_union>()
+        if (size != 4) {
+            throw Exception("Size of simple_union_simple_union is not 4 but ${size} bytes")
+        }
+        let align = alignOf<simple_union_simple_union>()
+        if (align != 4) {
+            throw Exception("Alignment of simple_union_simple_union is not 4 but ${align} bytes")
+        }
+}
+
+public type simple_union_t_simple_union_t = simple_union_simple_union

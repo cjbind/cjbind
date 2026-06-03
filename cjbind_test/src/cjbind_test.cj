@@ -46,6 +46,9 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                 } else if (part == "--fit-macro-constants") {
                     opt.fitMacroConstants = true
                     i += 1
+                } else if (part == "--no-union-accessor-workaround") {
+                    opt.useUnionAccessorWorkaround = false
+                    i += 1
                 } else if (part == "--clang-arg" && i + 1 < parts.size) {
                     opt.clangArgs.add(parts[i + 1].trimAscii())
                     i += 2

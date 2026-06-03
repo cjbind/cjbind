@@ -90,6 +90,24 @@ public class Helpers {
         )
     }
 
+    public static func unionReadPointerHelper(typeName: String, cjType: TokenStream): TokenStream {
+        let funcName = "__cjbind_read_${typeName}"
+        return @tmpl(
+            func ${funcName}(ptr: CPointer<UInt8>): ${cjType} {
+                return unsafe { CPointer<${cjType}>(ptr).read() }
+            }
+        )
+    }
+
+    public static func unionWritePointerHelper(typeName: String, cjType: TokenStream): TokenStream {
+        let funcName = "__cjbind_write_${typeName}"
+        return @tmpl(
+            func ${funcName}(ptr: CPointer<UInt8>, val: ${cjType}): Unit {
+                unsafe { CPointer<${cjType}>(ptr).write(val) }
+            }
+        )
+    }
+
     public static func bitfieldReadHelper(): TokenStream {
         return @tmpl(
             @C

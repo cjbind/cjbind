@@ -145,6 +145,7 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.objcGenerateDefinitions = opts.objcGenerateDefinitions
     ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
     ctxOpts.fitMacroConstants = opts.fitMacroConstants
+    ctxOpts.useUnionAccessorWorkaround = opts.useUnionAccessorWorkaround
 
     let ctx = CjbindContext(ctxOpts)
 

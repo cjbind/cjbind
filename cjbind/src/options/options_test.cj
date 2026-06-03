@@ -44,6 +44,7 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.objcGenerateDefinitions, false)
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.Consts, true)
         @Expect(opts.fitMacroConstants, false)
+        @Expect(opts.useUnionAccessorWorkaround, true)
     }
 
     @TestCase
@@ -72,6 +73,7 @@ public class CjbindOptionsDefaultsTest {
         opts.funcWrapperSuffix = "_wrap"
         opts.defaultEnumStyle = DefaultEnumStyle.NewType
         opts.objcCodegenMode = ObjcCodegenMode.Compiler
+        opts.useUnionAccessorWorkaround = false
 
         @Expect(opts.packageName, "my_package")
         @Expect(opts.noEnumPrefix, true)
@@ -79,5 +81,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.funcWrapperSuffix, "_wrap")
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.NewType, true)
         @Expect(opts.objcCodegenMode == ObjcCodegenMode.Compiler, true)
+        @Expect(opts.useUnionAccessorWorkaround, false)
     }
 }

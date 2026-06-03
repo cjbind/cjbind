@@ -459,23 +459,42 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                                 if (!result.unionHelpersSeen.contains(typeName)) {
                                     result.unionHelpersSeen.add(typeName)
-                                    result.helpers.add(Helpers.unionReadHelper(typeName, blobTy, fieldTy))
-                                    result.helpers.add(Helpers.unionWriteHelper(typeName, blobTy, fieldTy))
+                                    if (ctx.options.useUnionAccessorWorkaround) {
+                                        result.helpers.add(Helpers.unionReadHelper(typeName, blobTy, fieldTy))
+                                        result.helpers.add(Helpers.unionWriteHelper(typeName, blobTy, fieldTy))
+                                    } else {
+                                        result.helpers.add(Helpers.unionReadPointerHelper(typeName, fieldTy))
+                                        result.helpers.add(Helpers.unionWritePointerHelper(typeName, fieldTy))
+                                    }
                                 }
 
                                 let readFuncName = "__cjbind_read_${typeName}"
                                 let writeFuncName = "__cjbind_write_${typeName}"
 
-                                fields.add(@tmpl(
-                                    public func ${fieldIdent}(): ${fieldTy} {
-                                        return ${readFuncName}(this._storage)
-                                    }
-                                ))
-                                fields.add(@tmpl(
-                                    public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
-                                        this._storage = ${writeFuncName}(this._storage, val)
-                                    }
-                                ))
+                                if (ctx.options.useUnionAccessorWorkaround) {
+                                    fields.add(@tmpl(
+                                        public func ${fieldIdent}(): ${fieldTy} {
+                                            return ${readFuncName}(this._storage)
+                                        }
+                                    ))
+                                    fields.add(@tmpl(
+                                        public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
+                                            this._storage = ${writeFuncName}(this._storage, val)
+                                        }
+                                    ))
+                                } else {
+                                    fields.add(@tmpl(
+                                        public func ${fieldIdent}(): ${fieldTy} {
+                                            var s = this._storage
+                                            return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
+                                        }
+                                    ))
+                                    fields.add(@tmpl(
+                                        public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
+                                            unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }
+                                        }
+                                    ))
+                                }
                             case _ => ()
                         }
                     }

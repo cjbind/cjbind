@@ -28,6 +28,8 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "默认枚举生成风格: consts (默认) 或 newtype", "STYLE", "consts")
     let fitMacroConstantsFlag = BoolFlag(None, "fit-macro-constants", "fit-macro-constants",
         "根据值范围选择最小适配整数类型")
+    let noUnionAccessorWorkaroundFlag = BoolFlag(None, "no-union-accessor-workaround",
+        "no-union-accessor-workaround", "禁用 union accessor 的编译器 verifier workaround")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -52,6 +54,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         objcGenerateDefinitions,
         defaultEnumStyleFlag,
         fitMacroConstantsFlag,
+        noUnionAccessorWorkaroundFlag,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -97,6 +100,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
             env.exit(1)
     }
     opt.fitMacroConstants = fitMacroConstantsFlag.value
+    opt.useUnionAccessorWorkaround = !noUnionAccessorWorkaroundFlag.value
 
     let output: ?String = outputFlag.value
 

@@ -172,6 +172,26 @@ public class UnionHelperTest {
         @Expect(result.contains("): UInt64"), true)
         @Expect(result.contains("return s"), true)
     }
+
+    @TestCase
+    func readPointerHelperContainsPointerArgument(): Unit {
+        let ts = Helpers.unionReadPointerHelper("myField", tokenStreamFromTemplate("Int32"))
+        let result = ts.toString()
+        @Expect(result.contains("func __cjbind_read_myField"), true)
+        @Expect(result.contains("ptr: CPointer<UInt8>"), true)
+        @Expect(result.contains("storage:"), false)
+        @Expect(result.contains("CPointer<Int32>(ptr).read()"), true)
+    }
+
+    @TestCase
+    func writePointerHelperReturnsUnit(): Unit {
+        let ts = Helpers.unionWritePointerHelper("myField", tokenStreamFromTemplate("Float64"))
+        let result = ts.toString()
+        @Expect(result.contains("func __cjbind_write_myField"), true)
+        @Expect(result.contains("ptr: CPointer<UInt8>"), true)
+        @Expect(result.contains("): Unit"), true)
+        @Expect(result.contains("CPointer<Float64>(ptr).write(val)"), true)
+    }
 }
 
 // === Bitfield read/write helpers ===
