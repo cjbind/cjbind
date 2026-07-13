@@ -45,6 +45,23 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.Consts, true)
         @Expect(opts.fitMacroConstants, false)
         @Expect(opts.useUnionAccessorWorkaround, true)
+        @Expect(opts.enableCxxNamespaces, false)
+        @Expect(opts.conservativeInlineNamespaces, false)
+        @Expect(opts.generateFunctions, true)
+        @Expect(opts.generateTypes, true)
+        @Expect(opts.generateVars, true)
+        @Expect(opts.generateMethods, true)
+        @Expect(opts.generateConstructors, true)
+        @Expect(opts.generateDestructors, true)
+        @Expect(opts.representCxxOperators, false)
+        @Expect(opts.respectCxxAccessSpecs, false)
+        @Expect(opts.useSpecificVirtualFunctionReceiver, false)
+        @Expect(opts.useDistinctChar16T, false)
+        @Expect(opts.generateInlineFunctions, false)
+        @Expect(opts.generateDeletedFunctions, false)
+        @Expect(opts.generatePureVirtualFunctions, false)
+        @Expect(opts.generatePrivateFunctions, false)
+        @Expect(opts.vtableGeneration, false)
         @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
@@ -75,6 +92,23 @@ public class CjbindOptionsDefaultsTest {
         opts.defaultEnumStyle = DefaultEnumStyle.NewType
         opts.objcCodegenMode = ObjcCodegenMode.Compiler
         opts.useUnionAccessorWorkaround = false
+        opts.enableCxxNamespaces = true
+        opts.conservativeInlineNamespaces = true
+        opts.generateFunctions = false
+        opts.generateTypes = false
+        opts.generateVars = false
+        opts.generateMethods = false
+        opts.generateConstructors = false
+        opts.generateDestructors = false
+        opts.representCxxOperators = true
+        opts.respectCxxAccessSpecs = true
+        opts.useSpecificVirtualFunctionReceiver = true
+        opts.useDistinctChar16T = true
+        opts.generateInlineFunctions = true
+        opts.generateDeletedFunctions = true
+        opts.generatePureVirtualFunctions = true
+        opts.generatePrivateFunctions = true
+        opts.vtableGeneration = true
         opts.fieldNameCallback = { info: FieldInfo => Some("renamed_${info.fieldName}") }
 
         @Expect(opts.packageName, "my_package")
@@ -84,6 +118,23 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.NewType, true)
         @Expect(opts.objcCodegenMode == ObjcCodegenMode.Compiler, true)
         @Expect(opts.useUnionAccessorWorkaround, false)
+        @Expect(opts.enableCxxNamespaces, true)
+        @Expect(opts.conservativeInlineNamespaces, true)
+        @Expect(opts.generateFunctions, false)
+        @Expect(opts.generateTypes, false)
+        @Expect(opts.generateVars, false)
+        @Expect(opts.generateMethods, false)
+        @Expect(opts.generateConstructors, false)
+        @Expect(opts.generateDestructors, false)
+        @Expect(opts.representCxxOperators, true)
+        @Expect(opts.respectCxxAccessSpecs, true)
+        @Expect(opts.useSpecificVirtualFunctionReceiver, true)
+        @Expect(opts.useDistinctChar16T, true)
+        @Expect(opts.generateInlineFunctions, true)
+        @Expect(opts.generateDeletedFunctions, true)
+        @Expect(opts.generatePureVirtualFunctions, true)
+        @Expect(opts.generatePrivateFunctions, true)
+        @Expect(opts.vtableGeneration, true)
         @Expect(opts.fieldNameCallback.isSome(), true)
     }
 }

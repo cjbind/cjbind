@@ -35,30 +35,6 @@ func __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_U
     return s
 }
 
-func __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>): rte_ipv4_tuple_rte_ipv4_tuple {
-    var s = storage
-    return unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>,
-    val: rte_ipv4_tuple_rte_ipv4_tuple): VArray<UInt8, $48> {
-    var s = storage
-    unsafe { CPointer<rte_ipv4_tuple_rte_ipv4_tuple>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
-func __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>): rte_ipv6_tuple_rte_ipv6_tuple {
-    var s = storage
-    return unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(storage: VArray<UInt8, $48>,
-    val: rte_ipv6_tuple_rte_ipv6_tuple): VArray<UInt8, $48> {
-    var s = storage
-    unsafe { CPointer<rte_ipv6_tuple_rte_ipv6_tuple>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let dport: UInt16
@@ -224,31 +200,8 @@ let _ = {
 
 @C
 public struct rte_thash_tuple_rte_thash_tuple {
-    var _storage: VArray<UInt8, $48> = unsafe { zeroValue<VArray<UInt8, $48>>() }
-    public init() {}
-    public func v4(): rte_ipv4_tuple_rte_ipv4_tuple {
-        return __cjbind_read_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(this._storage)
+    let _cjbind_opaque_blob: VArray<UInt8, $48>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $48>>() }
     }
-    public mut func v4(val!: rte_ipv4_tuple_rte_ipv4_tuple): Unit {
-        this._storage = __cjbind_write_rte_ipv4_tuple_rte_ipv4_tuple_from_VArray_UInt8__48_(this._storage, val)
-    }
-    public func v6(): rte_ipv6_tuple_rte_ipv6_tuple {
-        return __cjbind_read_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(this._storage)
-    }
-    public mut func v6(val!: rte_ipv6_tuple_rte_ipv6_tuple): Unit {
-        this._storage = __cjbind_write_rte_ipv6_tuple_rte_ipv6_tuple_from_VArray_UInt8__48_(this._storage, val)
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<rte_thash_tuple_rte_thash_tuple>()
-        if (size != 48) {
-            throw Exception("Size of rte_thash_tuple_rte_thash_tuple is not 48 but ${size} bytes")
-        }
-        let align = alignOf<rte_thash_tuple_rte_thash_tuple>()
-        if (align != 16) {
-            throw Exception("Alignment of rte_thash_tuple_rte_thash_tuple is not 16 but ${align} bytes")
-        }
 }

@@ -1,7 +1,7 @@
 package cjbind_test
 
 import std.fs.{File, Path, exists}
-import std.collection.collectArray
+import std.collection.ArrayList
 import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
@@ -17,8 +17,17 @@ let testdataDir: String = if (exists("cjbind_test/testdata")) {
 }
 
 func searchTestCases(): Array<String> {
-    let paths = glob.glob("${testdataDir}/headers/*.h")
-    return paths.map {p => p.toString()} |> collectArray
+    let paths = ArrayList<String>()
+    let filter = getVariable("CJBIND_TEST_FILTER")
+    for (extension in ["h", "H", "hpp", "hxx", "hh", "h++"]) {
+        for (path in glob.glob("${testdataDir}/headers/*.${extension}")) {
+            let pathString = path.toString()
+            if (filter.map({value => pathString.contains(value)}).getOrDefault({=> true})) {
+                paths.add(pathString)
+            }
+        }
+    }
+    return paths.toArray()
 }
 
 func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
@@ -48,6 +57,64 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                     i += 1
                 } else if (part == "--no-union-accessor-workaround") {
                     opt.useUnionAccessorWorkaround = false
+                    i += 1
+                } else if (part == "--auto-cstring") {
+                    opt.autoCString = true
+                    i += 1
+                } else if (part == "--enable-cxx-namespaces") {
+                    opt.enableCxxNamespaces = true
+                    i += 1
+                } else if (part == "--conservative-inline-namespaces") {
+                    opt.conservativeInlineNamespaces = true
+                    i += 1
+                } else if (part == "--ignore-methods") {
+                    opt.generateMethods = false
+                    i += 1
+                } else if (part == "--generate" && i + 1 < parts.size) {
+                    opt.generateFunctions = false
+                    opt.generateTypes = false
+                    opt.generateVars = false
+                    opt.generateMethods = false
+                    opt.generateConstructors = false
+                    opt.generateDestructors = false
+                    for (item in parts[i + 1].trimAscii().split(",")) {
+                        match (item.trimAscii()) {
+                            case "methods" => opt.generateMethods = true
+                            case "constructors" => opt.generateConstructors = true
+                            case "destructors" => opt.generateDestructors = true
+                            case "functions" => opt.generateFunctions = true
+                            case "types" => opt.generateTypes = true
+                            case "vars" => opt.generateVars = true
+                            case value => eprintln("Warning: unrecognized generation item: ${value}")
+                        }
+                    }
+                    i += 2
+                } else if (part == "--represent-cxx-operators") {
+                    opt.representCxxOperators = true
+                    i += 1
+                } else if (part == "--respect-cxx-access-specs") {
+                    opt.respectCxxAccessSpecs = true
+                    i += 1
+                } else if (part == "--use-specific-virtual-function-receiver") {
+                    opt.useSpecificVirtualFunctionReceiver = true
+                    i += 1
+                } else if (part == "--use-distinct-char16-t") {
+                    opt.useDistinctChar16T = true
+                    i += 1
+                } else if (part == "--generate-inline-functions") {
+                    opt.generateInlineFunctions = true
+                    i += 1
+                } else if (part == "--generate-deleted-functions") {
+                    opt.generateDeletedFunctions = true
+                    i += 1
+                } else if (part == "--generate-pure-virtual-functions") {
+                    opt.generatePureVirtualFunctions = true
+                    i += 1
+                } else if (part == "--generate-private-functions") {
+                    opt.generatePrivateFunctions = true
+                    i += 1
+                } else if (part == "--vtable-generation") {
+                    opt.vtableGeneration = true
                     i += 1
                 } else if (part == "--field-rename-callback") {
                     opt.fieldNameCallback = {
@@ -91,8 +158,7 @@ func generateOutput(testcase: String): String {
     opt.headers.add(testcase)
     opt.noDetectIncludePath = true
     applyTestOptions(opt, testcase)
-    // Pin to a default target so that expected outputs are platform-independent,
-    // like rust-bindgen does.
+    // Pin to a default target so that expected outputs are platform-independent.
     if (!hasTargetFlag(opt)) {
         opt.clangArgs.add(defaultTarget)
     }

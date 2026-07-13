@@ -138,3 +138,24 @@ let _ = {
             throw Exception("Alignment of Inner_Inner is not 2 but ${align} bytes")
         }
 }
+
+@C
+public struct Outer_Outer {
+    let _cjbind_opaque_blob: VArray<UInt8, $4>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Outer_Outer>()
+        if (size != 4) {
+            throw Exception("Size of Outer_Outer is not 4 but ${size} bytes")
+        }
+        let align = alignOf<Outer_Outer>()
+        if (align != 1) {
+            throw Exception("Alignment of Outer_Outer is not 1 but ${align} bytes")
+        }
+}

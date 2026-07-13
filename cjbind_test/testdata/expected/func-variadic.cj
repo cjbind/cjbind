@@ -4,8 +4,8 @@ foreign func f(a: Int32, ...): Unit
 
 @C
 public struct Foo_Foo {
-    public let f: VArray<UInt32, $0>
-    public init(f: VArray<UInt32, $0>) {
+    public let f: CPointer<Unit>
+    public init(f: CPointer<Unit>) {
         this.f = f
     }
 }

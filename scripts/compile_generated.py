@@ -24,6 +24,12 @@ HEADERS = [
     ROOT / "cjbind_test/testdata/headers/union_with_nesting.h",
     ROOT / "cjbind_test/testdata/headers/union_with_zero_sized_array.h",
     ROOT / "cjbind_test/testdata/headers/tomlc17-issue19.h",
+    ROOT / "cjbind_test/testdata/headers/cxx-access-char16.hxx",
+    ROOT / "cjbind_test/testdata/headers/cxx-alignas.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-auto-cstring.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-class-methods.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-inheritance-virtual.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-template.hpp",
 ]
 
 

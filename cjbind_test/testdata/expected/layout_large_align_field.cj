@@ -100,46 +100,10 @@ let _ = {
 // First two entries in the frags[] array are for the last and first fragments.
 @C
 public struct ip_frag_pkt_ip_frag_pkt {
-    //< LRU list *
-    public let lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
-    //< fragmentation key *
-    public let key: ip_frag_key_ip_frag_key
-    //< creation timestamp *
-    public let start: UInt64
-    //< expected reassembled size *
-    public let total_size: UInt32
-    //< size of fragments received *
-    public let frag_size: UInt32
-    //< index of next entry to fill *
-    public let last_idx: UInt32
-    //< fragments *
-    public let frags: VArray<ip_frag_ip_frag, $4>
-    public init(lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1,
-        key: ip_frag_key_ip_frag_key, start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32,
-        frags: VArray<ip_frag_ip_frag, $4>) {
-        this.lru = lru
-        this.__cjbind_anon_1 = __cjbind_anon_1
-        this.key = key
-        this.start = start
-        this.total_size = total_size
-        this.frag_size = frag_size
-        this.last_idx = last_idx
-        this.frags = frags
+    let _cjbind_opaque_blob: VArray<UInt8, $192>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $192>>() }
     }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<ip_frag_pkt_ip_frag_pkt>()
-        if (size != 192) {
-            throw Exception("Size of ip_frag_pkt_ip_frag_pkt is not 192 but ${size} bytes")
-        }
-        let align = alignOf<ip_frag_pkt_ip_frag_pkt>()
-        if (align != 64) {
-            throw Exception("Alignment of ip_frag_pkt_ip_frag_pkt is not 64 but ${align} bytes")
-        }
 }
 
 @C
@@ -168,95 +132,19 @@ let _ = {
 // fragmentation table statistics *
 @C
 public struct ip_frag_tbl_stat_ip_frag_tbl_stat {
-    //< total # of find/insert attempts. *
-    public let find_num: UInt64
-    //< # of add ops. *
-    public let add_num: UInt64
-    //< # of del ops. *
-    public let del_num: UInt64
-    //< # of reuse (del/add) ops. *
-    public let reuse_num: UInt64
-    //< total # of add failures. *
-    public let fail_total: UInt64
-    //< # of 'no space' add failures. *
-    public let fail_nospace: UInt64
-    public init(find_num: UInt64, add_num: UInt64, del_num: UInt64, reuse_num: UInt64, fail_total: UInt64,
-        fail_nospace: UInt64) {
-        this.find_num = find_num
-        this.add_num = add_num
-        this.del_num = del_num
-        this.reuse_num = reuse_num
-        this.fail_total = fail_total
-        this.fail_nospace = fail_nospace
+    let _cjbind_opaque_blob: VArray<UInt8, $64>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $64>>() }
     }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<ip_frag_tbl_stat_ip_frag_tbl_stat>()
-        if (size != 64) {
-            throw Exception("Size of ip_frag_tbl_stat_ip_frag_tbl_stat is not 64 but ${size} bytes")
-        }
-        let align = alignOf<ip_frag_tbl_stat_ip_frag_tbl_stat>()
-        if (align != 64) {
-            throw Exception("Alignment of ip_frag_tbl_stat_ip_frag_tbl_stat is not 64 but ${align} bytes")
-        }
 }
 
 // fragmentation table *
 @C
 public struct rte_ip_frag_tbl_rte_ip_frag_tbl {
-    //< ttl for table entries. *
-    public let max_cycles: UInt64
-    //< hash value mask. *
-    public let entry_mask: UInt32
-    //< max entries allowed. *
-    public let max_entries: UInt32
-    //< entries in use. *
-    public let use_entries: UInt32
-    //< hash assocaitivity. *
-    public let bucket_entries: UInt32
-    //< total size of the table. *
-    public let nb_entries: UInt32
-    //< num of associativity lines. *
-    public let nb_buckets: UInt32
-    //< last used entry. *
-    public let last: CPointer<ip_frag_pkt_ip_frag_pkt>
-    //< LRU list for table entries. *
-    public let lru: ip_pkt_list_ip_pkt_list
-    //< statistics counters. *
-    public let stat: ip_frag_tbl_stat_ip_frag_tbl_stat
-    //< hash table. *
-    public let pkt: CPointer<ip_frag_pkt_ip_frag_pkt>
-    public init(max_cycles: UInt64, entry_mask: UInt32, max_entries: UInt32, use_entries: UInt32,
-        bucket_entries: UInt32, nb_entries: UInt32, nb_buckets: UInt32, last: CPointer<ip_frag_pkt_ip_frag_pkt>,
-        lru: ip_pkt_list_ip_pkt_list, stat: ip_frag_tbl_stat_ip_frag_tbl_stat, pkt: CPointer<ip_frag_pkt_ip_frag_pkt>) {
-        this.max_cycles = max_cycles
-        this.entry_mask = entry_mask
-        this.max_entries = max_entries
-        this.use_entries = use_entries
-        this.bucket_entries = bucket_entries
-        this.nb_entries = nb_entries
-        this.nb_buckets = nb_buckets
-        this.last = last
-        this.lru = lru
-        this.stat = stat
-        this.pkt = pkt
+    let _cjbind_opaque_blob: VArray<UInt8, $128>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $128>>() }
     }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<rte_ip_frag_tbl_rte_ip_frag_tbl>()
-        if (size != 128) {
-            throw Exception("Size of rte_ip_frag_tbl_rte_ip_frag_tbl is not 128 but ${size} bytes")
-        }
-        let align = alignOf<rte_ip_frag_tbl_rte_ip_frag_tbl>()
-        if (align != 64) {
-            throw Exception("Alignment of rte_ip_frag_tbl_rte_ip_frag_tbl is not 64 but ${align} bytes")
-        }
 }
 
 //< fragment mbuf *

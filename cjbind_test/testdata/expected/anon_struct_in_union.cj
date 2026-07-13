@@ -60,10 +60,8 @@ let _ = {
 @C
 public struct s_s {
     public let u: s__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: s__cjbind_ty_1__cjbind_ty_1
-    public init(u: s__cjbind_ty_1__cjbind_ty_1, __cjbind_anon_1: s__cjbind_ty_1__cjbind_ty_1) {
+    public init(u: s__cjbind_ty_1__cjbind_ty_1) {
         this.u = u
-        this.__cjbind_anon_1 = __cjbind_anon_1
     }
 }
 

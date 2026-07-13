@@ -71,3 +71,46 @@ let _ = {
             throw Exception("Alignment of WithBitfield_WithBitfield is not 4 but ${align} bytes")
         }
 }
+
+@C
+public struct WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
+    let _cjbind_opaque_blob: VArray<UInt8, $5>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked>()
+        if (size != 5) {
+            throw Exception("Size of WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked is not 5 but ${size} bytes")
+        }
+        let align = alignOf<WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked>()
+        if (align != 1) {
+            throw Exception(
+                "Alignment of WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct WithBitfieldAndPacked_WithBitfieldAndPacked {
+    let _cjbind_opaque_blob: VArray<UInt8, $5>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<WithBitfieldAndPacked_WithBitfieldAndPacked>()
+        if (size != 5) {
+            throw Exception("Size of WithBitfieldAndPacked_WithBitfieldAndPacked is not 5 but ${size} bytes")
+        }
+        let align = alignOf<WithBitfieldAndPacked_WithBitfieldAndPacked>()
+        if (align != 1) {
+            throw Exception("Alignment of WithBitfieldAndPacked_WithBitfieldAndPacked is not 1 but ${align} bytes")
+        }
+}

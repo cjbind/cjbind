@@ -49,16 +49,11 @@ let _ = {
 @C
 public struct foo_foo {
     public let bar: VArray<foo__cjbind_ty_1__cjbind_ty_1, $2>
-    public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1
     public let baz: VArray<VArray<VArray<foo__cjbind_ty_2__cjbind_ty_2, $4>, $3>, $2>
-    public let __cjbind_anon_2: foo__cjbind_ty_2__cjbind_ty_2
-    public init(bar: VArray<foo__cjbind_ty_1__cjbind_ty_1, $2>, __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1,
-        baz: VArray<VArray<VArray<foo__cjbind_ty_2__cjbind_ty_2, $4>, $3>, $2>,
-        __cjbind_anon_2: foo__cjbind_ty_2__cjbind_ty_2) {
+    public init(bar: VArray<foo__cjbind_ty_1__cjbind_ty_1, $2>,
+        baz: VArray<VArray<VArray<foo__cjbind_ty_2__cjbind_ty_2, $4>, $3>, $2>) {
         this.bar = bar
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.baz = baz
-        this.__cjbind_anon_2 = __cjbind_anon_2
     }
 }
 

@@ -52,3 +52,24 @@ let _ = {
             throw Exception("Alignment of rte_memseg__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
+
+@C
+public struct rte_memseg_rte_memseg {
+    let _cjbind_opaque_blob: VArray<UInt8, $44>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $44>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<rte_memseg_rte_memseg>()
+        if (size != 44) {
+            throw Exception("Size of rte_memseg_rte_memseg is not 44 but ${size} bytes")
+        }
+        let align = alignOf<rte_memseg_rte_memseg>()
+        if (align != 1) {
+            throw Exception("Alignment of rte_memseg_rte_memseg is not 1 but ${align} bytes")
+        }
+}

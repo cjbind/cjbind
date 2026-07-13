@@ -45,12 +45,6 @@ public struct foo_foo {
     public mut func bar(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
     }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
-    }
 }
 
 @When[debug]

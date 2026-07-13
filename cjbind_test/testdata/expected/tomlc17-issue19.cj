@@ -144,13 +144,6 @@ public struct toml_datum_t__cjbind_ty_1__cjbind_ty_1 {
         this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
             this._storage, val)
     }
-    public func __cjbind_anon_1(): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt64__4_(
-            this._storage, val)
-    }
     public func arr(): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
         return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(this._storage)
     }
@@ -158,24 +151,10 @@ public struct toml_datum_t__cjbind_ty_1__cjbind_ty_1 {
         this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
             this._storage, val)
     }
-    public func __cjbind_anon_2(): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
-        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(this._storage)
-    }
-    public mut func __cjbind_anon_2(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): Unit {
-        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt64__4_(
-            this._storage, val)
-    }
     public func tab(): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
         return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(this._storage)
     }
     public mut func tab(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): Unit {
-        this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
-            this._storage, val)
-    }
-    public func __cjbind_anon_3(): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
-        return __cjbind_read_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(this._storage)
-    }
-    public mut func __cjbind_anon_3(val!: toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3): Unit {
         this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
             this._storage, val)
     }
@@ -198,12 +177,9 @@ let _ = {
 public struct toml_datum_t_toml_datum_t {
     public let type_: Int32
     public let u: toml_datum_t__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: toml_datum_t__cjbind_ty_1__cjbind_ty_1
-    public init(type_: Int32, u: toml_datum_t__cjbind_ty_1__cjbind_ty_1,
-        __cjbind_anon_1: toml_datum_t__cjbind_ty_1__cjbind_ty_1) {
+    public init(type_: Int32, u: toml_datum_t__cjbind_ty_1__cjbind_ty_1) {
         this.type_ = type_
         this.u = u
-        this.__cjbind_anon_1 = __cjbind_anon_1
     }
 }
 

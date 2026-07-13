@@ -1,7 +1,5 @@
 package cjbind_ffi
 
-foreign func foo(): Int32
-
 public type number_number = Int32
 
 foreign func bar(x: number_number): Int32

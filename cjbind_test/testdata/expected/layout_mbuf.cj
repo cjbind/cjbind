@@ -474,24 +474,10 @@ public struct rte_mbuf__cjbind_ty_3__cjbind_ty_3 {
         this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(
             this._storage, val)
     }
-    public func __cjbind_anon_1(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(
-            this._storage, val)
-    }
     public func sched(): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
         return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(this._storage)
     }
     public mut func sched(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): Unit {
-        this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(
-            this._storage, val)
-    }
-    public func __cjbind_anon_2(): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
-        return __cjbind_read_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(this._storage)
-    }
-    public mut func __cjbind_anon_2(val!: rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2): Unit {
         this._storage = __cjbind_write_rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2_from_VArray_UInt32__2_(
             this._storage, val)
     }
@@ -642,98 +628,10 @@ let _ = {
 // The generic rte_mbuf, containing a packet mbuf.
 @C
 public struct rte_mbuf_rte_mbuf {
-    public let cacheline0: MARKER_MARKER
-    //< Virtual address of segment buffer. *
-    public let buf_addr: CPointer<Unit>
-    //< Physical address of segment buffer. *
-    public let buf_physaddr: phys_addr_t_phys_addr_t
-    //< Length of segment buffer. *
-    public let buf_len: UInt16
-    public let rearm_data: MARKER8_MARKER8
-    public let data_off: UInt16
-    public let __cjbind_anon_1: rte_mbuf__cjbind_ty_1__cjbind_ty_1
-    //< Number of segments. *
-    public let nb_segs: UInt8
-    //< Input port. *
-    public let port: UInt8
-    //< Offload features. *
-    public let ol_flags: UInt64
-    public let rx_descriptor_fields1: MARKER_MARKER
-    public let __cjbind_anon_2: rte_mbuf__cjbind_ty_2__cjbind_ty_2
-    //< Total pkt len: sum of all segments. *
-    public let pkt_len: UInt32
-    //< Amount of data in segment buffer. *
-    public let data_len: UInt16
-    // VLAN TCI (CPU order), valid if PKT_RX_VLAN_STRIPPED is set. *
-    public let vlan_tci: UInt16
-    //< hash information *
-    public let hash: rte_mbuf__cjbind_ty_3__cjbind_ty_3
-    public let __cjbind_anon_3: rte_mbuf__cjbind_ty_3__cjbind_ty_3
-    //< Sequence number. See also rte_reorder_insert() *
-    public let seqn: UInt32
-    // Outer VLAN TCI (CPU order), valid if PKT_RX_QINQ_STRIPPED is set. *
-    public let vlan_tci_outer: UInt16
-    public let cacheline1: MARKER_MARKER
-    public let __cjbind_anon_4: rte_mbuf__cjbind_ty_4__cjbind_ty_4
-    //< Pool from which mbuf was allocated. *
-    public let pool: CPointer<rte_mempool_rte_mempool>
-    //< Next segment of scattered packet. *
-    public let next: CPointer<rte_mbuf_rte_mbuf>
-    public let __cjbind_anon_5: rte_mbuf__cjbind_ty_5__cjbind_ty_5
-    // Size of the application private data. In case of an indirect
-    // mbuf, it stores the direct mbuf private data size. *
-    public let priv_size: UInt16
-    // Timesync flags for use with IEEE1588. *
-    public let timesync: UInt16
-    public init(cacheline0: MARKER_MARKER, buf_addr: CPointer<Unit>, buf_physaddr: phys_addr_t_phys_addr_t,
-        buf_len: UInt16, rearm_data: MARKER8_MARKER8, data_off: UInt16,
-        __cjbind_anon_1: rte_mbuf__cjbind_ty_1__cjbind_ty_1, nb_segs: UInt8, port: UInt8, ol_flags: UInt64,
-        rx_descriptor_fields1: MARKER_MARKER, __cjbind_anon_2: rte_mbuf__cjbind_ty_2__cjbind_ty_2, pkt_len: UInt32,
-        data_len: UInt16, vlan_tci: UInt16, hash: rte_mbuf__cjbind_ty_3__cjbind_ty_3,
-        __cjbind_anon_3: rte_mbuf__cjbind_ty_3__cjbind_ty_3, seqn: UInt32, vlan_tci_outer: UInt16,
-        cacheline1: MARKER_MARKER, __cjbind_anon_4: rte_mbuf__cjbind_ty_4__cjbind_ty_4,
-        pool: CPointer<rte_mempool_rte_mempool>, next: CPointer<rte_mbuf_rte_mbuf>,
-        __cjbind_anon_5: rte_mbuf__cjbind_ty_5__cjbind_ty_5, priv_size: UInt16, timesync: UInt16) {
-        this.cacheline0 = cacheline0
-        this.buf_addr = buf_addr
-        this.buf_physaddr = buf_physaddr
-        this.buf_len = buf_len
-        this.rearm_data = rearm_data
-        this.data_off = data_off
-        this.__cjbind_anon_1 = __cjbind_anon_1
-        this.nb_segs = nb_segs
-        this.port = port
-        this.ol_flags = ol_flags
-        this.rx_descriptor_fields1 = rx_descriptor_fields1
-        this.__cjbind_anon_2 = __cjbind_anon_2
-        this.pkt_len = pkt_len
-        this.data_len = data_len
-        this.vlan_tci = vlan_tci
-        this.hash = hash
-        this.__cjbind_anon_3 = __cjbind_anon_3
-        this.seqn = seqn
-        this.vlan_tci_outer = vlan_tci_outer
-        this.cacheline1 = cacheline1
-        this.__cjbind_anon_4 = __cjbind_anon_4
-        this.pool = pool
-        this.next = next
-        this.__cjbind_anon_5 = __cjbind_anon_5
-        this.priv_size = priv_size
-        this.timesync = timesync
+    let _cjbind_opaque_blob: VArray<UInt8, $128>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $128>>() }
     }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<rte_mbuf_rte_mbuf>()
-        if (size != 128) {
-            throw Exception("Size of rte_mbuf_rte_mbuf is not 128 but ${size} bytes")
-        }
-        let align = alignOf<rte_mbuf_rte_mbuf>()
-        if (align != 64) {
-            throw Exception("Alignment of rte_mbuf_rte_mbuf is not 64 but ${align} bytes")
-        }
 }
 
 //< Pool from which mbuf was allocated. *

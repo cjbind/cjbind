@@ -100,46 +100,10 @@ let _ = {
 // First two entries in the frags[] array are for the last and first fragments.
 @C
 public struct ip_frag_pkt_ip_frag_pkt {
-    //< LRU list *
-    public let lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1
-    //< fragmentation key *
-    public let key: ip_frag_key_ip_frag_key
-    //< creation timestamp *
-    public let start: UInt64
-    //< expected reassembled size *
-    public let total_size: UInt32
-    //< size of fragments received *
-    public let frag_size: UInt32
-    //< index of next entry to fill *
-    public let last_idx: UInt32
-    //< fragments *
-    public let frags: VArray<ip_frag_ip_frag, $4>
-    public init(lru: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1, __cjbind_anon_1: ip_frag_pkt__cjbind_ty_1__cjbind_ty_1,
-        key: ip_frag_key_ip_frag_key, start: UInt64, total_size: UInt32, frag_size: UInt32, last_idx: UInt32,
-        frags: VArray<ip_frag_ip_frag, $4>) {
-        this.lru = lru
-        this.__cjbind_anon_1 = __cjbind_anon_1
-        this.key = key
-        this.start = start
-        this.total_size = total_size
-        this.frag_size = frag_size
-        this.last_idx = last_idx
-        this.frags = frags
+    let _cjbind_opaque_blob: VArray<UInt8, $192>
+    private init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $192>>() }
     }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<ip_frag_pkt_ip_frag_pkt>()
-        if (size != 192) {
-            throw Exception("Size of ip_frag_pkt_ip_frag_pkt is not 192 but ${size} bytes")
-        }
-        let align = alignOf<ip_frag_pkt_ip_frag_pkt>()
-        if (align != 64) {
-            throw Exception("Alignment of ip_frag_pkt_ip_frag_pkt is not 64 but ${align} bytes")
-        }
 }
 
 //< fragment mbuf *

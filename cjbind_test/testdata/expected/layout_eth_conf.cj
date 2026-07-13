@@ -413,17 +413,15 @@ public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
     public let nb_pool_maps: UInt8
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>
-    public let __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1
     public let dcb_tc: VArray<UInt8, $8>
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         nb_pool_maps: UInt8, pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>,
-        __cjbind_anon_1: rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, dcb_tc: VArray<UInt8, $8>) {
+        dcb_tc: VArray<UInt8, $8>) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
         this.nb_pool_maps = nb_pool_maps
         this.pool_map = pool_map
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.dcb_tc = dcb_tc
     }
 }
@@ -580,11 +578,9 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
     public let rx_mode: UInt32
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>
-    public let __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         enable_loop_back: UInt8, nb_pool_maps: UInt8, rx_mode: UInt32,
-        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>,
-        __cjbind_anon_1: rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1) {
+        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
@@ -592,7 +588,6 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
         this.nb_pool_maps = nb_pool_maps
         this.rx_mode = rx_mode
         this.pool_map = pool_map
-        this.__cjbind_anon_1 = __cjbind_anon_1
     }
 }
 
@@ -1026,10 +1021,8 @@ public struct rte_eth_conf_rte_eth_conf {
     public let lpbk_mode: UInt32
     //< Port RX filtering configuration (union). *
     public let rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: rte_eth_conf__cjbind_ty_1__cjbind_ty_1
     //< Port TX DCB configuration (union). *
     public let tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2
-    public let __cjbind_anon_2: rte_eth_conf__cjbind_ty_2__cjbind_ty_2
     // Currently,Priority Flow Control(PFC) are supported,if DCB with PFC
     //is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *
     public let dcb_capability_en: UInt32
@@ -1039,17 +1032,14 @@ public struct rte_eth_conf_rte_eth_conf {
     public let intr_conf: rte_intr_conf_rte_intr_conf
     public init(link_speeds: UInt32, rxmode: rte_eth_rxmode_rte_eth_rxmode, txmode: rte_eth_txmode_rte_eth_txmode,
         lpbk_mode: UInt32, rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1,
-        __cjbind_anon_1: rte_eth_conf__cjbind_ty_1__cjbind_ty_1, tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2,
-        __cjbind_anon_2: rte_eth_conf__cjbind_ty_2__cjbind_ty_2, dcb_capability_en: UInt32,
+        tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2, dcb_capability_en: UInt32,
         fdir_conf: rte_fdir_conf_rte_fdir_conf, intr_conf: rte_intr_conf_rte_intr_conf) {
         this.link_speeds = link_speeds
         this.rxmode = rxmode
         this.txmode = txmode
         this.lpbk_mode = lpbk_mode
         this.rx_adv_conf = rx_adv_conf
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.tx_adv_conf = tx_adv_conf
-        this.__cjbind_anon_2 = __cjbind_anon_2
         this.dcb_capability_en = dcb_capability_en
         this.fdir_conf = fdir_conf
         this.intr_conf = intr_conf

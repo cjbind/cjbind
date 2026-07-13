@@ -45,12 +45,9 @@ let _ = {
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let __empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
     public let value1: CPointer<UInt8>
-    public init(__empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1,
-        __cjbind_anon_1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1, value1: CPointer<UInt8>) {
+    public init(__empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1, value1: CPointer<UInt8>) {
         this.__empty_value1 = __empty_value1
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.value1 = value1
     }
 }
@@ -89,12 +86,9 @@ let _ = {
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public let __empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_1: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1
     public let value2: CPointer<UInt8>
-    public init(__empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1,
-        __cjbind_anon_1: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1, value2: CPointer<UInt8>) {
+    public init(__empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1, value2: CPointer<UInt8>) {
         this.__empty_value2 = __empty_value2
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.value2 = value2
     }
 }
