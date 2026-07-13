@@ -55,7 +55,7 @@ def write_smoke_project(project: Path, generated: str) -> None:
     )
     (project / "cjpm.toml").write_text(
         """[package]
-  cjc-version = "1.1.0"
+  cjc-version = "1.1.3"
   compile-option = "-Woff unused"
   name = "cjbind_ffi"
   output-type = "static"

@@ -2,24 +2,25 @@
 
 ## 依赖版本
 
-- 仓颉版本：`nightly`：当前 CI 使用 `1.1.0-alpha.20260603010036`
-- uv: `>= 0.6.0` Python 版本：`>= 3.11`：用于运行 `scripts` 下的脚本并自动配置依赖
-- Go: `>= 1.24`：用于构建 opt 的补丁
+- 仓颉版本：`STS 1.1.3`
+- uv：CI 使用最新版本；Python 版本：`3.14`，用于运行 `scripts` 下的脚本并自动配置依赖
+- Go：`1.26`，用于构建 opt 补丁
 
-## 修补旧版编译器
+## 修补编译器
 
-仓颉 `1.1.x` 旧版工具链可能需要为 `opt` 生成补丁。当前 nightly 不需要此步骤。
+仓颉 STS 1.1.3 仍需为 `opt` 生成补丁。原版优化器在编译 `cjbind.clang` 时会由 `CJBarrierOpt` 报出 `Need write barrier` 并终止；CI 也会执行此步骤。
 
-如需在旧版工具链上运行，确保当前环境中安装了 `Go`，并且环境变量 `CANGJIE_HOME` 指向仓颉的安装目录。
-在 `cjbind` 的根目录下运行以下命令：
+确保当前环境中安装了 `Go`。使用 `cjv` 时，在 `cjbind` 根目录运行以下命令，让补丁脚本获得 STS 1.1.3 的 `CANGJIE_HOME`：
 
 ```
-uv run scripts/patch_opt.py
+cjv run sts-1.1.3 uv run scripts/patch_opt.py
 ```
+
+CI 中 `setup-cangjie` 已设置 `CANGJIE_HOME`，因此 workflow 直接运行 `uv run scripts/patch_opt.py`。
 
 这会构建 `scripts/opt.go` 并替换原有的 `opt`，原有的 `opt` 会被重命名为 `opt.old(.exe)`。
 
-这是为了 workaround 编译器中 llvm pass `cangjie-ir-verifier` 在 `cjbind.clang` 上的错误报错。
+脚本会根据当前 SDK 原版 `opt` 的 SHA-256 重新生成 pass 缓存，切换 SDK 版本时不会复用旧工具链的 pipeline。
 
 ## 更新版本
 

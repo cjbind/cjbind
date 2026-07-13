@@ -400,7 +400,10 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
     # Set CJBIND_OPT_PASSES_O* from cache for each optimization level
     passes_dict = read_passes_cache()
     if passes_dict:
-        for level, passes in passes_dict.items():
+        for level in ("O0", "O2"):
+            passes = passes_dict.get(level)
+            if not passes:
+                continue
             env_key = f"CJBIND_OPT_PASSES_{level}"
             env[env_key] = passes
             print(f"Set {env_key}: {passes[:60]}...", flush=True)

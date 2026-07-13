@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import sys
@@ -115,6 +116,14 @@ def write_cached_passes(passes_dict):
     print(f"缓存 passes 到 {path}")
 
 
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def patch():
     # 获取 CANGJIE_HOME 环境变量
     cangjie_home = os.environ.get('CANGJIE_HOME')
@@ -142,14 +151,19 @@ def patch():
         print(f"{opt_old_path} 已经存在，跳过重命名")
 
     # 检查缓存
+    opt_sha256 = file_sha256(opt_old_path)
     cached = read_cached_passes()
-    if cached and all(level in cached for level in OPT_LEVELS):
+    if (
+        cached
+        and cached.get('opt_sha256') == opt_sha256
+        and all(level in cached for level in OPT_LEVELS)
+    ):
         print("使用缓存的 passes:")
         for level in OPT_LEVELS:
             print(f"  {level}: {cached[level][:60]}...")
         passes_dict = cached
     else:
-        print(f"��� {opt_old_path} 获取各优化级别的 passes...")
+        print(f"从 {opt_old_path} 获取各优化级别的 passes...")
         passes_dict = {}
         for level in OPT_LEVELS:
             try:
@@ -159,6 +173,7 @@ def patch():
             except subprocess.CalledProcessError as e:
                 print(f"获取 {level} passes 失败: {e}")
                 sys.exit(1)
+        passes_dict['opt_sha256'] = opt_sha256
         write_cached_passes(passes_dict)
 
     opt_go_path = os.path.join(cache_dir(), 'opt.go')
