@@ -45,6 +45,7 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.Consts, true)
         @Expect(opts.fitMacroConstants, false)
         @Expect(opts.useUnionAccessorWorkaround, true)
+        @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
     @TestCase
@@ -74,6 +75,7 @@ public class CjbindOptionsDefaultsTest {
         opts.defaultEnumStyle = DefaultEnumStyle.NewType
         opts.objcCodegenMode = ObjcCodegenMode.Compiler
         opts.useUnionAccessorWorkaround = false
+        opts.fieldNameCallback = { info: FieldInfo => Some("renamed_${info.fieldName}") }
 
         @Expect(opts.packageName, "my_package")
         @Expect(opts.noEnumPrefix, true)
@@ -82,5 +84,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.NewType, true)
         @Expect(opts.objcCodegenMode == ObjcCodegenMode.Compiler, true)
         @Expect(opts.useUnionAccessorWorkaround, false)
+        @Expect(opts.fieldNameCallback.isSome(), true)
     }
 }

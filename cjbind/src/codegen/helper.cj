@@ -142,10 +142,10 @@ public class Helpers {
                     maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
                 }
                 maskVal = maskVal << UInt64(bitShift)
-                var fieldMask: UInt64 = if (bitWidth < 64) {
+                var fieldMask: UInt64 = if (bitWidth + bitShift < 64) {
                     ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
                 } else {
-                    !UInt64(0)
+                    !UInt64(0) << UInt64(bitShift)
                 }
                 var i: Int64 = 0
                 while (i < bytesNeeded) {
@@ -163,7 +163,7 @@ public class Helpers {
         return @tmpl(
             @C
             func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
-                let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+                let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
                 if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
                     return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
                 }

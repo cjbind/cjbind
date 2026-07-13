@@ -19,6 +19,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = [
+    ROOT / "cjbind_test/testdata/headers/bitfield-full-word-width.h",
+    ROOT / "cjbind_test/testdata/headers/struct_with_anon_union_of_array_members.h",
     ROOT / "cjbind_test/testdata/headers/union_with_nesting.h",
     ROOT / "cjbind_test/testdata/headers/union_with_zero_sized_array.h",
     ROOT / "cjbind_test/testdata/headers/tomlc17-issue19.h",

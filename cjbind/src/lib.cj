@@ -107,6 +107,10 @@ func detectIncludePaths(options: CjbindOptions) {
 }
 
 public func generate(opts: CjbindOptions): String {
+    if (opts.headers.isEmpty()) {
+        throw Exception("没有指定头文件")
+    }
+
     detectIncludePaths(opts)
 
     // Clone clangArgs so we do not mutate the caller's options object
@@ -146,6 +150,7 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
     ctxOpts.fitMacroConstants = opts.fitMacroConstants
     ctxOpts.useUnionAccessorWorkaround = opts.useUnionAccessorWorkaround
+    ctxOpts.fieldNameCallback = opts.fieldNameCallback
 
     let ctx = CjbindContext(ctxOpts)
 

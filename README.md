@@ -76,6 +76,23 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
     -h, --help                           显示帮助信息
 ```
 
+### 库调用：重命名字段
+
+通过 `CjbindOptions.fieldNameCallback` 可以在生成前重命名具名的 struct、union 和 bitfield 字段；返回 `None` 会保留原 C 字段名：
+
+```cangjie
+import cjbind.options.{CjbindOptions, FieldInfo}
+
+let options = CjbindOptions(["input.h"], [])
+options.fieldNameCallback = {
+    info: FieldInfo =>
+    match (info.fieldName) {
+        case "type" => Some("type_")
+        case _ => None
+    }
+}
+```
+
 ## 开发
 
 查看 [开发文档](./DEVELOPMENT.md) 以获取更多信息。

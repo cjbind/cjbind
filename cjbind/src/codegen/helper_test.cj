@@ -253,6 +253,8 @@ public class BitfieldHelperTest {
         @Expect(result.contains("byteVal"), true)
         @Expect(result.contains("byteMask"), true)
         @Expect(result.contains("(old &"), true)
+        @Expect(result.contains("bitWidth + bitShift < 64"), true)
+        @Expect(result.contains("!UInt64(0) << UInt64(bitShift)"), true)
     }
 
     @TestCase
@@ -268,7 +270,7 @@ public class BitfieldHelperTest {
         let ts = Helpers.bitfieldReadSignedHelper()
         let result = ts.toString()
         // Calls the unsigned reader
-        @Expect(result.contains("__cjbind_bitfield_read(ptr, bitOffset, bitWidth)"), true)
+        @Expect(result.contains("unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }"), true)
         // Sign extension check
         @Expect(result.contains("bitWidth - 1"), true)
     }

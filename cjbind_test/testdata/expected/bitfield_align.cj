@@ -28,10 +28,10 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
         maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
     }
     maskVal = maskVal << UInt64(bitShift)
-    var fieldMask: UInt64 = if (bitWidth < 64) {
+    var fieldMask: UInt64 = if (bitWidth + bitShift < 64) {
         ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
     } else {
-        !UInt64(0)
+        !UInt64(0) << UInt64(bitShift)
     }
     var i: Int64 = 0
     while (i < bytesNeeded) {
@@ -45,7 +45,7 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 
 @C
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
-    let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+    let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
         return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
     }
@@ -260,10 +260,43 @@ let _ = {
 
 @C
 public struct Date2_Date2 {
-    let _cjbind_opaque_blob: VArray<UInt16, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $2>>() }
+    var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
+    public func nWeekDay(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 3) })
     }
+    public mut func nWeekDay(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 3, UInt64(val)) }
+    }
+    public func nMonthDay(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 3, 6) })
+    }
+    public mut func nMonthDay(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 3, 6, UInt64(val)) }
+    }
+    public func nMonth(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 9, 5) })
+    }
+    public mut func nMonth(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 9, 5, UInt64(val)) }
+    }
+    public func nYear(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 16, 8) })
+    }
+    public mut func nYear(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 8, UInt64(val)) }
+    }
+    public func byte(): UInt8 {
+        var s = this._bitfield_1
+        return UInt8(unsafe { __cjbind_bitfield_read(inout s, 24, 8) })
+    }
+    public mut func byte(val!: UInt8): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
+    }
+    public init() {}
 }
 
 @When[debug]

@@ -53,21 +53,60 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct WithBitfield_WithBitfield {
-    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-    public var a: UInt32 = unsafe { zeroValue<UInt32>() }
+public struct FullWordWidth_FullWordWidth {
+    var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
+    public func full(): UInt64 {
+        var s = this._bitfield_1
+        return UInt64(unsafe { __cjbind_bitfield_read(inout s, 0, 64) })
+    }
+    public mut func full(val!: UInt64): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 64, UInt64(val)) }
+    }
     public init() {}
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<WithBitfield_WithBitfield>()
+        let size = sizeOf<FullWordWidth_FullWordWidth>()
         if (size != 8) {
-            throw Exception("Size of WithBitfield_WithBitfield is not 8 but ${size} bytes")
+            throw Exception("Size of FullWordWidth_FullWordWidth is not 8 but ${size} bytes")
         }
-        let align = alignOf<WithBitfield_WithBitfield>()
-        if (align != 4) {
-            throw Exception("Alignment of WithBitfield_WithBitfield is not 4 but ${align} bytes")
+        let align = alignOf<FullWordWidth_FullWordWidth>()
+        if (align != 8) {
+            throw Exception("Alignment of FullWordWidth_FullWordWidth is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct ShiftedWordWidth_ShiftedWordWidth {
+    var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
+    public func first(): UInt64 {
+        var s = this._bitfield_1
+        return UInt64(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+    }
+    public mut func first(val!: UInt64): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    }
+    public func rest(): UInt64 {
+        var s = this._bitfield_1
+        return UInt64(unsafe { __cjbind_bitfield_read(inout s, 1, 63) })
+    }
+    public mut func rest(val!: UInt64): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 63, UInt64(val)) }
+    }
+    public init() {}
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<ShiftedWordWidth_ShiftedWordWidth>()
+        if (size != 8) {
+            throw Exception("Size of ShiftedWordWidth_ShiftedWordWidth is not 8 but ${size} bytes")
+        }
+        let align = alignOf<ShiftedWordWidth_ShiftedWordWidth>()
+        if (align != 8) {
+            throw Exception("Alignment of ShiftedWordWidth_ShiftedWordWidth is not 8 but ${align} bytes")
         }
 }

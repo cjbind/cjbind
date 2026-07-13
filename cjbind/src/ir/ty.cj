@@ -231,6 +231,22 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
         } else if (tyKind == clang.CXTypeKind_CXType_Typedef) {
             let inner = cursor.typedefType().getOrThrow()
+            // Clang 22 may report Objective-C compiler builtins such as id,
+            // SEL, and Class as typedefs whose underlying declaration has the
+            // same USR. Building an alias in that case creates a self-cycle.
+            let sameUnderlyingDecl = match ((cursor.usr(), inner.declaration().usr())) {
+                case (Some(outerUsr), Some(innerUsr)) => outerUsr == innerUsr
+                case _ => false
+            }
+            if (sameUnderlyingDecl) {
+                return Type.fromClangTy(
+                    potentialId,
+                    inner,
+                    location,
+                    parentId,
+                    ctx
+                )
+            }
             // Detect ObjC generic typedef (typedef + ObjCObjectPointer + TemplateTypeParameter)
             // These are erased to id to prevent duplicate typedefs
             let innerKind = inner.kind()

@@ -185,6 +185,8 @@ public class CjbindContext <: Resource {
         let pch = "${tmpDir}/${pchName}"
 
         var cArgs = ArrayList<String>()
+        let targetArg = "--target=${this.targetInfo.triple}"
+        cArgs.add(targetArg)
         cArgs.add("-x")
         cArgs.add("c-header")
         for (h in headerPaths) {
@@ -208,6 +210,7 @@ public class CjbindContext <: Resource {
         }
 
         cArgs = ArrayList<String>()
+        cArgs.add(targetArg)
         cArgs.add("-include-pch")
         cArgs.add(pch)
 
@@ -684,7 +687,7 @@ public class CjbindContext <: Resource {
         }
     }
 
-    public func deanonymizeFields(): Unit {
+    public func assignFieldNames(): Unit {
         let compItemIds = this
             .getItems()
             .filterMap {
@@ -706,8 +709,9 @@ public class CjbindContext <: Resource {
             } |> collectArrayList
 
         for (id in compItemIds) {
+            let canonicalTypeName = this.resolveItem(id).canonicalName(this)
             this.withLoanedItem(id) {
-                ctx, item => item.kind.asType().getOrThrow().asComp().getOrThrow().deanonymizeFields(ctx)
+                ctx, item => item.kind.asType().getOrThrow().asComp().getOrThrow().assignFieldNames(ctx, canonicalTypeName)
             }
         }
     }
@@ -778,7 +782,7 @@ public class CjbindContext <: Resource {
 
         this.resolveTypeRefs()
         this.computeBitfieldUnits()
-        this.deanonymizeFields()
+        this.assignFieldNames()
 
         this.computeCodegenItems()
 

@@ -6,7 +6,7 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.{CjbindOptions, DefaultEnumStyle}
+import cjbind.options.{CjbindOptions, DefaultEnumStyle, FieldInfo}
 import cjbind.utils.formatString
 import std.env.{getCommandLine, getVariable}
 
@@ -48,6 +48,20 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                     i += 1
                 } else if (part == "--no-union-accessor-workaround") {
                     opt.useUnionAccessorWorkaround = false
+                    i += 1
+                } else if (part == "--field-rename-callback") {
+                    opt.fieldNameCallback = {
+                        info: FieldInfo =>
+                        if (info.typeName != "RenameMe_RenameMe") {
+                            return None
+                        }
+                        return match (info.fieldName) {
+                            case "renamed_member" => Some("cj_friendly")
+                            case "bitfield_uGlyName" => Some("bitfield_less_ugly_name")
+                            case "bitfieldWorse_name" => Some("bitfield_better_name")
+                            case _ => None
+                        }
+                    }
                     i += 1
                 } else if (part == "--clang-arg" && i + 1 < parts.size) {
                     opt.clangArgs.add(parts[i + 1].trimAscii())

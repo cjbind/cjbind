@@ -28,10 +28,10 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
         maskVal = maskVal & ((UInt64(1) << UInt64(bitWidth)) - 1)
     }
     maskVal = maskVal << UInt64(bitShift)
-    var fieldMask: UInt64 = if (bitWidth < 64) {
+    var fieldMask: UInt64 = if (bitWidth + bitShift < 64) {
         ((UInt64(1) << UInt64(bitWidth)) - 1) << UInt64(bitShift)
     } else {
-        !UInt64(0)
+        !UInt64(0) << UInt64(bitShift)
     }
     var i: Int64 = 0
     while (i < bytesNeeded) {
@@ -45,7 +45,7 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 
 @C
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
-    let raw = __cjbind_bitfield_read(ptr, bitOffset, bitWidth)
+    let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
         return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
     }
@@ -54,10 +54,52 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 
 @C
 public struct bitfield_bitfield {
-    let _cjbind_opaque_blob: VArray<UInt32, $4>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $4>>() }
+    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
+    public func a(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
     }
+    public mut func a(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    }
+    public func b(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+    }
+    public mut func b(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
+    }
+    public func c(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
+    }
+    public mut func c(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
+    }
+    public func d(): UInt16 {
+        var s = this._bitfield_1
+        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 6, 2) })
+    }
+    public mut func d(val!: UInt16): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 6, 2, UInt64(val)) }
+    }
+    public var e: Int32 = unsafe { zeroValue<Int32>() }
+    var _bitfield_2: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
+    public func f(): UInt32 {
+        var s = this._bitfield_2
+        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
+    }
+    public mut func f(val!: UInt32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 0, 2, UInt64(val)) }
+    }
+    public func g(): UInt32 {
+        var s = this._bitfield_2
+        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 32, 32) })
+    }
+    public mut func g(val!: UInt32): Unit {
+        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 32, 32, UInt64(val)) }
+    }
+    public init() {}
 }
 
 @When[debug]
