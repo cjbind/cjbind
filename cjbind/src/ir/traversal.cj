@@ -21,6 +21,14 @@ public enum EdgeKind {
     | FunctionParameterEdge
     | VarTypeEdge
     | TypeReferenceEdge
+    | BaseMemberEdge
+    | InnerTypeEdge
+    | InnerVarEdge
+    | MethodEdge
+    | ConstructorEdge
+    | DestructorEdge
+    | TemplateArgumentEdge
+    | TemplateParameterDefinitionEdge
 }
 
 public struct Edge {

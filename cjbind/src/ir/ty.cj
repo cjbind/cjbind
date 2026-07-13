@@ -113,6 +113,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         parentId: ?ItemId,
         ctx: CjbindContext
     ): Result<ParseResult<Type>, ParseError> {
+        let canonicalTy = ty.canonicalType()
+        if (ty != canonicalTy && ty.kind() != clang.CXTypeKind_CXType_Record &&
+            ty.spelling().contains("<")) {
+            return Type.fromClangTy(potentialId, canonicalTy, location, parentId, ctx)
+        }
         let alreadyResolved = ctx.builtinOrResolvedTy(
             potentialId,
             parentId,
@@ -137,8 +142,38 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
         }
 
-        let canonicalTy = ty.canonicalType()
         let tyKind = ty.kind()
+
+        if (location.kind() == clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization) {
+            let opaque = Type(name, layout, TypeKind.TypeKindOpaque, ty.isConst())
+            return Ok(ParseResult.New(opaque, None))
+        }
+
+        if (location.kind() == clang.CXCursorKind_CXCursor_ClassTemplate) {
+            let templateName = location.spelling()
+            let templateComp = match (CompInfo.fromTy(potentialId, ty, Some(location), ctx)) {
+                case Ok(value) => value
+                case Err(error) => return Err(error)
+            }
+            let templateType = Type(
+                if (templateName.isEmpty()) { None } else { Some(templateName) },
+                None,
+                TypeKind.TypeKindComp(templateComp),
+                false
+            )
+            return Ok(ParseResult.New(templateType, Some(location)))
+        }
+
+        if (location.kind() != clang.CXCursorKind_CXCursor_ClassTemplate &&
+            (location.kind() == clang.CXCursorKind_CXCursor_TemplateRef ||
+            (ty.templateArgs().isSome() && tyKind != clang.CXTypeKind_CXType_Typedef))) {
+            let templateKind = match (TemplateInstantiation.fromTy(ty, ctx)) {
+                case Some(instantiation) => TypeKind.TypeKindTemplateInstantiation(instantiation)
+                case None => TypeKind.TypeKindOpaque
+            }
+            let templateType = Type(name, layout, templateKind, ty.isConst())
+            return Ok(ParseResult.New(templateType, Some(cursor.canonical())))
+        }
 
         if (tyKind == clang.CXTypeKind_CXType_Unexposed && ty != canonicalTy && canonicalTy.kind() != clang.CXTypeKind_CXType_Invalid &&
             ty.retType().isNone()) {
@@ -193,6 +228,8 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 parentId,
                 ctx
             )
+        } else if (tyKind == clang.CXTypeKind_CXType_MemberPointer) {
+            TypeKind.TypeKindOpaque
         } else if (tyKind == clang.CXTypeKind_CXType_Pointer) {
             var pointee = ty.pointeeType().getOrThrow()
             if (ty != canonicalTy) {
@@ -203,7 +240,12 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
             let inner = Item.fromTyOrRef(pointee, location, None, ctx)
             TypeKind.TypeKindPointer(inner)
-        } else if (tyKind == clang.CXTypeKind_CXType_VariableArray) {
+        } else if (tyKind == clang.CXTypeKind_CXType_LValueReference ||
+            tyKind == clang.CXTypeKind_CXType_RValueReference) {
+            let inner = Item.fromTyOrRef(ty.pointeeType().getOrThrow(), location, None, ctx)
+            TypeKind.TypeKindReference(inner)
+        } else if (tyKind == clang.CXTypeKind_CXType_VariableArray ||
+            tyKind == clang.CXTypeKind_CXType_DependentSizedArray) {
             let inner = Item
                 .fromTy(
                     ty.elemType().getOrThrow(),
@@ -399,6 +441,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     case None => None
                 }
             case TypeKind.TypeKindPointer(_) |
+                TypeKind.TypeKindReference(_) |
                 TypeKind.TypeKindObjCInterface(_) |
                 TypeKind.TypeKindObjCId |
                 TypeKind.TypeKindObjCSel |
@@ -421,7 +464,9 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             case TypeKind.TypeKindComp(_) |
                 TypeKind.TypeKindFunction(_) |
                 TypeKind.TypeKindPointer(_) |
+                TypeKind.TypeKindReference(_) |
                 TypeKind.TypeKindArray(_, _) |
+                TypeKind.TypeKindTemplateInstantiation(_) |
                 TypeKind.ResolvedTypeRef(_) |
                 TypeKind.TypeKindObjCInterface(_) => true
             case _ => false
@@ -431,6 +476,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     public func sanitizedName(ctx: CjbindContext): ?String {
         let nameInfo: ?(ItemId, String) = match (this.kind) {
             case TypeKind.TypeKindPointer(inner) => Some((inner, "ptr"))
+            case TypeKind.TypeKindReference(inner) => Some((inner, "ref"))
             case TypeKind.TypeKindArray(inner, length) => Some((inner, "array${length}"))
             case TypeKind.TypeKindObjCInterface(iface) => return Some(iface.name)
             case _ => None
@@ -460,6 +506,8 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             case TypeKind.TypeKindOpaque => true
             case TypeKind.TypeKindComp(comp) => comp.isOpaque(ctx, this.layout)
             case TypeKind.ResolvedTypeRef(to) => to.isOpaque(ctx, ())
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                instantiation.definition.isOpaque(ctx, ())
             case _ => false
         }
     }
@@ -489,7 +537,9 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
 
         match (this.kind) {
-            case TypeKind.TypeKindPointer(inner) => 
+            case TypeKind.TypeKindPointer(inner) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindReference(inner) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case TypeKind.TypeKindArray(inner, _) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
@@ -497,6 +547,8 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case TypeKind.TypeKindAlias(inner) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                instantiation.trace(context, tracer, ())
             case TypeKind.ResolvedTypeRef(inner) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case TypeKind.TypeKindComp(ci) =>
@@ -571,6 +623,9 @@ public enum TypeKind {
     | TypeKindFunction(FunctionSig)
     | TypeKindEnum(Enum)
     | TypeKindPointer(TypeId)
+    | TypeKindReference(TypeId)
+    | TypeKindTemplateInstantiation(TemplateInstantiation)
+    | TypeKindTypeParam
     | UnresolvedTypeRef(clang.Type, clang.Cursor, ?ItemId)
     | ResolvedTypeRef(TypeId)
     | TypeKindObjCInterface(ObjCInterface)

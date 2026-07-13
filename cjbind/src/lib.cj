@@ -24,6 +24,16 @@ func parseOne(ctx: CjbindContext, cursor: clang.Cursor, parent: ?ItemId): Unit {
         }
     }
 
+    if (cursor.kind() == clang.CXCursorKind_CXCursor_Namespace) {
+        let moduleId = ctx.module(cursor)
+        ctx.withModule(moduleId) {
+            moduleCtx => cursor.visitContinue {
+                child => parseOne(moduleCtx, child, Some(moduleId))
+            }
+        }
+        return
+    }
+
     match (Item.parse(cursor, parent, ctx)) {
         case Ok(_) => ()
         case Err(ParseError.Continue) => ()
@@ -96,7 +106,13 @@ func detectIncludePaths(options: CjbindOptions) {
             } |> collectArrayList
     }().toArray()
 
-    let searchPaths = clang.getSearchPaths(clangArgsForClang)
+    let detectionArgs = ArrayList<String>(clangArgsForClang)
+    if (hasCxxHeader(options.headers) && !hasExplicitLanguage(detectionArgs)) {
+        detectionArgs.add("-x")
+        detectionArgs.add("c++")
+    }
+
+    let searchPaths = clang.getSearchPaths(detectionArgs.toArray())
 
     if (let Some(ps) <- searchPaths) {
         for (p in ps) {
@@ -104,6 +120,28 @@ func detectIncludePaths(options: CjbindOptions) {
             options.clangArgs.add(p)
         }
     }
+}
+
+func hasExplicitLanguage(args: Collection<String>): Bool {
+    for (arg in args) {
+        if (arg == "-x" || (arg.startsWith("-x") && arg.size > 2)) {
+            return true
+        }
+    }
+    return false
+}
+
+func hasCxxHeader(headers: Collection<String>): Bool {
+    for (header in headers) {
+        if (header.endsWith(".hpp") || header.endsWith(".hxx") || header.endsWith(".hh") ||
+            header.endsWith(".h++") || header.endsWith(".HPP") || header.endsWith(".HXX") ||
+            header.endsWith(".HH") || header.endsWith(".H++") || header.endsWith(".H") ||
+            header.endsWith(".cc") || header.endsWith(".cpp") || header.endsWith(".cxx") ||
+            header.endsWith(".c++") || header.endsWith(".C")) {
+            return true
+        }
+    }
+    return false
 }
 
 public func generate(opts: CjbindOptions): String {
@@ -119,6 +157,9 @@ public func generate(opts: CjbindOptions): String {
     if (opts.objc) {
         localArgs.add("-x")
         localArgs.add("objective-c")
+    } else if (!hasExplicitLanguage(localArgs) && hasCxxHeader(opts.headers)) {
+        localArgs.add("-x")
+        localArgs.add("c++")
     }
 
     // Last header is used as the main translation unit file. All preceding headers are pre-included via -include.
@@ -150,6 +191,23 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
     ctxOpts.fitMacroConstants = opts.fitMacroConstants
     ctxOpts.useUnionAccessorWorkaround = opts.useUnionAccessorWorkaround
+    ctxOpts.enableCxxNamespaces = opts.enableCxxNamespaces
+    ctxOpts.conservativeInlineNamespaces = opts.conservativeInlineNamespaces
+    ctxOpts.generateFunctions = opts.generateFunctions
+    ctxOpts.generateTypes = opts.generateTypes
+    ctxOpts.generateVars = opts.generateVars
+    ctxOpts.generateMethods = opts.generateMethods
+    ctxOpts.generateConstructors = opts.generateConstructors
+    ctxOpts.generateDestructors = opts.generateDestructors
+    ctxOpts.representCxxOperators = opts.representCxxOperators
+    ctxOpts.respectCxxAccessSpecs = opts.respectCxxAccessSpecs
+    ctxOpts.useSpecificVirtualFunctionReceiver = opts.useSpecificVirtualFunctionReceiver
+    ctxOpts.useDistinctChar16T = opts.useDistinctChar16T
+    ctxOpts.generateInlineFunctions = opts.generateInlineFunctions
+    ctxOpts.generateDeletedFunctions = opts.generateDeletedFunctions
+    ctxOpts.generatePureVirtualFunctions = opts.generatePureVirtualFunctions
+    ctxOpts.generatePrivateFunctions = opts.generatePrivateFunctions
+    ctxOpts.vtableGeneration = opts.vtableGeneration
     ctxOpts.fieldNameCallback = opts.fieldNameCallback
 
     let ctx = CjbindContext(ctxOpts)

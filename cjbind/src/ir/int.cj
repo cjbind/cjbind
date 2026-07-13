@@ -16,6 +16,7 @@ public enum TypeKindIntKind {
     | IntKindUChar
     | IntKindWChar(Bool) // isSigned
     | IntKindChar(Bool) // signed or not
+    | IntKindChar16
     | IntKindShort
     | IntKindUShort
     | IntKindInt
@@ -38,7 +39,7 @@ public enum TypeKindIntKind {
 
     public func isSigned(): ?Bool {
         match (this) {
-            case IntKindBool | IntKindUChar | IntKindUShort | IntKindUInt | IntKindULong | IntKindULongLong | IntKindU8 | IntKindU16 | IntKindU32 | IntKindU64 | IntKindU128 => Some(false)
+            case IntKindBool | IntKindUChar | IntKindChar16 | IntKindUShort | IntKindUInt | IntKindULong | IntKindULongLong | IntKindU8 | IntKindU16 | IntKindU32 | IntKindU64 | IntKindU128 => Some(false)
             case IntKindSChar | IntKindShort | IntKindInt | IntKindLong | IntKindLongLong | IntKindI8 | IntKindI16 | IntKindI32 | IntKindI64 | IntKindI128 => Some(true)
             case IntKindWChar(signed) => Some(signed)
             case IntKindChar(v) => Some(v)
@@ -49,7 +50,7 @@ public enum TypeKindIntKind {
     public func knownSize(): ?UIntNative {
         return match (this) {
             case IntKindBool | IntKindUChar | IntKindSChar | IntKindU8 | IntKindI8 | IntKindChar(_) => 1
-            case IntKindU16 | IntKindI16 => 2
+            case IntKindChar16 | IntKindU16 | IntKindI16 => 2
             case IntKindU32 | IntKindI32 => 4
             case IntKindU64 | IntKindI64 => 8
             case IntKindI128 | IntKindU128 => 16

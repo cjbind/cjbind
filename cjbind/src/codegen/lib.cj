@@ -6,6 +6,7 @@ import std.env
 import std.collection.{ArrayList, HashSet}
 import cjbind.build.VERSION
 import cjbind.ir.*
+import cjbind.clang
 import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.result.Result
 
@@ -39,6 +40,8 @@ public class CodegenResult {
     public let itemsSeen: HashSet<ItemId> = HashSet()
 
     public let functionsSeen: HashSet<String> = HashSet()
+    public let generatedFunctionNames: HashSet<String> = HashSet()
+    public let generatedTypeNames: HashSet<String> = HashSet()
     public let varsSeen: HashSet<String> = HashSet<String>()
     public let unionHelpersSeen: HashSet<String> = HashSet<String>()
 
@@ -56,6 +59,32 @@ public class CodegenResult {
 
     public func sawFunction(name: String): Unit {
         this.functionsSeen.add(name)
+    }
+
+    public func uniqueFunctionName(baseName: String): String {
+        if (!this.generatedFunctionNames.contains(baseName)) {
+            this.generatedFunctionNames.add(baseName)
+            return baseName
+        }
+
+        var suffix = 1
+        while (true) {
+            let candidate = "${baseName}${suffix}"
+            if (!this.generatedFunctionNames.contains(candidate)) {
+                this.generatedFunctionNames.add(candidate)
+                return candidate
+            }
+            suffix += 1
+        }
+        throw Exception("unreachable")
+    }
+
+    public func seenType(name: String): Bool {
+        return this.generatedTypeNames.contains(name)
+    }
+
+    public func sawType(name: String): Unit {
+        this.generatedTypeNames.add(name)
     }
 
     public func seenVar(name: String): Bool {
@@ -160,6 +189,9 @@ extend Module <: CodeGenerator<Item, Unit> {
             )
 
             result.headers.add(header)
+            if (ctx.options.useDistinctChar16T) {
+                result.headers.add(tokenStreamFromTemplate("public type cjbind_cchar16_t = UInt16"))
+            }
         }
     }
 }
@@ -179,6 +211,14 @@ extend Function <: CodeGenerator<Item, Unit> {
             return
         }
 
+        if (!ctx.options.generatePureVirtualFunctions) {
+            match (this.kind) {
+                case FunctionKind.KindMethod(MethodKind.Virtual(true)) |
+                    FunctionKind.KindMethod(MethodKind.VirtualDestructor(true)) => return
+                case _ => ()
+            }
+        }
+
         let signatureItem = ctx.resolveItem(this.signature)
         let signatureTy = signatureItem.kind.expectType().canonicalType(ctx)
 
@@ -187,13 +227,32 @@ extend Function <: CodeGenerator<Item, Unit> {
             case _ => throw Exception("expected function type for sig")
         }
 
-        let name = this.name
-
-        if (result.seenFunction(name)) {
+        if (!signature.abi.isForeignCompatibleForTarget(ctx.targetInfo)) {
+            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because its calling convention cannot be represented by the current FFI")
+            return
+        }
+        if (signature.isVariadicFunction() && signature.argumentTypes.isEmpty()) {
+            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because an unprototyped variadic ABI cannot be represented")
+            return
+        }
+        if (usesCxxLanguage(ctx.options) && hasOpaqueValueAbi(signature, ctx)) {
+            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because an opaque value ABI cannot be represented safely")
             return
         }
 
-        result.sawFunction(name)
+        let name = this.name
+        let symbolName = this.symbolName()
+
+        if (result.seenFunction(symbolName)) {
+            return
+        }
+
+        result.sawFunction(symbolName)
+
+        if (!clang.isValidIdentifier(symbolName)) {
+            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because its ABI symbol cannot be represented by the current FFI")
+            return
+        }
 
         let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
             let pc = preprocessComment(c)
@@ -205,7 +264,11 @@ extend Function <: CodeGenerator<Item, Unit> {
         let args = Utils.fnsigArguments(ctx, signature)
         let ret = Utils.fnsigReturnTy(ctx, signature)
 
-        let ident = ctx.cjIdent(name)
+        let ident = if (this.mangledName.isSome()) {
+            ctx.cjIdentRaw(symbolName)
+        } else {
+            ctx.cjIdent(symbolName)
+        }
 
         if (signature.getIsVariadic()) {
             args.add(tokenStreamFromTemplate("..."))
@@ -213,16 +276,35 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         let argsToken = joinStreams(args, ", ")
 
+        let declaration = if (signature.abi.isStdcall()) {
+            @tmpl(
+                @CallingConv[STDCALL]
+                foreign func ${ident} ( ${argsToken} ) : ${ret}
+            )
+        } else {
+            tokenStreamFromTemplate("foreign func ${ident} ( ${argsToken} ) : ${ret}")
+        }
+
         let tokens = optionalComment(
             ctx,
             commentToken,
-            tokenStreamFromTemplate("foreign func ${ident} ( ${argsToken} ) : ${ret}")
+            declaration
         )
 
         result.items.add(tokens)
 
-        if (ctx.options.makeFuncWrapper && !signature.getIsVariadic()) {
-            let wrapperName = ctx.cjIdent("${name}${ctx.options.funcWrapperSuffix}")
+        let needsWrapper = this.mangledName.isSome() || ctx.options.makeFuncWrapper
+        if (needsWrapper && !signature.getIsVariadic()) {
+            let wrapperBase = if (this.mangledName.isSome()) {
+                let canonical = functionCanonicalName(ctx, item, name)
+                match (this.kind) {
+                    case FunctionKind.KindMethod(MethodKind.Constructor) => "${canonical}_constructor"
+                    case _ => canonical
+                }
+            } else {
+                "${name}${ctx.options.funcWrapperSuffix}"
+            }
+            let wrapperName = ctx.cjIdent(result.uniqueFunctionName(wrapperBase))
             let argsName = Utils.fnsigArgumentNames(ctx, signature)
             let argsNameToken = joinStreams(argsName, ", ")
             let tokens = optionalComment(
@@ -236,8 +318,50 @@ extend Function <: CodeGenerator<Item, Unit> {
             )
 
             result.items.add(tokens)
+
+            if (this.constructorCanReturnByValue) {
+                if (let FunctionKind.KindMethod(MethodKind.Constructor) <- this.kind) {
+                if (!signature.argumentTypes.isEmpty()) {
+                    let receiverType = ctx.resolveType(signature.argumentTypes[0][1]).canonicalType(ctx)
+                    if (let TypeKind.TypeKindPointer(receiverInner) <- receiverType.kind) {
+                        let classType = receiverInner.toCjTyOrOpaque(ctx, ())
+                        let className = ctx.resolveItem(receiverInner).canonicalName(ctx)
+                        let constructorName = ctx.cjIdent(result.uniqueFunctionName("${className}_new"))
+                        let constructorArgs = ArrayList<TokenStream>(args)
+                        constructorArgs.remove(at: 0)
+                        let constructorArgNames = ArrayList<TokenStream>(argsName)
+                        constructorArgNames.remove(at: 0)
+                        let constructorArgsToken = joinStreams(constructorArgs, ", ")
+                        let constructorCallArgs = ArrayList<TokenStream>()
+                        constructorCallArgs.add(tokenStreamFromTemplate("CPointer<${classType}>(inout value)"))
+                        constructorCallArgs.add(all: constructorArgNames)
+                        let constructorCallArgsToken = joinStreams(constructorCallArgs, ", ")
+                        result.items.add(optionalComment(
+                            ctx,
+                            commentToken,
+                            @tmpl(
+                                public unsafe func ${constructorName} ( ${constructorArgsToken} ) : ${classType} {
+                                var value = unsafe { zeroValue<${classType}>() }
+                                ${ident}( ${constructorCallArgsToken} )
+                                return value
+                                }
+                            )
+                        ))
+                    }
+                }
+            }
+            }
         }
     }
+}
+
+func functionCanonicalName(ctx: CjbindContext, item: Item, name: String): String {
+    let canonical = item.canonicalName(ctx)
+    let repeatedSuffix = "_${name}"
+    if (canonical.endsWith(repeatedSuffix) && canonical.size > repeatedSuffix.size) {
+        return canonical[..(canonical.size - repeatedSuffix.size)]
+    }
+    return canonical
 }
 
 extend Var <: CodeGenerator<Item, Unit> {
@@ -247,7 +371,6 @@ extend Var <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item
     ): Unit {
-        // 只支持 C，不需要考虑 namespace
         let canonicalName = item.canonicalName(ctx)
 
         if (result.seenVar(canonicalName)) {
@@ -354,7 +477,8 @@ extend Type <: CodeGenerator<Item, Unit> {
         match (this.kind) {
             case TypeKind.TypeKindVoid | TypeKind.TypeKindNullPtr | TypeKind.TypeKindInt(_) | TypeKind.TypeKindFloat(_) | TypeKind
                     .TypeKindComplex(_) | TypeKind.TypeKindArray(_, _) | TypeKind.TypeKindVector(_, _) | TypeKind
-                    .TypeKindPointer(_) | TypeKind.TypeKindFunction(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
+                    .TypeKindPointer(_) | TypeKind.TypeKindReference(_) | TypeKind.TypeKindFunction(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
+                    .TypeKindTypeParam | TypeKind.TypeKindTemplateInstantiation(_) | TypeKind
                     .TypeKindOpaque => ()
             case TypeKind.TypeKindObjCInterface(iface) => iface.codegen(ctx, result, item)
             case TypeKind.TypeKindObjCId | TypeKind.TypeKindObjCSel | TypeKind.TypeKindObjCBlockPointer(_) => ()
@@ -373,6 +497,11 @@ extend Type <: CodeGenerator<Item, Unit> {
                 if (Utils.typeFromNamed(ctx, spelling).isSome()) {
                     return
                 }
+
+                if (result.seenType(name)) {
+                    return
+                }
+                result.sawType(name)
 
                 let isOpaque = item.isOpaque(ctx, ())
                 let innerCjType = if (isOpaque) {
@@ -404,23 +533,36 @@ extend Type <: CodeGenerator<Item, Unit> {
 }
 
 extend CompInfo <: CodeGenerator<Item, Unit> {
-    // TODO: 支持 union 和 bitfield
     // cjlint-ignore -start !G.FUN.01
     public func codegen(
         ctx: CjbindContext,
         result: CodegenResult,
         item: Item
     ): Unit {
+        if (!this.templateParams.isEmpty() || this.hasTemplateTypeParams || this.hasNonTypeTemplateParams) {
+            return
+        }
         let ty = item.kind.expectType()
         let layout = ty.getLayout(ctx)
+        let hasRepresentableAlignment = layout
+            .map({value => value.align <= ctx.pointerWidth() && Layout.knownCjTypeForSize(value.align).isSome()})
+            .getOrDefault({=> true})
 
         let canonicalName = item.canonicalName(ctx)
+        if (result.seenType(canonicalName)) {
+            return
+        }
+        result.sawType(canonicalName)
         var isOpaque = item.isOpaque(ctx, ())
 
         let packed = this.isPacked(ctx, layout)
-        if (packed) {
-            eprintln("警告：${canonicalName} 是一个 packed 类型，cj 暂不支持，跳过生成")
-            return
+        if (packed && layout.isSome()) {
+            eprintln("警告：${canonicalName} 是一个 packed 类型，将生成不透明布局")
+            isOpaque = true
+        }
+        if (!hasRepresentableAlignment) {
+            eprintln("警告：${canonicalName} 的对齐要求无法由当前 FFI 类型表达；该类型仅适合通过指针使用")
+            isOpaque = true
         }
 
         let hasBitfields = if (let CompFieldsAfter(v) <- this.fields) {
@@ -436,7 +578,85 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let sigs = TokenStream()
         let inits = ArrayList<TokenStream>()
 
-        if (this.isUnion()) {
+        if (!this.isUnion() && !isOpaque) {
+            if (this.hasVtablePointer(ctx)) {
+                let vtableName = ctx.cjIdent("vtable_")
+                let vtableTy = if (ctx.options.vtableGeneration && this.canGenerateTypedVtable(ctx)) {
+                    let generatedVtableName = "${canonicalName}__cjbind_vtable"
+                    let generatedVtableIdent = ctx.cjIdent(generatedVtableName)
+                    let vtableFields = ArrayList<TokenStream>()
+                    let vtableSigs = TokenStream()
+                    let vtableInits = ArrayList<TokenStream>()
+                    let vtableNames = HashSet<String>()
+
+                    for (method in this.methods) {
+                        if (!method.kind.isVirtual()) {
+                            continue
+                        }
+                        let methodItem = ctx.resolveItem(method.signature)
+                        let methodFunction = match (methodItem.kind) {
+                            case ItemKind.KindFunction(function) => function
+                            case _ => continue
+                        }
+                        let fieldBase = functionCanonicalName(ctx, methodItem, methodFunction.name)
+                        let fieldName = ctx.cjIdent(uniqueName(vtableNames, fieldBase))
+                        let fieldTy = methodFunction.signature.toCjTyOrOpaque(ctx, ())
+                        vtableFields.add(tokenStreamFromTemplate("public let ${fieldName} : ${fieldTy}"))
+                        if (!vtableSigs.isEmpty()) {
+                            vtableSigs.appendLiteral(", ")
+                        }
+                        vtableSigs.appendLiteral("${fieldName} : ${fieldTy}")
+                        vtableInits.add(tokenStreamFromTemplate("this.${fieldName} = ${fieldName}"))
+                    }
+
+                    let vtableFieldsToken = joinStreams(vtableFields, "\n")
+                    let vtableInitToken = if (vtableInits.isEmpty()) {
+                        TokenStream()
+                    } else {
+                        let vtableInitBody = joinStreams(vtableInits, "\n")
+                        @tmpl(
+                            public init(${vtableSigs}) {
+                                ${vtableInitBody}
+                            }
+                        )
+                    }
+                    result.items.add(@tmpl(
+                        @C
+                        public struct ${generatedVtableIdent} {
+                            ${vtableFieldsToken}
+                            ${vtableInitToken}
+                        }
+                    ))
+                    tokenStreamFromTemplate("CPointer<${generatedVtableIdent}>")
+                } else {
+                    tokenStreamFromTemplate("CPointer<Unit>")
+                }
+                fields.add(tokenStreamFromTemplate("public let ${vtableName} : ${vtableTy}"))
+                sigs.appendLiteral("${vtableName} : ${vtableTy}")
+                inits.add(tokenStreamFromTemplate("this.${vtableName} = ${vtableName}"))
+            }
+
+            for (base in this.baseMembers) {
+                if (!base.requiresStorage(ctx)) {
+                    continue
+                }
+                let baseName = ctx.cjIdent(base.fieldName)
+                let baseTy = base.ty.toCjTyOrOpaque(ctx, ())
+                let visibility = if (ctx.options.respectCxxAccessSpecs && !base.isPublic) {
+                    "private "
+                } else {
+                    "public "
+                }
+                fields.add(tokenStreamFromTemplate("${visibility}let ${baseName} : ${baseTy}"))
+                if (!sigs.isEmpty()) {
+                    sigs.appendLiteral(", ")
+                }
+                sigs.appendLiteral("${baseName} : ${baseTy}")
+                inits.add(tokenStreamFromTemplate("this.${baseName} = ${baseName}"))
+            }
+        }
+
+        if (this.isUnion() && !isOpaque) {
             match (layout) {
                 case Some(l) =>
                     let blobTy = Helpers.blob(ctx, l)
@@ -470,27 +690,32 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                                 let readFuncName = "__cjbind_read_${typeName}"
                                 let writeFuncName = "__cjbind_write_${typeName}"
+                                let visibility = if (ctx.options.respectCxxAccessSpecs && !data.isPublic) {
+                                    "private "
+                                } else {
+                                    "public "
+                                }
 
                                 if (ctx.options.useUnionAccessorWorkaround) {
                                     fields.add(@tmpl(
-                                        public func ${fieldIdent}(): ${fieldTy} {
+                                        ${visibility}func ${fieldIdent}(): ${fieldTy} {
                                             return ${readFuncName}(this._storage)
                                         }
                                     ))
                                     fields.add(@tmpl(
-                                        public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
+                                        ${visibility}mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
                                             this._storage = ${writeFuncName}(this._storage, val)
                                         }
                                     ))
                                 } else {
                                     fields.add(@tmpl(
-                                        public func ${fieldIdent}(): ${fieldTy} {
+                                        ${visibility}func ${fieldIdent}(): ${fieldTy} {
                                             var s = this._storage
                                             return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
                                         }
                                     ))
                                     fields.add(@tmpl(
-                                        public mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
+                                        ${visibility}mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
                                             unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }
                                         }
                                     ))
@@ -521,11 +746,16 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 d => ctx.cjMangle(d)
                             }.getOrThrow()
                             let fieldIdent = ctx.cjIdent(fieldName)
+                            let visibility = if (ctx.options.respectCxxAccessSpecs && !data.isPublic) {
+                                "private "
+                            } else {
+                                "public "
+                            }
 
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                tokenStreamFromTemplate("public var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
+                                tokenStreamFromTemplate("${visibility}var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
                             )
                             fields.add(fieldToken)
 
@@ -548,6 +778,11 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let bfTy = bf.data.ty.toCjTyOrOpaque(ctx, ())
                                 let bitOffset = Int64(bf.offsetIntoUnit)
                                 let bitWidth = Int64(bf.data.bitfieldWidth.getOrThrow())
+                                let visibility = if (ctx.options.respectCxxAccessSpecs && !bf.data.isPublic) {
+                                    "private "
+                                } else {
+                                    "public "
+                                }
 
                                 let bfFieldItem = bf.data.ty.intoResolver().throughTypeRefs().resolve(ctx)
                                 let bfFieldTy = bfFieldItem.kind.expectType()
@@ -568,14 +803,14 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 let readFunc = if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
 
                                 fields.add(@tmpl(
-                                    public func ${bfIdent}(): ${bfTy} {
+                                    ${visibility}func ${bfIdent}(): ${bfTy} {
                                         var s = this.${storageIdent}
                                         return ${bfTy}(unsafe { ${readFunc}(inout s, ${bitOffset}, ${bitWidth}) })
                                     }
                                 ))
 
                                 fields.add(@tmpl(
-                                    public mut func ${bfIdent}(val!: ${bfTy}): Unit {
+                                    ${visibility}mut func ${bfIdent}(val!: ${bfTy}): Unit {
                                         unsafe { __cjbind_bitfield_write(inout this.${storageIdent}, ${bitOffset}, ${bitWidth}, UInt64(val)) }
                                     }
                                 ))
@@ -592,9 +827,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                 fields.add(tokenStreamFromTemplate("public init() {}"))
             } else {
-                for ((idx, field) in fieldDecls.iterator().enumerate()) {
-                    let isLast = idx == fieldDecls.size - 1
-
+                for (field in fieldDecls) {
                     match (field) {
                         case Field.DataMember(data) =>
                             let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
@@ -613,23 +846,36 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             }.getOrThrow()
                             let fieldIdent = ctx.cjIdent(fieldName)
 
+                            let visibility = if (ctx.options.respectCxxAccessSpecs && !data.isPublic) {
+                                "private "
+                            } else {
+                                "public "
+                            }
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                tokenStreamFromTemplate("public let ${fieldIdent} : ${ty}")
+                                tokenStreamFromTemplate("${visibility}let ${fieldIdent} : ${ty}")
                             )
                             fields.add(fieldToken)
 
-                            sigs.appendLiteral("${fieldIdent} : ${ty}")
-                            if (!isLast) {
+                            if (!sigs.isEmpty()) {
                                 sigs.appendLiteral(", ")
                             }
+                            sigs.appendLiteral("${fieldIdent} : ${ty}")
                             inits.add(tokenStreamFromTemplate("this.${fieldIdent} = ${fieldIdent}"))
 
                         case _ => throw Exception("Only support normal field")
                     }
                 }
             }
+        }
+
+        if (!this.isUnion() && !isOpaque && fields.isEmpty() &&
+            layout.map({value => value.size > 0}).getOrDefault({=> false})) {
+            let emptyFieldName = ctx.cjIdent("_cjbind_empty")
+            fields.add(tokenStreamFromTemplate("let ${emptyFieldName}: UInt8"))
+            sigs.appendLiteral("${emptyFieldName}: UInt8")
+            inits.add(tokenStreamFromTemplate("this.${emptyFieldName} = ${emptyFieldName}"))
         }
 
         if (isOpaque) {
@@ -659,6 +905,9 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let initToken = TokenStream()
         let initVisibility = if (this.isForwardDeclaration) {
             ""
+        } else if (!hasRepresentableAlignment ||
+            (ctx.options.respectCxxAccessSpecs && this.hasNonPublicMembers())) {
+            "private "
         } else {
             "public "
         }
@@ -687,7 +936,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         result.items.add(ret)
 
-        if (!ctx.options.noLayoutTests && !this.isForwardDeclaration) {
+        if (!ctx.options.noLayoutTests && !this.isForwardDeclaration && hasRepresentableAlignment) {
             if (let Some(l) <- layout) {
                 let size = l.size
                 let align = l.align
@@ -717,6 +966,23 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         }
     }
     // cjlint-ignore -end
+}
+
+func uniqueName(seen: HashSet<String>, baseName: String): String {
+    if (!seen.contains(baseName)) {
+        seen.add(baseName)
+        return baseName
+    }
+    var suffix = 1
+    while (true) {
+        let candidate = "${baseName}${suffix}"
+        if (!seen.contains(candidate)) {
+            seen.add(candidate)
+            return candidate
+        }
+        suffix += 1
+    }
+    throw Exception("unreachable")
 }
 
 func enumVariantExpr(val: EnumVariantValue): TokenStream {

@@ -19,6 +19,18 @@ func cxstringToString(x: CXString): String {
     }
 }
 
+// Converts a CXString owned by another libclang container. The container is
+// responsible for releasing the string storage.
+func cxstringToBorrowedString(x: CXString): String {
+    if (x.data.isNull()) {
+        return ""
+    }
+
+    unsafe {
+        return clang_getCString(x).toString()
+    }
+}
+
 public func getClangVersion(): String {
     unsafe {
         cxstringToString(clang_getClangVersion())
@@ -91,6 +103,29 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     public func mangling(): String {
         unsafe {
             return cxstringToString(clang_Cursor_getMangling(x))
+        }
+    }
+
+    /// Get every mangled symbol associated with a C++ constructor or
+    /// destructor. Most declarations have either one symbol or no string set.
+    public func cxxManglings(): Result<Array<String>, Unit> {
+        unsafe {
+            let manglings = clang_Cursor_getCXXManglings(x)
+            if (manglings.isNull()) {
+                return Result<Array<String>, Unit>.Err(())
+            }
+
+            try {
+                let stringSet = manglings.read()
+                let count = stringSet.Count
+                let strings = stringSet.Strings
+                let values = Array<String>(Int64(count)) {
+                    i => cxstringToBorrowedString((strings + i).read())
+                }
+                return Result<Array<String>, Unit>.Ok(values)
+            } finally {
+                clang_disposeStringSet(manglings)
+            }
         }
     }
 
@@ -216,6 +251,180 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    /// Return the number of template arguments used by this declaration.
+    /// Type metadata is preferred because cursor metadata is incomplete for
+    /// some class template specializations.
+    public func numTemplateArgs(): ?UInt32 {
+        if (let Some(count) <- this.curType().numTemplateArgs()) {
+            return Some(count)
+        }
+
+        let cursorCount = unsafe { clang_Cursor_getNumTemplateArguments(x) }
+        if (cursorCount >= 0) {
+            return Some(UInt32(cursorCount))
+        }
+
+        let canonicalCursor = this.canonical()
+        if (canonicalCursor == this) {
+            return None
+        }
+        return canonicalCursor.numTemplateArgs()
+    }
+
+    /// Return template arguments as types. Non-type template arguments are
+    /// represented by invalid Type values and can be inspected through the
+    /// cursor-specific template argument accessors below.
+    public func templateArgs(): ?Array<Type> {
+        if (let Some(args) <- this.curType().templateArgs()) {
+            return Some(args)
+        }
+
+        let count = unsafe { clang_Cursor_getNumTemplateArguments(x) }
+        if (count >= 0) {
+            return Some(Array<Type>(Int64(count)) {
+                i => unsafe { Type(clang_Cursor_getTemplateArgumentType(x, UInt32(i))) }
+            })
+        }
+
+        let canonicalCursor = this.canonical()
+        if (canonicalCursor == this) {
+            return None
+        }
+        return canonicalCursor.templateArgs()
+    }
+
+    public func templateArgumentKind(index: UInt32): ?CXTemplateArgumentKind {
+        if (let Some(count) <- this.numTemplateArgs()) {
+            if (index >= count) {
+                return None
+            }
+        } else {
+            return None
+        }
+
+        let kind = unsafe { clang_Cursor_getTemplateArgumentKind(x, index) }
+        if (kind == CXTemplateArgumentKind_CXTemplateArgumentKind_Invalid) {
+            return None
+        }
+        return Some(kind)
+    }
+
+    public func templateArgumentType(index: UInt32): ?Type {
+        if (this.templateArgumentKind(index) != Some(CXTemplateArgumentKind_CXTemplateArgumentKind_Type)) {
+            return None
+        }
+
+        let ty = unsafe { Type(clang_Cursor_getTemplateArgumentType(x, index)) }
+        if (ty.isValid()) {
+            return Some(ty)
+        }
+        return None
+    }
+
+    public func templateArgumentValue(index: UInt32): ?Int64 {
+        if (this.templateArgumentKind(index) != Some(CXTemplateArgumentKind_CXTemplateArgumentKind_Integral)) {
+            return None
+        }
+        return Some(unsafe { clang_Cursor_getTemplateArgumentValue(x, index) })
+    }
+
+    public func templateArgumentUnsignedValue(index: UInt32): ?UInt64 {
+        if (this.templateArgumentKind(index) != Some(CXTemplateArgumentKind_CXTemplateArgumentKind_Integral)) {
+            return None
+        }
+        return Some(unsafe { clang_Cursor_getTemplateArgumentUnsignedValue(x, index) })
+    }
+
+    /// Return the primary template specialized by this declaration.
+    public func specialized(): ?Cursor {
+        let cursor = unsafe { Cursor(clang_getSpecializedCursorTemplate(x)) }
+        if (cursor.isValid() && cursor.kind() != CXCursorKind_CXCursor_NoDeclFound) {
+            return Some(cursor)
+        }
+        return None
+    }
+
+    /// Return the declaration kind produced by instantiating this template.
+    public func templateKind(): CXCursorKind {
+        unsafe {
+            return clang_getTemplateCursorKind(x)
+        }
+    }
+
+    public func isTemplateLike(): Bool {
+        let cursorKind = this.kind()
+        return cursorKind == CXCursorKind_CXCursor_ClassTemplate ||
+            cursorKind == CXCursorKind_CXCursor_ClassTemplatePartialSpecialization ||
+            cursorKind == CXCursorKind_CXCursor_TypeAliasTemplateDecl
+    }
+
+    public func isTemplateSpecialization(): Bool {
+        return this.specialized().isSome()
+    }
+
+    public func isFullySpecializedTemplate(): Bool {
+        return this.isTemplateSpecialization() &&
+            this.kind() != CXCursorKind_CXCursor_ClassTemplatePartialSpecialization &&
+            this.numTemplateArgs().getOrDefault({=> 0u32}) > 0
+    }
+
+    /// Return whether this declaration is outside every class or function
+    /// scope. Namespace layers do not change the result.
+    public func isTopLevel(): Bool {
+        var parent = this.fallibleSemanticParent()
+        while (let Some(parentCursor) <- parent) {
+            let parentKind = parentCursor.kind()
+            if (parentKind != CXCursorKind_CXCursor_Namespace &&
+                parentKind != CXCursorKind_CXCursor_NamespaceAlias &&
+                parentKind != CXCursorKind_CXCursor_NamespaceRef) {
+                break
+            }
+            parent = parentCursor.fallibleSemanticParent()
+        }
+
+        match (parent) {
+            case Some(parentCursor) => return parentCursor == this.translationUnit()
+            case None => return false
+        }
+    }
+
+    /// Return whether any enclosing template still has free parameters.
+    public func isInNonFullySpecializedTemplate(): Bool {
+        if (this.isTopLevel()) {
+            return false
+        }
+
+        let parent = this.semanticParent()
+        if (parent.isFullySpecializedTemplate()) {
+            return false
+        }
+        if (!parent.isTemplateLike()) {
+            return parent.isInNonFullySpecializedTemplate()
+        }
+        return true
+    }
+
+    public func isTemplateParameter(): Bool {
+        let cursorKind = this.kind()
+        return cursorKind == CXCursorKind_CXCursor_TemplateTemplateParameter ||
+            cursorKind == CXCursorKind_CXCursor_TemplateTypeParameter ||
+            cursorKind == CXCursorKind_CXCursor_NonTypeTemplateParameter
+    }
+
+    /// Return whether this declaration's type or value refers to a template
+    /// parameter anywhere in its cursor tree.
+    public func isDependentOnTemplateParameter(): Bool {
+        if (this.isTemplateParameter()) {
+            return true
+        }
+
+        let found = Box(false)
+        this.visit {
+            child => visitTemplateDependency(child, found)
+        }
+        return found.value
+    }
+
     public func linkage(): CXLinkageKind {
         unsafe {
             return clang_getCursorLinkage(x)
@@ -228,9 +437,33 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    public func language(): CXLanguageKind {
+        unsafe {
+            return clang_getCursorLanguage(x)
+        }
+    }
+
     public func isInlinedFunction(): Bool {
         unsafe {
             clang_Cursor_isFunctionInlined(x) != 0
+        }
+    }
+
+    public func isDefaultedFunction(): Bool {
+        unsafe {
+            return clang_CXXMethod_isDefaulted(x) != 0
+        }
+    }
+
+    public func isDeletedFunction(): Bool {
+        unsafe {
+            return clang_CXXMethod_isDeleted(x) != 0
+        }
+    }
+
+    public func lexicalParent(): Cursor {
+        unsafe {
+            return Cursor(clang_getCursorLexicalParent(x))
         }
     }
 
@@ -272,6 +505,123 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
             }
         }
         return None
+    }
+
+    public func numOverloadedDecls(): UInt32 {
+        unsafe {
+            return clang_getNumOverloadedDecls(x)
+        }
+    }
+
+    public func overloadedDecls(): Array<Cursor> {
+        let count = this.numOverloadedDecls()
+        return Array<Cursor>(Int64(count)) {
+            i => unsafe { Cursor(clang_getOverloadedDecl(x, UInt32(i))) }
+        }
+    }
+
+    public func accessSpecifier(): CX_CXXAccessSpecifier {
+        unsafe {
+            return clang_getCXXAccessSpecifier(x)
+        }
+    }
+
+    /// Declarations without an explicit access specifier are accessible at
+    /// namespace scope and are treated as public here.
+    public func isPublic(): Bool {
+        let access = this.accessSpecifier()
+        return access == CX_CXXAccessSpecifier_CX_CXXPublic ||
+            access == CX_CXXAccessSpecifier_CX_CXXInvalidAccessSpecifier
+    }
+
+    public func isMutableField(): Bool {
+        unsafe {
+            return clang_CXXField_isMutable(x) != 0
+        }
+    }
+
+    public func methodIsStatic(): Bool {
+        unsafe {
+            return clang_CXXMethod_isStatic(x) != 0
+        }
+    }
+
+    public func methodIsConst(): Bool {
+        unsafe {
+            return clang_CXXMethod_isConst(x) != 0
+        }
+    }
+
+    public func methodIsVirtual(): Bool {
+        unsafe {
+            return clang_CXXMethod_isVirtual(x) != 0
+        }
+    }
+
+    public func methodIsPureVirtual(): Bool {
+        unsafe {
+            return clang_CXXMethod_isPureVirtual(x) != 0
+        }
+    }
+
+    public func methodIsCopyAssignmentOperator(): Bool {
+        unsafe {
+            return clang_CXXMethod_isCopyAssignmentOperator(x) != 0
+        }
+    }
+
+    public func methodIsMoveAssignmentOperator(): Bool {
+        unsafe {
+            return clang_CXXMethod_isMoveAssignmentOperator(x) != 0
+        }
+    }
+
+    public func methodIsExplicit(): Bool {
+        unsafe {
+            return clang_CXXMethod_isExplicit(x) != 0
+        }
+    }
+
+    public func constructorIsConverting(): Bool {
+        unsafe {
+            return clang_CXXConstructor_isConvertingConstructor(x) != 0
+        }
+    }
+
+    public func constructorIsCopy(): Bool {
+        unsafe {
+            return clang_CXXConstructor_isCopyConstructor(x) != 0
+        }
+    }
+
+    public func constructorIsDefault(): Bool {
+        unsafe {
+            return clang_CXXConstructor_isDefaultConstructor(x) != 0
+        }
+    }
+
+    public func constructorIsMove(): Bool {
+        unsafe {
+            return clang_CXXConstructor_isMoveConstructor(x) != 0
+        }
+    }
+
+    public func isCxxAbstract(): Bool {
+        unsafe {
+            return clang_CXXRecord_isAbstract(x) != 0
+        }
+    }
+
+    public func isVirtualBase(): Bool {
+        unsafe {
+            return clang_isVirtualBase(x) != 0
+        }
+    }
+
+    public func isScopedEnum(): Bool {
+        unsafe {
+            return clang_EnumDecl_isScoped(x) != 0
+        }
     }
 
     public func typedefType(): ?Type {
@@ -420,6 +770,12 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         return children
     }
 
+    public func isInlineNamespace(): Bool {
+        unsafe {
+            return clang_Cursor_isInlineNamespace(x) != 0
+        }
+    }
+
     // --- ObjC support ---
 
     /// Get ObjC property attributes (readonly, copy, retain, etc.)
@@ -480,6 +836,33 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
     // cjlint-ignore -end eq
 }
 
+func visitTemplateDependency(cursor: Cursor, found: Box<Bool>): CXChildVisitResult {
+    if (found.value) {
+        return CXChildVisitResult_CXChildVisit_Break
+    }
+
+    if (cursor.isTemplateParameter()) {
+        found.value = true
+        return CXChildVisitResult_CXChildVisit_Break
+    }
+
+    if (let Some(referenced) <- cursor.referenced()) {
+        if (referenced.isTemplateParameter()) {
+            found.value = true
+            return CXChildVisitResult_CXChildVisit_Break
+        }
+
+        referenced.visit {
+            child => visitTemplateDependency(child, found)
+        }
+        if (found.value) {
+            return CXChildVisitResult_CXChildVisit_Break
+        }
+    }
+
+    return CXChildVisitResult_CXChildVisit_Recurse
+}
+
 public class Type <: Equatable<Type> {
     let x: CXType
     init(x: CXType) {
@@ -537,6 +920,12 @@ public class Type <: Equatable<Type> {
     public func isConst(): Bool {
         unsafe {
             return clang_isConstQualifiedType(x) != 0
+        }
+    }
+
+    public func isPod(): Bool {
+        unsafe {
+            return clang_isPODType(x) != 0
         }
     }
 
@@ -637,6 +1026,26 @@ public class Type <: Equatable<Type> {
         }
     }
 
+    /// Get the number of template arguments for this specialization.
+    public func numTemplateArgs(): ?UInt32 {
+        let count = unsafe { clang_Type_getNumTemplateArguments(x) }
+        if (count >= 0) {
+            return Some(UInt32(count))
+        }
+        return None
+    }
+
+    /// Return all type positions in a class template specialization. Entries
+    /// for non-type arguments are invalid Type values.
+    public func templateArgs(): ?Array<Type> {
+        if (let Some(count) <- this.numTemplateArgs()) {
+            return Some(Array<Type>(Int64(count)) {
+                i => unsafe { Type(clang_Type_getTemplateArgumentAsType(x, UInt32(i))) }
+            })
+        }
+        return None
+    }
+
     public func numElements(): ?UIntNative {
         let num = unsafe {
             clang_getNumElements(x)
@@ -661,6 +1070,12 @@ public class Type <: Equatable<Type> {
     public func callConv(): CXCallingConv {
         unsafe {
             return clang_getFunctionTypeCallingConv(x)
+        }
+    }
+
+    public func referenceQualifier(): CXRefQualifierKind {
+        unsafe {
+            return clang_Type_getCXXRefQualifier(x)
         }
     }
 
@@ -1044,7 +1459,7 @@ public class FallbackTranslationUnit <: Resource {
 
 public enum ABIKind {
     GenericItanium
-    // Microsoft not supported yet
+    | Microsoft
 }
 
 public class TargetInfo {
@@ -1064,7 +1479,11 @@ public class TargetInfo {
             throw Exception("pointer width is not a multiple of 8")
         }
 
-        this.abi = ABIKind.GenericItanium
+        this.abi = if (this.triple.contains("msvc")) {
+            ABIKind.Microsoft
+        } else {
+            ABIKind.GenericItanium
+        }
     }
 }
 

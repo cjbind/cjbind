@@ -1,6 +1,6 @@
 package cjbind.ir
 
-import std.collection.{ArrayList, collectArrayList}
+import std.collection.{ArrayList, HashSet, collectArrayList}
 import cjbind.clang
 import cjbind.options.FieldInfo
 import cjbind.result.Result
@@ -10,18 +10,138 @@ public enum CompKind {
     | CompKindUnion
 }
 
+public enum MethodKind {
+    Constructor
+    | Destructor
+    | VirtualDestructor(Bool)
+    | Static
+    | Normal
+    | Virtual(Bool)
+
+    public func isDestructor(): Bool {
+        return match (this) {
+            case Destructor | VirtualDestructor(_) => true
+            case _ => false
+        }
+    }
+
+    public func isVirtual(): Bool {
+        return match (this) {
+            case Virtual(_) | VirtualDestructor(_) => true
+            case _ => false
+        }
+    }
+
+    public func isPureVirtual(): Bool {
+        return match (this) {
+            case Virtual(pure) => pure
+            case VirtualDestructor(pure) => pure
+            case _ => false
+        }
+    }
+}
+
+public class Method {
+    public let kind: MethodKind
+    public let signature: ItemId
+    public let isConst: Bool
+
+    public init(kind: MethodKind, signature: ItemId, isConst: Bool) {
+        this.kind = kind
+        this.signature = signature
+        this.isConst = isConst
+    }
+
+    public func isStatic(): Bool {
+        return match (this.kind) {
+            case MethodKind.Static => true
+            case _ => false
+        }
+    }
+}
+
+public enum BaseKind {
+    Normal
+    | Virtual
+}
+
+public class Base {
+    public let ty: TypeId
+    public let kind: BaseKind
+    public let fieldName: String
+    public let isPublic: Bool
+
+    public init(ty: TypeId, kind: BaseKind, fieldName: String, isPublic: Bool) {
+        this.ty = ty
+        this.kind = kind
+        this.fieldName = fieldName
+        this.isPublic = isPublic
+    }
+
+    public func isVirtual(): Bool {
+        return match (this.kind) {
+            case BaseKind.Virtual => true
+            case BaseKind.Normal => false
+        }
+    }
+
+    public func requiresStorage(ctx: CjbindContext): Bool {
+        if (this.isVirtual()) {
+            return false
+        }
+
+        let baseItem = this.ty.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
+        if (let Some(baseType) <- baseItem.kind.asType()) {
+            if (let Some(baseComp) <- baseType.asComp()) {
+                if (baseComp.isEmptyBase(ctx, HashSet<ItemId>())) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+}
+
+func baseHasVtable(base: Base, ctx: CjbindContext, visiting: HashSet<ItemId>): Bool {
+    let baseItem = base.ty.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
+    if (visiting.contains(baseItem.id)) {
+        return false
+    }
+    visiting.add(baseItem.id)
+
+    if (let Some(baseType) <- baseItem.kind.asType()) {
+        if (let Some(baseComp) <- baseType.asComp()) {
+            return baseComp.hasVtableInner(ctx, visiting)
+        }
+    }
+    return false
+}
+
 public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public let kind: CompKind
+    public let isCxxRecord: Bool
     public var fields: CompFields = CompFieldsBefore(ArrayList())
     public let innerTypes: ArrayList<TypeId> = ArrayList()
+    public let templateParams: ArrayList<TypeId> = ArrayList()
+    public let innerVars: ArrayList<ItemId> = ArrayList()
+    public let methods: ArrayList<Method> = ArrayList()
+    public let constructors: ArrayList<ItemId> = ArrayList()
+    public var destructor: ?(MethodKind, ItemId) = None
+    public let baseMembers: ArrayList<Base> = ArrayList()
 
     public var isForwardDeclaration: Bool = false
     public var packedAttr: Bool = false
     public var hasUnevaluableBitFieldWidth: Bool = false
     public var foundUnknownAttr: Bool = false
+    public var hasOwnVirtualMethod: Bool = false
+    public var hasDestructor: Bool = false
+    public var hasNonTypeTemplateParams: Bool = false
+    public var hasTemplateTypeParams: Bool = false
+    public var hasUnrepresentedVirtualMethod: Bool = false
 
-    public init(kind: CompKind) {
+    public init(kind: CompKind, isCxxRecord!: Bool = false) {
         this.kind = kind
+        this.isCxxRecord = isCxxRecord
     }
 
     public func isUnion(): Bool {
@@ -38,6 +158,17 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             return Result.Ok(CompKind.CompKindUnion)
         }
         if (k == clang.CXCursorKind_CXCursor_StructDecl) {
+            return Result.Ok(CompKind.CompKindStruct)
+        }
+        if (k == clang.CXCursorKind_CXCursor_ClassDecl) {
+            return Result.Ok(CompKind.CompKindStruct)
+        }
+        if (k == clang.CXCursorKind_CXCursor_CXXBaseSpecifier ||
+            k == clang.CXCursorKind_CXCursor_ClassTemplate ||
+            k == clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization) {
+            if (cursor.templateKind() == clang.CXCursorKind_CXCursor_UnionDecl) {
+                return Result.Ok(CompKind.CompKindUnion)
+            }
             return Result.Ok(CompKind.CompKindStruct)
         }
 
@@ -65,7 +196,10 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             case Err(e) => return Err(e)
         }
 
-        let ci = CompInfo(kind)
+        let ci = CompInfo(
+            kind,
+            isCxxRecord: cursor.value.language() == clang.CXLanguageKind_CXLanguage_CPlusPlus
+        )
         ci.isForwardDeclaration = location
             .flatMap {
                 cur =>
@@ -73,7 +207,8 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 if (k == clang.CXCursorKind_CXCursor_ParmDecl) {
                     return true
                 }
-                if (k == clang.CXCursorKind_CXCursor_StructDecl || k == clang.CXCursorKind_CXCursor_UnionDecl) {
+                if (k == clang.CXCursorKind_CXCursor_StructDecl || k == clang.CXCursorKind_CXCursor_UnionDecl ||
+                    k == clang.CXCursorKind_CXCursor_ClassDecl) {
                     return !cur.isDefinition()
                 }
                 return false
@@ -93,6 +228,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                             // Typedefs of anonymous structs appear later in the ast
                             // than the struct itself, that would otherwise be an
                             // anonymous field. Detect that case here, and do nothing.
+                            maybeAnonymousStructField.value = None
                         } else {
                             let field = RawField(None, ty, None, None, offset)
                             maybeAnonymousStructField.value = None
@@ -114,9 +250,9 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
                         if (!used.value) {
                             let field = RawField(None, ty, None, None, offset)
-                            maybeAnonymousStructField.value = None
                             ci.fields.appendRawField(field)
                         }
+                        maybeAnonymousStructField.value = None
                     }
 
                     let bitWidth: ?UInt32 = if (cur.isBitField()) {
@@ -154,7 +290,8 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                         fieldType,
                         comment,
                         bitWidth,
-                        offset
+                        offset,
+                        isPublic: cur.isPublic()
                     )
                     ci.fields.appendRawField(field)
 
@@ -167,8 +304,17 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     }
                 } else if (k == clang.CXCursorKind_CXCursor_UnexposedAttr) {
                     ci.foundUnknownAttr = true
-                } else if (k == clang.CXCursorKind_CXCursor_EnumDecl || k == clang.CXCursorKind_CXCursor_TypedefDecl || k == clang
-                    .CXCursorKind_CXCursor_StructDecl || k == clang.CXCursorKind_CXCursor_UnionDecl) {
+                } else if (k == clang.CXCursorKind_CXCursor_EnumDecl ||
+                    k == clang.CXCursorKind_CXCursor_TypedefDecl ||
+                    k == clang.CXCursorKind_CXCursor_TypeAliasDecl ||
+                    k == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl ||
+                    k == clang.CXCursorKind_CXCursor_StructDecl ||
+                    k == clang.CXCursorKind_CXCursor_UnionDecl ||
+                    k == clang.CXCursorKind_CXCursor_ClassDecl ||
+                    k == clang.CXCursorKind_CXCursor_ClassTemplate) {
+                    if (ctx.options.respectCxxAccessSpecs && !cur.isPublic()) {
+                        return clang.CXChildVisitResult_CXChildVisit_Continue
+                    }
                     let isInnerStruct: Bool = cur.semanticParent() == cursor.value || cur.isDefinition()
                     if (!isInnerStruct) {
                         return clang.CXChildVisitResult_CXChildVisit_Continue
@@ -187,8 +333,77 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     }
                 } else if (k == clang.CXCursorKind_CXCursor_PackedAttr) {
                     ci.packedAttr = true
+                } else if (k == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+                    ci.hasTemplateTypeParams = true
+                    if (let Some(param) <- Item.typeParam(None, cur, ctx)) {
+                        ci.templateParams.add(param)
+                    }
+                } else if (k == clang.CXCursorKind_CXCursor_NonTypeTemplateParameter) {
+                    ci.hasNonTypeTemplateParams = true
+                } else if (k == clang.CXCursorKind_CXCursor_CXXBaseSpecifier) {
+                    let isVirtual = cur.isVirtualBase()
+                    ci.hasOwnVirtualMethod ||= isVirtual
+                    let baseKind = if (isVirtual) { BaseKind.Virtual } else { BaseKind.Normal }
+                    let fieldName = if (ci.baseMembers.isEmpty()) {
+                        "_base"
+                    } else {
+                        "_base_${ci.baseMembers.size}"
+                    }
+                    let baseType = Item.fromTyOrRef(cur.curType(), cur, Some(potentialId), ctx)
+                    ci.baseMembers.add(Base(baseType, baseKind, fieldName, cur.isPublic()))
+                } else if (k == clang.CXCursorKind_CXCursor_Constructor ||
+                    k == clang.CXCursorKind_CXCursor_Destructor ||
+                    k == clang.CXCursorKind_CXCursor_CXXMethod) {
+                    let isVirtual = cur.methodIsVirtual()
+                    let isStatic = cur.methodIsStatic()
+                    ci.hasDestructor ||= k == clang.CXCursorKind_CXCursor_Destructor
+                    ci.hasOwnVirtualMethod ||= isVirtual
+
+                    if (ci.hasTemplateTypeParams || ci.hasNonTypeTemplateParams) {
+                        ci.hasUnrepresentedVirtualMethod ||= isVirtual
+                        return clang.CXChildVisitResult_CXChildVisit_Continue
+                    }
+
+                    let signature = match (Item.parse(cur, Some(potentialId), ctx)) {
+                        case Ok(itemId) =>
+                            if (!ctx.resolveItem(itemId).kind.isFunction()) {
+                                ci.hasUnrepresentedVirtualMethod ||= isVirtual
+                                return clang.CXChildVisitResult_CXChildVisit_Continue
+                            }
+                            itemId
+                        case _ =>
+                            ci.hasUnrepresentedVirtualMethod ||= isVirtual
+                            return clang.CXChildVisitResult_CXChildVisit_Continue
+                    }
+
+                    if (k == clang.CXCursorKind_CXCursor_Constructor) {
+                        ci.constructors.add(signature)
+                    } else if (k == clang.CXCursorKind_CXCursor_Destructor) {
+                        let methodKind = if (isVirtual) {
+                            MethodKind.VirtualDestructor(cur.methodIsPureVirtual())
+                        } else {
+                            MethodKind.Destructor
+                        }
+                        ci.destructor = Some((methodKind, signature))
+                    } else {
+                        let methodKind = if (isStatic) {
+                            MethodKind.Static
+                        } else if (isVirtual) {
+                            MethodKind.Virtual(cur.methodIsPureVirtual())
+                        } else {
+                            MethodKind.Normal
+                        }
+                        ci.methods.add(Method(methodKind, signature, cur.methodIsConst()))
+                    }
+                } else if (k == clang.CXCursorKind_CXCursor_VarDecl) {
+                    if (cur.visibility() == clang.CXVisibilityKind_CXVisibility_Default &&
+                        (!ctx.options.respectCxxAccessSpecs || cur.isPublic())) {
+                        if (let Ok(varId) <- Item.parse(cur, Some(potentialId), ctx)) {
+                            ci.innerVars.add(varId)
+                        }
+                    }
                 } else {
-                    // throw those fucking away
+                    ()
                 }
 
                 return clang.CXChildVisitResult_CXChildVisit_Continue
@@ -210,6 +425,46 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             case CompFields.CompFieldsAfter(v) => !v.fields.isEmpty()
             case CompFields.CompFieldsBefore(v) => !v.isEmpty()
         }
+    }
+
+    public func hasVtable(ctx: CjbindContext): Bool {
+        return this.hasVtableInner(ctx, HashSet<ItemId>())
+    }
+
+    public func hasVtablePointer(ctx: CjbindContext): Bool {
+        if (!this.hasOwnVirtualMethod) {
+            return false
+        }
+        for (base in this.baseMembers) {
+            if (baseHasVtable(base, ctx, HashSet<ItemId>())) {
+                return false
+            }
+        }
+        return true
+    }
+
+    func hasVtableInner(ctx: CjbindContext, visiting: HashSet<ItemId>): Bool {
+        if (this.hasOwnVirtualMethod) {
+            return true
+        }
+        for (base in this.baseMembers) {
+            if (baseHasVtable(base, ctx, visiting)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    func isEmptyBase(ctx: CjbindContext, visiting: HashSet<ItemId>): Bool {
+        if (this.hasFields() || this.hasVtableInner(ctx, visiting)) {
+            return false
+        }
+        for (base in this.baseMembers) {
+            if (base.requiresStorage(ctx)) {
+                return false
+            }
+        }
+        return true
     }
 
     public func getFields(): Array<Field> {
@@ -336,23 +591,205 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         }
 
         if (this.isPacked(ctx, layout)) {
-            if (layout.flatMap {
-                l => return l.align > 1
-            }.getOrDefault {=> false}) {
+            return true
+        }
+
+        if (this.isCxxRecord && !this.isUnion()) {
+            let hasBitfields = this.getFields().iterator().any {
+                field => match (field) {
+                    case Field.Bitfields(_) => true
+                    case _ => false
+                }
+            }
+            let complexLayout = !this.baseMembers.isEmpty() || this.hasVtablePointer(ctx)
+            if (hasBitfields && complexLayout) {
                 return true
+            }
+            if (!hasBitfields) {
+                if (let Some(expected) <- layout) {
+                    if (!this.generatedRecordLayoutMatches(ctx, expected)) {
+                        return true
+                    }
+                }
             }
         }
 
         return false
     }
 
-    // cjlint-ignore -start !G.ITF.04
-    public func trace(context: CjbindContext, tracer: Tracer, item: Item): Unit {
-        if (item.isOpaque(context, ())) {
-            return
+    func generatedRecordLayoutMatches(ctx: CjbindContext, expected: Layout): Bool {
+        if (let clang.ABIKind.Microsoft <- ctx.targetInfo.abi) {
+            if (!this.baseMembers.isEmpty() || this.hasVtableInner(ctx, HashSet<ItemId>())) {
+                return false
+            }
         }
 
-        this.fields.trace(context, tracer, ())
+        for (base in this.baseMembers) {
+            if (base.isVirtual()) {
+                return false
+            }
+        }
+
+        var storedBaseCount = 0
+        var firstStoredBaseHasVtable = false
+        for (base in this.baseMembers) {
+            if (!base.requiresStorage(ctx)) {
+                continue
+            }
+            let hasVtable = baseHasVtable(base, ctx, HashSet<ItemId>())
+            if (storedBaseCount == 0) {
+                firstStoredBaseHasVtable = hasVtable
+            } else if (!firstStoredBaseHasVtable && hasVtable) {
+                return false
+            }
+            storedBaseCount += 1
+        }
+
+        var size = 0i32
+        var alignment = 1i32
+
+        func appendLayout(fieldLayout: Layout): Unit {
+            size = alignBytes(size, fieldLayout.align)
+            size += fieldLayout.size
+            alignment = max(alignment, fieldLayout.align)
+        }
+
+        if (this.hasVtablePointer(ctx)) {
+            let pointerSize = ctx.pointerWidth()
+            appendLayout(Layout(pointerSize, pointerSize))
+        }
+
+        for (base in this.baseMembers) {
+            if (!base.requiresStorage(ctx)) {
+                continue
+            }
+            let baseLayout = match (ctx.resolveType(base.ty).getLayout(ctx)) {
+                case Some(value) => value
+                case None => return false
+            }
+            if (baseLayout.align > ctx.pointerWidth()) {
+                return false
+            }
+            appendLayout(baseLayout)
+        }
+
+        for (field in this.getFields()) {
+            match (field) {
+                case Field.DataMember(data) =>
+                    let fieldLayout = match (ctx.resolveType(data.ty).getLayout(ctx)) {
+                        case Some(value) => value
+                        case None => return false
+                    }
+                    if (fieldLayout.align > ctx.pointerWidth()) {
+                        return false
+                    }
+                    let fieldOffset = alignBytes(size, fieldLayout.align)
+                    if (let Some(actualOffset) <- data.offset) {
+                        if (actualOffset != UIntNative(fieldOffset * 8)) {
+                            return false
+                        }
+                    }
+                    size = fieldOffset + fieldLayout.size
+                    alignment = max(alignment, fieldLayout.align)
+                case Field.Bitfields(_) => return false
+            }
+        }
+
+        if (size == 0 && expected.size > 0) {
+            size = 1
+        }
+        size = alignBytes(size, alignment)
+        return size == expected.size && alignment == expected.align
+    }
+
+    public func canGenerateTypedVtable(ctx: CjbindContext): Bool {
+        if (!this.baseMembers.isEmpty() || this.hasDestructor || this.hasUnrepresentedVirtualMethod) {
+            return false
+        }
+        for (method in this.methods) {
+            if (!method.kind.isVirtual()) {
+                continue
+            }
+            let function = match (ctx.resolveItem(method.signature).kind) {
+                case ItemKind.KindFunction(value) => value
+                case _ => return false
+            }
+            let signature = match (ctx.resolveType(function.signature).canonicalType(ctx).kind) {
+                case TypeKind.TypeKindFunction(value) => value
+                case _ => return false
+            }
+            if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    public func hasNonPublicMembers(): Bool {
+        for (base in this.baseMembers) {
+            if (!base.isPublic) {
+                return true
+            }
+        }
+        for (field in this.getFields()) {
+            match (field) {
+                case Field.DataMember(data) =>
+                    if (!data.isPublic) {
+                        return true
+                    }
+                case Field.Bitfields(unit) =>
+                    for (bitfield in unit.bitfields) {
+                        if (!bitfield.data.isPublic) {
+                            return true
+                        }
+                    }
+            }
+        }
+        return false
+    }
+
+    // cjlint-ignore -start !G.ITF.04
+    public func trace(context: CjbindContext, tracer: Tracer, item: Item): Unit {
+        let opaque = item.isOpaque(context, ())
+        if (!opaque) {
+            this.fields.trace(context, tracer, ())
+            for (base in this.baseMembers) {
+                tracer.visitKind(base.ty, EdgeKind.BaseMemberEdge)
+            }
+        }
+
+        for (inner in this.innerTypes) {
+            tracer.visitKind(inner, EdgeKind.InnerTypeEdge)
+        }
+        if (context.options.generateVars) {
+            for (innerVar in this.innerVars) {
+                tracer.visitKind(innerVar, EdgeKind.InnerVarEdge)
+            }
+        }
+        if (context.options.generateMethods) {
+            for (method in this.methods) {
+                tracer.visitKind(method.signature, EdgeKind.MethodEdge)
+            }
+        } else if (context.options.vtableGeneration && this.canGenerateTypedVtable(context)) {
+            for (method in this.methods) {
+                if (!method.kind.isVirtual()) {
+                    continue
+                }
+                if (let ItemKind.KindFunction(function) <- context.resolveItem(method.signature).kind) {
+                    tracer.visit(function.signature)
+                }
+            }
+        }
+        if (context.options.generateConstructors) {
+            for (constructor in this.constructors) {
+                tracer.visitKind(constructor, EdgeKind.ConstructorEdge)
+            }
+        }
+        if (context.options.generateDestructors) {
+            if (let Some((_, destructor)) <- this.destructor) {
+                tracer.visitKind(destructor, EdgeKind.DestructorEdge)
+            }
+        }
     }
     // cjlint-ignore -end
 }
@@ -363,19 +800,22 @@ public open class FieldData {
     public let comment: ?String
     public let bitfieldWidth: ?UInt32
     public let offset: ?UIntNative
+    public let isPublic: Bool
 
     public init(
         name: ?String,
         ty: TypeId,
         comment: ?String,
         bitfieldWidth: ?UInt32,
-        offset: ?UIntNative
+        offset: ?UIntNative,
+        isPublic!: Bool = true
     ) {
         this.name = name
         this.ty = ty
         this.comment = comment
         this.bitfieldWidth = bitfieldWidth
         this.offset = offset
+        this.isPublic = isPublic
     }
 }
 
@@ -385,9 +825,10 @@ public class RawField <: FieldData {
         ty: TypeId,
         comment: ?String,
         bitfieldWidth: ?UInt32,
-        offset: ?UIntNative
+        offset: ?UIntNative,
+        isPublic!: Bool = true
     ) {
-        super(name, ty, comment, bitfieldWidth, offset)
+        super(name, ty, comment, bitfieldWidth, offset, isPublic: isPublic)
     }
 }
 
@@ -643,6 +1084,17 @@ func alignTo(size: UInt32, align: UInt32): UInt32 {
     }
 
     return size + align - rem
+}
+
+func alignBytes(size: Int32, align: Int32): Int32 {
+    if (align <= 1) {
+        return size
+    }
+    let remainder = size % align
+    if (remainder == 0) {
+        return size
+    }
+    return size + align - remainder
 }
 
 // cjlint-ignore -start !G.FUN.01

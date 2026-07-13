@@ -14,6 +14,37 @@ public type TypeId = ItemId
 
 public type ModuleId = ItemId
 
+public func usesCxxLanguage(options: CjbindOptions): Bool {
+    var languageFollows = false
+    var explicitLanguage: ?Bool = None
+    for (arg in options.clangArgs) {
+        if (languageFollows) {
+            explicitLanguage = if (arg == "none") { None } else { Some(arg.contains("c++")) }
+            languageFollows = false
+            continue
+        }
+        if (arg == "-x") {
+            languageFollows = true
+        } else if (arg.startsWith("-x") && arg.size > 2) {
+            let language = arg[2..]
+            explicitLanguage = if (language == "none") { None } else { Some(language.contains("c++")) }
+        }
+    }
+    if (let Some(cxx) <- explicitLanguage) {
+        return cxx
+    }
+    for (header in options.headers) {
+        if (header.endsWith(".hpp") || header.endsWith(".hxx") || header.endsWith(".hh") ||
+            header.endsWith(".h++") || header.endsWith(".HPP") || header.endsWith(".HXX") ||
+            header.endsWith(".HH") || header.endsWith(".H++") || header.endsWith(".H") ||
+            header.endsWith(".cc") || header.endsWith(".cpp") || header.endsWith(".cxx") ||
+            header.endsWith(".c++") || header.endsWith(".C")) {
+            return true
+        }
+    }
+    return false
+}
+
 extend ItemId <: IsOpaque<Unit> & Trace<Tracer, Unit> {
     public func isOpaque(ctx: CjbindContext, _: Unit): Bool {
         return ctx.resolveItem(this).isOpaque(ctx, ())
@@ -50,6 +81,56 @@ public enum TypeKey <: Hashable & Equatable<TypeKey> {
     }
 }
 
+func templateInstantiationName(spelling: String): String {
+    var name = spelling
+        .replace("::", "_")
+        .replace("&&", "_rref")
+        .replace("&", "_ref")
+        .replace("const ", "const_")
+        .replace("volatile ", "volatile_")
+        .replace("<", "_open0_")
+        .replace(">", "_close0")
+        .replace("*", "_ptr")
+        .replace("[", "_array_")
+        .replace("]", "_endarray_")
+        .replace("(", "_lparen_")
+        .replace(")", "_rparen_")
+        .replace("-", "_minus_")
+        .replace("+", "_plus_")
+        .replace("/", "_slash_")
+        .replace("=", "_equals_")
+        .replace("!", "_not_")
+        .replace("%", "_percent_")
+        .replace("^", "_xor_")
+        .replace("|", "_or_")
+        .replace("{", "_lbrace_")
+        .replace("}", "_rbrace_")
+        .replace("'", "_quote_")
+        .replace("?", "_question_")
+        .replace("~", "_tilde_")
+        .replace(".", "_dot_")
+        .replace(",", "_")
+        .replace(" ", "_")
+        .replace(":", "_")
+
+    while (name.contains("__")) {
+        name = name.replace("__", "_")
+    }
+    let safeName = StringBuilder()
+    for (rune in name.toRuneArray()) {
+        if (rune.isAsciiNumberOrLetter() || rune == r'_') {
+            safeName.append("${rune}")
+        } else {
+            safeName.append("_u${UInt32(rune)}_")
+        }
+    }
+    var result = safeName.toString().trimAscii()
+    if (!result.isEmpty() && result.toRuneArray()[0].isAsciiNumber()) {
+        result = "template_${result}"
+    }
+    return if (result.isEmpty()) { "template_instantiation" } else { result }
+}
+
 public class PartialType <: Equatable<PartialType> {
     public let decl: clang.Cursor
     public let id: ItemId
@@ -70,7 +151,10 @@ public class CjbindContext <: Resource {
 
     public let items: ArrayList<?Item>
     public let types: HashMap<TypeKey, TypeId> = HashMap()
+    public let typeDeclarations: HashMap<clang.Cursor, TypeId> = HashMap()
     public let modules: HashMap<clang.Cursor, ModuleId> = HashMap()
+    public let typeParams: HashMap<clang.Cursor, TypeId> = HashMap()
+    public let templateInstantiations: HashMap<String, TypeId> = HashMap()
 
     public let rootModule: ModuleId
     public var currentModule: ModuleId
@@ -149,7 +233,8 @@ public class CjbindContext <: Resource {
         }
 
         let tmpDir = getTempDirectory().toString()
-        let file = "${tmpDir}/.macro_eval.c"
+        let cxxMode = usesCxxLanguage(this.options)
+        let file = if (cxxMode) { "${tmpDir}/.macro_eval.cpp" } else { "${tmpDir}/.macro_eval.c" }
 
         let index = clang.Index(false, false)
 
@@ -181,14 +266,15 @@ public class CjbindContext <: Resource {
 
             headerNamesToCompile.add(compileName)
         }
-        let pchName = String.join(headerNamesToCompile.toArray(), delimiter: "-") + "-precompile.h.pch"
+        let pchSuffix = if (cxxMode) { "-precompile.hpp.pch" } else { "-precompile.h.pch" }
+        let pchName = String.join(headerNamesToCompile.toArray(), delimiter: "-") + pchSuffix
         let pch = "${tmpDir}/${pchName}"
 
         var cArgs = ArrayList<String>()
         let targetArg = "--target=${this.targetInfo.triple}"
         cArgs.add(targetArg)
         cArgs.add("-x")
-        cArgs.add("c-header")
+        cArgs.add(if (cxxMode) { "c++-header" } else { "c-header" })
         for (h in headerPaths) {
             cArgs.add("-I${h}")
         }
@@ -243,6 +329,36 @@ public class CjbindContext <: Resource {
         this.currentModule = prev_module
     }
 
+    public func module(cursor: clang.Cursor): ModuleId {
+        let canonicalCursor = cursor.canonical()
+        if (let Some(id) <- this.modules.get(canonicalCursor)) {
+            return id
+        }
+
+        let spelling = canonicalCursor.spelling()
+        let name: ?String = if (spelling.isEmpty()) {
+            None
+        } else {
+            Some(spelling)
+        }
+        let kind = if (canonicalCursor.isInlineNamespace()) {
+            ModuleKind.Inline
+        } else {
+            ModuleKind.Normal
+        }
+        let id = this.nextItemId()
+        let item = Item(
+            id,
+            None,
+            this.currentModule,
+            ItemKind.KindModule(Module(name, kind: kind)),
+            Some(canonicalCursor.location())
+        )
+        this.modules.add(canonicalCursor, id)
+        this.addItem(item, None, Some(canonicalCursor))
+        return id
+    }
+
     public func nextItemId(): ItemId {
         let ret = UIntNative(this.items.size)
         this.items.add(None)
@@ -277,6 +393,7 @@ public class CjbindContext <: Resource {
         }
 
         if (let Some(decl) <- declaration) {
+            this.typeDeclarations.add(decl, id)
             let candecl = decl.canonical()
             if (!candecl.isValid()) {
                 return
@@ -411,6 +528,9 @@ public class CjbindContext <: Resource {
                 return TypeKind.TypeKindInt(IntKindWChar(false))
             }
             if (k == clang.CXTypeKind_CXType_Char16) {
+                if (this.options.useDistinctChar16T) {
+                    return TypeKind.TypeKindInt(IntKindChar16)
+                }
                 return TypeKind.TypeKindInt(IntKindU16)
             }
             if (k == clang.CXTypeKind_CXType_Char32) {
@@ -502,6 +622,36 @@ public class CjbindContext <: Resource {
         ty: clang.Type,
         location: ?clang.Cursor
     ): ?TypeId {
+        let locationKind = location.map({cursor => cursor.kind()})
+        let isTemplateDefinition = locationKind == Some(clang.CXCursorKind_CXCursor_ClassTemplate) ||
+            locationKind == Some(clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization) ||
+            locationKind == Some(clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl)
+        if (isTemplateDefinition) {
+            return None
+        }
+        if (ty != ty.canonicalType() &&
+            (ty.declaration().kind() == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl ||
+            (ty.kind() == clang.CXTypeKind_CXType_Typedef &&
+            (ty.templateArgs().isSome() || ty.spelling().contains("<"))))) {
+            return None
+        }
+        let isTemplateInstantiation = !isTemplateDefinition &&
+            ty.kind() != clang.CXTypeKind_CXType_Typedef &&
+            ty.templateArgs().map({args => !args.isEmpty()}).getOrDefault({=> false})
+        if (isTemplateInstantiation) {
+            if (let Some(instantiation) <- TemplateInstantiation.fromTy(ty, this)) {
+                if (let Some(concrete) <- this.buildTemplateInstantiation(
+                    withId,
+                    instantiation,
+                    parentId,
+                    ty,
+                    location
+                )) {
+                    return Some(concrete)
+                }
+            }
+        }
+
         if (let Some(decl) <- ty.canonicalDeclaration(location)) {
             if (let Some(tid) <- this.getResolvedType(decl)) {
                 return Some(this.buildTyWrapper(withId, tid, parentId, ty))
@@ -509,6 +659,299 @@ public class CjbindContext <: Resource {
         }
 
         return this.buildBuiltinTy(ty)
+    }
+
+    func buildTemplateInstantiation(
+        withId: ItemId,
+        instantiation: TemplateInstantiation,
+        parentId: ?ItemId,
+        ty: clang.Type,
+        location: ?clang.Cursor
+    ): ?TypeId {
+        let keyParts = ArrayList<String>()
+        let definitionId = instantiation.definition
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(this)
+            .id
+        keyParts.add(definitionId.toString())
+        for (argument in instantiation.arguments) {
+            let argumentType = this.resolveType(argument)
+            let argumentId = argument
+                .intoResolver()
+                .throughTypeRefs()
+                .throughTypeAliases()
+                .resolve(this)
+                .id
+            keyParts.add("${argumentId}:${argumentType.isConst}")
+        }
+        if (let Some(identity) <- instantiation.nonTypeIdentity) {
+            keyParts.add(identity)
+        }
+        let key = String.join(keyParts.toArray(), delimiter: ":")
+        if (let Some(existing) <- this.templateInstantiations.get(key)) {
+            return Some(this.buildTyWrapper(withId, existing, parentId, ty))
+        }
+
+        this.templateInstantiations.add(key, withId)
+        let spelling = ty.spelling()
+        let name = templateInstantiationName(spelling)
+        let declaration = ty.declaration()
+        let hasConcreteDefinition = declaration.isDefinition() && declaration.specialized().isSome()
+        let templateType = Type(
+            Some(name),
+            ty.fallibleLayout(this).ok(),
+            TypeKind.TypeKindTemplateInstantiation(instantiation),
+            ty.isConst()
+        )
+        this.addItem(
+            Item(
+                withId,
+                None,
+                parentId ?? this.currentModule,
+                ItemKind.KindType(templateType),
+                location.map({cursor => cursor.location()})
+            ),
+            if (hasConcreteDefinition) { Some(declaration.canonical()) } else { None },
+            location
+        )
+
+        if (hasConcreteDefinition) {
+            if (let Ok(comp) <- CompInfo.fromTy(withId, ty, Some(declaration), this)) {
+                let representsConcreteDefinition = comp.hasFields() || !comp.baseMembers.isEmpty() ||
+                    ty.fallibleLayout(this).ok().map({layout => layout.size <= 1}).getOrDefault({=> false})
+                if (representsConcreteDefinition) {
+                    this.resolveItem(withId).kind = ItemKind.KindType(
+                        Type(
+                            Some(name),
+                            ty.fallibleLayout(this).ok(),
+                            TypeKind.TypeKindComp(comp),
+                            ty.isConst()
+                        )
+                    )
+                    this.needBitfieldAllocation.add(withId)
+                }
+            }
+        }
+        return Some(withId)
+    }
+
+    func instantiateTemplateType(
+        sourceId: TypeId,
+        substitutions: HashMap<TypeId, TypeId>,
+        failed: Box<Bool>
+    ): TypeId {
+        if (let Some(substituted) <- substitutions.get(sourceId)) {
+            return substituted
+        }
+
+        let resolvedSourceId = sourceId
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(this)
+            .id
+        for ((parameter, substituted) in substitutions) {
+            let resolvedParameter = parameter
+                .intoResolver()
+                .throughTypeRefs()
+                .throughTypeAliases()
+                .resolve(this)
+                .id
+            if (resolvedParameter == resolvedSourceId) {
+                return substituted
+            }
+        }
+
+        let source = match (this.safeResolveType(sourceId)) {
+            case Some(value) => value
+            case None => return sourceId
+        }
+
+        let newKind: ?TypeKind = match (source.kind) {
+            case TypeKind.TypeKindPointer(inner) =>
+                TypeKind.TypeKindPointer(this.instantiateTemplateType(inner, substitutions, failed))
+            case TypeKind.TypeKindReference(inner) =>
+                TypeKind.TypeKindReference(this.instantiateTemplateType(inner, substitutions, failed))
+            case TypeKind.TypeKindArray(inner, length) =>
+                TypeKind.TypeKindArray(this.instantiateTemplateType(inner, substitutions, failed), length)
+            case TypeKind.TypeKindVector(inner, length) =>
+                TypeKind.TypeKindVector(this.instantiateTemplateType(inner, substitutions, failed), length)
+            case TypeKind.TypeKindAlias(inner) =>
+                TypeKind.TypeKindAlias(this.instantiateTemplateType(inner, substitutions, failed))
+            case TypeKind.TypeKindFunction(signature) =>
+                let arguments = ArrayList<(?String, TypeId)>()
+                for ((name, argument) in signature.argumentTypes) {
+                    arguments.add((name, this.instantiateTemplateType(argument, substitutions, failed)))
+                }
+                TypeKind.TypeKindFunction(FunctionSig(
+                    signature.name,
+                    this.instantiateTemplateType(signature.returnType, substitutions, failed),
+                    arguments.toArray(),
+                    signature.isVariadicFunction(),
+                    signature.abi,
+                    valueAbiUnsupported: signature.valueAbiUnsupported
+                ))
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                for (argument in instantiation.arguments) {
+                    let concreteArgument = this.instantiateTemplateType(argument, substitutions, failed)
+                    if (concreteArgument != argument) {
+                        failed.value = true
+                    }
+                }
+                return sourceId
+            case TypeKind.TypeKindComp(comp) =>
+                if (!comp.templateParams.isEmpty() || comp.hasTemplateTypeParams ||
+                    comp.hasNonTypeTemplateParams) {
+                    failed.value = true
+                }
+                return sourceId
+            case TypeKind.ResolvedTypeRef(inner) =>
+                return this.instantiateTemplateType(inner, substitutions, failed)
+            case _ => return sourceId
+        }
+
+        let instantiatedKind = newKind.getOrThrow()
+        let instantiatedLayout: ?Layout = match (instantiatedKind) {
+            case TypeKind.TypeKindArray(inner, length) =>
+                this.resolveType(inner).getLayout(this).map {
+                    layout => Layout(layout.size * Int32(length), layout.align)
+                }
+            case TypeKind.TypeKindVector(inner, length) =>
+                this.resolveType(inner).getLayout(this).map {
+                    layout => Layout(layout.size * Int32(length), layout.align)
+                }
+            case _ => source.layout
+        }
+        let newId = this.nextItemId()
+        this.addItem(
+            Item(
+                newId,
+                None,
+                this.rootModule,
+                ItemKind.KindType(Type(source.name, instantiatedLayout, instantiatedKind, source.isConst)),
+                None
+            ),
+            None,
+            None
+        )
+        substitutions.add(sourceId, newId)
+        return newId
+    }
+
+    func instantiateTemplateComp(instantiation: TemplateInstantiation): ?CompInfo {
+        let definitionCursor = instantiation.definitionCursor
+            .definition()
+            .getOrDefault({=> instantiation.definitionCursor})
+        let latestDefinition = this.typeDeclarations.get(definitionCursor).getOrDefault {
+            => this.getResolvedType(
+            clang.CanonicalTypeDeclaration(
+                instantiation.definitionCursor.curType(),
+                instantiation.definitionCursor
+            )
+            ).getOrDefault({=> instantiation.definition})
+        }
+        if (this.resolveItemFallible(latestDefinition).isNone()) {
+            return None
+        }
+        let definitionItem = latestDefinition
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(this)
+        let definitionType = match (definitionItem.kind.asType()) {
+            case Some(value) => value
+            case None => return None
+        }
+        let definitionComp = match (definitionType.kind) {
+            case TypeKind.TypeKindComp(value) => value
+            case _ => return None
+        }
+        if (definitionComp.templateParams.size > instantiation.arguments.size ||
+            definitionComp.hasNonTypeTemplateParams) {
+            return None
+        }
+
+        let substitutions = HashMap<TypeId, TypeId>()
+        for ((index, parameter) in definitionComp.templateParams.iterator().enumerate()) {
+            substitutions.add(parameter, instantiation.arguments[index])
+        }
+
+        let rawFields = match (definitionComp.fields) {
+            case CompFields.CompFieldsBefore(value) => value
+            case _ => return None
+        }
+        let concreteFields = ArrayList<RawField>()
+        let failedSubstitution = Box(false)
+        for (field in rawFields) {
+            concreteFields.add(
+                RawField(
+                    field.name,
+                    this.instantiateTemplateType(field.ty, substitutions, failedSubstitution),
+                    field.comment,
+                    field.bitfieldWidth,
+                    field.offset,
+                    isPublic: field.isPublic
+                )
+            )
+        }
+        if (failedSubstitution.value) {
+            return None
+        }
+
+        let concrete = CompInfo(definitionComp.kind, isCxxRecord: definitionComp.isCxxRecord)
+        concrete.fields = CompFields.CompFieldsBefore(concreteFields)
+        concrete.isForwardDeclaration = definitionComp.isForwardDeclaration
+        concrete.packedAttr = definitionComp.packedAttr
+        concrete.hasUnevaluableBitFieldWidth = definitionComp.hasUnevaluableBitFieldWidth
+        concrete.foundUnknownAttr = definitionComp.foundUnknownAttr
+        concrete.hasOwnVirtualMethod = definitionComp.hasOwnVirtualMethod
+        concrete.hasDestructor = definitionComp.hasDestructor
+        concrete.hasUnrepresentedVirtualMethod = definitionComp.hasUnrepresentedVirtualMethod
+
+        for (base in definitionComp.baseMembers) {
+            concrete.baseMembers.add(
+                Base(
+                    this.instantiateTemplateType(base.ty, substitutions, failedSubstitution),
+                    base.kind,
+                    base.fieldName,
+                    base.isPublic
+                )
+            )
+        }
+        if (failedSubstitution.value) {
+            return None
+        }
+        return Some(concrete)
+    }
+
+    func populateTemplateInstantiations(): Unit {
+        let ids = ArrayList<TypeId>()
+        for ((_, id) in this.templateInstantiations) {
+            ids.add(id)
+        }
+
+        for (id in ids) {
+            let item = match (this.resolveItemFallible(id)) {
+                case Some(value) => value
+                case None => continue
+            }
+            let ty = match (item.kind.asType()) {
+                case Some(value) => value
+                case None => continue
+            }
+            let instantiation = match (ty.kind) {
+                case TypeKind.TypeKindTemplateInstantiation(value) => value
+                case _ => continue
+            }
+            if (let Some(comp) <- this.instantiateTemplateComp(instantiation)) {
+                item.kind = ItemKind.KindType(Type(ty.name, ty.layout, TypeKind.TypeKindComp(comp), ty.isConst))
+                this.needBitfieldAllocation.add(id)
+            } else {
+                item.kind = ItemKind.KindType(Type(ty.name, ty.layout, TypeKind.TypeKindOpaque, ty.isConst))
+            }
+        }
     }
 
     public func beginParsing(partialTy: PartialType): Unit {
@@ -728,12 +1171,28 @@ public class CjbindContext <: Resource {
     }
 
     func computeCodegenItems() {
-        let roots = this.getItems().map {
-            it => it[0]
-        } |> collectArray
+        let roots = ArrayList<ItemId>()
+        for ((id, item) in this.getItems()) {
+            let include = match (item.kind) {
+                case ItemKind.KindModule(_) => true
+                case ItemKind.KindType(_) => this.options.generateTypes
+                case ItemKind.KindVar(_) => this.options.generateVars
+                case ItemKind.KindFunction(function) =>
+                    match (function.kind) {
+                        case FunctionKind.KindFunction => this.options.generateFunctions
+                        case FunctionKind.KindMethod(MethodKind.Constructor) => this.options.generateConstructors
+                        case FunctionKind.KindMethod(MethodKind.Destructor) |
+                            FunctionKind.KindMethod(MethodKind.VirtualDestructor(_)) => this.options.generateDestructors
+                        case FunctionKind.KindMethod(_) => this.options.generateMethods
+                    }
+            }
+            if (include) {
+                roots.add(id)
+            }
+        }
         roots.reverse()
 
-        let found = ItemTraversal(this, roots) |> collectArray
+        let found = ItemTraversal(this, roots.toArray()) |> collectArray
         this.codegenItems = Some(ItemSet(found))
     }
 
@@ -781,6 +1240,7 @@ public class CjbindContext <: Resource {
         this.inCodegen = true
 
         this.resolveTypeRefs()
+        this.populateTemplateInstantiations()
         this.computeBitfieldUnits()
         this.assignFieldNames()
 

@@ -61,6 +61,23 @@ public class CjbindOptions {
     public var defaultEnumStyle: DefaultEnumStyle = DefaultEnumStyle.Consts
     public var fitMacroConstants: Bool = false
     public var useUnionAccessorWorkaround: Bool = true
+    public var enableCxxNamespaces: Bool = false
+    public var conservativeInlineNamespaces: Bool = false
+    public var generateFunctions: Bool = true
+    public var generateTypes: Bool = true
+    public var generateVars: Bool = true
+    public var generateMethods: Bool = true
+    public var generateConstructors: Bool = true
+    public var generateDestructors: Bool = true
+    public var representCxxOperators: Bool = false
+    public var respectCxxAccessSpecs: Bool = false
+    public var useSpecificVirtualFunctionReceiver: Bool = false
+    public var useDistinctChar16T: Bool = false
+    public var generateInlineFunctions: Bool = false
+    public var generateDeletedFunctions: Bool = false
+    public var generatePureVirtualFunctions: Bool = false
+    public var generatePrivateFunctions: Bool = false
+    public var vtableGeneration: Bool = false
     /// Allows library users to rename named struct, union, and bitfield fields.
     /// Returning `None` keeps the original C field name.
     public var fieldNameCallback: ?((FieldInfo) -> ?String) = None

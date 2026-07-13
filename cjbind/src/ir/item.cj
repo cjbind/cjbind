@@ -168,6 +168,10 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         var names = ArrayList<String>()
         for (id in ancestorIds) {
             let item = ctx.resolveItem(id)
+            if (ctx.options.enableCxxNamespaces && !ctx.options.conservativeInlineNamespaces &&
+                item.asModule().map({module => module.isInline()}).getOrDefault({=> false})) {
+                continue
+            }
             let name = item.baseName(ctx)
             var shouldAddName = !name.startsWith("_cjbind_")
             if (!shouldAddName && item.kind.isType()) {
@@ -334,6 +338,69 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     }
     // cjlint-ignore -end
 
+    public static func typeParam(
+        withId: ?ItemId,
+        location: clang.Cursor,
+        ctx: CjbindContext
+    ): ?TypeId {
+        let ty = location.curType()
+        if (ty.kind() != clang.CXTypeKind_CXType_Unexposed &&
+            location.kind() != clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+            return None
+        }
+
+        let definition: Box<?clang.Cursor> = Box(None)
+        if (location.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+            definition.value = Some(location.canonical())
+        } else if (location.kind() == clang.CXCursorKind_CXCursor_TypeRef) {
+            if (let Some(referenced) <- location.referenced()) {
+                if (referenced.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+                    definition.value = Some(referenced.canonical())
+                }
+            }
+        } else {
+            location.visit {
+                child =>
+                if (child.kind() == clang.CXCursorKind_CXCursor_TypeRef) {
+                    if (let Some(referenced) <- child.referenced()) {
+                        if (referenced.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+                            definition.value = Some(referenced.canonical())
+                            return clang.CXChildVisitResult_CXChildVisit_Break
+                        }
+                    }
+                }
+                return clang.CXChildVisitResult_CXChildVisit_Continue
+            }
+        }
+
+        let definitionCursor = match (definition.value) {
+            case Some(value) => value
+            case None => return None
+        }
+        if (let Some(existing) <- ctx.typeParams.get(definitionCursor)) {
+            if (let Some(id) <- withId) {
+                return Some(ctx.buildTyWrapper(id, existing, Some(ctx.rootModule), ty))
+            }
+            return Some(existing)
+        }
+
+        var name = definitionCursor.spelling()
+        if (name.isEmpty()) {
+            name = ty.spelling().replace("const ", "").replace(".", "")
+        }
+        let id = withId ?? ctx.nextItemId()
+        let item = Item(
+            id,
+            None,
+            ctx.rootModule,
+            ItemKind.KindType(Type(Some(name), None, TypeKind.TypeKindTypeParam, false)),
+            Some(location.location())
+        )
+        ctx.typeParams.add(definitionCursor, id)
+        ctx.addItem(item, Some(definitionCursor), Some(location))
+        return Some(id)
+    }
+
     public static func newOpaqueType(
         withId: ItemId,
         ty: clang.Type,
@@ -428,6 +495,17 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         parentId: ?ItemId,
         ctx: CjbindContext
     ): Result<TypeId, ParseError> {
+        let locationKind = location.kind()
+        let canBeTypeParameter = locationKind != clang.CXCursorKind_CXCursor_ClassTemplate &&
+            locationKind != clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization &&
+            locationKind != clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl
+        if (canBeTypeParameter && (ty.kind() == clang.CXTypeKind_CXType_Unexposed ||
+            location.curType().kind() == clang.CXTypeKind_CXType_Unexposed)) {
+            if (let Some(param) <- Item.typeParam(Some(id), location, ctx)) {
+                return Ok(param)
+            }
+        }
+
         if (let Some(par) <- ty.declaration().fallibleSemanticParent()) {
             if (FunctionKind.fromCursor(par).isSome()) {
                 return Ok(Item.newOpaqueType(id, ty, ctx))
@@ -520,10 +598,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 }
 
                 if (let Err(ParseError.Recurse) <- result2.value) {
-                    throw Exception("unreachable")
-                } else {
-                    result2.value
+                    result2.value = Result<TypeId, ParseError>.Err(ParseError.Continue)
                 }
+                result2.value
         }
 
         if (validDecl) {

@@ -130,6 +130,15 @@ extend Type <: TryToCjTy<Item> {
                 let ret = AstTy.intKindCjType(ctx, ik, this.getLayout(ctx))
                 return Ok(ret)
             case TypeKind.TypeKindFloat(fk) =>
+                let requiresOpaque = match (fk) {
+                    case TypeKindFloatKind.FloatKindFloat128 => true
+                    case TypeKindFloatKind.FloatKindLongDouble =>
+                        this.getLayout(ctx).map({layout => layout.size > 8}).getOrDefault({=> false})
+                    case _ => false
+                }
+                if (requiresOpaque) {
+                    return this.tryToOpaque(ctx, item)
+                }
                 let ret = AstTy.floatKindCjType(ctx, fk, this.getLayout(ctx))
                 return Ok(ret)
             case TypeKind.TypeKindComplex(_) => return Err(Error.Unsupported("complex not supported yet"))
@@ -157,7 +166,8 @@ extend Type <: TryToCjTy<Item> {
                 return Ok(token)
             case TypeKind.TypeKindEnum(_) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
-            case TypeKind.TypeKindAlias(_) =>
+            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTypeParam |
+                TypeKind.TypeKindTemplateInstantiation(_) =>
                 if (let Some(n) <- this.name) {
                     let named = Utils.typeFromNamed(ctx, n)
                     if (let Some(nn) <- named) {
@@ -167,31 +177,10 @@ extend Type <: TryToCjTy<Item> {
                 return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindComp(info) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
+            case TypeKind.TypeKindReference(inner) =>
+                return this.pointerLikeType(ctx, item, inner, false)
             case TypeKind.TypeKindPointer(inner) =>
-                let size = this.getLayoutUnsafe(ctx, item).size
-                if (size != ctx.pointerWidth()) {
-                    return Err(
-                        Error.InvalidPointerSize(
-                            this.name.getOrDefault {=> "unknown"},
-                            UIntNative(size),
-                            UIntNative(ctx.pointerWidth())
-                        )
-                    )
-                }
-
-                let innerTy = inner.intoResolver().throughTypeRefs().resolve(ctx).kind.expectType()
-
-                let ty = inner.toCjTyOrOpaque(ctx, ())
-
-                let innerCanonicalType = innerTy.canonicalType(ctx)
-
-                if (innerCanonicalType.isFunction()) {
-                    return Ok(ty)
-                } else if (innerCanonicalType.isChar() && ctx.options.autoCString) {
-                    return Ok(tokenStreamFromTemplate("CString"))
-                } else {
-                    return Ok(ty.toPtr())
-                }
+                return this.pointerLikeType(ctx, item, inner, true)
             case TypeKind.TypeKindObjCId => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
             case TypeKind.TypeKindObjCSel => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
             case TypeKind.TypeKindObjCBlockPointer(inner) =>
@@ -213,6 +202,38 @@ extend Type <: TryToCjTy<Item> {
                 return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(iface.name)))
             case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("unreachable")
         }
+    }
+
+    private func pointerLikeType(
+        ctx: CjbindContext,
+        item: Item,
+        inner: TypeId,
+        allowCString: Bool
+    ): Result<TokenStream, Error> {
+                let size = this.getLayoutUnsafe(ctx, item).size
+                if (size != ctx.pointerWidth()) {
+                    return Err(
+                        Error.InvalidPointerSize(
+                            this.name.getOrDefault {=> "unknown"},
+                            UIntNative(size),
+                            UIntNative(ctx.pointerWidth())
+                        )
+                    )
+                }
+
+                let innerTy = inner.intoResolver().throughTypeRefs().resolve(ctx).kind.expectType()
+
+                let ty = inner.toCjTyOrOpaque(ctx, ())
+
+                let innerCanonicalType = innerTy.canonicalType(ctx)
+
+                if (innerCanonicalType.isFunction()) {
+                    return Ok(ty)
+                } else if (innerCanonicalType.isChar() && allowCString && ctx.options.autoCString) {
+                    return Ok(tokenStreamFromTemplate("CString"))
+                } else {
+                    return Ok(ty.toPtr())
+                }
     }
     // cjlint-ignore -end
 }
@@ -237,8 +258,9 @@ extend FunctionSig <: TryToCjTy<Item> {
         ctx: CjbindContext,
         _: Item
     ): Result<TokenStream, Error> {
-        if (this.getIsVariadic()) {
-            return Err(Error.Unsupported("variadic func type not supported"))
+        if (this.isVariadicFunction() || this.valueAbiUnsupported ||
+            hasOpaqueValueAbi(this, ctx) || !this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+            return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
         }
 
         let ret = Utils.fnsigReturnTy(ctx, this)
