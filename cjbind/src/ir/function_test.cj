@@ -32,4 +32,12 @@ public class CompleteObjectManglingTest {
         @Expect(normalizePlatformMangling("_cf@4", true, "i686-pc-win32", 32), "cf")
         @Expect(normalizePlatformMangling("_Z3fooi", false, "i686-unknown-linux-gnu", 32), "_Z3fooi")
     }
+
+    @TestCase
+    func namesUnsupportedCallingConventions(): Unit {
+        @Expect(Known(Abi.ThisCall).diagnosticName(), "thiscall")
+        @Expect(Known(Abi.Fastcall).diagnosticName(), "fastcall")
+        @Expect(Known(Abi.Vectorcall).diagnosticName(), "vectorcall")
+        @Expect(Unknown(222u32).diagnosticName(), "unknown (222)")
+    }
 }

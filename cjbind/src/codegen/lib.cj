@@ -40,6 +40,7 @@ public class CodegenResult {
     public let itemsSeen: HashSet<ItemId> = HashSet()
 
     public let functionsSeen: HashSet<String> = HashSet()
+    private let skippedFunctionDiagnostics: HashSet<ItemId> = HashSet()
     public let generatedFunctionNames: HashSet<String> = HashSet()
     public let generatedTypeNames: HashSet<String> = HashSet()
     public let varsSeen: HashSet<String> = HashSet<String>()
@@ -59,6 +60,26 @@ public class CodegenResult {
 
     public func sawFunction(name: String): Unit {
         this.functionsSeen.add(name)
+    }
+
+    func shouldReportSkippedFunction(id: ItemId): Bool {
+        if (this.skippedFunctionDiagnostics.contains(id)) {
+            return false
+        }
+        this.skippedFunctionDiagnostics.add(id)
+        return true
+    }
+
+    func reportSkippedFunction(
+        id: ItemId,
+        declarationName: String,
+        symbolName: String,
+        reason: String
+    ): Unit {
+        if (!this.shouldReportSkippedFunction(id)) {
+            return
+        }
+        eprintln(skippedFunctionErrorMessage(declarationName, symbolName, reason))
     }
 
     public func uniqueFunctionName(baseName: String): String {
@@ -227,8 +248,16 @@ extend Function <: CodeGenerator<Item, Unit> {
             case _ => throw Exception("expected function type for sig")
         }
 
+        let declarationName = item.canonicalName(ctx)
+        let symbolName = this.symbolName()
+
         if (!signature.abi.isForeignCompatibleForTarget(ctx.targetInfo)) {
-            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because its calling convention cannot be represented by the current FFI")
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                "calling convention '${signature.abi.diagnosticName()}' cannot be represented by the current Cangjie FFI"
+            )
             return
         }
         if (signature.isVariadicFunction() && signature.argumentTypes.isEmpty()) {
@@ -241,7 +270,6 @@ extend Function <: CodeGenerator<Item, Unit> {
         }
 
         let name = this.name
-        let symbolName = this.symbolName()
 
         if (result.seenFunction(symbolName)) {
             return
@@ -250,7 +278,12 @@ extend Function <: CodeGenerator<Item, Unit> {
         result.sawFunction(symbolName)
 
         if (!clang.isValidIdentifier(symbolName)) {
-            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because its ABI symbol cannot be represented by the current FFI")
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                unsupportedFunctionSymbolReason(symbolName)
+            )
             return
         }
 
@@ -353,6 +386,21 @@ extend Function <: CodeGenerator<Item, Unit> {
             }
         }
     }
+}
+
+func skippedFunctionErrorMessage(
+    declarationName: String,
+    symbolName: String,
+    reason: String
+): String {
+    return "Error: skipping function '${declarationName}' (ABI symbol '${symbolName}'): ${reason}"
+}
+
+func unsupportedFunctionSymbolReason(symbolName: String): String {
+    if (symbolName.startsWith("?")) {
+        return "MSVC-decorated ABI symbols cannot be represented by the current Cangjie FFI"
+    }
+    return "the ABI symbol is not a valid foreign-function identifier in the current Cangjie FFI"
 }
 
 func functionCanonicalName(ctx: CjbindContext, item: Item, name: String): String {

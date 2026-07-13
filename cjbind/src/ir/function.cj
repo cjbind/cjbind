@@ -130,6 +130,14 @@ public class Function <: ClangSubItemParser<Function> {
             return Result.Err(ParseError.Continue)
         }
 
+        if (cursorKind == clang.CXCursorKind_CXCursor_CXXMethod &&
+            hasOnlyAdjustingThunkManglings(cursor, context.targetInfo)) {
+            eprintln(
+                "Error: skipping '${cursor.displayName()}' because only this-adjusting thunk ABI symbols were available"
+            )
+            return Result.Err(ParseError.Continue)
+        }
+
         if (hasUnsupportedValueAbi(
             cursor.curType(),
             UIntNative(context.pointerWidth()),
@@ -216,6 +224,16 @@ func cursorMangling(cursor: clang.Cursor, isCxx: Bool, targetInfo: clang.TargetI
     let isConstructor = cursor.kind() == clang.CXCursorKind_CXCursor_Constructor
     let isDestructor = cursor.kind() == clang.CXCursorKind_CXCursor_Destructor
     if (let Ok(manglings) <- cursor.cxxManglings()) {
+        if (!isConstructor && !isDestructor &&
+            cursor.kind() == clang.CXCursorKind_CXCursor_CXXMethod) {
+            if (let Some(mangling) <- selectNonAdjustingMethodMangling(
+                manglings,
+                targetInfo.triple,
+                targetInfo.pointerWidth
+            )) {
+                return normalizedCursorMangling(mangling, cursor, isCxx, targetInfo)
+            }
+        }
         var fallback: ?String = None
         var index = manglings.size
         while (index > 0) {
@@ -254,6 +272,59 @@ func cursorMangling(cursor: clang.Cursor, isCxx: Bool, targetInfo: clang.TargetI
         }
     }
     return normalizedCursorMangling(selected, cursor, isCxx, targetInfo)
+}
+
+func isAdjustingThunkMangling(
+    mangling: String,
+    targetTriple: String,
+    pointerWidth: Int32
+): Bool {
+    let normalized = normalizePlatformMangling(
+        mangling,
+        false,
+        targetTriple,
+        pointerWidth
+    )
+    return normalized.startsWith("_ZTh") || normalized.startsWith("_ZTv") ||
+        normalized.startsWith("_ZTc")
+}
+
+func selectNonAdjustingMethodMangling(
+    manglings: Array<String>,
+    targetTriple: String,
+    pointerWidth: Int32
+): ?String {
+    var index = manglings.size
+    while (index > 0) {
+        index -= 1
+        let candidate = manglings[index]
+        if (!candidate.isEmpty() &&
+            !isAdjustingThunkMangling(candidate, targetTriple, pointerWidth)) {
+            return Some(candidate)
+        }
+    }
+    return None
+}
+
+func hasOnlyAdjustingThunkManglings(cursor: clang.Cursor, targetInfo: clang.TargetInfo): Bool {
+    if (let Ok(manglings) <- cursor.cxxManglings()) {
+        var sawMangling = false
+        for (mangling in manglings) {
+            if (mangling.isEmpty()) {
+                continue
+            }
+            sawMangling = true
+            if (!isAdjustingThunkMangling(
+                mangling,
+                targetInfo.triple,
+                targetInfo.pointerWidth
+            )) {
+                return false
+            }
+        }
+        return sawMangling
+    }
+    return false
 }
 
 func normalizedCursorMangling(
@@ -517,6 +588,21 @@ public enum ClangAbi <: ToTokens {
         return match (this) {
             case Known(Abi.C) => true
             case _ => false
+        }
+    }
+
+    public func diagnosticName(): String {
+        return match (this) {
+            case Known(Abi.C) => "cdecl"
+            case Known(Abi.Stdcall) => "stdcall"
+            case Known(Abi.Fastcall) => "fastcall"
+            case Known(Abi.ThisCall) => "thiscall"
+            case Known(Abi.Vectorcall) => "vectorcall"
+            case Known(Abi.Aapcs) => "aapcs"
+            case Known(Abi.AapcsVfp) => "aapcs-vfp"
+            case Known(Abi.Win64) => "win64"
+            case Known(Abi.SysV64) => "sysv64"
+            case Unknown(value) => "unknown (${value})"
         }
     }
 
