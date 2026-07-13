@@ -137,12 +137,12 @@ public class ArgsParser {
         let sb = StringBuilder()
 
         let header = """
-自动生成仓颉到 C 库的 FFI 绑定代码。
+自动生成仓颉到 C/C++ 库的 FFI 绑定代码。
 
 用法：cjbind <OPTIONS> <HEADER> -- <CLANG_ARGS>
 
 参数：
-    <HEADER>          C 头文件路径
+    <HEADER>          C/C++ 头文件路径
     [CLANG_ARGS]...   会被直接传递给 clang 的参数
 
 选项：

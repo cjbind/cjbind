@@ -30,6 +30,31 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "根据值范围选择最小适配整数类型")
     let noUnionAccessorWorkaroundFlag = BoolFlag(None, "no-union-accessor-workaround",
         "no-union-accessor-workaround", "禁用 union accessor 的编译器 verifier workaround")
+    let enableCxxNamespacesFlag = BoolFlag(None, "enable-cxx-namespaces", "enable-cxx-namespaces",
+        "启用 C++ namespace 命名规则（默认折叠内联 namespace）")
+    let conservativeInlineNamespacesFlag = BoolFlag(None, "conservative-inline-namespaces",
+        "conservative-inline-namespaces", "保守处理 C++ inline namespace")
+    let ignoreMethodsFlag = BoolFlag(None, "ignore-methods", "ignore-methods", "不生成 C++ 方法绑定")
+    let generateFlag = StringFlag(None, "generate", "generate",
+        "选择生成项，可用值为 functions、types、vars、methods、constructors、destructors", "ITEMS", None)
+    let representCxxOperatorsFlag = BoolFlag(None, "represent-cxx-operators", "represent-cxx-operators",
+        "生成受支持的 C++ 运算符绑定")
+    let respectCxxAccessSpecsFlag = BoolFlag(None, "respect-cxx-access-specs", "respect-cxx-access-specs",
+        "按 C++ 访问说明符设置生成项的可见性")
+    let useSpecificVirtualFunctionReceiverFlag = BoolFlag(None, "use-specific-virtual-function-receiver",
+        "use-specific-virtual-function-receiver", "虚函数使用具体类指针作为接收者")
+    let useDistinctChar16TFlag = BoolFlag(None, "use-distinct-char16-t", "use-distinct-char16-t",
+        "把 C++ char16_t 生成为独立类型")
+    let generateInlineFunctionsFlag = BoolFlag(None, "generate-inline-functions", "generate-inline-functions",
+        "生成 C++ inline 函数绑定")
+    let generateDeletedFunctionsFlag = BoolFlag(None, "generate-deleted-functions", "generate-deleted-functions",
+        "保留标记为 deleted 的 C++ 函数")
+    let generatePureVirtualFunctionsFlag = BoolFlag(None, "generate-pure-virtual-functions",
+        "generate-pure-virtual-functions", "保留纯虚函数绑定")
+    let generatePrivateFunctionsFlag = BoolFlag(None, "generate-private-functions", "generate-private-functions",
+        "保留私有 C++ 函数绑定")
+    let vtableGenerationFlag = BoolFlag(None, "vtable-generation", "vtable-generation",
+        "生成 C++ 虚函数表定义")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -55,6 +80,19 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         defaultEnumStyleFlag,
         fitMacroConstantsFlag,
         noUnionAccessorWorkaroundFlag,
+        enableCxxNamespacesFlag,
+        conservativeInlineNamespacesFlag,
+        ignoreMethodsFlag,
+        generateFlag,
+        representCxxOperatorsFlag,
+        respectCxxAccessSpecsFlag,
+        useSpecificVirtualFunctionReceiverFlag,
+        useDistinctChar16TFlag,
+        generateInlineFunctionsFlag,
+        generateDeletedFunctionsFlag,
+        generatePureVirtualFunctionsFlag,
+        generatePrivateFunctionsFlag,
+        vtableGenerationFlag,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -101,6 +139,41 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     }
     opt.fitMacroConstants = fitMacroConstantsFlag.value
     opt.useUnionAccessorWorkaround = !noUnionAccessorWorkaroundFlag.value
+    opt.enableCxxNamespaces = enableCxxNamespacesFlag.value
+    opt.conservativeInlineNamespaces = conservativeInlineNamespacesFlag.value
+    opt.representCxxOperators = representCxxOperatorsFlag.value
+    opt.respectCxxAccessSpecs = respectCxxAccessSpecsFlag.value
+    opt.useSpecificVirtualFunctionReceiver = useSpecificVirtualFunctionReceiverFlag.value
+    opt.useDistinctChar16T = useDistinctChar16TFlag.value
+    opt.generateInlineFunctions = generateInlineFunctionsFlag.value
+    opt.generateDeletedFunctions = generateDeletedFunctionsFlag.value
+    opt.generatePureVirtualFunctions = generatePureVirtualFunctionsFlag.value
+    opt.generatePrivateFunctions = generatePrivateFunctionsFlag.value
+    opt.vtableGeneration = vtableGenerationFlag.value
+    if (let Some(items) <- generateFlag.value) {
+        opt.generateFunctions = false
+        opt.generateTypes = false
+        opt.generateVars = false
+        opt.generateMethods = false
+        opt.generateConstructors = false
+        opt.generateDestructors = false
+        for (item in items.split(",")) {
+            match (item.trimAscii()) {
+                case "methods" => opt.generateMethods = true
+                case "constructors" => opt.generateConstructors = true
+                case "destructors" => opt.generateDestructors = true
+                case "functions" => opt.generateFunctions = true
+                case "types" => opt.generateTypes = true
+                case "vars" => opt.generateVars = true
+                case value =>
+                    eprintln("Error: --generate contains an unknown item: ${value}")
+                    env.exit(1)
+            }
+        }
+    }
+    if (ignoreMethodsFlag.value) {
+        opt.generateMethods = false
+    }
 
     let output: ?String = outputFlag.value
 
