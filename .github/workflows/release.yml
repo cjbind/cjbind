@@ -1,0 +1,188 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release tag
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test.yml
+
+  package:
+    name: "${{ matrix.os.friendly }} / ${{ matrix.linking }}"
+    needs: verify
+    runs-on: ${{ matrix.os.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - runner: ubuntu-22.04
+            sys: linux
+            arch: x64
+            friendly: Linux (x64)
+            ext: ""
+          - runner: ubuntu-22.04-arm
+            sys: linux
+            arch: arm64
+            friendly: Linux (ARM64)
+            ext: ""
+          - runner: macos-14
+            sys: darwin
+            arch: arm64
+            friendly: macOS (Apple Silicon)
+            ext: ""
+          - runner: windows-2022
+            sys: windows
+            arch: x64
+            friendly: Windows (x64)
+            ext: .exe
+        linking:
+          - dynamic
+          - static
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Setup release environment
+        uses: ./.github/actions/setup-cjbind
+        with:
+          static-libclang: ${{ matrix.linking == 'static' }}
+          runner-key: ${{ matrix.os.runner }}
+          architecture: ${{ matrix.os.arch }}
+
+      - name: Install system libclang (Linux)
+        if: matrix.linking == 'dynamic' && matrix.os.sys == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev
+
+      - name: Install system libraries (macOS)
+        if: matrix.os.sys == 'darwin'
+        run: |
+          brew install openssl
+          echo "DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          if [ "${{ matrix.linking }}" = "dynamic" ]; then
+            brew install llvm
+            echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build release binary (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: |
+          static_flag=""
+          if [ "${{ matrix.linking }}" = "static" ]; then
+            static_flag="--static"
+          fi
+          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V
+
+      - name: Build release binary (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: |
+          static_flag=""
+          if [ "${{ matrix.linking }}" = "static" ]; then
+            static_flag="--static"
+          fi
+          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V
+
+      - name: Verify release binary (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: ./target/release/bin/cjbind_cli${{ matrix.os.ext }} --version
+
+      - name: Verify release binary (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: ./target/release/bin/cjbind_cli${{ matrix.os.ext }} --version
+
+      - name: Name release asset (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: |
+          mv target/release/bin/cjbind_cli${{ matrix.os.ext }} \
+            target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking }}${{ matrix.os.ext }}
+
+      - name: Name release asset (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: |
+          mv target/release/bin/cjbind_cli${{ matrix.os.ext }} \
+            target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking }}${{ matrix.os.ext }}
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking }}
+          path: target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking }}${{ matrix.os.ext }}
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish assembled release
+    needs: package
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Download packaged assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --pattern 'cjbind-*' --dir dist
+
+      - name: Create draft, upload every asset, and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            is_draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')
+            if [ "$is_draft" != "true" ]; then
+              echo "error: release $RELEASE_TAG is already published" >&2
+              exit 1
+            fi
+          else
+            release_flags=(--verify-tag --draft --generate-notes)
+            if [[ "$RELEASE_TAG" == *-* ]]; then
+              release_flags+=(--prerelease)
+            fi
+            gh release create "$RELEASE_TAG" "${release_flags[@]}"
+          fi
+
+          mapfile -d '' assets < <(find dist -type f -print0)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "error: no packaged release assets were downloaded" >&2
+            exit 1
+          fi
+
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          gh release edit "$RELEASE_TAG" --draft=false

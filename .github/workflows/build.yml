@@ -5,134 +5,105 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
-  release:
-    types: ["created"]
+  workflow_dispatch:
 
 permissions:
-  contents: "write"
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: "${{ matrix.os.friendly }} / ${{ matrix.channel }} / ${{ matrix.linking }}"
+    runs-on: ${{ matrix.os.runner }}
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         os:
-          - runner: "ubuntu-22.04"
-            sys: "linux"
-            arch: "x64"
-            friendly_name: "Linux (x64)"
+          - runner: ubuntu-22.04
+            sys: linux
+            arch: x64
+            friendly: Linux (x64)
             ext: ""
-          - runner: "ubuntu-22.04-arm"
-            sys: "linux"
-            arch: "arm64"
-            friendly_name: "Linux (ARM64)"
+          - runner: ubuntu-22.04-arm
+            sys: linux
+            arch: arm64
+            friendly: Linux (ARM64)
             ext: ""
-          - runner: "macos-14"
-            sys: "darwin"
-            arch: "arm64"
-            friendly_name: "macOS (Apple Silicon)"
+          - runner: macos-14
+            sys: darwin
+            arch: arm64
+            friendly: macOS (Apple Silicon)
             ext: ""
-          - runner: "windows-2022"
-            sys: "windows"
-            arch: "x64"
-            friendly_name: "Windows (x64)"
-            ext: ".exe"
-        build:
-          - channel: "release"
-            flag: ""
-          - channel: "debug"
-            flag: "-g"
+          - runner: windows-2022
+            sys: windows
+            arch: x64
+            friendly: Windows (x64)
+            ext: .exe
+        channel:
+          - release
+          - debug
         linking:
-          - mode: "dynamic"
-          - mode: "static"
-      fail-fast: false
-
-    runs-on: ${{ matrix.os.runner }}
+          - dynamic
+          - static
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      - name: Setup build environment
+        uses: ./.github/actions/setup-cjbind
         with:
-          python-version: "3.14"
-          cache-dependency-glob: "**/*.py.lock"
+          static-libclang: ${{ matrix.linking == 'static' }}
+          runner-key: ${{ matrix.os.runner }}
+          architecture: ${{ matrix.os.arch }}
 
-      - name: Restore cached libclang
-        id: cache-libclang-restore
-        if: matrix.linking.mode == 'static'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lib/libclang
-          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ hashFiles('scripts/libclang.json') }}
-
-      - name: Download libclang
-        if: matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
-        run: |
-          uv run scripts/download.py
-
-      - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: 1.26
-          cache: true
-
-      - name: Setup Cangjie
-        uses: Zxilly/setup-cangjie@91463316b1c359f216c2ac49e35900f9341c1571 # v3.2.0
-        with:
-          channel: "sts"
-          version: "1.1.3"
-
-      - name: Patch Cangjie optimizer
-        run: uv run scripts/patch_opt.py
-
-      - name: Install system libclang (dynamic, Linux)
-        if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'linux'
+      - name: Install system libclang (Linux)
+        if: matrix.linking == 'dynamic' && matrix.os.sys == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libclang-dev
 
-      - name: Install system libclang (dynamic, macOS)
-        if: matrix.linking.mode == 'dynamic' && matrix.os.sys == 'darwin'
-        run: |
-          brew install llvm
-          echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> $GITHUB_ENV
-
-      - name: Install OpenSSL on macOS
-        if: runner.os == 'macOS'
+      - name: Install system libraries (macOS)
+        if: matrix.os.sys == 'darwin'
         run: |
           brew install openssl
-          echo "DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          if [ "${{ matrix.linking }}" = "dynamic" ]; then
+            brew install llvm
+            echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> "$GITHUB_ENV"
+          fi
 
-      - name: Setup MSYS2
-        if: matrix.os.sys == 'windows'
-        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
-        with:
-          msystem: CLANG64
-          update: true
-          install: >-
-            mingw-w64-clang-x86_64-clang
-          path-type: inherit
-
-      # Skip debug builds on release events
-      - name: Build unix ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
-        if: matrix.os.sys != 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
+      - name: Build CLI (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
         run: |
           static_flag=""
-          if [ "${{ matrix.linking.mode }}" = "static" ]; then
+          if [ "${{ matrix.linking }}" = "static" ]; then
             static_flag="--static"
           fi
-          uv run scripts/cjpm.py $static_flag build --cfg_verbose -V ${{ matrix.build.flag }}
+          debug_flag=""
+          if [ "${{ matrix.channel }}" = "debug" ]; then
+            debug_flag="-g"
+          fi
+          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V $debug_flag
 
-      - name: Build windows ${{ matrix.build.channel }} (${{ matrix.linking.mode }})
-        if: matrix.os.sys == 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug')
+      - name: Build CLI (Windows)
+        if: matrix.os.sys == 'windows'
         shell: msys2 {0}
         run: |
           static_flag=""
-          if [ "${{ matrix.linking.mode }}" = "static" ]; then
+          if [ "${{ matrix.linking }}" = "static" ]; then
             static_flag="--static"
           fi
-          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V ${{ matrix.build.flag }}
+          debug_flag=""
+          if [ "${{ matrix.channel }}" = "debug" ]; then
+            debug_flag="-g"
+          fi
+          uv run python scripts/cjpm.py $static_flag build --cfg_verbose -V $debug_flag
 
       - name: Enable core dumps (Linux)
         if: matrix.os.sys == 'linux'
@@ -140,9 +111,7 @@ jobs:
           sudo mkdir -p /tmp/cores
           sudo chmod 1777 /tmp/cores
           sudo sysctl -w kernel.core_pattern=/tmp/cores/core.%e.%p
-          # Disable apport if present
           sudo service apport stop 2>/dev/null || true
-          echo "Core dumps enabled, pattern: /tmp/cores/core.%e.%p"
 
       - name: Enable core dumps (macOS)
         if: matrix.os.sys == 'darwin'
@@ -150,96 +119,58 @@ jobs:
           sudo mkdir -p /tmp/cores
           sudo chmod 1777 /tmp/cores
           sudo sysctl -w kern.corefile=/tmp/cores/core.%P
-          echo "Core dumps enabled, pattern: /tmp/cores/core.%P"
 
-      - name: Test binary (Unix)
-        id: test_binary_unix
-        if: ${{ matrix.os.sys != 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+      - name: Verify built binary (Unix)
+        id: verify-binary-unix
+        if: matrix.os.sys != 'windows'
         continue-on-error: true
         shell: bash
         run: |
           ulimit -c unlimited
-          ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
+          ./target/${{ matrix.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
 
-      - name: Test binary (Windows)
-        id: test_binary_win
-        if: ${{ matrix.os.sys == 'windows' && !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+      - name: Verify built binary (Windows)
+        id: verify-binary-windows
+        if: matrix.os.sys == 'windows'
         continue-on-error: true
         shell: msys2 {0}
-        run: |
-          ./target/${{ matrix.build.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
+        run: ./target/${{ matrix.channel }}/bin/cjbind_cli${{ matrix.os.ext }} --version
 
-      - name: Collect crash artifacts (Linux)
-        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'linux'
-        run: |
-          mkdir -p crash-artifacts
-          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
-          cp /tmp/cores/core.* crash-artifacts/ 2>/dev/null || true
-          ls -la /tmp/cores/ 2>/dev/null || echo "No cores in /tmp/cores/"
-          ls -la crash-artifacts/
-
-      - name: Collect crash artifacts (macOS)
-        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'darwin'
-        run: |
-          mkdir -p crash-artifacts
-          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli crash-artifacts/ || true
-          cp /tmp/cores/core.* crash-artifacts/ 2>/dev/null || true
-          ls -la /tmp/cores/ 2>/dev/null || echo "No cores in /tmp/cores/"
-          # macOS crash reports
-          cp ~/Library/Logs/DiagnosticReports/cjbind_cli* crash-artifacts/ 2>/dev/null || true
-          ls -la crash-artifacts/
-
-      - name: Collect crash artifacts (Windows)
-        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure') && matrix.os.sys == 'windows'
+      - name: Collect crash diagnostics (Unix)
+        if: steps.verify-binary-unix.outcome == 'failure'
         shell: bash
         run: |
           mkdir -p crash-artifacts
-          cp ./target/${{ matrix.build.channel }}/bin/cjbind_cli.exe crash-artifacts/ || true
-          # Windows minidumps
+          cp ./target/${{ matrix.channel }}/bin/cjbind_cli${{ matrix.os.ext }} crash-artifacts/ || true
+          cp /tmp/cores/core.* crash-artifacts/ 2>/dev/null || true
+          if [ "${{ matrix.os.sys }}" = "darwin" ]; then
+            cp ~/Library/Logs/DiagnosticReports/cjbind_cli* crash-artifacts/ 2>/dev/null || true
+          fi
+
+      - name: Collect crash diagnostics (Windows)
+        if: steps.verify-binary-windows.outcome == 'failure'
+        shell: msys2 {0}
+        run: |
+          mkdir -p crash-artifacts
+          cp ./target/${{ matrix.channel }}/bin/cjbind_cli.exe crash-artifacts/ || true
           find /c/Users/runneradmin/AppData/Local/CrashDumps -name '*.dmp' -exec cp {} crash-artifacts/ \; 2>/dev/null || true
-          ls -la crash-artifacts/
 
-      - name: Upload crash artifacts
-        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure')
+      - name: Upload crash diagnostics
+        if: steps.verify-binary-unix.outcome == 'failure' || steps.verify-binary-windows.outcome == 'failure'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: crash-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
+          name: crash-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.channel }}-${{ matrix.linking }}
           path: crash-artifacts/
+          retention-days: 7
 
-      - name: Upload artifact
-        if: ${{ !(github.event_name == 'release' && matrix.build.channel == 'debug') }}
+      - name: Upload build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}-${{ matrix.linking.mode }}
-          path: |
-            target/${{ matrix.build.channel }}/bin/cjbind_cli*
+          name: cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.channel }}-${{ matrix.linking }}
+          path: target/${{ matrix.channel }}/bin/cjbind_cli${{ matrix.os.ext }}
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Fail if test crashed
-        if: (steps.test_binary_unix.outcome == 'failure' || steps.test_binary_win.outcome == 'failure')
+      - name: Fail on invalid binary
+        if: steps.verify-binary-unix.outcome == 'failure' || steps.verify-binary-windows.outcome == 'failure'
         run: exit 1
-
-      - name: Rename binary
-        if: github.event_name == 'release' && matrix.build.channel == 'release'
-        shell: bash
-        run: |
-          cd target/release/bin
-          mv cjbind_cli${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
-
-      - name: Upload to Release
-        if: github.event_name == 'release' && matrix.build.channel == 'release'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_PATH: target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}-${{ matrix.linking.mode }}${{ matrix.os.ext }}
-        run: |
-          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.os.friendly_name }} (${{ matrix.linking.mode }})" \
-            --clobber
-
-      - name: Always Save libclang
-        id: cache-libclang-save
-        if: always() && matrix.linking.mode == 'static' && steps.cache-libclang-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
-          path: |
-            lib/libclang
