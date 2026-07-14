@@ -149,6 +149,8 @@ public func generate(opts: CjbindOptions): String {
         throw Exception("没有指定头文件")
     }
 
+    clang.ensureSupportedClangVersion()
+
     detectIncludePaths(opts)
 
     // Clone clangArgs so we do not mutate the caller's options object

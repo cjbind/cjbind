@@ -2,6 +2,7 @@ package cjbind.clang
 
 import std.fs.{File as FSFile, remove}
 import std.collection.{HashMap, ArrayList}
+import std.convert.*
 
 import cjbind.result.Result
 
@@ -35,6 +36,47 @@ public func getClangVersion(): String {
     unsafe {
         cxstringToString(clang_getClangVersion())
     }
+}
+
+public const MINIMUM_SUPPORTED_CLANG_MAJOR: Int64 = 20
+
+func parseClangMajorVersion(version: String): ?Int64 {
+    let markerParts = version.split("version ", 2)
+    if (markerParts.size != 2) {
+        return None
+    }
+
+    let versionParts = markerParts[1].split(".", 2)
+    if (versionParts.isEmpty()) {
+        return None
+    }
+
+    try {
+        return Some(Int64.parse(versionParts[0]))
+    } catch (_: IllegalArgumentException) {
+        return None
+    }
+}
+
+func validateClangVersion(version: String): Unit {
+    match (parseClangMajorVersion(version)) {
+        case Some(major) =>
+            if (major < MINIMUM_SUPPORTED_CLANG_MAJOR) {
+                throw UnsupportedException(
+                    "Unsupported libclang version '${version}'. " +
+                    "cjbind requires libclang ${MINIMUM_SUPPORTED_CLANG_MAJOR} or newer."
+                )
+            }
+        case None =>
+            throw UnsupportedException(
+                "Unable to determine libclang version from '${version}'. " +
+                "cjbind requires libclang ${MINIMUM_SUPPORTED_CLANG_MAJOR} or newer."
+            )
+    }
+}
+
+public func ensureSupportedClangVersion(): Unit {
+    validateClangVersion(getClangVersion())
 }
 
 // workaround cfunc capture limit
