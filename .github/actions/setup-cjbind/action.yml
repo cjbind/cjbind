@@ -58,6 +58,24 @@ runs:
       shell: bash
       run: uv run scripts/patch_opt.py
 
+    - name: Install LLVM 20 libclang
+      if: runner.os == 'Linux' && inputs.static-libclang != 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ca-certificates curl gnupg
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
+          | gpg --dearmor \
+          | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
+        echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-20 main" \
+          | sudo tee /etc/apt/sources.list.d/apt.llvm.org.list >/dev/null
+        sudo apt-get update
+        sudo apt-get install -y libclang-20-dev
+        test -e /usr/lib/llvm-20/lib/libclang.so
+        echo "LIBCLANG_PATH=/usr/lib/llvm-20/lib" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=/usr/lib/llvm-20/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+
     - name: Setup MSYS2
       if: runner.os == 'Windows'
       uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
