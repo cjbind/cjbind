@@ -129,11 +129,15 @@ func resolveLoadedSymbol(symbolName: String): CPointer<Unit> {
     if (handle.isNull()) {
         return CPointer<Unit>()
     }
-    try (symbol = CStringOwned(symbolName)) {
-        return unsafe { dlsym(handle, symbol.pointer) }
+    var address = CPointer<Unit>()
+    try {
+        try (symbol = CStringOwned(symbolName)) {
+            address = unsafe { dlsym(handle, symbol.pointer) }
+        }
     } finally {
         unsafe { dlclose(handle) }
     }
+    return address
 }
 
 @When[libclang_linkage == "static"]
