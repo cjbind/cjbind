@@ -60,7 +60,6 @@ func canonicalItemId(ctx: CjbindContext, start: ItemId): ItemId {
         }
         match (ty.kind) {
             case TypeKind.TypeKindAlias(inner) => current = inner
-            case TypeKind.TypeKindTemplateAlias(inner, _) => current = inner
             case TypeKind.ResolvedTypeRef(inner) => current = inner
             case _ => return current
         }
