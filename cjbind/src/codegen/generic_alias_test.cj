@@ -131,6 +131,42 @@ public class GenericAliasRenderingTest {
     }
 
     @TestCase
+    func skipsAliasesWhoseGenericRecordTargetsAreNotGenerated(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let comp = CompInfo(CompKind.CompKindStruct, isCxxRecord: true)
+            comp.hasNonTypeTemplateParams = true
+            let record = addGenericAliasTestType(ctx, "FixedArray", TypeKind.TypeKindComp(comp))
+            let alias = addGenericAliasTestType(
+                ctx,
+                "Fixed16",
+                TypeKind.TypeKindTemplateAlias(record, [parameter])
+            )
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, parameter, [parameter])
+            markGenericAliasUsage(usage, record, Array<TypeId>())
+            markGenericAliasUsage(usage, alias, Array<TypeId>())
+            ctx.usedTemplateParameters = Some(usage)
+
+            let result = CodegenResult()
+            let aliasItem = ctx.resolveItem(alias)
+            codegenTypeAlias(
+                aliasItem.kind.expectType(),
+                record,
+                ctx,
+                result,
+                aliasItem
+            )
+
+            @Expect(result.items.isEmpty(), true)
+            @Expect(result.seenType(aliasItem.canonicalName(ctx)), false)
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
     func substitutesNestedTemplateAliasInstancesBeforeRendering(): Unit {
         let ctx = genericAliasTestContext()
         try {

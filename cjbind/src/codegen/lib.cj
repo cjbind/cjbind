@@ -575,8 +575,30 @@ func codegenTypeAlias(
     if (Utils.typeFromNamed(ctx, spelling).isSome() || result.seenType(name)) {
         return
     }
-    result.sawType(name)
     let usedParameters = ctx.usedTemplateParams(item.id)
+    let targetIsUnsupportedGenericRecord = match (throughTypeAliases.kind.asType()) {
+        case Some(targetType) => match (targetType.kind) {
+            case TypeKind.TypeKindComp(comp) =>
+                let isConcrete = ctx.templateInstantiationFor(throughTypeAliases.id).isSome() ||
+                    ctx.isMaterializedNestedTemplateType(throughTypeAliases.id)
+                let hasTemplatedAncestor = allTemplateParams(throughTypeAliases.id, ctx).size >
+                    selfTemplateParams(throughTypeAliases.id, ctx).size
+                !isConcrete && (comp.hasNonTypeTemplateParams ||
+                    ctx.usesAnyTemplateParameters(throughTypeAliases.id) ||
+                    hasTemplatedAncestor)
+            case _ => false
+        }
+        case None => false
+    }
+    if (targetIsUnsupportedGenericRecord || (usedParameters.isEmpty() &&
+        (ctx.usesAnyTemplateParameters(innerItem.id) ||
+        ctx.usesAnyTemplateParameters(throughTypeAliases.id)))) {
+        eprintln(
+            "Warning: skipping C++ template alias '${name}' because its generic RHS cannot be represented by the current Cangjie FFI"
+        )
+        return
+    }
+    result.sawType(name)
     let parameterNames = ArrayList<TokenStream>()
     let substitutions = HashMap<ItemId, String>()
     let seenParameterNames = HashSet<String>()

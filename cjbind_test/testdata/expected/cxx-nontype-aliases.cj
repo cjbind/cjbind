@@ -1,7 +1,5 @@
 package cjbind_ffi
 
-public type Fixed16_Fixed16 = FixedArray_FixedArray
-
 @C
 public struct FixedArray_open0_4_close0_FixedArray_open0_4_close0 {
     let _cjbind_opaque_blob: VArray<UInt32, $4>
