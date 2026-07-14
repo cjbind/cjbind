@@ -9,7 +9,7 @@ public class SizednessAnalysisRulesTest {
     func distinguishesEmptyDependentAndConcreteRecords(): Unit {
         let ctx = analysisTestContext()
         try {
-            let integer = addDeriveTestTypeWithLayout(
+            let integer = addAnalysisTestTypeWithLayout(
                 ctx,
                 "Integer",
                 Layout(4, 4),
@@ -54,7 +54,7 @@ public class SizednessAnalysisRulesTest {
             let virtualRecord = addAnalysisTestType(ctx, "VirtualRecord", TypeKind.TypeKindComp(virtualComp))
             let opaqueComp = analysisTestRecord(Array<TypeId>())
             opaqueComp.hasNonTypeTemplateParams = true
-            let opaqueRecord = addDeriveTestTypeWithLayout(
+            let opaqueRecord = addAnalysisTestTypeWithLayout(
                 ctx,
                 "OpaqueRecord",
                 Layout(16, 8),

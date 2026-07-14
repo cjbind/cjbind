@@ -134,42 +134,6 @@ func analysisCompLayout(comp: CompInfo, ctx: CjbindContext): ?Layout {
     return Some(Layout(maxSize, maxAlign))
 }
 
-func normalFieldTypes(comp: CompInfo): Array<TypeId> {
-    let result = ArrayList<TypeId>()
-    match (comp.fields) {
-        case CompFields.CompFieldsError => ()
-        case CompFields.CompFieldsBefore(_) =>
-            throw Exception("Should always have computed bitfield units first")
-        case CompFields.CompFieldsAfter(value) =>
-            for (field in value.fields) {
-                if (let Field.DataMember(data) <- field) {
-                    result.add(data.ty)
-                }
-            }
-    }
-    return result.toArray()
-}
-
-func allFieldTypes(comp: CompInfo): Array<TypeId> {
-    let result = ArrayList<TypeId>()
-    match (comp.fields) {
-        case CompFields.CompFieldsError => ()
-        case CompFields.CompFieldsBefore(_) =>
-            throw Exception("Should always have computed bitfield units first")
-        case CompFields.CompFieldsAfter(value) =>
-            for (field in value.fields) {
-                match (field) {
-                    case Field.DataMember(data) => result.add(data.ty)
-                    case Field.Bitfields(unit) =>
-                        for (bitfield in unit.bitfields) {
-                            result.add(bitfield.data.ty)
-                        }
-                }
-            }
-    }
-    return result.toArray()
-}
-
 func extendSet(target: ItemSet, source: ItemSet): Unit {
     for (id in source) {
         target.add(id)

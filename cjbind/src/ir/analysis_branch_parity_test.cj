@@ -133,7 +133,7 @@ public class SizednessAnalysisBranchParityTest {
                 "Empty",
                 TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>()))
             )
-            let integer = addDeriveTestTypeWithLayout(
+            let integer = addAnalysisTestTypeWithLayout(
                 ctx,
                 "Integer",
                 Layout(4, 4),
@@ -161,19 +161,19 @@ public class SizednessAnalysisBranchParityTest {
                 TypeKind.TypeKindObjCBlockPointer(templateAlias)
             )
             let resolved = addAnalysisTestType(ctx, "Resolved", TypeKind.ResolvedTypeRef(blockPointer))
-            let opaqueZero = addDeriveTestTypeWithLayout(
+            let opaqueZero = addAnalysisTestTypeWithLayout(
                 ctx,
                 "OpaqueZero",
                 Layout(0, 1),
                 TypeKind.TypeKindOpaque
             )
-            let opaqueNonZero = addDeriveTestTypeWithLayout(
+            let opaqueNonZero = addAnalysisTestTypeWithLayout(
                 ctx,
                 "OpaqueNonZero",
                 Layout(24, 8),
                 TypeKind.TypeKindOpaque
             )
-            let ordinaryInstance = addDeriveTestTypeWithLayout(
+            let ordinaryInstance = addAnalysisTestTypeWithLayout(
                 ctx,
                 "OrdinaryInstance",
                 Layout(16, 8),
@@ -182,7 +182,7 @@ public class SizednessAnalysisBranchParityTest {
                     [integer]
                 ))
             )
-            let opaqueInstance = addDeriveTestTypeWithLayout(
+            let opaqueInstance = addAnalysisTestTypeWithLayout(
                 ctx,
                 "OpaqueInstance",
                 Layout(16, 8),
@@ -232,268 +232,6 @@ public class SizednessAnalysisBranchParityTest {
             @Expect(sizednessResultFor(results, ordinaryInstance), SizednessResult.ZeroSized)
             @Expect(sizednessResultFor(results, opaqueInstance), SizednessResult.NonZeroSized)
             @Expect(sizednessResultFor(results, joined), SizednessResult.NonZeroSized)
-        } finally {
-            ctx.close()
-        }
-    }
-}
-
-@Test
-public class DestructorAnalysisBranchParityTest {
-    @TestCase
-    func propagatesThroughEveryOwningEdgeButNotPointersOrUnionFields(): Unit {
-        let ctx = analysisTestContext()
-        try {
-            let ownComp = analysisTestRecord(Array<TypeId>())
-            ownComp.hasDestructor = true
-            let own = addAnalysisTestType(ctx, "Own", TypeKind.TypeKindComp(ownComp))
-            let alias = addAnalysisTestType(ctx, "Alias", TypeKind.TypeKindAlias(own))
-            let templateAlias = addAnalysisTestType(
-                ctx,
-                "TemplateAlias",
-                TypeKind.TypeKindTemplateAlias(alias, Array<TypeId>())
-            )
-            let resolved = addAnalysisTestType(ctx, "Resolved", TypeKind.ResolvedTypeRef(templateAlias))
-            let pointer = addAnalysisTestType(ctx, "Pointer", TypeKind.TypeKindPointer(own))
-            let function = analysisFunctionType(ctx, "Function", own, [own])
-            let baseComp = analysisTestRecord(Array<TypeId>())
-            baseComp.baseMembers.add(Base(resolved, BaseKind.Normal, "base", true))
-            let baseHolder = addAnalysisTestType(ctx, "BaseHolder", TypeKind.TypeKindComp(baseComp))
-            let fieldHolder = addAnalysisTestType(
-                ctx,
-                "FieldHolder",
-                TypeKind.TypeKindComp(analysisTestRecord([resolved]))
-            )
-            let unionHolder = addAnalysisTestType(
-                ctx,
-                "UnionHolder",
-                TypeKind.TypeKindComp(deriveTestUnion([own]))
-            )
-            let cleanDefinition = addAnalysisTestType(
-                ctx,
-                "CleanDefinition",
-                TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>()))
-            )
-            let definitionInstance = analysisInstantiation(
-                ctx,
-                "DefinitionInstance",
-                own,
-                [cleanDefinition]
-            )
-            let argumentInstance = analysisInstantiation(
-                ctx,
-                "ArgumentInstance",
-                cleanDefinition,
-                [own]
-            )
-            let ids = [
-                own,
-                alias,
-                templateAlias,
-                resolved,
-                pointer,
-                function,
-                baseHolder,
-                fieldHolder,
-                unionHolder,
-                cleanDefinition,
-                definitionInstance,
-                argumentInstance
-            ]
-            let results = analyzeHasDestructor(ctx, analysisTestItems(ids))
-
-            @Expect(results.contains(alias), true)
-            @Expect(results.contains(templateAlias), true)
-            @Expect(results.contains(resolved), true)
-            @Expect(results.contains(pointer), false)
-            @Expect(results.contains(function), false)
-            @Expect(results.contains(baseHolder), true)
-            @Expect(results.contains(fieldHolder), true)
-            @Expect(results.contains(unionHolder), false)
-            @Expect(results.contains(definitionInstance), true)
-            @Expect(results.contains(argumentInstance), true)
-        } finally {
-            ctx.close()
-        }
-    }
-}
-
-@Test
-public class TypeParameterArrayAnalysisBranchParityTest {
-    @TestCase
-    func propagatesThroughReferenceKindsAndBothSidesOfInstantiation(): Unit {
-        let ctx = analysisTestContext()
-        try {
-            let parameter = addAnalysisTestType(ctx, "T", TypeKind.TypeKindTypeParam)
-            let parameterAlias = addAnalysisTestType(ctx, "ParameterAlias", TypeKind.TypeKindAlias(parameter))
-            let array = addAnalysisTestType(ctx, "Array", TypeKind.TypeKindArray(parameterAlias, 2))
-            let templateAlias = addAnalysisTestType(
-                ctx,
-                "TemplateAlias",
-                TypeKind.TypeKindTemplateAlias(array, Array<TypeId>())
-            )
-            let resolved = addAnalysisTestType(ctx, "Resolved", TypeKind.ResolvedTypeRef(templateAlias))
-            let blockPointer = addAnalysisTestType(
-                ctx,
-                "BlockPointer",
-                TypeKind.TypeKindObjCBlockPointer(resolved)
-            )
-            let pointerToParameter = addAnalysisTestType(
-                ctx,
-                "PointerToParameter",
-                TypeKind.TypeKindPointer(parameter)
-            )
-            let pointerArray = addAnalysisTestType(
-                ctx,
-                "PointerArray",
-                TypeKind.TypeKindArray(pointerToParameter, 2)
-            )
-            let function = analysisFunctionType(ctx, "Function", array, [array])
-            let definition = addAnalysisTestType(
-                ctx,
-                "Definition",
-                TypeKind.TypeKindComp(analysisTestRecord([array]))
-            )
-            let cleanDefinition = addAnalysisTestType(
-                ctx,
-                "CleanDefinition",
-                TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>()))
-            )
-            let definitionInstance = analysisInstantiation(
-                ctx,
-                "DefinitionInstance",
-                definition,
-                [pointerToParameter]
-            )
-            let argumentInstance = analysisInstantiation(
-                ctx,
-                "ArgumentInstance",
-                cleanDefinition,
-                [array]
-            )
-            let ids = [
-                parameter,
-                parameterAlias,
-                array,
-                templateAlias,
-                resolved,
-                blockPointer,
-                pointerToParameter,
-                pointerArray,
-                function,
-                definition,
-                cleanDefinition,
-                definitionInstance,
-                argumentInstance
-            ]
-            let results = analyzeHasTypeParameterInArray(ctx, analysisTestItems(ids))
-
-            @Expect(results.contains(array), true)
-            @Expect(results.contains(templateAlias), true)
-            @Expect(results.contains(resolved), true)
-            @Expect(results.contains(blockPointer), true)
-            @Expect(results.contains(pointerToParameter), false)
-            @Expect(results.contains(pointerArray), false)
-            @Expect(results.contains(function), false)
-            @Expect(results.contains(definitionInstance), true)
-            @Expect(results.contains(argumentInstance), true)
-        } finally {
-            ctx.close()
-        }
-    }
-}
-
-@Test
-public class FloatAnalysisBranchParityTest {
-    @TestCase
-    func propagatesComplexAndBitfieldValuesAcrossAliasesAndInstantiations(): Unit {
-        let ctx = analysisTestContext()
-        try {
-            let floating = addDeriveTestTypeWithLayout(
-                ctx,
-                "Floating",
-                Layout(4, 4),
-                TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindFloat)
-            )
-            let complex = addAnalysisTestType(
-                ctx,
-                "Complex",
-                TypeKind.TypeKindComplex(TypeKindFloatKind.FloatKindDouble)
-            )
-            let alias = addAnalysisTestType(ctx, "Alias", TypeKind.TypeKindAlias(complex))
-            let templateAlias = addAnalysisTestType(
-                ctx,
-                "TemplateAlias",
-                TypeKind.TypeKindTemplateAlias(alias, Array<TypeId>())
-            )
-            let resolved = addAnalysisTestType(ctx, "Resolved", TypeKind.ResolvedTypeRef(templateAlias))
-            let blockPointer = addAnalysisTestType(
-                ctx,
-                "BlockPointer",
-                TypeKind.TypeKindObjCBlockPointer(resolved)
-            )
-            let pointer = addAnalysisTestType(ctx, "Pointer", TypeKind.TypeKindPointer(floating))
-            let function = analysisFunctionType(ctx, "Function", floating, [floating])
-            let bitfieldData = RawField(Some("value"), floating, None, Some(1), Some(0))
-            let bitfieldComp = analysisTestRecord(Array<TypeId>())
-            bitfieldComp.fields = CompFields.CompFieldsAfter(CompFieldsAfterValue(
-                [Field.Bitfields(BitfieldUnit(0, Layout(1, 1), [Bitfield(0, bitfieldData)]))],
-                true
-            ))
-            let bitfieldHolder = addAnalysisTestType(
-                ctx,
-                "BitfieldHolder",
-                TypeKind.TypeKindComp(bitfieldComp)
-            )
-            let definition = addAnalysisTestType(
-                ctx,
-                "Definition",
-                TypeKind.TypeKindComp(analysisTestRecord([floating]))
-            )
-            let cleanDefinition = addAnalysisTestType(
-                ctx,
-                "CleanDefinition",
-                TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>()))
-            )
-            let definitionInstance = analysisInstantiation(
-                ctx,
-                "DefinitionInstance",
-                definition,
-                [pointer]
-            )
-            let argumentInstance = analysisInstantiation(
-                ctx,
-                "ArgumentInstance",
-                cleanDefinition,
-                [floating]
-            )
-            let ids = [
-                floating,
-                complex,
-                alias,
-                templateAlias,
-                resolved,
-                blockPointer,
-                pointer,
-                function,
-                bitfieldHolder,
-                definition,
-                cleanDefinition,
-                definitionInstance,
-                argumentInstance
-            ]
-            let results = analyzeHasFloat(ctx, analysisTestItems(ids))
-
-            @Expect(results.contains(complex), true)
-            @Expect(results.contains(alias), true)
-            @Expect(results.contains(templateAlias), true)
-            @Expect(results.contains(resolved), true)
-            @Expect(results.contains(blockPointer), true)
-            @Expect(results.contains(pointer), false)
-            @Expect(results.contains(function), false)
-            @Expect(results.contains(bitfieldHolder), true)
-            @Expect(results.contains(definitionInstance), true)
-            @Expect(results.contains(argumentInstance), true)
         } finally {
             ctx.close()
         }

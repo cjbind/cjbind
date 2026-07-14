@@ -138,16 +138,6 @@ class CodegenAliasUse {
     }
 }
 
-func deriveTraitCacheDiscriminant(deriveTrait: DeriveTrait): UInt8 {
-    return match (deriveTrait) {
-        case DeriveTrait.Copy => 0
-        case DeriveTrait.Debug => 1
-        case DeriveTrait.Default => 2
-        case DeriveTrait.Hash => 3
-        case DeriveTrait.PartialEqOrPartialOrd => 4
-    }
-}
-
 public class CjbindContext <: Resource {
     var _released: Bool = false
     public let options: CjbindOptions
@@ -189,63 +179,6 @@ public class CjbindContext <: Resource {
     public var usedTemplateParameters: ?HashMap<ItemId, ItemSet> = None
     var haveVtable: ?HashMap<ItemId, HasVtableResult> = None
     var sizednessResults: ?HashMap<ItemId, SizednessResult> = None
-    var haveDestructor: ?ItemSet = None
-    var cannotDeriveDebug: ?HashMap<ItemId, CanDerive> = None
-    var cannotDeriveDefault: ?HashMap<ItemId, CanDerive> = None
-    var cannotDeriveCopy: ?HashMap<ItemId, CanDerive> = None
-    var cannotDeriveHash: ?HashMap<ItemId, CanDerive> = None
-    var cannotDerivePartialEqOrPartialOrd: ?HashMap<ItemId, CanDerive> = None
-    var hasTypeParameterInArrayResults: ?ItemSet = None
-    var hasFloatResults: ?ItemSet = None
-    let blocklistedTraitResults: HashMap<String, CanDerive> = HashMap()
-    var deriveCopy: Bool = true
-    var deriveDebug: Bool = true
-    var deriveDefault: Bool = false
-    var deriveHash: Bool = false
-    private var derivePartialEqValue: Bool = false
-    private var derivePartialOrdValue: Bool = false
-    private var deriveEqValue: Bool = false
-    private var deriveOrdValue: Bool = false
-    mut prop derivePartialEq: Bool {
-        get() { this.derivePartialEqValue }
-        set(value) {
-            this.derivePartialEqValue = value
-            if (!value) {
-                this.deriveEqValue = false
-            }
-        }
-    }
-    mut prop deriveEq: Bool {
-        get() { this.deriveEqValue }
-        set(value) {
-            this.deriveEqValue = value
-            if (value) {
-                this.derivePartialEqValue = true
-            }
-        }
-    }
-    mut prop derivePartialOrd: Bool {
-        get() { this.derivePartialOrdValue }
-        set(value) {
-            this.derivePartialOrdValue = value
-            if (!value) {
-                this.deriveOrdValue = false
-            }
-        }
-    }
-    mut prop deriveOrd: Bool {
-        get() { this.deriveOrdValue }
-        set(value) {
-            this.deriveOrdValue = value
-            this.derivePartialOrdValue = value
-        }
-    }
-    let noCopyTypes: NamePatternSet = NamePatternSet()
-    let noDebugTypes: NamePatternSet = NamePatternSet()
-    let noDefaultTypes: NamePatternSet = NamePatternSet()
-    let noHashTypes: NamePatternSet = NamePatternSet()
-    let noPartialEqTypes: NamePatternSet = NamePatternSet()
-    var blocklistedTypeImplementsTraitCallback: ?((String, DeriveTrait) -> ?CanDerive) = None
 
     public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
@@ -1675,47 +1608,6 @@ public class CjbindContext <: Resource {
         return this.options.opaqueTypes.matches(instantiatedName)
     }
 
-    func noDeriveByName(item: Item, deriveTrait: DeriveTrait): Bool {
-        let name = this.itemPolicyName(item)
-        return match (deriveTrait) {
-            case DeriveTrait.Copy => this.noCopyTypes.matches(name)
-            case DeriveTrait.Debug => this.noDebugTypes.matches(name)
-            case DeriveTrait.Default => this.noDefaultTypes.matches(name)
-            case DeriveTrait.Hash => this.noHashTypes.matches(name)
-            case DeriveTrait.PartialEqOrPartialOrd => this.noPartialEqTypes.matches(name)
-        }
-    }
-
-    func blocklistedTypeImplementsTrait(item: Item, deriveTrait: DeriveTrait): CanDerive {
-        let cacheKey = "${item.id}:${deriveTraitCacheDiscriminant(deriveTrait)}"
-        if (let Some(cached) <- this.blocklistedTraitResults.get(cacheKey)) {
-            return cached
-        }
-        let ty = match (item.asType()) {
-            case Some(value) => value
-            case None =>
-                this.blocklistedTraitResults.add(cacheKey, CanDerive.No)
-                return CanDerive.No
-        }
-        let name = match (ty.name) {
-            case Some(value) => value
-            case None =>
-                this.blocklistedTraitResults.add(cacheKey, CanDerive.No)
-                return CanDerive.No
-        }
-        var result = CanDerive.No
-        if (let Some(callback) <- this.blocklistedTypeImplementsTraitCallback) {
-            if (let Some(configured) <- callback(name, deriveTrait)) {
-                this.blocklistedTraitResults.add(cacheKey, configured)
-                return configured
-            }
-        } else if (this.isStdintType(name)) {
-            result = CanDerive.Yes
-        }
-        this.blocklistedTraitResults.add(cacheKey, result)
-        return result
-    }
-
     public func usesTemplateParameter(id: ItemId, parameter: TypeId): Bool {
         if (this.isBlocklistedItem(id)) {
             return true
@@ -1782,73 +1674,10 @@ public class CjbindContext <: Resource {
         return this.sizedness(id) == SizednessResult.ZeroSized
     }
 
-    func hasDestructor(id: ItemId): Bool {
-        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
-        return match (this.haveDestructor) {
-            case Some(results) => results.contains(analysisId)
-            case None => throw Exception("destructor analysis has not been computed")
-        }
-    }
-
-    func hasTypeParameterInArray(id: ItemId): Bool {
-        return match (this.hasTypeParameterInArrayResults) {
-            case Some(results) => results.contains(id)
-            case None => throw Exception("array type parameter analysis has not been computed")
-        }
-    }
-
-    func hasFloat(id: ItemId): Bool {
-        return match (this.hasFloatResults) {
-            case Some(results) => results.contains(id)
-            case None => throw Exception("floating-point analysis has not been computed")
-        }
-    }
-
-    func canDerive(id: ItemId, deriveTrait: DeriveTrait): CanDerive {
-        let results = match (deriveTrait) {
-            case DeriveTrait.Debug => this.cannotDeriveDebug
-            case DeriveTrait.Default => this.cannotDeriveDefault
-            case DeriveTrait.Copy => this.cannotDeriveCopy
-            case DeriveTrait.Hash => this.cannotDeriveHash
-            case DeriveTrait.PartialEqOrPartialOrd => this.cannotDerivePartialEqOrPartialOrd
-        }
-        let result = match (results) {
-            case Some(values) => values.get(id).getOrDefault({=> CanDerive.Yes})
-            case None => throw Exception("derive analysis has not been computed")
-        }
-        if (deriveTrait == DeriveTrait.Copy && this.hasTypeParameterInArray(id)) {
-            return CanDerive.No
-        }
-        return result
-    }
-
-    func canDeriveEq(id: ItemId): Bool {
-        return this.deriveEq &&
-            this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes &&
-            !this.hasFloat(id)
-    }
-
-    func canDerivePartialEq(id: ItemId): Bool {
-        return this.derivePartialEq &&
-            this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes
-    }
-
-    func canDerivePartialOrd(id: ItemId): Bool {
-        return this.derivePartialOrd &&
-            this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes
-    }
-
-    func canDeriveOrd(id: ItemId): Bool {
-        return this.deriveOrd &&
-            this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes &&
-            !this.hasFloat(id)
-    }
-
     func computeCoreAnalyses(): Unit {
         let items = this.allowlistedItems.getOrThrow()
         this.haveVtable = Some(computeHasVtable(this, items))
         this.sizednessResults = Some(computeSizedness(this, items, this.haveVtable.getOrThrow()))
-        this.haveDestructor = Some(analyzeHasDestructor(this, items))
         this.usedTemplateParameters = Some(this.computeUsedTemplateParameterUsage(items))
     }
 
@@ -1865,29 +1694,6 @@ public class CjbindContext <: Resource {
                 usage.add(id, parameters)
             }
             return usage
-        }
-    }
-
-    func computeDeriveAnalyses(): Unit {
-        let items = this.allowlistedItems.getOrThrow()
-        if (this.deriveDebug) {
-            this.cannotDeriveDebug = Some(analyzeCanDerive(this, items, DeriveTrait.Debug))
-        }
-        if (this.deriveDefault) {
-            this.cannotDeriveDefault = Some(analyzeCanDerive(this, items, DeriveTrait.Default))
-        }
-        this.cannotDeriveCopy = Some(analyzeCanDerive(this, items, DeriveTrait.Copy))
-        this.hasTypeParameterInArrayResults = Some(analyzeHasTypeParameterInArray(this, items))
-        if (this.deriveEq || this.deriveOrd) {
-            this.hasFloatResults = Some(analyzeHasFloat(this, items))
-        }
-        if (this.deriveHash) {
-            this.cannotDeriveHash = Some(analyzeCanDerive(this, items, DeriveTrait.Hash))
-        }
-        if (this.derivePartialEq || this.derivePartialOrd || this.deriveEq) {
-            this.cannotDerivePartialEqOrPartialOrd = Some(
-                analyzeCanDerive(this, items, DeriveTrait.PartialEqOrPartialOrd)
-            )
         }
     }
 
@@ -2133,7 +1939,6 @@ public class CjbindContext <: Resource {
         this.computeCodegenItems()
         this.computeCoreAnalyses()
         this.computeEnumTypedefCombos()
-        this.computeDeriveAnalyses()
 
         this.lowerTemplateInstantiationsForCodegen()
 
