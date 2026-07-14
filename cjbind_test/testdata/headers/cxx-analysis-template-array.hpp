@@ -26,6 +26,21 @@ struct DeepParameterArray {
     ContainsParameterArray<T> nested;
 };
 
+template <typename T>
+struct FirstParameterArrayOwner {
+    ArrayOfParameter<T, 3> nested;
+};
+
+template <typename T>
+struct SecondParameterArrayOwner {
+    ArrayOfParameter<T, 3> nested;
+};
+
+template <typename T, int N>
+struct ParameterArrayWrapper {
+    ArrayOfParameter<T, N> nested;
+};
+
 template <typename T, int N>
 struct FixedIntegerArray {
     int values[N];
@@ -47,6 +62,9 @@ struct TemplateArrayAnalysisHolder {
     ContainsParameterArray<short> contained;
     InheritsParameterArray<unsigned char> inherited;
     DeepParameterArray<long long> deep;
+    FirstParameterArrayOwner<int> firstOwner;
+    SecondParameterArrayOwner<short> secondOwner;
+    ParameterArrayWrapper<unsigned int, 6> parameterized;
     FixedIntegerArray<float, 5> fixedInteger;
     PointerToParameter<double> pointerOnly;
     ScalarParameter<float> scalarOnly;

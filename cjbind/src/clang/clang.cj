@@ -1708,6 +1708,20 @@ public class FallbackTranslationUnit <: Resource {
         this.probeIndexes.add(probeIndex)
         this.probeTranslationUnits.add(probeTranslationUnit)
 
+        var hasError = false
+        for (diagnostic in probeTranslationUnit.diags()) {
+            try {
+                if (diagnostic.severity() >= CXDiagnosticSeverity_CXDiagnostic_Error) {
+                    hasError = true
+                }
+            } finally {
+                diagnostic.close()
+            }
+        }
+        if (hasError) {
+            return None
+        }
+
         for (declaration in probeTranslationUnit.cursor().collectChildren()) {
             if (declaration.kind() != CXCursorKind_CXCursor_StructDecl ||
                 declaration.spelling() != probeName) {

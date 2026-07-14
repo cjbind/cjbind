@@ -68,6 +68,7 @@ public class TemplateInstantiation <: Trace<Tracer, Unit> {
     public let allArgumentSpellings: Array<String>
     public let nonTypeArgumentSpellings: Array<String>
     public let typeArgumentPositions: Array<Int64>
+    public let isDependent: Bool
 
     public init(
         definition: TypeId,
@@ -79,7 +80,8 @@ public class TemplateInstantiation <: Trace<Tracer, Unit> {
         argumentSpellings!: Array<String> = Array<String>(),
         allArgumentSpellings!: Array<String> = Array<String>(),
         nonTypeArgumentSpellings!: Array<String> = Array<String>(),
-        typeArgumentPositions!: Array<Int64> = Array<Int64>()
+        typeArgumentPositions!: Array<Int64> = Array<Int64>(),
+        isDependent!: Bool = false
     ) {
         this.definition = definition
         this.arguments = arguments
@@ -91,6 +93,7 @@ public class TemplateInstantiation <: Trace<Tracer, Unit> {
         this.allArgumentSpellings = allArgumentSpellings
         this.nonTypeArgumentSpellings = nonTypeArgumentSpellings
         this.typeArgumentPositions = typeArgumentPositions
+        this.isDependent = isDependent
     }
 
     public static func fromTy(ty: clang.Type, ctx: CjbindContext): ?TemplateInstantiation {
@@ -230,7 +233,11 @@ public class TemplateInstantiation <: Trace<Tracer, Unit> {
             argumentSpellings: argumentSpellings.toArray(),
             allArgumentSpellings: allArgumentSpellings.toArray(),
             nonTypeArgumentSpellings: nonTypeArgumentSpellings.toArray(),
-            typeArgumentPositions: typeArgumentPositions.toArray()
+            typeArgumentPositions: typeArgumentPositions.toArray(),
+            isDependent: match (ty.fallibleLayout(ctx)) {
+                case Err(LayoutError.LayoutErrorDependent) => true
+                case _ => false
+            }
         ))
     }
 

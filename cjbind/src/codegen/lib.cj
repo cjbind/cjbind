@@ -949,7 +949,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             return
         }
         if (!isConcreteInstantiation &&
-            (ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)) {
+            (ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor ||
+            ctx.recordContainsUnsupportedGenericType(item.id))) {
             eprintln(
                 "Warning: skipping C++ record '${item.canonicalName(ctx)}' because a generic @C record cannot be represented by the current Cangjie FFI"
             )

@@ -786,12 +786,13 @@ public class CjbindContext <: Resource {
                 }
             }
             if (let Some(tid) <- knownTid) {
-                if (ty.spelling().contains("<") && ty.fallibleLayout(this).ok().isSome()) {
+                if (ty.spelling().contains("<")) {
                     if (let Some(instantiation) <- this.templateInstantiationFromKnownDefinition(
                         ty,
                         tid,
                         ty.spelling(),
-                        HashMap<TypeId, TypeId>()
+                        HashMap<TypeId, TypeId>(),
+                        parentId
                     )) {
                         if (let Some(concrete) <- this.buildTemplateInstantiation(
                             withId,
@@ -818,6 +819,9 @@ public class CjbindContext <: Resource {
         spelling: String,
         concreteCursor!: ?clang.Cursor = None
     ): TemplateInstantiation {
+        if (instantiation.isDependent) {
+            return instantiation
+        }
         let parameterKinds = this.templateInstantiationParameterKinds(
             instantiation,
             concreteCursor: concreteCursor
@@ -867,7 +871,8 @@ public class CjbindContext <: Resource {
             argumentSpellings: completedSpellings.toArray(),
             allArgumentSpellings: allSpellings.toArray(),
             nonTypeArgumentSpellings: nonTypeSpellings.toArray(),
-            typeArgumentPositions: typePositions.toArray()
+            typeArgumentPositions: typePositions.toArray(),
+            isDependent: instantiation.isDependent
         )
     }
 
@@ -935,7 +940,21 @@ public class CjbindContext <: Resource {
         let definitionIdentity = instantiation.definitionCursor.usr().getOrDefault {
             => "cursor_${instantiation.definitionCursor.hashCode()}"
         }
-        let key = "${definitionIdentity}|${ty.canonicalType().spelling()}"
+        let dependentOwner = if (instantiation.isDependent) {
+            parentId.map({id => "|owner=${id}"}).getOrDefault({=> "|owner=root"})
+        } else {
+            ""
+        }
+        let argumentIdentity = if (instantiation.isDependent) {
+            let ids = ArrayList<String>()
+            for (argument in instantiation.arguments) {
+                ids.add(argument.toString())
+            }
+            "|arguments=${String.join(ids.toArray(), delimiter: ",")}"
+        } else {
+            ""
+        }
+        let key = "${definitionIdentity}|${ty.canonicalType().spelling()}${dependentOwner}${argumentIdentity}"
         if (let Some(existing) <- this.templateInstantiations.get(key)) {
             // A template definition can be encountered through the concrete type
             // while its own declaration is still being parsed. It is not a
@@ -950,7 +969,8 @@ public class CjbindContext <: Resource {
         let name = templateInstantiationName(spelling)
         let declaration = ty.declaration()
         let concreteDefinition = declaration.definition().getOrDefault({=> declaration})
-        let hasConcreteDefinition = concreteDefinition.isDefinition() && declaration.specialized().isSome()
+        let hasConcreteDefinition = !instantiation.isDependent &&
+            concreteDefinition.isDefinition() && declaration.specialized().isSome()
         let templateType = Type(
             Some(name),
             ty.fallibleLayout(this).ok(),
@@ -1053,8 +1073,13 @@ public class CjbindContext <: Resource {
         ty: clang.Type,
         definition: TypeId,
         spelling: String,
-        substitutions: HashMap<TypeId, TypeId>
+        substitutions: HashMap<TypeId, TypeId>,
+        ownerId: ?ItemId
     ): ?TemplateInstantiation {
+        let isDependent = match (ty.fallibleLayout(this)) {
+            case Err(LayoutError.LayoutErrorDependent) => true
+            case _ => false
+        }
         let directArguments = ty.templateArgs().getOrDefault({=> Array<clang.Type>()})
         let canonicalArguments = ty.canonicalType().templateArgs().getOrDefault({=> Array<clang.Type>()})
         let parsedSpellings = splitTemplateArgumentSpellings(spelling)
@@ -1113,6 +1138,21 @@ public class CjbindContext <: Resource {
                             break
                         }
                     }
+                    if (ownerReplacement.isNone() && isDependent) {
+                        if (let Some(owner) <- ownerId) {
+                            for (parameter in allTemplateParams(owner, this)) {
+                                let parameterItem = parameter
+                                    .intoResolver()
+                                    .throughTypeRefs()
+                                    .throughTypeAliases()
+                                    .resolve(this)
+                                if (parameterItem.baseName(this) == value) {
+                                    ownerReplacement = Some(parameterItem.id)
+                                    break
+                                }
+                            }
+                        }
+                    }
                     match (ownerReplacement) {
                         case Some(concreteOwner) =>
                             arguments.add(concreteOwner)
@@ -1120,8 +1160,12 @@ public class CjbindContext <: Resource {
                             allArgumentSpellings.add(value)
                             typeArgumentPositions.add(index)
                         case None =>
-                            let probedArgument = this.tryEnsureFallbackTranslationUnit().flatMap {
-                                fallback => fallback.probeType(value)
+                            let probedArgument: ?clang.Type = if (isDependent) {
+                                None
+                            } else {
+                                this.tryEnsureFallbackTranslationUnit().flatMap {
+                                    fallback => fallback.probeType(value)
+                                }
                             }
                             match (probedArgument) {
                                 case Some(concreteType) =>
@@ -1155,7 +1199,8 @@ public class CjbindContext <: Resource {
             argumentSpellings: argumentSpellings.toArray(),
             allArgumentSpellings: allArgumentSpellings.toArray(),
             nonTypeArgumentSpellings: nonTypeArgumentSpellings.toArray(),
-            typeArgumentPositions: typeArgumentPositions.toArray()
+            typeArgumentPositions: typeArgumentPositions.toArray(),
+            isDependent: isDependent
         ))
     }
 
@@ -1166,7 +1211,8 @@ public class CjbindContext <: Resource {
         argumentSpellings: Array<String>,
         allArgumentSpellings: Array<String>,
         nonTypeArgumentSpellings: Array<String>,
-        spelling: String
+        spelling: String,
+        failed: Box<Bool>
     ): TypeId {
         let definitionIdentity = instantiation.definitionCursor.usr().getOrDefault {
             => "cursor_${instantiation.definitionCursor.hashCode()}"
@@ -1176,6 +1222,11 @@ public class CjbindContext <: Resource {
             return existing
         }
 
+        let probedType = this.probeConcreteTemplateType(spelling)
+        if (instantiation.isDependent && probedType.isNone()) {
+            failed.value = true
+            return instantiation.definition
+        }
         let concreteInstantiation = TemplateInstantiation(
             instantiation.definition,
             arguments,
@@ -1186,9 +1237,9 @@ public class CjbindContext <: Resource {
             argumentSpellings: argumentSpellings,
             allArgumentSpellings: allArgumentSpellings,
             nonTypeArgumentSpellings: nonTypeArgumentSpellings,
-            typeArgumentPositions: instantiation.typeArgumentPositions
+            typeArgumentPositions: instantiation.typeArgumentPositions,
+            isDependent: false
         )
-        let probedType = this.probeConcreteTemplateType(spelling)
         let layout = match (probedType.flatMap({value => value.fallibleLayout(this).ok()})) {
             case Some(value) => Some(value)
             case None => source.layout
@@ -1457,7 +1508,8 @@ public class CjbindContext <: Resource {
                     concreteArgumentSpellings.toArray(),
                     concreteAllArgumentSpellings.toArray(),
                     concreteNonTypeArgumentSpellings.toArray(),
-                    concreteSpelling
+                    concreteSpelling,
+                    failed
                 )
             case TypeKind.TypeKindComp(comp) =>
                 if (!comp.templateParams.isEmpty() || comp.hasTemplateTypeParams ||
@@ -1501,7 +1553,8 @@ public class CjbindContext <: Resource {
                                 concreteType,
                                 knownDefinition,
                                 concreteSpelling,
-                                substitutions
+                                substitutions,
+                                concreteParentId
                             )
                         }
                         if (let Some(parsed) <- parsedInstantiation) {
@@ -1535,7 +1588,8 @@ public class CjbindContext <: Resource {
                             argumentSpellings: parsed.argumentSpellings,
                             allArgumentSpellings: parsed.allArgumentSpellings,
                             nonTypeArgumentSpellings: parsed.nonTypeArgumentSpellings,
-                            typeArgumentPositions: parsed.typeArgumentPositions
+                            typeArgumentPositions: parsed.typeArgumentPositions,
+                            isDependent: false
                         )
                         let newId = this.nextItemId()
                         if (let Some(concrete) <- this.buildTemplateInstantiation(
@@ -1777,6 +1831,9 @@ public class CjbindContext <: Resource {
         instantiation: TemplateInstantiation,
         ownerId!: ?ItemId = None
     ): ?CompInfo {
+        if (instantiation.isDependent) {
+            return None
+        }
         let definitionComp = match (this.templateDefinitionComp(instantiation)) {
             case Some(value) => value
             case None => return None
@@ -1929,7 +1986,8 @@ public class CjbindContext <: Resource {
             argumentSpellings: instantiation.argumentSpellings,
             allArgumentSpellings: instantiation.allArgumentSpellings,
             nonTypeArgumentSpellings: instantiation.nonTypeArgumentSpellings,
-            typeArgumentPositions: instantiation.typeArgumentPositions
+            typeArgumentPositions: instantiation.typeArgumentPositions,
+            isDependent: instantiation.isDependent
         )
     }
 
@@ -2020,6 +2078,9 @@ public class CjbindContext <: Resource {
             let rawInstantiation = match (ty.kind) {
                 case TypeKind.TypeKindTemplateInstantiation(value) => value
                 case _ => continue
+            }
+            if (rawInstantiation.isDependent) {
+                continue
             }
             let normalizedInstantiation = this.normalizeTemplateInstantiationDefinition(rawInstantiation)
             let instantiation = this.completeNestedTemplateInstantiation(
@@ -2429,6 +2490,208 @@ public class CjbindContext <: Resource {
         return this.publicTemplateInstantiationSpellingInner(instantiation, ItemSet())
     }
 
+    public func recordContainsUnsupportedGenericType(id: ItemId): Bool {
+        let item = match (this.resolveItemFallible(id)) {
+            case Some(value) => value
+            case None => return false
+        }
+        let comp = match (item.kind.asType().flatMap({ty => ty.asComp()})) {
+            case Some(value) => value
+            case None => return false
+        }
+        let visiting = ItemSet()
+        visiting.add(item.id)
+        return this.compContainsUnsupportedGenericType(comp, visiting, true)
+    }
+
+    func recordContainsLayoutDependentGenericType(id: ItemId): Bool {
+        let item = match (this.resolveItemFallible(id)) {
+            case Some(value) => value
+            case None => return false
+        }
+        let comp = match (item.kind.asType().flatMap({ty => ty.asComp()})) {
+            case Some(value) => value
+            case None => return false
+        }
+        let visiting = ItemSet()
+        visiting.add(item.id)
+        return this.compContainsUnsupportedGenericType(comp, visiting, false)
+    }
+
+    func compContainsUnsupportedGenericType(
+        comp: CompInfo,
+        visiting: ItemSet,
+        followIndirect: Bool
+    ): Bool {
+        for (base in comp.baseMembers) {
+            if (this.typeContainsUnsupportedGenericType(base.ty, visiting, followIndirect)) {
+                return true
+            }
+        }
+        return match (comp.fields) {
+            case CompFields.CompFieldsBefore(fields) => fields.iterator().any {
+                field => this.typeContainsUnsupportedGenericType(field.ty, visiting, followIndirect)
+            }
+            case CompFields.CompFieldsAfter(value) => value.fields.iterator().any {
+                field => match (field) {
+                    case Field.DataMember(data) =>
+                        this.typeContainsUnsupportedGenericType(data.ty, visiting, followIndirect)
+                    case Field.Bitfields(unit) => unit.bitfields.iterator().any {
+                        bitfield => this.typeContainsUnsupportedGenericType(
+                            bitfield.data.ty,
+                            visiting,
+                            followIndirect
+                        )
+                    }
+                }
+            }
+            case CompFields.CompFieldsError => false
+        }
+    }
+
+    func typeContainsUnsupportedGenericType(
+        id: TypeId,
+        visiting: ItemSet,
+        followIndirect: Bool
+    ): Bool {
+        let item = match (this.resolveItemFallible(id)) {
+            case Some(value) => value
+            case None => return false
+        }
+        if (!visiting.add(item.id)) {
+            return false
+        }
+        let ty = match (item.kind.asType()) {
+            case Some(value) => value
+            case None =>
+                visiting.remove(item.id)
+                return false
+        }
+        let found = match (ty.kind) {
+            case TypeKind.ResolvedTypeRef(inner) =>
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            case TypeKind.TypeKindAlias(inner) =>
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            case TypeKind.TypeKindTemplateAlias(inner, _) =>
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            case TypeKind.TypeKindPointer(inner) => if (followIndirect) {
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            } else {
+                false
+            }
+            case TypeKind.TypeKindReference(inner) => if (followIndirect) {
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            } else {
+                false
+            }
+            case TypeKind.TypeKindArray(inner, _) =>
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            case TypeKind.TypeKindVector(inner, _) =>
+                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
+            case TypeKind.TypeKindFunction(signature) => if (followIndirect) {
+                var unsupported = this.typeContainsUnsupportedGenericType(
+                    signature.returnType,
+                    visiting,
+                    followIndirect
+                )
+                if (!unsupported) {
+                    for ((_, argument) in signature.argumentTypes) {
+                        if (this.typeContainsUnsupportedGenericType(
+                            argument,
+                            visiting,
+                            followIndirect
+                        )) {
+                            unsupported = true
+                            break
+                        }
+                    }
+                }
+                unsupported
+            } else {
+                false
+            }
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                if (this.concreteTemplateInstantiations.contains(item.id)) {
+                    false
+                } else {
+                    this.typeContainsUnsupportedGenericType(
+                        instantiation.definition,
+                        visiting,
+                        followIndirect
+                    )
+                }
+            case TypeKind.TypeKindComp(nested) =>
+                let isConcrete = this.concreteTemplateInstantiations.contains(item.id) ||
+                    this.isMaterializedNestedTemplateType(item.id)
+                let hasTemplatedAncestor = allTemplateParams(item.id, this).size >
+                    selfTemplateParams(item.id, this).size
+                (!isConcrete && (nested.hasNonTypeTemplateParams ||
+                    this.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)) ||
+                    this.compContainsUnsupportedGenericType(nested, visiting, followIndirect)
+            case TypeKind.TypeKindEnum(_) => this.usesAnyTemplateParameters(item.id)
+            case _ => false
+        }
+        visiting.remove(item.id)
+        return found
+    }
+
+    public func templateInstantiationRequiresConcreteIdentity(
+        instantiation: TemplateInstantiation
+    ): Bool {
+        let definition = instantiation.definition
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(this)
+        let comp = match (definition.kind.asType().flatMap({ty => ty.asComp()})) {
+            case Some(value) => value
+            case None => return false
+        }
+        return (comp.hasNonTypeTemplateParams &&
+            this.recordStorageUsesOwnedTemplateParameter(definition.id, comp)) ||
+            this.recordContainsLayoutDependentGenericType(definition.id)
+    }
+
+    func recordStorageUsesOwnedTemplateParameter(
+        id: ItemId,
+        comp: CompInfo
+    ): Bool {
+        let parameters = selfTemplateParams(id, this)
+        if (parameters.isEmpty()) {
+            return false
+        }
+        let usage = this.usedTemplateParameters.getOrThrow()
+        let usesOwnedParameter = {
+            typeId: TypeId =>
+            let typeUsage = usage.get(typeId).getOrDefault({=> ItemSet()})
+            for (parameter in parameters) {
+                if (typeUsage.contains(canonicalItemId(this, parameter))) {
+                    return true
+                }
+            }
+            return false
+        }
+        for (base in comp.baseMembers) {
+            if (usesOwnedParameter(base.ty)) {
+                return true
+            }
+        }
+        return match (comp.fields) {
+            case CompFields.CompFieldsBefore(fields) => fields.iterator().any {
+                field => usesOwnedParameter(field.ty)
+            }
+            case CompFields.CompFieldsAfter(value) => value.fields.iterator().any {
+                field => match (field) {
+                    case Field.DataMember(data) => usesOwnedParameter(data.ty)
+                    case Field.Bitfields(unit) => unit.bitfields.iterator().any {
+                        bitfield => usesOwnedParameter(bitfield.data.ty)
+                    }
+                }
+            }
+            case CompFields.CompFieldsError => false
+        }
+    }
+
     func publicTemplateInstantiationSpellingInner(
         instantiation: TemplateInstantiation,
         visiting: ItemSet
@@ -2437,6 +2700,9 @@ public class CjbindContext <: Resource {
             => instantiation.definitionCursor.spelling()
         }
         if (!instantiation.kind.isPrimary()) {
+            return sourceSpelling
+        }
+        if (this.templateInstantiationRequiresConcreteIdentity(instantiation)) {
             return sourceSpelling
         }
         let firstTemplateOpen = sourceSpelling.indexOf("<")
