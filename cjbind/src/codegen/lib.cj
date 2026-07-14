@@ -602,6 +602,12 @@ func codegenTypeAlias(
 ): Unit {
     let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
     let name = item.canonicalName(ctx)
+    if (let Err(error) <- validateTemplateAliasDefinition(ctx, item, inner)) {
+        eprintln(
+            "${genericAliasDiagnosticLevel(error)}: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
+        )
+        return
+    }
     let throughTypeAliases = inner.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
     if (throughTypeAliases.canonicalName(ctx) == name) {
         return
@@ -614,12 +620,6 @@ func codegenTypeAlias(
         Array<TypeId>()
     } else {
         ctx.usedTemplateParams(item.id)
-    }
-    if (let Err(error) <- validateTemplateAliasDefinition(ctx, item, inner)) {
-        eprintln(
-            "${genericAliasDiagnosticLevel(error)}: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
-        )
-        return
     }
     result.sawType(name)
     let parameterNames = ArrayList<TokenStream>()
@@ -1082,6 +1082,9 @@ func renderGenericAliasFunction(
     valueAbiSubstitutions: ItemSet,
     degraded: Box<Bool>
 ): Result<TokenStream, Error> {
+    if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+        return Err(Error.UnsupportedAbi(signature.abi.diagnosticName()))
+    }
     if (signature.getIsVariadic()) {
         return Err(Error.Unsupported(
             "variadic function pointers cannot be represented by the current Cangjie FFI"
@@ -1095,9 +1098,6 @@ func renderGenericAliasFunction(
         return Err(Error.Unsupported(
             "the function pointer value ABI cannot be represented safely by the current Cangjie FFI"
         ))
-    }
-    if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
-        return Err(Error.UnsupportedAbi(signature.abi.diagnosticName()))
     }
 
     let arguments = ArrayList<TokenStream>()

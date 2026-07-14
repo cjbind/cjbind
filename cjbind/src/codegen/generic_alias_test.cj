@@ -372,7 +372,8 @@ public class GenericAliasRenderingTest {
                     unit,
                     Array<(Option<String>, TypeId)>(),
                     false,
-                    ClangAbi.Known(Abi.Fastcall)
+                    ClangAbi.Known(Abi.Fastcall),
+                    valueAbiUnsupported: true
                 ),
                 substitutions,
                 visiting,

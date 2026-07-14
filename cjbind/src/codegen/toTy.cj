@@ -408,6 +408,9 @@ extend FunctionSig <: TryToCjTy<Item> {
         ctx: CjbindContext,
         _: Item
     ): Result<TokenStream, Error> {
+        if (!this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+            return Err(Error.UnsupportedAbi(this.abi.diagnosticName()))
+        }
         if (this.getIsVariadic()) {
             return Err(Error.Unsupported(
                 "variadic function pointers cannot be represented by the current Cangjie FFI"
@@ -417,9 +420,6 @@ extend FunctionSig <: TryToCjTy<Item> {
             return Err(Error.Unsupported(
                 "the function pointer value ABI cannot be represented safely by the current Cangjie FFI"
             ))
-        }
-        if (!this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
-            return Err(Error.UnsupportedAbi(this.abi.diagnosticName()))
         }
 
         let ret = Utils.fnsigReturnTy(ctx, this)
