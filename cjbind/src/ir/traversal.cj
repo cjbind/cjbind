@@ -28,6 +28,7 @@ public enum EdgeKind {
     | ConstructorEdge
     | DestructorEdge
     | TemplateArgumentEdge
+    | TemplateDeclarationEdge
     | TemplateParameterDefinitionEdge
 }
 
@@ -48,6 +49,7 @@ public class ItemTraversal <: Iterator<ItemId> & Tracer {
     let ctx: CjbindContext
     let seen: ItemSet
     let queue: Queue<ItemId>
+    let predicate: (CjbindContext, Edge) -> Bool
     var currentlyTraversing: ?ItemId = None
 
     public init(
@@ -57,6 +59,23 @@ public class ItemTraversal <: Iterator<ItemId> & Tracer {
         this.ctx = ctx
         this.seen = ItemSet()
         this.queue = ArrayQueue<ItemId>()
+        this.predicate = {_ctx, _edge => true}
+
+        for (id in roots) {
+            this.seen.add(id)
+            this.queue.add(id)
+        }
+    }
+
+    public init(
+        ctx: CjbindContext,
+        roots: Array<ItemId>,
+        predicate: (CjbindContext, Edge) -> Bool
+    ) {
+        this.ctx = ctx
+        this.seen = ItemSet()
+        this.queue = ArrayQueue<ItemId>()
+        this.predicate = predicate
 
         for (id in roots) {
             this.seen.add(id)
@@ -77,7 +96,10 @@ public class ItemTraversal <: Iterator<ItemId> & Tracer {
         return Some(id)
     }
 
-    public func visitKind(item: ItemId, _: EdgeKind): Unit {
+    public func visitKind(item: ItemId, kind: EdgeKind): Unit {
+        if (!this.predicate(this.ctx, Edge(item, kind))) {
+            return
+        }
         let isNewlyDiscovered = this.seen.add(item)
         if (isNewlyDiscovered) {
             this.queue.add(item)

@@ -86,7 +86,79 @@ public func ensureSupportedClangVersion(): Unit {}
 // workaround cfunc capture limit
 // thus we can only work as single thread
 var CursorVisitCallback: HashMap<Int64, ?(Cursor) -> CXChildVisitResult> = HashMap<Int64, ?(Cursor) -> CXChildVisitResult>()
+var FieldVisitCallback: HashMap<Int64, ?(Cursor) -> CXVisitorResult> = HashMap<Int64, ?(Cursor) -> CXVisitorResult>()
+var BaseVisitCallback: HashMap<Int64, ?(Cursor) -> CXVisitorResult> = HashMap<Int64, ?(Cursor) -> CXVisitorResult>()
 var CurrentCallbackId = 0
+
+@When[os == "Windows"]
+foreign func GetModuleHandleA(moduleName: CString): CPointer<Unit>
+
+@When[os == "Windows"]
+foreign func GetProcAddress(module: CPointer<Unit>, symbolName: CString): CPointer<Unit>
+
+@When[os != "Windows"]
+foreign func dlopen(filename: CPointer<Unit>, flags: Int32): CPointer<Unit>
+
+@When[os != "Windows"]
+foreign func dlsym(handle: CPointer<Unit>, symbolName: CString): CPointer<Unit>
+
+@When[os != "Windows"]
+foreign func dlclose(handle: CPointer<Unit>): Int32
+
+@When[os == "Windows"]
+func resolveLoadedSymbol(symbolName: String): CPointer<Unit> {
+    try (symbol = CStringOwned(symbolName)) {
+        for (moduleName in ["libclang.dll", "clang.dll"]) {
+            try (moduleString = CStringOwned(moduleName)) {
+                let module = unsafe { GetModuleHandleA(moduleString.pointer) }
+                if (!module.isNull()) {
+                    let address = unsafe { GetProcAddress(module, symbol.pointer) }
+                    if (!address.isNull()) {
+                        return address
+                    }
+                }
+            }
+        }
+    }
+    return CPointer<Unit>()
+}
+
+@When[os != "Windows"]
+func resolveLoadedSymbol(symbolName: String): CPointer<Unit> {
+    let handle = unsafe { dlopen(CPointer<Unit>(), 1) }
+    if (handle.isNull()) {
+        return CPointer<Unit>()
+    }
+    try (symbol = CStringOwned(symbolName)) {
+        return unsafe { dlsym(handle, symbol.pointer) }
+    } finally {
+        unsafe { dlclose(handle) }
+    }
+}
+
+@When[libclang_linkage == "static"]
+func visitCxxBaseClassesRaw(
+    _: CXType,
+    _: CXFieldVisitor,
+    _: CXClientData
+): Bool {
+    return false
+}
+
+@When[libclang_linkage == "dynamic"]
+func visitCxxBaseClassesRaw(
+    ty: CXType,
+    visitor: CXFieldVisitor,
+    clientData: CXClientData
+): Bool {
+    let address = resolveLoadedSymbol("clang_visitCXXBaseClasses")
+    if (address.isNull()) {
+        return false
+    }
+    let visit = CFunc<(CXType, CXFieldVisitor, CXClientData) -> UInt32>(address)
+    unsafe { visit(ty, visitor, clientData) }
+    return true
+}
 
 func getNextCallbackId(): Int64 {
     let id = CurrentCallbackId
@@ -921,6 +993,52 @@ public class Type <: Equatable<Type> {
         }
     }
 
+    public func visitFields(visitor: (Cursor) -> CXVisitorResult): Unit {
+        let cbId = getNextCallbackId()
+        FieldVisitCallback.add(cbId, visitor)
+
+        unsafe {
+            let cb: CFunc<(CXCursor, CPointer<Unit>) -> CXVisitorResult> = {
+                field, cbIdData =>
+                    let id = CPointer<Int64>(cbIdData).read()
+                    let callback = FieldVisitCallback[id].getOrThrow()
+                    callback(Cursor(field))
+            }
+            let cbIdData = LibC.malloc<Int64>(count: 1)
+            cbIdData.write(cbId)
+
+            try {
+                clang_Type_visitFields(x, cb, CPointer<Unit>(cbIdData))
+            } finally {
+                LibC.free<Int64>(cbIdData)
+                FieldVisitCallback.remove(cbId)
+            }
+        }
+    }
+
+    public func visitCxxBaseClasses(visitor: (Cursor) -> CXVisitorResult): Bool {
+        let cbId = getNextCallbackId()
+        BaseVisitCallback.add(cbId, visitor)
+
+        unsafe {
+            let cb: CFunc<(CXCursor, CPointer<Unit>) -> CXVisitorResult> = {
+                base, cbIdData =>
+                    let id = CPointer<Int64>(cbIdData).read()
+                    let callback = BaseVisitCallback[id].getOrThrow()
+                    callback(Cursor(base))
+            }
+            let cbIdData = LibC.malloc<Int64>(count: 1)
+            cbIdData.write(cbId)
+
+            try {
+                return visitCxxBaseClassesRaw(x, cb, CPointer<Unit>(cbIdData))
+            } finally {
+                LibC.free<Int64>(cbIdData)
+                BaseVisitCallback.remove(cbId)
+            }
+        }
+    }
+
     public func kind(): CXTypeKind {
         return this.x.kind
     }
@@ -1218,10 +1336,70 @@ public class Type <: Equatable<Type> {
     // cjlint-ignore -end eq
 }
 
+public class CommentAttribute {
+    public let name: String
+    public let value: String
+
+    public init(name: String, value: String) {
+        this.name = name
+        this.value = value
+    }
+}
+
 public class Comment {
     let x: CXComment
     init(x: CXComment) {
         this.x = x
+    }
+
+    public func kind(): CXCommentKind {
+        unsafe {
+            return clang_Comment_getKind(this.x)
+        }
+    }
+
+    public func tagName(): ?String {
+        let commentKind = this.kind()
+        if (commentKind != CXCommentKind_CXComment_HTMLStartTag &&
+            commentKind != CXCommentKind_CXComment_HTMLEndTag) {
+            return None
+        }
+        unsafe {
+            return Some(cxstringToString(clang_HTMLTagComment_getTagName(this.x)))
+        }
+    }
+
+    public func attrs(): Array<CommentAttribute> {
+        if (this.kind() != CXCommentKind_CXComment_HTMLStartTag) {
+            return Array<CommentAttribute>()
+        }
+
+        let attributes = ArrayList<CommentAttribute>()
+        unsafe {
+            let count = clang_HTMLStartTag_getNumAttrs(this.x)
+            var index = UInt32(0)
+            while (index < count) {
+                attributes.add(CommentAttribute(
+                    cxstringToString(clang_HTMLStartTag_getAttrName(this.x, index)),
+                    cxstringToString(clang_HTMLStartTag_getAttrValue(this.x, index))
+                ))
+                index += 1
+            }
+        }
+        return attributes.toArray()
+    }
+
+    public func children(): Array<Comment> {
+        let children = ArrayList<Comment>()
+        unsafe {
+            let count = clang_Comment_getNumChildren(this.x)
+            var index = UInt32(0)
+            while (index < count) {
+                children.add(Comment(clang_Comment_getChild(this.x, index)))
+                index += 1
+            }
+        }
+        return children.toArray()
     }
 }
 
@@ -1436,8 +1614,11 @@ public class UnsavedFile {
 public class FallbackTranslationUnit <: Resource {
     public let filePath: String
     public let pchPath: String
+    let commandArguments: Array<String>
     public let idx: Index
     public let tu: TranslationUnit
+    let probeIndexes: ArrayList<Index> = ArrayList()
+    let probeTranslationUnits: ArrayList<TranslationUnit> = ArrayList()
     var _released: Bool = false
 
     public init(
@@ -1458,6 +1639,7 @@ public class FallbackTranslationUnit <: Resource {
 
         this.filePath = file
         this.pchPath = pch_path
+        this.commandArguments = cArgs
         this.idx = fIndex
         this.tu = fTranslationUnit
     }
@@ -1467,6 +1649,12 @@ public class FallbackTranslationUnit <: Resource {
     public func close(): Unit {
         if (!_released) {
             _released = true
+            for (probe in this.probeTranslationUnits) {
+                probe.close()
+            }
+            for (probeIndex in this.probeIndexes) {
+                probeIndex.close()
+            }
             this.tu.close()
             this.idx.close()
             try { remove(this.filePath) } catch (_: Exception) {}
@@ -1500,6 +1688,34 @@ public class FallbackTranslationUnit <: Resource {
         } finally {
             content.close()
         }
+    }
+
+    public func probeType(typeSpelling: String): ?Type {
+        let probeName = "__cjbind_concrete_type_probe"
+        let contents = "struct ${probeName} { ${typeSpelling} value; };"
+        FSFile.writeTo(this.filePath, contents.toArray())
+        let probeIndex = Index(true, false)
+        let probeTranslationUnit = TranslationUnit(
+            probeIndex,
+            this.filePath,
+            this.commandArguments,
+            CXTranslationUnit_Flags_CXTranslationUnit_None
+        )
+        this.probeIndexes.add(probeIndex)
+        this.probeTranslationUnits.add(probeTranslationUnit)
+
+        for (declaration in probeTranslationUnit.cursor().collectChildren()) {
+            if (declaration.kind() != CXCursorKind_CXCursor_StructDecl ||
+                declaration.spelling() != probeName) {
+                continue
+            }
+            for (field in declaration.collectChildren()) {
+                if (field.kind() == CXCursorKind_CXCursor_FieldDecl && field.spelling() == "value") {
+                    return Some(field.curType())
+                }
+            }
+        }
+        return None
     }
 }
 

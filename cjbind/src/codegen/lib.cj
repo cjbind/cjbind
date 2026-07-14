@@ -3,7 +3,7 @@ package cjbind.codegen
 import cjbind_token.*
 import cjbind_token.macros.*
 import std.env
-import std.collection.{ArrayList, HashSet}
+import std.collection.{ArrayList, HashMap, HashSet}
 import cjbind.build.VERSION
 import cjbind.ir.*
 import cjbind.clang
@@ -172,6 +172,18 @@ extend Item <: CodeGenerator<Unit, Unit> {
         result: CodegenResult,
         _: Unit
     ): Unit {
+        if (!this.kind.isModule() && !this.kind.isType() &&
+            !allTemplateParams(this.id, ctx).isEmpty()) {
+            let category = match (this.kind) {
+                case ItemKind.KindFunction(_) => "function"
+                case ItemKind.KindVar(_) => "variable"
+                case _ => "item"
+            }
+            eprintln(
+                "Warning: skipping C++ template ${category} '${this.canonicalName(ctx)}' because a generic foreign symbol cannot be represented by the current Cangjie FFI"
+            )
+            return
+        }
         if (!this.processBeforeCodegen(ctx, result)) {
             return
         }
@@ -531,52 +543,285 @@ extend Type <: CodeGenerator<Item, Unit> {
             case TypeKind.TypeKindObjCInterface(iface) => iface.codegen(ctx, result, item)
             case TypeKind.TypeKindObjCId | TypeKind.TypeKindObjCSel | TypeKind.TypeKindObjCBlockPointer(_) => ()
             case TypeKind.TypeKindComp(ci) => ci.codegen(ctx, result, item)
-            case TypeKind.TypeKindAlias(inner) =>
-                let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
-                let name = item.canonicalName(ctx)
-
-                let throughTypeAliases = inner.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
-
-                if (throughTypeAliases.canonicalName(ctx) == name) {
-                    return
-                }
-
-                let spelling = this.name.getOrThrow()
-                if (Utils.typeFromNamed(ctx, spelling).isSome()) {
-                    return
-                }
-
-                if (result.seenType(name)) {
-                    return
-                }
-                result.sawType(name)
-
-                let isOpaque = item.isOpaque(ctx, ())
-                let innerCjType = if (isOpaque) {
-                    this.toOpaque(ctx, item)
+            case TypeKind.TypeKindAlias(inner) => codegenTypeAlias(this, inner, ctx, result, item)
+            case TypeKind.TypeKindTemplateAlias(inner, _) => codegenTypeAlias(this, inner, ctx, result, item)
+            case TypeKind.TypeKindEnum(ei) =>
+                if (ctx.usesAnyTemplateParameters(item.id)) {
+                    eprintln(
+                        "Warning: skipping C++ enum '${item.canonicalName(ctx)}' because a generic C ABI enum cannot be represented by the current Cangjie FFI"
+                    )
                 } else {
-                    innerItem.tryToCjTyOrOpaque(ctx, ()).unwrapOrElse {
-                        _ => this.toOpaque(ctx, item)
-                    }
+                    ei.codegen(ctx, result, item)
                 }
-
-                let cjName = ctx.cjIdent(name)
-                let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
-                    let pc = preprocessComment(c)
-                    Some(Attributes.doc(pc))
-                } else {
-                    None
-                }
-
-                let tokens = optionalComment(
-                    ctx,
-                    commentToken,
-                    tokenStreamFromTemplate("public type ${cjName} = ${innerCjType}")
-                )
-                result.items.add(tokens)
-            case TypeKind.TypeKindEnum(ei) => ei.codegen(ctx, result, item)
             case TypeKind.UnresolvedTypeRef(_, _, _) => throw Exception("should have been resolved by now")
         }
+    }
+}
+
+func codegenTypeAlias(
+    source: Type,
+    inner: TypeId,
+    ctx: CjbindContext,
+    result: CodegenResult,
+    item: Item
+): Unit {
+    let innerItem = inner.intoResolver().throughTypeRefs().resolve(ctx)
+    let name = item.canonicalName(ctx)
+    let throughTypeAliases = inner.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
+    if (throughTypeAliases.canonicalName(ctx) == name) {
+        return
+    }
+    let spelling = source.name.getOrThrow()
+    if (Utils.typeFromNamed(ctx, spelling).isSome() || result.seenType(name)) {
+        return
+    }
+    result.sawType(name)
+    let usedParameters = ctx.usedTemplateParams(item.id)
+    let parameterNames = ArrayList<TokenStream>()
+    let substitutions = HashMap<ItemId, String>()
+    let seenParameterNames = HashSet<String>()
+    for (parameter in usedParameters) {
+        let parameterItem = ctx.resolveItem(parameter)
+        let parameterName = uniqueName(
+            seenParameterNames,
+            ctx.cjIdent(parameterItem.baseName(ctx))
+        )
+        parameterNames.add(tokenStreamFromTemplate(parameterName))
+        substitutions.add(parameter, parameterName)
+        let resolvedParameter = parameter.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
+        if (!substitutions.contains(resolvedParameter.id)) {
+            substitutions.add(resolvedParameter.id, parameterName)
+        }
+    }
+    let innerCjType = if (usedParameters.isEmpty()) {
+        if (item.isOpaque(ctx, ())) {
+            source.toOpaque(ctx, item)
+        } else {
+            innerItem.tryToCjTyOrOpaque(ctx, ()).unwrapOrElse {
+                _ => source.toOpaque(ctx, item)
+            }
+        }
+    } else {
+        if (item.isOpaque(ctx, ())) {
+            eprintln(
+                "Warning: skipping C++ template alias '${name}' because an opaque generic alias cannot be represented by the current Cangjie FFI"
+            )
+            return
+        }
+        match (renderGenericAliasType(ctx, inner, substitutions, ItemSet())) {
+            case Ok(rendered) => rendered
+            case Err(error) =>
+                eprintln(
+                    "Warning: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
+                )
+                return
+        }
+    }
+    let commentToken: ?TokenStream = if (let Some(comment) <- item.comment) {
+        Some(Attributes.doc(preprocessComment(comment)))
+    } else {
+        None
+    }
+    let genericParameters = if (parameterNames.isEmpty()) {
+        TokenStream()
+    } else {
+        let joined = joinStreams(parameterNames, ", ")
+        tokenStreamFromTemplate("<${joined}>")
+    }
+    result.items.add(optionalComment(
+        ctx,
+        commentToken,
+        tokenStreamFromTemplate("public type ${ctx.cjIdent(name)}${genericParameters} = ${innerCjType}")
+    ))
+}
+
+func renderGenericAliasType(
+    ctx: CjbindContext,
+    typeId: TypeId,
+    substitutions: HashMap<ItemId, String>,
+    visiting: ItemSet
+): Result<TokenStream, Error> {
+    if (let Some(parameterName) <- substitutions.get(typeId)) {
+        return Ok(tokenStreamFromTemplate(parameterName))
+    }
+
+    let item = ctx.resolveItem(typeId)
+    if (let Some(parameterName) <- substitutions.get(item.id)) {
+        return Ok(tokenStreamFromTemplate(parameterName))
+    }
+    if (!ctx.usesAnyTemplateParameters(item.id)) {
+        return item.tryToCjTy(ctx, ())
+    }
+    if (!visiting.add(item.id)) {
+        return Err(Error.Unsupported("the alias RHS contains a recursive dependent type"))
+    }
+
+    let ty = item.kind.expectType()
+    let rendered: Result<TokenStream, Error> = match (ty.kind) {
+        case TypeKind.ResolvedTypeRef(inner) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting)
+        case TypeKind.TypeKindAlias(inner) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting)
+        case TypeKind.TypeKindTemplateAlias(inner, _) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting)
+        case TypeKind.TypeKindTypeParam =>
+            Err<TokenStream, Error>(Error.Unsupported(
+                "the alias RHS refers to an unmapped template parameter '${item.baseName(ctx)}'"
+            ))
+        case TypeKind.TypeKindPointer(inner) =>
+            match (renderGenericAliasType(ctx, inner, substitutions, visiting)) {
+                case Ok(innerType) =>
+                    let innerIsFunction = ctx.resolveType(inner).canonicalType(ctx).isFunction()
+                    if (innerIsFunction) {
+                        Ok<TokenStream, Error>(innerType)
+                    } else {
+                        Ok<TokenStream, Error>(innerType.toPtr())
+                    }
+                case Err(error) => Err<TokenStream, Error>(error)
+            }
+        case TypeKind.TypeKindReference(inner) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
+                innerType => innerType.toPtr()
+            }
+        case TypeKind.TypeKindArray(inner, length) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
+                innerType =>
+                if (length == 0) {
+                    tokenStreamFromTemplate("CPointer<${innerType}>")
+                } else {
+                    tokenStreamFromTemplate("VArray<${innerType}, \$${Int64(length)}>")
+                }
+            }
+        case TypeKind.TypeKindVector(inner, length) =>
+            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
+                innerType => tokenStreamFromTemplate("VArray<${innerType}, \$${Int64(length)}>")
+            }
+        case TypeKind.TypeKindFunction(signature) =>
+            renderGenericAliasFunction(ctx, signature, substitutions, visiting)
+        case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+            let definition = ctx.resolveItem(instantiation.definition)
+            match (definition.kind.expectType().kind) {
+                case TypeKind.TypeKindTemplateAlias(inner, parameters) =>
+                    let nestedSubstitutions = HashMap<ItemId, String>()
+                    for ((substitutionId, substitution) in substitutions) {
+                        nestedSubstitutions.add(substitutionId, substitution)
+                    }
+                    let count = min(parameters.size, instantiation.arguments.size)
+                    for (index in 0..count) {
+                        let parameter = parameters[index]
+                        if (!ctx.usesTemplateParameter(definition.id, parameter)) {
+                            continue
+                        }
+                        let renderedArgument = match (renderGenericAliasType(
+                            ctx,
+                            instantiation.arguments[index],
+                            substitutions,
+                            visiting
+                        )) {
+                            case Ok(value) => value
+                            case Err(error) => return Err(error)
+                        }
+                        let argument = renderedArgument.toString()
+                        nestedSubstitutions.add(parameter, argument)
+                        let canonicalParameter = parameter
+                            .intoResolver()
+                            .throughTypeRefs()
+                            .throughTypeAliases()
+                            .resolve(ctx)
+                        if (!nestedSubstitutions.contains(canonicalParameter.id)) {
+                            nestedSubstitutions.add(canonicalParameter.id, argument)
+                        }
+                    }
+                    renderGenericAliasType(ctx, inner, nestedSubstitutions, visiting)
+                case _ => Err<TokenStream, Error>(Error.Unsupported(
+                    "a generic C++ record cannot be represented as an @C type by the current Cangjie FFI"
+                ))
+            }
+        case TypeKind.TypeKindComp(_) =>
+            Err<TokenStream, Error>(Error.Unsupported(
+                "a generic C++ record cannot be represented as an @C type by the current Cangjie FFI"
+            ))
+        case TypeKind.TypeKindEnum(_) =>
+            Err<TokenStream, Error>(Error.Unsupported(
+                "a dependent C++ enum cannot be represented by the current Cangjie FFI"
+            ))
+        case TypeKind.TypeKindOpaque =>
+            Err<TokenStream, Error>(Error.Unsupported(
+                "the dependent alias RHS has no representable layout"
+            ))
+        case TypeKind.TypeKindVoid | TypeKind.TypeKindNullPtr |
+            TypeKind.TypeKindInt(_) | TypeKind.TypeKindFloat(_) |
+            TypeKind.TypeKindComplex(_) | TypeKind.TypeKindObjCInterface(_) |
+            TypeKind.TypeKindObjCId | TypeKind.TypeKindObjCSel |
+            TypeKind.TypeKindObjCBlockPointer(_) => item.tryToCjTy(ctx, ())
+        case TypeKind.UnresolvedTypeRef(_, _, _) =>
+            Err<TokenStream, Error>(Error.Unsupported(
+                "the alias RHS contains an unresolved dependent type"
+            ))
+    }
+    visiting.remove(item.id)
+    return rendered
+}
+
+func renderGenericAliasFunction(
+    ctx: CjbindContext,
+    signature: FunctionSig,
+    substitutions: HashMap<ItemId, String>,
+    visiting: ItemSet
+): Result<TokenStream, Error> {
+    if (signature.isVariadicFunction() || signature.valueAbiUnsupported ||
+        !signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+        return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+    }
+
+    let arguments = ArrayList<TokenStream>()
+    var unnamedArgument = 0
+    for ((argumentName, argumentTypeId) in signature.argumentTypes) {
+        let argumentItem = ctx.resolveItem(argumentTypeId)
+        let argumentType = argumentItem.kind.expectType()
+        let renderedArgument = if (!ctx.options.arrayPointersInArgs &&
+            let TypeKind.TypeKindArray(element, _) <- argumentType.canonicalType(ctx).kind) {
+            match (renderGenericAliasType(ctx, element, substitutions, visiting)) {
+                case Ok(elementType) => elementType.toPtr()
+                case Err(error) => return Err(error)
+            }
+        } else {
+            match (renderGenericAliasType(ctx, argumentTypeId, substitutions, visiting)) {
+                case Ok(value) => value
+                case Err(error) => return Err(error)
+            }
+        }
+        let name = match (argumentName) {
+            case Some(value) => ctx.cjIdent(value)
+            case None =>
+                unnamedArgument += 1
+                "arg${unnamedArgument}"
+        }
+        arguments.add(tokenStreamFromTemplate("${name}: ${renderedArgument}"))
+    }
+
+    let returnItem = ctx.resolveItem(signature.returnType)
+    let returnType = if (let TypeKind.TypeKindVoid <- returnItem.kind.expectType().canonicalType(ctx).kind) {
+        tokenStreamFromTemplate("Unit")
+    } else {
+        match (renderGenericAliasType(ctx, signature.returnType, substitutions, visiting)) {
+            case Ok(value) => value
+            case Err(error) => return Err(error)
+        }
+    }
+    let joinedArguments = joinStreams(arguments, ", ")
+    return Ok(tokenStreamFromTemplate("CFunc<(${joinedArguments}) -> ${returnType}>") )
+}
+
+func genericAliasErrorReason(error: Error): String {
+    return match (error) {
+        case Error.Unsupported(reason) => reason
+        case Error.UnsupportedAbi(abi) =>
+            "calling convention '${abi}' cannot be represented by the current Cangjie FFI"
+        case Error.InvalidPointerSize(name, size, pointerSize) =>
+            "pointer type '${name}' has size ${size}, but the target pointer size is ${pointerSize}"
+        case Error.NoLayoutForOpaqueBlob =>
+            "the alias RHS has no layout that can be represented by the current Cangjie FFI"
     }
 }
 
@@ -587,7 +832,35 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item
     ): Unit {
-        if (!this.templateParams.isEmpty() || this.hasTemplateTypeParams || this.hasNonTypeTemplateParams) {
+        if (let Some(instantiation) <- ctx.templateInstantiationFor(item.id)) {
+            let definition = instantiation.definition
+                .intoResolver()
+                .throughTypeRefs()
+                .throughTypeAliases()
+                .resolve(ctx)
+            let allowlisted = ctx.allowlistedItems.getOrThrow()
+            if (instantiation.kind.isPrimary() &&
+                !this.hasFields() && this.baseMembers.isEmpty() &&
+                (allowlisted.contains(instantiation.definition) || allowlisted.contains(definition.id)) &&
+                ctx.usedTemplateParams(definition.id).isEmpty()) {
+                return
+            }
+        }
+        let isConcreteInstantiation = ctx.templateInstantiationFor(item.id).isSome() ||
+            ctx.isMaterializedNestedTemplateType(item.id)
+        let hasTemplatedAncestor = allTemplateParams(item.id, ctx).size >
+            selfTemplateParams(item.id, ctx).size
+        if (this.hasNonTypeTemplateParams && !isConcreteInstantiation) {
+            eprintln(
+                "Warning: skipping C++ record '${item.canonicalName(ctx)}' because non-type template parameters cannot be represented by the current Cangjie FFI"
+            )
+            return
+        }
+        if (!isConcreteInstantiation &&
+            (ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)) {
+            eprintln(
+                "Warning: skipping C++ record '${item.canonicalName(ctx)}' because a generic @C record cannot be represented by the current Cangjie FFI"
+            )
             return
         }
         let ty = item.kind.expectType()
@@ -627,7 +900,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let inits = ArrayList<TokenStream>()
 
         if (!this.isUnion() && !isOpaque) {
-            if (this.hasVtablePointer(ctx)) {
+            if (ctx.hasVtablePointer(item.id)) {
                 let vtableName = ctx.cjIdent("vtable_")
                 let vtableTy = if (ctx.options.vtableGeneration && this.canGenerateTypedVtable(ctx)) {
                     let generatedVtableName = "${canonicalName}__cjbind_vtable"
@@ -918,12 +1191,20 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             }
         }
 
-        if (!this.isUnion() && !isOpaque && fields.isEmpty() &&
-            layout.map({value => value.size > 0}).getOrDefault({=> false})) {
-            let emptyFieldName = ctx.cjIdent("_cjbind_empty")
-            fields.add(tokenStreamFromTemplate("let ${emptyFieldName}: UInt8"))
-            sigs.appendLiteral("${emptyFieldName}: UInt8")
-            inits.add(tokenStreamFromTemplate("this.${emptyFieldName} = ${emptyFieldName}"))
+        if (!this.isForwardDeclaration && fields.isEmpty() && ctx.isZeroSized(item.id)) {
+            let needsAddress = if (isOpaque) {
+                layout.isNone()
+            } else if (this.isUnion()) {
+                false
+            } else {
+                layout.map({value => value.size != 0}).getOrDefault({=> true})
+            }
+            if (needsAddress) {
+                let emptyFieldName = ctx.cjIdent("_cjbind_empty")
+                fields.add(tokenStreamFromTemplate("let ${emptyFieldName}: UInt8"))
+                sigs.appendLiteral("${emptyFieldName}: UInt8")
+                inits.add(tokenStreamFromTemplate("this.${emptyFieldName} = ${emptyFieldName}"))
+            }
         }
 
         if (isOpaque) {
@@ -933,12 +1214,48 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                     fields.add(tokenStreamFromTemplate("let _cjbind_opaque_blob: ${ty}"))
                     inits.add(tokenStreamFromTemplate("this._cjbind_opaque_blob = unsafe { zeroValue<${ty}>() }"))
 
-                case None => throw Exception("Expect layout for opaque comp")
+                case None =>
+                    if (!this.isForwardDeclaration) {
+                        eprintln(
+                            "Warning: opaque type '${canonicalName}' has no known layout; using a one-byte address placeholder"
+                        )
+                    }
             }
         }
 
         if (this.isForwardDeclaration) {
             inits.add(tokenStreamFromTemplate("throw Exception(\"type should not be inited\")"))
+        }
+
+        for (member in codegenDerivedCoreMembers(
+            ctx,
+            item,
+            this,
+            canonicalIdent,
+            isOpaque,
+            layout
+        )) {
+            fields.add(member)
+        }
+        for (member in codegenDerivedDefaultAndHashMembers(
+            ctx,
+            item,
+            this,
+            canonicalIdent,
+            isOpaque,
+            layout
+        )) {
+            fields.add(member)
+        }
+        for (member in codegenDerivedOrderingMembers(
+            ctx,
+            item,
+            this,
+            canonicalIdent,
+            isOpaque,
+            layout
+        )) {
+            fields.add(member)
         }
 
         let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {
@@ -1010,6 +1327,18 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 )
 
                 result.items.add(testToken)
+            }
+        }
+
+        let codegenItems = ctx.codegenItems.getOrThrow()
+        for (innerType in this.innerTypes) {
+            if (codegenItems.contains(innerType)) {
+                ctx.resolveItem(innerType).codegen(ctx, result, ())
+            }
+        }
+        for (innerVar in this.innerVars) {
+            if (codegenItems.contains(innerVar)) {
+                ctx.resolveItem(innerVar).codegen(ctx, result, ())
             }
         }
     }

@@ -52,6 +52,21 @@ public class StringFlag <: Flag {
 
 }
 
+public class StringListFlag <: Flag {
+    public let values: ArrayList<String> = ArrayList()
+
+    public init(shortArg: ?String, longArg: String, name: String, description: String, optSuffix: ?String) {
+        super(shortArg, longArg, name, description, optSuffix)
+    }
+
+    public func read(it: Iterator<String>): Unit {
+        match (it.next()) {
+            case Some(value) => this.values.add(value)
+            case None => throw Exception("选项 ${this.name} 需要一个参数")
+        }
+    }
+}
+
 public class BoolFlag <: Flag {
     public var value: Bool = false
 

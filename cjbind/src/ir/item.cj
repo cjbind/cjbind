@@ -40,6 +40,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     var nextChildLocalId: ItemId
     var canonicalNameCache: ?String
     public let comment: ?String
+    public let annotations: Annotations
     public let parentId: ItemId
     public var kind: ItemKind
     public let location: ?clang.SourceLocation
@@ -49,7 +50,8 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         comment: ?String,
         parentId: ItemId,
         kind: ItemKind,
-        location: ?clang.SourceLocation
+        location: ?clang.SourceLocation,
+        annotations!: Annotations = Annotations()
     ) {
         if (!(id != parentId || kind.isModule())) {
             throw Exception("item error")
@@ -61,6 +63,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.canonicalNameCache = None
         this.parentId = parentId
         this.comment = comment
+        this.annotations = annotations
         this.kind = kind
         this.location = location
     }
@@ -125,11 +128,125 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             case ItemKind.KindModule(module) => module.name.getOrDefault {
                 => "_cjbind_mod_${this.exposedId(ctx)}"
             }
-            case ItemKind.KindType(ty) => ty.sanitizedName(ctx).getOrDefault {
-                => "_cjbind_ty_${this.exposedId(ctx)}"
-            }
+            case ItemKind.KindType(ty) =>
+                if (ctx.usedTemplateParameters.isSome()) {
+                    if (let Some(instantiation) <- ctx.templateInstantiationFor(this.id)) {
+                        return templateInstantiationName(ctx.publicTemplateInstantiationSpelling(instantiation))
+                    }
+                }
+                ty.sanitizedName(ctx).getOrDefault {=> "_cjbind_ty_${this.exposedId(ctx)}"}
             case ItemKind.KindFunction(fun) => fun.name
         }
+    }
+
+    func policyBaseName(ctx: CjbindContext): String {
+        let base = this.baseName(ctx)
+        let function = match (this.kind) {
+            case ItemKind.KindFunction(value) => value
+            case _ => return base
+        }
+        let parent = this.parentId
+        if (parent == ctx.rootModule) {
+            return base
+        }
+        let comp: ?CompInfo = match (ctx.resolveItem(parent).kind.asType()) {
+            case Some(parentType) => parentType.asComp()
+            case None => None
+        }
+        match (comp) {
+            case Some(value) =>
+                let overloadIndex: ?Int64 = match (function.kind) {
+                    case FunctionKind.KindMethod(MethodKind.Constructor) =>
+                        var found: ?Int64 = None
+                        for ((index, constructor) in value.constructors.iterator().enumerate()) {
+                            if (constructor == this.id) {
+                                found = Some(index)
+                                break
+                            }
+                        }
+                        found
+                    case FunctionKind.KindMethod(MethodKind.Normal) |
+                        FunctionKind.KindMethod(MethodKind.Static) |
+                        FunctionKind.KindMethod(MethodKind.Virtual(_)) =>
+                        var matchingIndex = 0
+                        var found: ?Int64 = None
+                        for (method in value.methods) {
+                            let methodItem = ctx.resolveItem(method.signature)
+                            let methodName = methodItem.kind.expectFunction().name
+                            if (methodName != function.name) {
+                                continue
+                            }
+                            if (method.signature == this.id) {
+                                found = Some(matchingIndex)
+                                break
+                            }
+                            matchingIndex += 1
+                        }
+                        found
+                    case _ => None
+                }
+                match (overloadIndex) {
+                    case Some(index) where index > 0 => "${base}${index}"
+                    case _ => base
+                }
+            case None => base
+        }
+    }
+
+    func policyNameTarget(ctx: CjbindContext): Item {
+        var target = this
+        let visited = ItemSet()
+        while (!visited.contains(target.id)) {
+            visited.add(target.id)
+            let next: ?ItemId = match (target.kind) {
+                case ItemKind.KindType(ty) => match (ty.kind) {
+                    case TypeKind.ResolvedTypeRef(inner) => Some(inner)
+                    case TypeKind.TypeKindTemplateInstantiation(instantiation) => Some(instantiation.definition)
+                    case _ => ctx.templateInstantiationFor(target.id).map({value => value.definition})
+                }
+                case _ => None
+            }
+            match (next) {
+                case Some(id) => target = ctx.resolveItem(id)
+                case None => return target
+            }
+        }
+        return target
+    }
+
+    public func policyName(ctx: CjbindContext): String {
+        let target = this.policyNameTarget(ctx)
+        let namespaces = ArrayList<String>()
+        let nested = ArrayList<String>()
+        var parent = target.parentId
+        while (parent != ctx.rootModule) {
+            let ancestor = ctx.resolveItem(parent)
+            match (ancestor.kind) {
+                case ItemKind.KindModule(module) =>
+                    if (ctx.options.conservativeInlineNamespaces || !module.isInline()) {
+                        let name = ancestor.policyBaseName(ctx)
+                        if (!name.isEmpty()) {
+                            namespaces.add(name)
+                        }
+                    }
+                case _ =>
+                    let name = ancestor.policyBaseName(ctx)
+                    if (!name.isEmpty()) {
+                        nested.add(name)
+                    }
+            }
+            parent = ancestor.parentId
+        }
+        namespaces.reverse()
+        nested.reverse()
+        let targetName = target.policyBaseName(ctx)
+        if (!targetName.isEmpty()) {
+            nested.add(targetName)
+        }
+        if (!nested.isEmpty()) {
+            namespaces.add(String.join(nested.toArray(), delimiter: "_"))
+        }
+        return String.join(namespaces.toArray(), delimiter: "::")
     }
 
     public func isAnon(): Bool {
@@ -146,6 +263,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     }
 
     public func canonicalName(ctx: CjbindContext): String {
+        if (ctx.usedTemplateParameters.isSome()) {
+            return this.realCanonicalName(ctx)
+        }
         if (let Some(cached) <- this.canonicalNameCache) {
             return cached
         }
@@ -207,6 +327,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
 
     // cjlint-ignore -start !G.ITF.04
     public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit): Unit {
+        if (let Some(instantiation) <- ctx.concreteTemplateInstantiations.get(this.id)) {
+            instantiation.trace(ctx, tracer, ())
+        }
         match (this.kind) {
             case ItemKind.KindType(ty) =>
                 if (ty.shouldBeTracedUnconditionally() || !this.isOpaque(ctx, ())) {
@@ -220,9 +343,22 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     // cjlint-ignore -end
 
     public func isOpaque(ctx: CjbindContext, _: Unit): Bool {
+        if (this.annotations.opaque() || ctx.isOpaqueByName(this)) {
+            return true
+        }
         match (this.asType()) {
             case Some(v) => return v.isOpaque(ctx, this)
             case _ => return false
+        }
+    }
+
+    public func isSemanticallyOpaque(ctx: CjbindContext): Bool {
+        if (this.annotations.opaque() || ctx.isOpaqueByName(this)) {
+            return true
+        }
+        return match (this.asType()) {
+            case Some(value) => value.isSemanticallyOpaque(ctx, this)
+            case None => false
         }
     }
 
@@ -341,14 +477,15 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public static func typeParam(
         withId: ?ItemId,
         location: clang.Cursor,
-        ctx: CjbindContext
+        ctx: CjbindContext,
+        ty: clang.Type
     ): ?TypeId {
-        let ty = location.curType()
         if (ty.kind() != clang.CXTypeKind_CXType_Unexposed &&
+            ty.kind() != clang.CXTypeKind_CXType_Elaborated &&
+            ty.kind() != clang.CXTypeKind_CXType_Dependent &&
             location.kind() != clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
             return None
         }
-
         let definition: Box<?clang.Cursor> = Box(None)
         if (location.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
             definition.value = Some(location.canonical())
@@ -359,17 +496,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 }
             }
         } else {
-            location.visit {
-                child =>
-                if (child.kind() == clang.CXCursorKind_CXCursor_TypeRef) {
-                    if (let Some(referenced) <- child.referenced()) {
-                        if (referenced.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
-                            definition.value = Some(referenced.canonical())
-                            return clang.CXChildVisitResult_CXChildVisit_Break
-                        }
-                    }
-                }
-                return clang.CXChildVisitResult_CXChildVisit_Continue
+            let typeDeclaration = ty.declaration()
+            if (typeDeclaration.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+                definition.value = Some(typeDeclaration.canonical())
             }
         }
 
@@ -499,11 +628,31 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         let canBeTypeParameter = locationKind != clang.CXCursorKind_CXCursor_ClassTemplate &&
             locationKind != clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization &&
             locationKind != clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl
-        if (canBeTypeParameter && (ty.kind() == clang.CXTypeKind_CXType_Unexposed ||
-            location.curType().kind() == clang.CXTypeKind_CXType_Unexposed)) {
-            if (let Some(param) <- Item.typeParam(Some(id), location, ctx)) {
+        let tyKind = ty.kind()
+        let typeMayBeParameter = tyKind == clang.CXTypeKind_CXType_Unexposed ||
+            tyKind == clang.CXTypeKind_CXType_Elaborated ||
+            tyKind == clang.CXTypeKind_CXType_Dependent
+        let locationTypeKind = if (typeMayBeParameter) {
+            clang.CXTypeKind_CXType_Invalid
+        } else {
+            location.curType().kind()
+        }
+        if (canBeTypeParameter &&
+            (typeMayBeParameter ||
+            locationTypeKind == clang.CXTypeKind_CXType_Unexposed ||
+            locationTypeKind == clang.CXTypeKind_CXType_Elaborated ||
+            locationTypeKind == clang.CXTypeKind_CXType_Dependent)) {
+            if (let Some(param) <- Item.typeParam(Some(id), location, ctx, ty)) {
                 return Ok(param)
             }
+        }
+
+        if (tyKind == clang.CXTypeKind_CXType_Elaborated) {
+            let namedType = ty.named()
+            if (namedType != ty) {
+                return Item.fromTyWithId(id, namedType, location, parentId, ctx)
+            }
+            return Err(ParseError.Continue)
         }
 
         if (let Some(par) <- ty.declaration().fallibleSemanticParent()) {
@@ -511,27 +660,46 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 return Ok(Item.newOpaqueType(id, ty, ctx))
             }
         }
-
         let decl: clang.Cursor = {
             =>
+            let directDeclaration = ty.declaration()
+            if (let Some(directDefinition) <- directDeclaration.definition()) {
+                return directDefinition
+            }
+            if (tyKind == clang.CXTypeKind_CXType_Unexposed ||
+                tyKind == clang.CXTypeKind_CXType_Elaborated ||
+                tyKind == clang.CXTypeKind_CXType_Dependent) {
+                return directDeclaration
+            }
             let canDef = ty.canonicalType().declaration().definition()
             match (canDef) {
                 case Some(v) => return v
-                case None => ty.declaration()
+                case None => directDeclaration
             }
         }()
 
-        let comment: ?String = {
-            =>
-            if (let Some(v) <- location.rawComment()) {
-                return v
+        let carriesTypeAnnotations = locationKind == clang.CXCursorKind_CXCursor_StructDecl ||
+            locationKind == clang.CXCursorKind_CXCursor_UnionDecl ||
+            locationKind == clang.CXCursorKind_CXCursor_ClassDecl ||
+            locationKind == clang.CXCursorKind_CXCursor_ClassTemplate ||
+            locationKind == clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization ||
+            locationKind == clang.CXCursorKind_CXCursor_EnumDecl
+        let comment: ?String = if (carriesTypeAnnotations) {
+            match (location.rawComment()) {
+                case Some(value) => Some(value)
+                case None => decl.rawComment()
             }
-            if (let Some(v) <- decl.rawComment()) {
-                return v
+        } else {
+            None
+        }
+        let annotations = if (carriesTypeAnnotations) {
+            match (parseAnnotations(decl.comment())) {
+                case Some(value) => value
+                case None => parseAnnotations(location.comment()).getOrDefault({=> Annotations()})
             }
-            return None<String>
-        }()
-
+        } else {
+            Annotations()
+        }
         if (let Some(rty) <- ctx.builtinOrResolvedTy(id, parentId, ty, location)) {
             return Ok(rty)
         }
@@ -567,13 +735,15 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         let ret: Result<TypeId, ParseError> = match (result) {
             case Ok(ParseResult.AlreadyResolved(ty)) => Ok(ty)
             case Ok(ParseResult.New(titem, tdecl)) =>
+                let sourceLocation = location.location()
                 ctx.addItem(
                     Item(
                         id,
                         comment,
                         relevantParentId,
                         ItemKind.KindType(titem),
-                        Some(location.location())
+                        Some(sourceLocation),
+                        annotations: annotations
                     ),
                     tdecl,
                     Some(location)
@@ -632,11 +802,7 @@ func visitChild(
 
     return match (result.value) {
         case Ok(_) => clang.CXChildVisitResult_CXChildVisit_Break
-        case Err(ParseError.Recurse) =>
-            cur.visit {
-                c => visitChild(c, id, ty, parentId, ctx, result)
-            }
-            clang.CXChildVisitResult_CXChildVisit_Continue
+        case Err(ParseError.Recurse) => clang.CXChildVisitResult_CXChildVisit_Recurse
         case Err(ParseError.Continue) => clang.CXChildVisitResult_CXChildVisit_Continue
     }
 }

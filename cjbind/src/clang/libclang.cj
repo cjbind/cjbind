@@ -298,13 +298,6 @@ foreign func clang_getNullLocation(): CXSourceLocation
 // if they refer to different locations.
 foreign func clang_equalLocations(loc1: CXSourceLocation, loc2: CXSourceLocation): UInt32
 
-// Determine for two source locations if the first comes
-// strictly before the second one in the source code.
-//
-// \returns non-zero if the first source location comes
-// strictly before the second one, zero otherwise.
-foreign func clang_isBeforeInTranslationUnit(loc1: CXSourceLocation, loc2: CXSourceLocation): UInt32
-
 // Returns non-zero if the given source location is in a system header.
 foreign func clang_Location_isInSystemHeader(location: CXSourceLocation): Int32
 

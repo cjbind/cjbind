@@ -2,6 +2,7 @@ package cjbind.ir
 
 import cjbind.clang
 import cjbind.result.Result
+import std.collection.ArrayList
 
 public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     public let name: ?String
@@ -65,12 +66,24 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     }
 
     public func safeCanonicalType(ctx: CjbindContext): ?Type {
-        match (this.kind) {
-            case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).safeCanonicalType(ctx)
-            case TypeKind.TypeKindAlias(inner) => ctx.resolveType(inner).safeCanonicalType(ctx)
-            case TypeKind.UnresolvedTypeRef(_, _, _) => None
-            case _ => Some(this)
+        let visited = ItemSet()
+        var current: Type = this
+        while (true) {
+            let next: ?ItemId = match (current.kind) {
+                case TypeKind.ResolvedTypeRef(inner) => Some(inner)
+                case TypeKind.TypeKindAlias(inner) => Some(inner)
+                case TypeKind.TypeKindTemplateAlias(inner, _) => Some(inner)
+                case TypeKind.TypeKindTemplateInstantiation(instantiation) => Some(instantiation.definition)
+                case TypeKind.UnresolvedTypeRef(_, _, _) => return None
+                case _ => return Some(current)
+            }
+            let id = next.getOrThrow()
+            if (!visited.add(id)) {
+                return None
+            }
+            current = ctx.resolveType(id)
         }
+        return None
     }
 
     public func canonicalType(ctx: CjbindContext): Type {
@@ -162,6 +175,39 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 false
             )
             return Ok(ParseResult.New(templateType, Some(location)))
+        }
+
+        if (location.kind() == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl) {
+            let parameters = ArrayList<TypeId>()
+            let inner = Box<?TypeId>(None)
+            location.visit {
+                child =>
+                let childKind = child.kind()
+                if (childKind == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+                    if (let Some(parameter) <- Item.typeParam(None, child, ctx, child.curType())) {
+                        parameters.add(parameter)
+                    }
+                } else if (childKind == clang.CXCursorKind_CXCursor_TypeAliasDecl) {
+                    if (let Some(underlying) <- child.typedefType()) {
+                        inner.value = Some(Item.fromTyOrRef(underlying, child, Some(potentialId), ctx))
+                    }
+                }
+                clang.CXChildVisitResult_CXChildVisit_Continue
+            }
+            let innerType = match (inner.value) {
+                case Some(value) => value
+                case None => return Err(ParseError.Continue)
+            }
+            let aliasName = location.spelling()
+            return Ok(ParseResult.New(
+                Type(
+                    if (aliasName.isEmpty()) { None } else { Some(aliasName) },
+                    None,
+                    TypeKind.TypeKindTemplateAlias(innerType, parameters.toArray()),
+                    false
+                ),
+                Some(location)
+            ))
         }
 
         if (location.kind() != clang.CXCursorKind_CXCursor_ClassTemplate &&
@@ -435,6 +481,8 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     case None => None
                 }
             case TypeKind.ResolvedTypeRef(inner) => ctx.resolveType(inner).getLayout(ctx)
+            case TypeKind.TypeKindAlias(inner) => ctx.resolveType(inner).getLayout(ctx)
+            case TypeKind.TypeKindTemplateAlias(inner, _) => ctx.resolveType(inner).getLayout(ctx)
             case TypeKind.TypeKindEnum(en) =>
                 match (en.repr) {
                     case Some(reprId) => ctx.resolveType(reprId).getLayout(ctx)
@@ -501,13 +549,24 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
     }
 
-    public func isOpaque(ctx: CjbindContext, _: Item): Bool {
+    public func isOpaque(ctx: CjbindContext, item: Item): Bool {
         return match (this.kind) {
             case TypeKind.TypeKindOpaque => true
-            case TypeKind.TypeKindComp(comp) => comp.isOpaque(ctx, this.layout)
+            case TypeKind.TypeKindComp(comp) => comp.isOpaqueForItem(ctx, this.layout, itemId: item.id)
             case TypeKind.ResolvedTypeRef(to) => to.isOpaque(ctx, ())
             case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
                 instantiation.definition.isOpaque(ctx, ())
+            case _ => false
+        }
+    }
+
+    public func isSemanticallyOpaque(ctx: CjbindContext, item: Item): Bool {
+        return match (this.kind) {
+            case TypeKind.TypeKindOpaque => true
+            case TypeKind.TypeKindComp(comp) => comp.isSemanticallyOpaque(ctx)
+            case TypeKind.ResolvedTypeRef(to) => ctx.resolveItem(to).isSemanticallyOpaque(ctx)
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                ctx.resolveItem(instantiation.definition).isSemanticallyOpaque(ctx)
             case _ => false
         }
     }
@@ -547,6 +606,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case TypeKind.TypeKindAlias(inner) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+            case TypeKind.TypeKindTemplateAlias(inner, parameters) =>
+                tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
+                for (parameter in parameters) {
+                    tracer.visitKind(parameter, EdgeKind.TemplateParameterDefinitionEdge)
+                }
             case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
                 instantiation.trace(context, tracer, ())
             case TypeKind.ResolvedTypeRef(inner) =>
@@ -618,6 +682,7 @@ public enum TypeKind {
     | TypeKindFloat(TypeKindFloatKind)
     | TypeKindComplex(TypeKindFloatKind)
     | TypeKindAlias(TypeId)
+    | TypeKindTemplateAlias(TypeId, Array<TypeId>)
     | TypeKindVector(TypeId, UIntNative)
     | TypeKindArray(TypeId, UIntNative)
     | TypeKindFunction(FunctionSig)

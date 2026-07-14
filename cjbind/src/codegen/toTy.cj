@@ -166,7 +166,7 @@ extend Type <: TryToCjTy<Item> {
                 return Ok(token)
             case TypeKind.TypeKindEnum(_) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
-            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTypeParam |
+            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTemplateAlias(_, _) | TypeKind.TypeKindTypeParam |
                 TypeKind.TypeKindTemplateInstantiation(_) =>
                 if (let Some(n) <- this.name) {
                     let named = Utils.typeFromNamed(ctx, n)
@@ -175,7 +175,22 @@ extend Type <: TryToCjTy<Item> {
                     }
                 }
                 return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
-            case TypeKind.TypeKindComp(info) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
+            case TypeKind.TypeKindComp(info) =>
+                if (let Some(instantiation) <- ctx.templateInstantiationFor(item.id)) {
+                    let definition = instantiation.definition
+                        .intoResolver()
+                        .throughTypeRefs()
+                        .throughTypeAliases()
+                        .resolve(ctx)
+                    let allowlisted = ctx.allowlistedItems.getOrThrow()
+                    if (instantiation.kind.isPrimary() &&
+                        !info.hasFields() && info.baseMembers.isEmpty() &&
+                        (allowlisted.contains(instantiation.definition) || allowlisted.contains(definition.id)) &&
+                        ctx.usedTemplateParams(definition.id).isEmpty()) {
+                        return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(definition.canonicalName(ctx))))
+                    }
+                }
+                return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
             case TypeKind.TypeKindReference(inner) =>
                 return this.pointerLikeType(ctx, item, inner, false)

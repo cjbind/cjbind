@@ -119,10 +119,18 @@ public class Utils {
             case "int64_t" => primitiveTy(ctx, "Int64")
             case "uint64_t" => primitiveTy(ctx, "UInt64")
 
-            case "size_t" => primitiveTy(ctx, "UIntNative")
+            case "size_t" => if (ctx.options.sizeTIsUsize) {
+                primitiveTy(ctx, "UIntNative")
+            } else {
+                None
+            }
             case "uintptr_t" => primitiveTy(ctx, "UIntNative")
 
-            case "ssize_t" => primitiveTy(ctx, "IntNative")
+            case "ssize_t" => if (ctx.options.sizeTIsUsize) {
+                primitiveTy(ctx, "IntNative")
+            } else {
+                None
+            }
             case "intptr_t" | "ptrdiff_t" => primitiveTy(ctx, "IntNative")
 
             // ObjC type mappings

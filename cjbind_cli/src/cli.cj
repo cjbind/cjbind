@@ -2,7 +2,7 @@ package cjbind_cli
 
 import std.fs.File
 import std.env
-import cjbind_cli.arg.{StringFlag, BoolFlag, ArgsParser}
+import cjbind_cli.arg.{StringFlag, StringListFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
 import cjbind.options.{CjbindOptions, ObjcCodegenMode, DefaultEnumStyle}
@@ -55,6 +55,68 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "保留私有 C++ 函数绑定")
     let vtableGenerationFlag = BoolFlag(None, "vtable-generation", "vtable-generation",
         "生成 C++ 虚函数表定义")
+    let blocklistTypeFlag = StringListFlag(None, "blocklist-type", "blocklist-type",
+        "不生成名称匹配正则表达式的类型", "REGEX")
+    let blocklistFunctionFlag = StringListFlag(None, "blocklist-function", "blocklist-function",
+        "不生成名称匹配正则表达式的函数", "REGEX")
+    let blocklistItemFlag = StringListFlag(None, "blocklist-item", "blocklist-item",
+        "不生成名称匹配正则表达式的任意项目", "REGEX")
+    let blocklistVarFlag = StringListFlag(None, "blocklist-var", "blocklist-var",
+        "不生成名称匹配正则表达式的变量", "REGEX")
+    let blocklistFileFlag = StringListFlag(None, "blocklist-file", "blocklist-file",
+        "不生成完整路径匹配正则表达式的文件内容", "REGEX")
+    let opaqueTypeFlag = StringListFlag(None, "opaque-type", "opaque-type",
+        "把名称匹配正则表达式的类型生成为不透明布局", "REGEX")
+    let allowlistTypeFlag = StringListFlag(None, "allowlist-type", "allowlist-type",
+        "只选择名称匹配正则表达式的类型及其依赖", "REGEX")
+    let allowlistFunctionFlag = StringListFlag(None, "allowlist-function", "allowlist-function",
+        "只选择名称匹配正则表达式的函数及其依赖", "REGEX")
+    let allowlistItemFlag = StringListFlag(None, "allowlist-item", "allowlist-item",
+        "只选择名称匹配正则表达式的任意项目及其依赖", "REGEX")
+    let allowlistVarFlag = StringListFlag(None, "allowlist-var", "allowlist-var",
+        "只选择名称匹配正则表达式的变量及其依赖", "REGEX")
+    let allowlistFileFlag = StringListFlag(None, "allowlist-file", "allowlist-file",
+        "只选择完整路径匹配正则表达式的文件内容及其依赖", "REGEX")
+    let noRecursiveAllowlistFlag = BoolFlag(None, "no-recursive-allowlist", "no-recursive-allowlist",
+        "不递归选择显式 allowlist 项目的依赖")
+    let noRecordMatchesFlag = BoolFlag(None, "no-record-matches", "no-record-matches",
+        "不记录或报告未匹配的正则表达式")
+    let disableUntaggedUnionFlag = BoolFlag(None, "disable-untagged-union", "disable-untagged-union",
+        "禁用无标签 union 的原生分析规则")
+    let noSizeTIsUsizeFlag = BoolFlag(None, "no-size_t-is-usize", "no-size_t-is-usize",
+        "不把 size_t 自动映射为目标平台无符号整数")
+    let noDeriveCopyFlag = BoolFlag(None, "no-derive-copy", "no-derive-copy",
+        "禁用 Copy 派生")
+    let noDeriveDebugFlag = BoolFlag(None, "no-derive-debug", "no-derive-debug",
+        "禁用 Debug 派生")
+    let withDeriveDefaultFlag = BoolFlag(None, "with-derive-default", "with-derive-default",
+        "在可行时启用 Default 派生")
+    let noDeriveDefaultFlag = BoolFlag(None, "no-derive-default", "no-derive-default",
+        "禁用 Default 派生")
+    let withDeriveHashFlag = BoolFlag(None, "with-derive-hash", "with-derive-hash",
+        "在可行时启用 Hash 派生")
+    let withDerivePartialEqFlag = BoolFlag(None, "with-derive-partialeq", "with-derive-partialeq",
+        "在可行时启用 PartialEq 派生")
+    let withDeriveEqFlag = BoolFlag(None, "with-derive-eq", "with-derive-eq",
+        "在可行时启用 Eq 和 PartialEq 派生")
+    let withDerivePartialOrdFlag = BoolFlag(None, "with-derive-partialord", "with-derive-partialord",
+        "在可行时启用 PartialOrd 派生")
+    let withDeriveOrdFlag = BoolFlag(None, "with-derive-ord", "with-derive-ord",
+        "在可行时启用 Ord 和 PartialOrd 派生")
+    let implDebugFlag = BoolFlag(None, "impl-debug", "impl-debug",
+        "为需要手动实现的类型生成 toString")
+    let implPartialEqFlag = BoolFlag(None, "impl-partialeq", "impl-partialeq",
+        "为需要手动实现的类型生成相等运算符")
+    let noCopyFlag = StringListFlag(None, "no-copy", "no-copy",
+        "不为名称匹配正则表达式的类型派生 Copy", "REGEX")
+    let noDebugFlag = StringListFlag(None, "no-debug", "no-debug",
+        "不为名称匹配正则表达式的类型派生 Debug", "REGEX")
+    let noDefaultFlag = StringListFlag(None, "no-default", "no-default",
+        "不为名称匹配正则表达式的类型派生 Default", "REGEX")
+    let noHashFlag = StringListFlag(None, "no-hash", "no-hash",
+        "不为名称匹配正则表达式的类型派生 Hash", "REGEX")
+    let noPartialEqFlag = StringListFlag(None, "no-partialeq", "no-partialeq",
+        "不为名称匹配正则表达式的类型派生 PartialEq 或 PartialOrd", "REGEX")
 
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
@@ -93,6 +155,37 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         generatePureVirtualFunctionsFlag,
         generatePrivateFunctionsFlag,
         vtableGenerationFlag,
+        blocklistTypeFlag,
+        blocklistFunctionFlag,
+        blocklistItemFlag,
+        blocklistVarFlag,
+        blocklistFileFlag,
+        opaqueTypeFlag,
+        allowlistTypeFlag,
+        allowlistFunctionFlag,
+        allowlistItemFlag,
+        allowlistVarFlag,
+        allowlistFileFlag,
+        noRecursiveAllowlistFlag,
+        noRecordMatchesFlag,
+        disableUntaggedUnionFlag,
+        noSizeTIsUsizeFlag,
+        noDeriveCopyFlag,
+        noDeriveDebugFlag,
+        withDeriveDefaultFlag,
+        noDeriveDefaultFlag,
+        withDeriveHashFlag,
+        withDerivePartialEqFlag,
+        withDeriveEqFlag,
+        withDerivePartialOrdFlag,
+        withDeriveOrdFlag,
+        implDebugFlag,
+        implPartialEqFlag,
+        noCopyFlag,
+        noDebugFlag,
+        noDefaultFlag,
+        noHashFlag,
+        noPartialEqFlag,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -150,6 +243,48 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.generatePureVirtualFunctions = generatePureVirtualFunctionsFlag.value
     opt.generatePrivateFunctions = generatePrivateFunctionsFlag.value
     opt.vtableGeneration = vtableGenerationFlag.value
+    opt.blocklistedTypes.add(blocklistTypeFlag.values)
+    opt.blocklistedFunctions.add(blocklistFunctionFlag.values)
+    opt.blocklistedItems.add(blocklistItemFlag.values)
+    opt.blocklistedVars.add(blocklistVarFlag.values)
+    opt.blocklistedFiles.add(blocklistFileFlag.values)
+    opt.opaqueTypes.add(opaqueTypeFlag.values)
+    opt.allowlistedTypes.add(allowlistTypeFlag.values)
+    opt.allowlistedFunctions.add(allowlistFunctionFlag.values)
+    opt.allowlistedItems.add(allowlistItemFlag.values)
+    opt.allowlistedVars.add(allowlistVarFlag.values)
+    opt.allowlistedFiles.add(allowlistFileFlag.values)
+    opt.allowlistRecursively = !noRecursiveAllowlistFlag.value
+    opt.recordMatches = !noRecordMatchesFlag.value
+    opt.untaggedUnion = !disableUntaggedUnionFlag.value
+    opt.sizeTIsUsize = !noSizeTIsUsizeFlag.value
+    opt.deriveCopy = !noDeriveCopyFlag.value
+    opt.deriveDebug = !noDeriveDebugFlag.value
+    if (withDeriveDefaultFlag.value && noDeriveDefaultFlag.value) {
+        eprintln("Error: --with-derive-default and --no-derive-default cannot be used together")
+        env.exit(1)
+    }
+    opt.deriveDefault = withDeriveDefaultFlag.value && !noDeriveDefaultFlag.value
+    opt.deriveHash = withDeriveHashFlag.value
+    if (withDerivePartialEqFlag.value) {
+        opt.derivePartialEq = true
+    }
+    if (withDeriveEqFlag.value) {
+        opt.deriveEq = true
+    }
+    if (withDerivePartialOrdFlag.value) {
+        opt.derivePartialOrd = true
+    }
+    if (withDeriveOrdFlag.value) {
+        opt.deriveOrd = true
+    }
+    opt.implDebug = implDebugFlag.value
+    opt.implPartialEq = implPartialEqFlag.value
+    opt.noCopyTypes.add(noCopyFlag.values)
+    opt.noDebugTypes.add(noDebugFlag.values)
+    opt.noDefaultTypes.add(noDefaultFlag.values)
+    opt.noHashTypes.add(noHashFlag.values)
+    opt.noPartialEqTypes.add(noPartialEqFlag.values)
     if (let Some(items) <- generateFlag.value) {
         opt.generateFunctions = false
         opt.generateTypes = false

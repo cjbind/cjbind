@@ -274,7 +274,7 @@ func cursorMangling(cursor: clang.Cursor, isCxx: Bool, targetInfo: clang.TargetI
     return normalizedCursorMangling(selected, cursor, isCxx, targetInfo)
 }
 
-func isAdjustingThunkMangling(
+public func isAdjustingThunkMangling(
     mangling: String,
     targetTriple: String,
     pointerWidth: Int32
@@ -289,7 +289,7 @@ func isAdjustingThunkMangling(
         normalized.startsWith("_ZTc")
 }
 
-func selectNonAdjustingMethodMangling(
+public func selectNonAdjustingMethodMangling(
     manglings: Array<String>,
     targetTriple: String,
     pointerWidth: Int32
@@ -504,11 +504,40 @@ func recordHasUnsupportedValueLayout(ty: clang.Type): Bool {
 
 func recordHasUnsupportedValueLayoutInner(ty: clang.Type, requireAccessibleCopy: Bool): Bool {
     let declaration = ty.declaration()
-    if (declaration.kind() == clang.CXCursorKind_CXCursor_UnionDecl) {
+    let definition = declaration.definition().getOrDefault({=> declaration})
+    if (declaration.kind() == clang.CXCursorKind_CXCursor_UnionDecl ||
+        definition.kind() == clang.CXCursorKind_CXCursor_UnionDecl) {
         return true
     }
     let unsupported = Box(false)
-    declaration.visit {
+
+    // Concrete template specializations do not consistently expose their
+    // instantiated fields as declaration children. Inspect the type itself so
+    // nested records and bit-fields are checked after substitution as well.
+    ty.visitFields {
+        field =>
+        if (field.isBitField() || fieldContainsUnsupportedRecord(field.curType())) {
+            unsupported.value = true
+            return clang.CXVisitorResult_CXVisit_Break
+        }
+        clang.CXVisitorResult_CXVisit_Continue
+    }
+    if (unsupported.value) {
+        return true
+    }
+
+    // The optional type visitor supplies instantiated bases on newer
+    // libclang releases. The declaration walk below remains the fallback.
+    ty.visitCxxBaseClasses {
+        _ =>
+        unsupported.value = true
+        clang.CXVisitorResult_CXVisit_Break
+    }
+    if (unsupported.value) {
+        return true
+    }
+
+    definition.visit {
         child =>
         let kind = child.kind()
         let unavailableSpecialMember = kind == clang.CXCursorKind_CXCursor_Constructor &&
