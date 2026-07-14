@@ -142,7 +142,6 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     public var hasNonTypeTemplateParams: Bool = false
     public var hasTemplateTypeParams: Bool = false
     public var hasUnrepresentedVirtualMethod: Bool = false
-    public var forceOpaque: Bool = false
 
     public init(kind: CompKind, isCxxRecord!: Bool = false) {
         this.kind = kind
@@ -340,7 +339,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     ci.packedAttr = true
                 } else if (k == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
                     ci.hasTemplateTypeParams = true
-                    if (let Some(param) <- Item.typeParam(None, cur, ctx, cur.curType())) {
+                    if (let Some(param) <- Item.typeParam(None, cur, ctx)) {
                         ci.templateParams.add(param)
                     }
                 } else if (k == clang.CXCursorKind_CXCursor_NonTypeTemplateParameter) {
@@ -355,7 +354,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     } else {
                         "_base_${ci.baseMembers.size}"
                     }
-                    let baseType = Item.fromTyOrRef(cur.curType(), cur, Some(potentialId), ctx)
+                    let baseType = Item.fromTyOrRef(cur.curType(), cur, None, ctx)
                     ci.baseMembers.add(Base(baseType, baseKind, fieldName, cur.isPublic()))
                 } else if (k == clang.CXCursorKind_CXCursor_Constructor ||
                     k == clang.CXCursorKind_CXCursor_Destructor ||
@@ -621,11 +620,11 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
     }
 
     public func isOpaque(ctx: CjbindContext, layout: Option<Layout>): Bool {
-        return this.isOpaqueForItem(ctx, layout)
+        return this.isSemanticallyOpaque(ctx)
     }
 
     public func isSemanticallyOpaque(ctx: CjbindContext): Bool {
-        if (this.forceOpaque || this.hasNonTypeTemplateParams || this.hasUnevaluableBitFieldWidth) {
+        if (this.hasNonTypeTemplateParams || this.hasUnevaluableBitFieldWidth) {
             return true
         }
         if (let CompFields.CompFieldsError <- this.fields) {
@@ -639,17 +638,16 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     case Field.DataMember(_) => false
                     case Field.Bitfields(unit) => unit.bitfields.iterator().any {
                         bitfield =>
-                        let layout = ctx.resolveType(bitfield.data.ty).getLayout(ctx)
-                        match (layout) {
-                            case Some(value) => bitfield.data.bitfieldWidth.getOrThrow() / 8 > UInt32(value.size)
-                            case None => true
-                        }
+                        let layout = ctx.resolveType(bitfield.data.ty)
+                            .getLayout(ctx)
+                            .getOrThrow({=> Exception("bitfield type has no layout")})
+                        bitfield.data.bitfieldWidth.getOrThrow() / 8 > UInt32(layout.size)
                     }
                 }
             }
     }
 
-    public func isOpaqueForItem(
+    public func isCodegenOpaque(
         ctx: CjbindContext,
         layout: Option<Layout>,
         itemId!: ?ItemId = None
@@ -693,15 +691,24 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         expected: Layout,
         itemId!: ?ItemId = None
     ): Bool {
+        return this.generatedRecordLayout(ctx, itemId: itemId)
+            .map({layout => layout.size == expected.size && layout.align == expected.align})
+            .getOrDefault({=> false})
+    }
+
+    func generatedRecordLayout(
+        ctx: CjbindContext,
+        itemId!: ?ItemId = None
+    ): ?Layout {
         if (let clang.ABIKind.Microsoft <- ctx.targetInfo.abi) {
             if (!this.baseMembers.isEmpty() || this.hasVtableInner(ctx, HashSet<ItemId>())) {
-                return false
+                return None
             }
         }
 
         for (base in this.baseMembers) {
             if (base.isVirtual()) {
-                return false
+                return None
             }
         }
 
@@ -715,7 +722,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             if (storedBaseCount == 0) {
                 firstStoredBaseHasVtable = hasVtable
             } else if (!firstStoredBaseHasVtable && hasVtable) {
-                return false
+                return None
             }
             storedBaseCount += 1
         }
@@ -743,10 +750,10 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             }
             let baseLayout = match (ctx.resolveType(base.ty).getLayout(ctx)) {
                 case Some(value) => value
-                case None => return false
+                case None => return None
             }
             if (baseLayout.align > ctx.pointerWidth()) {
-                return false
+                return None
             }
             appendLayout(baseLayout)
         }
@@ -756,28 +763,28 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 case Field.DataMember(data) =>
                     let fieldLayout = match (ctx.resolveType(data.ty).getLayout(ctx)) {
                         case Some(value) => value
-                        case None => return false
+                        case None => return None
                     }
                     if (fieldLayout.align > ctx.pointerWidth()) {
-                        return false
+                        return None
                     }
                     let fieldOffset = alignBytes(size, fieldLayout.align)
                     if (let Some(actualOffset) <- data.offset) {
                         if (actualOffset != UIntNative(fieldOffset * 8)) {
-                            return false
+                            return None
                         }
                     }
                     size = fieldOffset + fieldLayout.size
                     alignment = max(alignment, fieldLayout.align)
-                case Field.Bitfields(_) => return false
+                case Field.Bitfields(_) => return None
             }
         }
 
-        if (size == 0 && expected.size > 0) {
+        if (size == 0) {
             size = 1
         }
         size = alignBytes(size, alignment)
-        return size == expected.size && alignment == expected.align
+        return Some(Layout(size, alignment))
     }
 
     public func canGenerateTypedVtable(ctx: CjbindContext): Bool {
@@ -848,7 +855,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             tracer.visitKind(constructor, EdgeKind.ConstructorEdge)
         }
 
-        if (this.isSemanticallyOpaque(context) || context.isOpaqueByName(item)) {
+        if (item.isOpaque(context, ())) {
             return
         }
         for (base in this.baseMembers) {

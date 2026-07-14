@@ -56,7 +56,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.representCxxOperators, false)
         @Expect(opts.respectCxxAccessSpecs, false)
         @Expect(opts.useSpecificVirtualFunctionReceiver, false)
-        @Expect(opts.useDistinctChar16T, false)
         @Expect(opts.generateInlineFunctions, false)
         @Expect(opts.generateDeletedFunctions, false)
         @Expect(opts.generatePureVirtualFunctions, false)
@@ -66,16 +65,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.recordMatches, true)
         @Expect(opts.untaggedUnion, true)
         @Expect(opts.sizeTIsUsize, true)
-        @Expect(opts.deriveCopy, true)
-        @Expect(opts.deriveDebug, true)
-        @Expect(opts.deriveDefault, false)
-        @Expect(opts.deriveHash, false)
-        @Expect(opts.implDebug, false)
-        @Expect(opts.implPartialEq, false)
-        @Expect(opts.derivePartialEq, false)
-        @Expect(opts.derivePartialOrd, false)
-        @Expect(opts.deriveEq, false)
-        @Expect(opts.deriveOrd, false)
         @Expect(opts.blocklistedTypes.size, 0)
         @Expect(opts.blocklistedFunctions.size, 0)
         @Expect(opts.blocklistedItems.size, 0)
@@ -87,12 +76,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.allowlistedItems.size, 0)
         @Expect(opts.allowlistedVars.size, 0)
         @Expect(opts.allowlistedFiles.size, 0)
-        @Expect(opts.noCopyTypes.size, 0)
-        @Expect(opts.noDebugTypes.size, 0)
-        @Expect(opts.noDefaultTypes.size, 0)
-        @Expect(opts.noHashTypes.size, 0)
-        @Expect(opts.noPartialEqTypes.size, 0)
-        @Expect(opts.blocklistedTypeImplementsTraitCallback.isNone(), true)
         @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
@@ -134,7 +117,6 @@ public class CjbindOptionsDefaultsTest {
         opts.representCxxOperators = true
         opts.respectCxxAccessSpecs = true
         opts.useSpecificVirtualFunctionReceiver = true
-        opts.useDistinctChar16T = true
         opts.generateInlineFunctions = true
         opts.generateDeletedFunctions = true
         opts.generatePureVirtualFunctions = true
@@ -160,7 +142,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.representCxxOperators, true)
         @Expect(opts.respectCxxAccessSpecs, true)
         @Expect(opts.useSpecificVirtualFunctionReceiver, true)
-        @Expect(opts.useDistinctChar16T, true)
         @Expect(opts.generateInlineFunctions, true)
         @Expect(opts.generateDeletedFunctions, true)
         @Expect(opts.generatePureVirtualFunctions, true)
@@ -221,34 +202,4 @@ public class CjbindOptionsDefaultsTest {
         @Expect(patterns.unmatchedPatterns(), ["Visible", "["])
     }
 
-    @TestCase
-    func equalityAndOrderingDerivesKeepTheirPrerequisites(): Unit {
-        let opts = CjbindOptions()
-
-        opts.deriveEq = true
-        @Expect(opts.deriveEq, true)
-        @Expect(opts.derivePartialEq, true)
-
-        opts.derivePartialEq = false
-        @Expect(opts.derivePartialEq, false)
-        @Expect(opts.deriveEq, false)
-
-        opts.deriveOrd = true
-        @Expect(opts.deriveOrd, true)
-        @Expect(opts.derivePartialOrd, true)
-
-        opts.derivePartialOrd = false
-        @Expect(opts.derivePartialOrd, false)
-        @Expect(opts.deriveOrd, false)
-
-        opts.derivePartialEq = true
-        opts.deriveEq = false
-        @Expect(opts.derivePartialEq, true)
-        @Expect(opts.deriveEq, false)
-
-        opts.derivePartialOrd = true
-        opts.deriveOrd = false
-        @Expect(opts.derivePartialOrd, false)
-        @Expect(opts.deriveOrd, false)
-    }
 }

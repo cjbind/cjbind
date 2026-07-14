@@ -174,12 +174,25 @@ public class DeriveArrayRulesTest {
                 Layout(64, 64),
                 TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt)
             )
+            let opaqueAlias = addAnalysisTestType(
+                ctx,
+                "OpaqueAlias",
+                TypeKind.TypeKindAlias(aligned)
+            )
+            ctx.options.opaqueTypes.add(#"^OpaqueAlias$"#)
 
             @Expect(
-                deriveTestResult(ctx, [aligned], aligned, DeriveTrait.Default),
+                deriveTestResult(ctx, [aligned, opaqueAlias], aligned, DeriveTrait.Default),
                 CanDerive.Manually
             )
-            @Expect(deriveTestResult(ctx, [aligned], aligned, DeriveTrait.Copy), CanDerive.Yes)
+            @Expect(
+                deriveTestResult(ctx, [aligned, opaqueAlias], opaqueAlias, DeriveTrait.Default),
+                CanDerive.Yes
+            )
+            @Expect(
+                deriveTestResult(ctx, [aligned, opaqueAlias], aligned, DeriveTrait.Copy),
+                CanDerive.Yes
+            )
         } finally {
             ctx.close()
         }
@@ -455,25 +468,6 @@ public class DeriveCompoundRulesTest {
     }
 
     @TestCase
-    func representationOpaqueRecordsUseTheirLayoutTraits(): Unit {
-        let ctx = analysisTestContext()
-        try {
-            let floating = addAnalysisTestType(
-                ctx,
-                "Floating",
-                TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindDouble)
-            )
-            let packedComp = analysisTestRecord([floating])
-            packedComp.packedAttr = true
-            let packed = addAnalysisTestType(ctx, "Packed", TypeKind.TypeKindComp(packedComp))
-
-            @Expect(deriveTestResult(ctx, [floating, packed], packed, DeriveTrait.Hash), CanDerive.Yes)
-        } finally {
-            ctx.close()
-        }
-    }
-
-    @TestCase
     func semanticOpacityUsesLayoutTraitsExceptForUntaggedUnions(): Unit {
         let ctx = analysisTestContext()
         try {
@@ -484,12 +478,12 @@ public class DeriveCompoundRulesTest {
             let nonTypeRecord = addAnalysisTestType(ctx, "NonTypeRecord", TypeKind.TypeKindComp(nonTypeComp))
             let opaque = addAnalysisTestType(ctx, "Opaque", TypeKind.TypeKindOpaque)
             let opaqueUnionComp = deriveTestUnion([pointer])
-            opaqueUnionComp.forceOpaque = true
             let opaqueUnion = addAnalysisTestType(ctx, "OpaqueUnion", TypeKind.TypeKindComp(opaqueUnionComp))
             let ids = [integer, pointer, nonTypeRecord, opaque, opaqueUnion]
 
             @Expect(deriveTestResult(ctx, ids, nonTypeRecord, DeriveTrait.Default), CanDerive.Yes)
             @Expect(deriveTestResult(ctx, ids, opaque, DeriveTrait.Default), CanDerive.Yes)
+            ctx.options.opaqueTypes.add(#"^OpaqueUnion$"#)
             ctx.options.untaggedUnion = true
             @Expect(deriveTestResult(ctx, ids, opaqueUnion, DeriveTrait.Copy), CanDerive.Yes)
             @Expect(deriveTestResult(ctx, ids, opaqueUnion, DeriveTrait.Debug), CanDerive.No)
@@ -630,43 +624,6 @@ public class DeriveReferenceEdgeRulesTest {
 @Test
 public class DeriveTemplateRulesTest {
     @TestCase
-    func concreteInstantiationUsesDeclarationAndArgumentsOnly(): Unit {
-        let ctx = analysisTestContext()
-        try {
-            let integer = addAnalysisTestType(ctx, "Integer", TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt))
-            let vector = addAnalysisTestType(ctx, "Vector", TypeKind.TypeKindVector(integer, 4))
-            let definition = addAnalysisTestType(
-                ctx,
-                "TemplateDefinition",
-                TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>()))
-            )
-            let concrete = addAnalysisTestType(
-                ctx,
-                "Concrete",
-                TypeKind.TypeKindComp(analysisTestRecord([vector]))
-            )
-            ctx.concreteTemplateInstantiations.add(concrete, TemplateInstantiation(
-                definition,
-                [integer],
-                ctx.translationUnit.cursor(),
-                None
-            ))
-
-            @Expect(
-                deriveTestResult(
-                    ctx,
-                    [integer, vector, definition, concrete],
-                    concrete,
-                    DeriveTrait.PartialEqOrPartialOrd
-                ),
-                CanDerive.Yes
-            )
-        } finally {
-            ctx.close()
-        }
-    }
-
-    @TestCase
     func definitionAndArgumentsBothConstrainInstantiation(): Unit {
         let ctx = analysisTestContext()
         try {
@@ -682,9 +639,7 @@ public class DeriveTemplateRulesTest {
                 "Instantiation",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     definition,
-                    [pointer],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [pointer]
                 ))
             )
             let ids = [integer, pointer, definition, instantiation]
@@ -709,9 +664,7 @@ public class DeriveTemplateRulesTest {
                 "OpaqueInstantiation",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     opaqueDefinition,
-                    [pointer],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [pointer]
                 ))
             )
             let ids = [integer, pointer, opaqueDefinition, instantiation]

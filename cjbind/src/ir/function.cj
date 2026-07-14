@@ -1,7 +1,6 @@
 package cjbind.ir
 
 import std.collection.{ArrayList, HashSet}
-import cjbind_token.*
 
 import cjbind.clang
 import cjbind.result.Result
@@ -401,24 +400,69 @@ func isCompleteObjectVariant(candidate: String, manglings: Array<String>, prefix
 }
 
 public func hasOpaqueValueAbi(signature: FunctionSig, ctx: CjbindContext): Bool {
+    return hasOpaqueValueAbiWithRepresentedTypeParams(signature, ctx, ItemSet())
+}
+
+public func hasOpaqueValueAbiWithRepresentedTypeParams(
+    signature: FunctionSig,
+    ctx: CjbindContext,
+    representedTypeParams: ItemSet
+): Bool {
     let visiting = HashSet<ItemId>()
-    if (typeHasOpaqueValueAbi(signature.returnType, ctx, visiting)) {
+    if (typeHasOpaqueValueAbi(
+        signature.returnType,
+        ctx,
+        visiting,
+        representedTypeParams
+    )) {
         return true
     }
     for ((_, argument) in signature.argumentTypes) {
-        if (typeHasOpaqueValueAbi(argument, ctx, visiting)) {
+        if (typeHasOpaqueValueAbi(argument, ctx, visiting, representedTypeParams)) {
             return true
         }
     }
     return false
 }
 
-func typeHasOpaqueValueAbi(typeId: TypeId, ctx: CjbindContext, visiting: HashSet<ItemId>): Bool {
+public func typeHasOpaqueValueAbiForCodegen(typeId: TypeId, ctx: CjbindContext): Bool {
+    return typeHasOpaqueValueAbi(typeId, ctx, HashSet<ItemId>(), ItemSet())
+}
+
+func typeHasOpaqueValueAbi(
+    typeId: TypeId,
+    ctx: CjbindContext,
+    visiting: HashSet<ItemId>,
+    representedTypeParams: ItemSet
+): Bool {
+    if (let Some(replacement) <- ctx.codegenTemplateReplacement(typeId)) {
+        if (replacement != typeId) {
+            return typeHasOpaqueValueAbi(
+                replacement,
+                ctx,
+                visiting,
+                representedTypeParams
+            )
+        }
+    }
     let item = typeId
         .intoResolver()
         .throughTypeRefs()
         .throughTypeAliases()
         .resolve(ctx)
+    if (let Some(replacement) <- ctx.codegenTemplateReplacement(item.id)) {
+        if (replacement != item.id) {
+            return typeHasOpaqueValueAbi(
+                replacement,
+                ctx,
+                visiting,
+                representedTypeParams
+            )
+        }
+    }
+    if (representedTypeParams.contains(item.id)) {
+        return false
+    }
     if (item.isOpaque(ctx, ())) {
         return true
     }
@@ -427,8 +471,30 @@ func typeHasOpaqueValueAbi(typeId: TypeId, ctx: CjbindContext, visiting: HashSet
     }
 
     let ty = item.kind.expectType()
+    if (let TypeKind.TypeKindComp(comp) <- ty.kind) {
+        if (comp.isCodegenOpaque(ctx, ty.getLayout(ctx), itemId: item.id)) {
+            return true
+        }
+    }
+    if (let TypeKind.TypeKindTemplateInstantiation(instantiation) <- ty.kind) {
+        let definition = instantiation.definition
+            .intoResolver()
+            .throughTypeRefs()
+            .resolve(ctx)
+        if (ctx.isBlocklistedItem(definition.id)) {
+            return true
+        }
+        if (ctx.codegenTemplateReplacement(item.id).isNone()) {
+            if (let TypeKind.TypeKindComp(_) <- definition.kind.expectType().kind) {
+                if (!ctx.usedTemplateParams(definition.id).isEmpty()) {
+                    return true
+                }
+            }
+        }
+    }
     return match (ty.kind) {
-        case TypeKind.TypeKindArray(inner, _) => typeHasOpaqueValueAbi(inner, ctx, visiting)
+        case TypeKind.TypeKindArray(inner, _) =>
+            typeHasOpaqueValueAbi(inner, ctx, visiting, representedTypeParams)
         case TypeKind.TypeKindVector(_, _) |
             TypeKind.TypeKindComplex(_) |
             TypeKind.TypeKindTemplateInstantiation(_) |
@@ -441,14 +507,24 @@ func typeHasOpaqueValueAbi(typeId: TypeId, ctx: CjbindContext, visiting: HashSet
             for (field in comp.getFields()) {
                 match (field) {
                     case Field.DataMember(data) =>
-                        if (typeHasOpaqueValueAbi(data.ty, ctx, visiting)) {
+                        if (typeHasOpaqueValueAbi(
+                            data.ty,
+                            ctx,
+                            visiting,
+                            representedTypeParams
+                        )) {
                             return true
                         }
                     case Field.Bitfields(_) => return true
                 }
             }
             for (base in comp.baseMembers) {
-                if (typeHasOpaqueValueAbi(base.ty, ctx, visiting)) {
+                if (typeHasOpaqueValueAbi(
+                    base.ty,
+                    ctx,
+                    visiting,
+                    representedTypeParams
+                )) {
                     return true
                 }
             }
@@ -574,37 +650,19 @@ func fieldContainsUnsupportedRecord(ty: clang.Type): Bool {
     return false
 }
 
-public enum Abi <: ToTokens {
+public enum Abi {
     C
     | Stdcall
     | Fastcall
     | ThisCall
     | Vectorcall
     | Aapcs
-    | AapcsVfp
     | Win64
-    | SysV64
-
-    public func appendToStream(tokens: TokenStream): Unit {
-        match (this) {
-            case Stdcall => tokens.appendLiteral("@CallingConv[STDCALL]")
-            case _ => tokens.appendLiteral("@CallingConv[CDECL]")
-        }
-    }
 }
 
-public enum ClangAbi <: ToTokens {
+public enum ClangAbi {
     Known(Abi)
     | Unknown(clang.CXCallingConv)
-
-    public func appendToStream(tokens: TokenStream): Unit {
-        match (this) {
-            case Known(v) => v.appendToStream(tokens)
-            case Unknown(_) =>
-                // Fall back to C calling convention for unknown ABIs
-                Abi.C.appendToStream(tokens)
-        }
-    }
 
     public func isStdcall(): Bool {
         return match (this) {
@@ -628,9 +686,7 @@ public enum ClangAbi <: ToTokens {
             case Known(Abi.ThisCall) => "thiscall"
             case Known(Abi.Vectorcall) => "vectorcall"
             case Known(Abi.Aapcs) => "aapcs"
-            case Known(Abi.AapcsVfp) => "aapcs-vfp"
             case Known(Abi.Win64) => "win64"
-            case Known(Abi.SysV64) => "sysv64"
             case Unknown(value) => "unknown (${value})"
         }
     }
@@ -641,13 +697,8 @@ public enum ClangAbi <: ToTokens {
             case Known(Abi.Win64) => targetInfo.pointerWidth == 64 &&
                 (targetInfo.triple.contains("windows") || targetInfo.triple.contains("mingw") ||
                 targetInfo.triple.contains("win32"))
-            case Known(Abi.SysV64) => targetInfo.pointerWidth == 64 &&
-                targetInfo.triple.contains("x86_64") && !targetInfo.triple.contains("windows") &&
-                !targetInfo.triple.contains("mingw") && !targetInfo.triple.contains("win32")
             case Known(Abi.Aapcs) => (targetInfo.triple.startsWith("arm") ||
                 targetInfo.triple.startsWith("thumb")) && !targetInfo.triple.contains("eabihf")
-            case Known(Abi.AapcsVfp) => (targetInfo.triple.startsWith("arm") ||
-                targetInfo.triple.startsWith("thumb")) && targetInfo.triple.contains("eabihf")
             case _ => false
         }
     }
@@ -680,14 +731,8 @@ func getAbi(cc: clang.CXCallingConv): ClangAbi {
     if (cc == clang.CXCallingConv_CXCallingConv_AAPCS) {
         return Known(Abi.Aapcs)
     }
-    if (cc == clang.CXCallingConv_CXCallingConv_AAPCS_VFP) {
-        return Known(Abi.AapcsVfp)
-    }
     if (cc == clang.CXCallingConv_CXCallingConv_X86_64Win64) {
         return Known(Abi.Win64)
-    }
-    if (cc == clang.CXCallingConv_CXCallingConv_X86_64SysV) {
-        return Known(Abi.SysV64)
     }
     return Unknown(cc)
 }
@@ -881,13 +926,11 @@ public class FunctionSig <: Trace<Tracer, Unit> {
     }
     // cjlint-ignore -end
 
-    // Returns false for C functions with variadic args but no named parameters
-    // (e.g., `f(...)`), as these cannot be represented in Cangjie FFI.
     public func getIsVariadic(): Bool {
         return this.isVariadic && !this.argumentTypes.isEmpty()
     }
 
-    public func isVariadicFunction(): Bool {
+    func rawIsVariadic(): Bool {
         return this.isVariadic
     }
 }

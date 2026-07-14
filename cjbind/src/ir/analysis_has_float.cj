@@ -2,7 +2,7 @@ package cjbind.ir
 
 import std.collection.*
 
-public class HasFloatAnalysis <: MonotoneFramework<ItemId, ItemSet> {
+class HasFloatAnalysis <: MonotoneFramework<ItemId, ItemSet> {
     let ctx: CjbindContext
     let allowlistedItems: ItemSet
     let hasFloat = ItemSet()
@@ -21,7 +21,14 @@ public class HasFloatAnalysis <: MonotoneFramework<ItemId, ItemSet> {
                     EdgeKind.TemplateArgumentEdge |
                     EdgeKind.TemplateDeclarationEdge |
                     EdgeKind.TemplateParameterDefinitionEdge => true
-                case _ => false
+                case EdgeKind.ConstructorEdge |
+                    EdgeKind.DestructorEdge |
+                    EdgeKind.FunctionReturnEdge |
+                    EdgeKind.FunctionParameterEdge |
+                    EdgeKind.InnerTypeEdge |
+                    EdgeKind.InnerVarEdge |
+                    EdgeKind.MethodEdge |
+                    EdgeKind.GenericEdge => false
             }
         }
     }
@@ -41,19 +48,17 @@ public class HasFloatAnalysis <: MonotoneFramework<ItemId, ItemSet> {
         }
 
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                if (this.hasFloat.contains(instantiation.definition)) {
+            if (this.hasFloat.contains(instantiation.definition)) {
+                this.hasFloat.add(id)
+                return ConstrainResult.Changed
+            }
+            for (argument in instantiation.arguments) {
+                if (this.hasFloat.contains(argument)) {
                     this.hasFloat.add(id)
                     return ConstrainResult.Changed
                 }
-                for (argument in instantiation.arguments) {
-                    if (this.hasFloat.contains(argument)) {
-                        this.hasFloat.add(id)
-                        return ConstrainResult.Changed
-                    }
-                }
-                return ConstrainResult.Same
             }
+            return ConstrainResult.Same
         }
 
         let containsFloat = match (ty.kind) {
@@ -101,7 +106,7 @@ public class HasFloatAnalysis <: MonotoneFramework<ItemId, ItemSet> {
     }
 }
 
-public func analyzeHasFloat(
+func analyzeHasFloat(
     ctx: CjbindContext,
     allowlistedItems: ItemSet
 ): ItemSet {

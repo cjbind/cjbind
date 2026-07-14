@@ -17,11 +17,18 @@ func genericAliasTestContext(): CjbindContext {
 func addGenericAliasTestType(
     ctx: CjbindContext,
     name: String,
-    kind: TypeKind
+    kind: TypeKind,
+    parentId!: ?ItemId = None
 ): TypeId {
     let id = ctx.nextItemId()
     ctx.addItem(
-        Item(id, None, ctx.rootModule, ItemKind.KindType(Type(Some(name), None, kind, false)), None),
+        Item(
+            id,
+            None,
+            parentId.getOrDefault({=> ctx.rootModule}),
+            ItemKind.KindType(Type(Some(name), None, kind, false)),
+            None
+        ),
         None,
         None
     )
@@ -39,12 +46,11 @@ func markGenericAliasUsage(
 @Test
 public class GenericAliasRenderingTest {
     @TestCase
-    func recursivelyRendersAliasesPointersArraysAndFunctions(): Unit {
+    func preservesAliasPaths(): Unit {
         let ctx = genericAliasTestContext()
         try {
             let returnParameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
             let skippedParameter = addGenericAliasTestType(ctx, "U", TypeKind.TypeKindTypeParam)
-            let argumentParameter = addGenericAliasTestType(ctx, "V", TypeKind.TypeKindTypeParam)
             let pointer = addGenericAliasTestType(
                 ctx,
                 "Pointer",
@@ -55,7 +61,48 @@ public class GenericAliasRenderingTest {
                 "Array",
                 TypeKind.TypeKindArray(pointer, 4)
             )
-            let alias = addGenericAliasTestType(ctx, "Alias", TypeKind.TypeKindAlias(array))
+            let ownerInfo = CompInfo(CompKind.CompKindStruct, isCxxRecord: true)
+            ownerInfo.templateParams.add(returnParameter)
+            let owner = addGenericAliasTestType(
+                ctx,
+                "Owner",
+                TypeKind.TypeKindComp(ownerInfo)
+            )
+            let alias = addGenericAliasTestType(
+                ctx,
+                "Alias",
+                TypeKind.TypeKindAlias(array),
+                parentId: owner
+            )
+
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, returnParameter, [returnParameter])
+            markGenericAliasUsage(usage, skippedParameter, [skippedParameter])
+            markGenericAliasUsage(usage, pointer, [returnParameter])
+            markGenericAliasUsage(usage, array, [returnParameter])
+            markGenericAliasUsage(usage, owner, [returnParameter])
+            markGenericAliasUsage(usage, alias, [returnParameter])
+            ctx.usedTemplateParameters = Some(usage)
+
+            let substitutions = HashMap<ItemId, String>()
+            substitutions.add(returnParameter, "T")
+
+            let renderedAlias = renderGenericAliasType(ctx, alias, substitutions, ItemSet())
+            match (renderedAlias) {
+                case Ok(tokens) => @Expect(tokens.toString(), "Owner_Alias<T>")
+                case Err(_) => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
+    func preservesGenericFunctionPointerAsOpaquePointerWhenItsValueAbiCannotBeNamed(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            let returnParameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let argumentParameter = addGenericAliasTestType(ctx, "V", TypeKind.TypeKindTypeParam)
             let function = addGenericAliasTestType(
                 ctx,
                 "Function",
@@ -72,30 +119,46 @@ public class GenericAliasRenderingTest {
                 "FunctionPointer",
                 TypeKind.TypeKindPointer(function)
             )
-
             let usage = HashMap<ItemId, ItemSet>()
             markGenericAliasUsage(usage, returnParameter, [returnParameter])
-            markGenericAliasUsage(usage, skippedParameter, [skippedParameter])
             markGenericAliasUsage(usage, argumentParameter, [argumentParameter])
-            markGenericAliasUsage(usage, pointer, [returnParameter])
-            markGenericAliasUsage(usage, array, [returnParameter])
-            markGenericAliasUsage(usage, alias, [returnParameter])
             markGenericAliasUsage(usage, function, [returnParameter, argumentParameter])
             markGenericAliasUsage(usage, functionPointer, [returnParameter, argumentParameter])
             ctx.usedTemplateParameters = Some(usage)
-
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(returnParameter, "T")
             substitutions.add(argumentParameter, "V")
 
-            let renderedAlias = renderGenericAliasType(ctx, alias, substitutions, ItemSet())
-            let renderedFunction = renderGenericAliasType(ctx, functionPointer, substitutions, ItemSet())
-            match (renderedAlias) {
-                case Ok(tokens) => @Expect(tokens.toString(), "VArray<CPointer<T>, $4>")
+            let visiting = ItemSet()
+            match (renderGenericAliasType(ctx, functionPointer, substitutions, visiting)) {
+                case Ok(tokens) => @Expect(tokens.toString(), "CPointer<Unit>")
                 case Err(_) => @Assert(false)
             }
-            match (renderedFunction) {
-                case Ok(tokens) => @Expect(tokens.toString(), "CFunc<(arg1: V) -> T>")
+            @Expect(visiting.isEmpty(), true)
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
+    func preservesGenericPointerWithoutCTypeConstraint(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let pointer = addGenericAliasTestType(
+                ctx,
+                "Pointer",
+                TypeKind.TypeKindPointer(parameter)
+            )
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, parameter, [parameter])
+            markGenericAliasUsage(usage, pointer, [parameter])
+            ctx.usedTemplateParameters = Some(usage)
+            let substitutions = HashMap<ItemId, String>()
+            substitutions.add(parameter, "T")
+
+            match (renderGenericAliasType(ctx, pointer, substitutions, ItemSet())) {
+                case Ok(tokens) => @Expect(tokens.toString(), "CPointer<T>")
                 case Err(_) => @Assert(false)
             }
         } finally {
@@ -131,7 +194,7 @@ public class GenericAliasRenderingTest {
     }
 
     @TestCase
-    func skipsAliasesWhoseGenericRecordTargetsAreNotGenerated(): Unit {
+    func erasesAliasesWhoseGenericRecordTargetsAreIndirect(): Unit {
         let ctx = genericAliasTestContext()
         try {
             let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
@@ -151,8 +214,8 @@ public class GenericAliasRenderingTest {
             let usage = HashMap<ItemId, ItemSet>()
             markGenericAliasUsage(usage, parameter, [parameter])
             markGenericAliasUsage(usage, record, [parameter])
-            markGenericAliasUsage(usage, pointer, Array<TypeId>())
-            markGenericAliasUsage(usage, alias, Array<TypeId>())
+            markGenericAliasUsage(usage, pointer, [parameter])
+            markGenericAliasUsage(usage, alias, [parameter])
             ctx.usedTemplateParameters = Some(usage)
 
             let result = CodegenResult()
@@ -165,15 +228,16 @@ public class GenericAliasRenderingTest {
                 aliasItem
             )
 
-            @Expect(result.items.isEmpty(), true)
-            @Expect(result.seenType(aliasItem.canonicalName(ctx)), false)
+            @Expect(result.items.size, 1)
+            @Expect(result.items[0].toString(), "public type Fixed16<T> = CPointer<Unit>")
+            @Expect(result.seenType(aliasItem.canonicalName(ctx)), true)
         } finally {
             ctx.close()
         }
     }
 
     @TestCase
-    func substitutesNestedTemplateAliasInstancesBeforeRendering(): Unit {
+    func preservesNestedTemplateAliasInstancesWithOpaqueFunctionPointers(): Unit {
         let ctx = genericAliasTestContext()
         try {
             let innerParameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
@@ -204,9 +268,7 @@ public class GenericAliasRenderingTest {
                 "CallbackU",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     definition,
-                    [outerParameter],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [outerParameter]
                 ))
             )
             let outerAlias = addGenericAliasTestType(
@@ -227,9 +289,120 @@ public class GenericAliasRenderingTest {
 
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(outerParameter, "U")
-            match (renderGenericAliasType(ctx, outerAlias, substitutions, ItemSet())) {
-                case Ok(tokens) => @Expect(tokens.toString(), "CFunc<(arg1: U) -> U>")
+            match (renderGenericAliasType(ctx, instance, substitutions, ItemSet())) {
+                case Ok(tokens) => @Expect(tokens.toString(), "Callback<U>")
                 case Err(_) => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
+    func rendersConcreteInstanceOfUnsupportedGenericFunctionAlias(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let integer = addGenericAliasTestType(
+                ctx,
+                "Integer",
+                TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt)
+            )
+            let function = addGenericAliasTestType(
+                ctx,
+                "Function",
+                TypeKind.TypeKindFunction(FunctionSig(
+                    "callback",
+                    parameter,
+                    [(None, parameter)],
+                    false,
+                    ClangAbi.Known(Abi.C)
+                ))
+            )
+            let pointer = addGenericAliasTestType(
+                ctx,
+                "FunctionPointer",
+                TypeKind.TypeKindPointer(function)
+            )
+            let definition = addGenericAliasTestType(
+                ctx,
+                "Callback",
+                TypeKind.TypeKindTemplateAlias(pointer, [parameter])
+            )
+            let instance = addGenericAliasTestType(
+                ctx,
+                "IntCallback",
+                TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
+                    definition,
+                    [integer]
+                ))
+            )
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, parameter, [parameter])
+            markGenericAliasUsage(usage, integer, Array<TypeId>())
+            markGenericAliasUsage(usage, function, [parameter])
+            markGenericAliasUsage(usage, pointer, [parameter])
+            markGenericAliasUsage(usage, definition, [parameter])
+            markGenericAliasUsage(usage, instance, Array<TypeId>())
+            ctx.usedTemplateParameters = Some(usage)
+
+            match (instance.tryToCjTy(ctx, ())) {
+                case Ok(tokens) => @Expect(tokens.toString(), "CFunc<(arg1: Int32) -> Int32>")
+                case Err(_) => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
+    func reportsUnsupportedCallingConventionsAsErrors(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            let unit = addGenericAliasTestType(ctx, "Unit", TypeKind.TypeKindVoid)
+            let substitutions = HashMap<ItemId, String>()
+            let visiting = ItemSet()
+            let ctypeSubstitutions = ItemSet()
+            let valueAbiSubstitutions = ItemSet()
+
+            let unsupported = renderGenericAliasFunction(
+                ctx,
+                FunctionSig(
+                    "fastCallback",
+                    unit,
+                    Array<(Option<String>, TypeId)>(),
+                    false,
+                    ClangAbi.Known(Abi.Fastcall)
+                ),
+                substitutions,
+                visiting,
+                ctypeSubstitutions,
+                valueAbiSubstitutions,
+                Box(false)
+            )
+            match (unsupported) {
+                case Err(error) => @Expect(genericAliasDiagnosticLevel(error), "Error")
+                case Ok(_) => @Assert(false)
+            }
+
+            let ordinary = renderGenericAliasFunction(
+                ctx,
+                FunctionSig(
+                    "variadicCallback",
+                    unit,
+                    [(None, unit)],
+                    true,
+                    ClangAbi.Known(Abi.C)
+                ),
+                substitutions,
+                visiting,
+                ctypeSubstitutions,
+                valueAbiSubstitutions,
+                Box(false)
+            )
+            match (ordinary) {
+                case Err(error) => @Expect(genericAliasDiagnosticLevel(error), "Warning")
+                case Ok(_) => @Assert(false)
             }
         } finally {
             ctx.close()

@@ -70,38 +70,6 @@ public class NamePatternSet {
     }
 }
 
-public enum ConfiguredDeriveTrait <: Equatable<ConfiguredDeriveTrait> {
-    Copy
-    | Debug
-    | Default
-    | Hash
-    | PartialEqOrPartialOrd
-
-    public operator func ==(rhs: ConfiguredDeriveTrait): Bool {
-        return match ((this, rhs)) {
-            case (Copy, Copy) |
-                (Debug, Debug) |
-                (Default, Default) |
-                (Hash, Hash) |
-                (PartialEqOrPartialOrd, PartialEqOrPartialOrd) => true
-            case _ => false
-        }
-    }
-}
-
-public enum ConfiguredCanDerive <: Equatable<ConfiguredCanDerive> {
-    Yes
-    | Manually
-    | No
-
-    public operator func ==(rhs: ConfiguredCanDerive): Bool {
-        return match ((this, rhs)) {
-            case (Yes, Yes) | (Manually, Manually) | (No, No) => true
-            case _ => false
-        }
-    }
-}
-
 public enum ObjcCodegenMode <: Equatable<ObjcCodegenMode> {
     | Runtime
     | Compiler
@@ -172,7 +140,6 @@ public class CjbindOptions {
     public var representCxxOperators: Bool = false
     public var respectCxxAccessSpecs: Bool = false
     public var useSpecificVirtualFunctionReceiver: Bool = false
-    public var useDistinctChar16T: Bool = false
     public var generateInlineFunctions: Bool = false
     public var generateDeletedFunctions: Bool = false
     public var generatePureVirtualFunctions: Bool = false
@@ -182,50 +149,6 @@ public class CjbindOptions {
     public var recordMatches: Bool = true
     public var untaggedUnion: Bool = true
     public var sizeTIsUsize: Bool = true
-    public var deriveCopy: Bool = true
-    public var deriveDebug: Bool = true
-    public var deriveDefault: Bool = false
-    public var deriveHash: Bool = false
-    public var implDebug: Bool = false
-    public var implPartialEq: Bool = false
-    private var derivePartialEqValue: Bool = false
-    private var derivePartialOrdValue: Bool = false
-    private var deriveEqValue: Bool = false
-    private var deriveOrdValue: Bool = false
-    public mut prop derivePartialEq: Bool {
-        get() { this.derivePartialEqValue }
-        set(value) {
-            this.derivePartialEqValue = value
-            if (!value) {
-                this.deriveEqValue = false
-            }
-        }
-    }
-    public mut prop deriveEq: Bool {
-        get() { this.deriveEqValue }
-        set(value) {
-            this.deriveEqValue = value
-            if (value) {
-                this.derivePartialEqValue = true
-            }
-        }
-    }
-    public mut prop derivePartialOrd: Bool {
-        get() { this.derivePartialOrdValue }
-        set(value) {
-            this.derivePartialOrdValue = value
-            if (!value) {
-                this.deriveOrdValue = false
-            }
-        }
-    }
-    public mut prop deriveOrd: Bool {
-        get() { this.deriveOrdValue }
-        set(value) {
-            this.deriveOrdValue = value
-            this.derivePartialOrdValue = value
-        }
-    }
     public let blocklistedTypes: NamePatternSet = NamePatternSet()
     public let blocklistedFunctions: NamePatternSet = NamePatternSet()
     public let blocklistedItems: NamePatternSet = NamePatternSet()
@@ -237,13 +160,6 @@ public class CjbindOptions {
     public let allowlistedItems: NamePatternSet = NamePatternSet()
     public let allowlistedVars: NamePatternSet = NamePatternSet()
     public let allowlistedFiles: NamePatternSet = NamePatternSet()
-    public let noCopyTypes: NamePatternSet = NamePatternSet()
-    public let noDebugTypes: NamePatternSet = NamePatternSet()
-    public let noDefaultTypes: NamePatternSet = NamePatternSet()
-    public let noHashTypes: NamePatternSet = NamePatternSet()
-    public let noPartialEqTypes: NamePatternSet = NamePatternSet()
-    public var blocklistedTypeImplementsTraitCallback:
-        ?((String, ConfiguredDeriveTrait) -> ?ConfiguredCanDerive) = None
     /// Allows library users to rename named struct, union, and bitfield fields.
     /// Returning `None` keeps the original C field name.
     public var fieldNameCallback: ?((FieldInfo) -> ?String) = None

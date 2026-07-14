@@ -190,7 +190,7 @@ public class AstTy {
         return match (ik) {
             case TypeKindIntKind.IntKindBool => tokenStreamFromTemplate("Bool")
             case TypeKindIntKind.IntKindChar(_) => rawType(ctx, "UInt8")
-            case TypeKindIntKind.IntKindChar16 => rawType(ctx, "cjbind_cchar16_t")
+            case TypeKindIntKind.IntKindChar16 => rawType(ctx, "UInt16")
             case TypeKindIntKind.IntKindSChar => rawType(ctx, "Int8")
             case TypeKindIntKind.IntKindUChar => rawType(ctx, "UInt8")
             case TypeKindIntKind.IntKindShort => rawType(ctx, "Int16")

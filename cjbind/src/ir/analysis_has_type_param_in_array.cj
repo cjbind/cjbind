@@ -2,7 +2,7 @@ package cjbind.ir
 
 import std.collection.*
 
-public class HasTypeParameterInArrayAnalysis <: MonotoneFramework<ItemId, ItemSet> {
+class HasTypeParameterInArrayAnalysis <: MonotoneFramework<ItemId, ItemSet> {
     let ctx: CjbindContext
     let allowlistedItems: ItemSet
     let hasTypeParameterInArray = ItemSet()
@@ -21,7 +21,14 @@ public class HasTypeParameterInArrayAnalysis <: MonotoneFramework<ItemId, ItemSe
                     EdgeKind.TemplateArgumentEdge |
                     EdgeKind.TemplateDeclarationEdge |
                     EdgeKind.TemplateParameterDefinitionEdge => true
-                case _ => false
+                case EdgeKind.ConstructorEdge |
+                    EdgeKind.DestructorEdge |
+                    EdgeKind.FunctionReturnEdge |
+                    EdgeKind.FunctionParameterEdge |
+                    EdgeKind.InnerTypeEdge |
+                    EdgeKind.InnerVarEdge |
+                    EdgeKind.MethodEdge |
+                    EdgeKind.GenericEdge => false
             }
         }
     }
@@ -41,19 +48,17 @@ public class HasTypeParameterInArrayAnalysis <: MonotoneFramework<ItemId, ItemSe
         }
 
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                if (this.hasTypeParameterInArray.contains(instantiation.definition)) {
+            if (this.hasTypeParameterInArray.contains(instantiation.definition)) {
+                this.hasTypeParameterInArray.add(id)
+                return ConstrainResult.Changed
+            }
+            for (argument in instantiation.arguments) {
+                if (this.hasTypeParameterInArray.contains(argument)) {
                     this.hasTypeParameterInArray.add(id)
                     return ConstrainResult.Changed
                 }
-                for (argument in instantiation.arguments) {
-                    if (this.hasTypeParameterInArray.contains(argument)) {
-                        this.hasTypeParameterInArray.add(id)
-                        return ConstrainResult.Changed
-                    }
-                }
-                return ConstrainResult.Same
             }
+            return ConstrainResult.Same
         }
 
         let hasTypeParameter = match (ty.kind) {
@@ -103,7 +108,7 @@ public class HasTypeParameterInArrayAnalysis <: MonotoneFramework<ItemId, ItemSe
     }
 }
 
-public func analyzeHasTypeParameterInArray(
+func analyzeHasTypeParameterInArray(
     ctx: CjbindContext,
     allowlistedItems: ItemSet
 ): ItemSet {

@@ -2,7 +2,7 @@ package cjbind.ir
 
 import std.collection.*
 
-public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, ItemSet>> {
+class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, ItemSet>> {
     let ctx: CjbindContext
     let allowlistedItems: ItemSet
     let analysisItems: ItemSet
@@ -13,26 +13,27 @@ public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap
         this.ctx = ctx
         this.allowlistedItems = allowlistedItems
         this.analysisItems = reachableAnalysisItems(ctx, allowlistedItems)
-        this.dependencies = generateAnalysisDependencies(ctx, this.analysisItems) {_ => true}
+        this.dependencies = HashMap<ItemId, ArrayList<ItemId>>()
 
-        for (id in this.analysisItems) {
+        for (id in analysisItemsToArray(this.analysisItems)) {
+            if (!this.dependencies.contains(id)) {
+                this.dependencies.add(id, ArrayList<ItemId>())
+            }
             usedSet(this.used, id)
             for (edge in traceAnalysisEdges(ctx, id)) {
                 usedSet(this.used, edge.to)
+                addAnalysisDependency(this.dependencies, edge.to, id)
             }
 
             if (let Some(instantiation) <- ctx.templateInstantiationFor(id)) {
-                let ty = ctx.resolveType(id)
-                if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                    let parameters = selfTemplateParams(instantiation.definition, ctx)
-                    let count = min(instantiation.arguments.size, parameters.size)
-                    for (index in 0..count) {
-                        let argument = canonicalItemId(ctx, instantiation.arguments[index])
-                        let parameter = canonicalItemId(ctx, parameters[index])
-                        usedSet(this.used, argument)
-                        usedSet(this.used, parameter)
-                        addAnalysisDependency(this.dependencies, argument, parameter)
-                    }
+                let parameters = selfTemplateParams(instantiation.definition, ctx)
+                let count = min(instantiation.arguments.size, parameters.size)
+                for (index in 0..count) {
+                    let argument = canonicalItemId(ctx, instantiation.arguments[index])
+                    let parameter = canonicalItemId(ctx, parameters[index])
+                    usedSet(this.used, argument)
+                    usedSet(this.used, parameter)
+                    addAnalysisDependency(this.dependencies, argument, parameter)
                 }
             }
         }
@@ -67,7 +68,7 @@ public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap
         let parameters = selfTemplateParams(instantiation.definition, this.ctx)
         let count = min(instantiation.arguments.size, parameters.size)
         for (index in 0..count) {
-            let parameter = canonicalItemId(this.ctx, parameters[index])
+            let parameter = parameters[index]
             if (!definitionUsed.contains(parameter)) {
                 continue
             }
@@ -101,7 +102,7 @@ public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap
     }
 
     public func initialWorklist(): Array<ItemId> {
-        return analysisItemsToArray(this.analysisItems)
+        return analysisInitialWorklist(this.ctx, this.allowlistedItems)
     }
 
     public func constrain(id: ItemId): ConstrainResult {
@@ -112,9 +113,7 @@ public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap
             if (let TypeKind.TypeKindTypeParam <- value.kind) {
                 target.add(id)
             } else if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-                if (hasMaterializedSpecializationBody(value, instantiation)) {
-                    this.constrainJoin(id, target)
-                } else if (this.allowlistedItems.contains(instantiation.definition)) {
+                if (this.allowlistedItems.contains(instantiation.definition)) {
                     this.constrainInstantiation(id, target, instantiation)
                 } else {
                     this.constrainBlocklistedInstantiation(id, target, instantiation)
@@ -140,7 +139,7 @@ public class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap
     }
 }
 
-public func analyzeUsedTemplateParameters(
+func analyzeUsedTemplateParameters(
     ctx: CjbindContext,
     allowlistedItems: ItemSet
 ): HashMap<ItemId, ItemSet> {

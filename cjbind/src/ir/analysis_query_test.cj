@@ -10,10 +10,10 @@ public class AnalysisQueryCompositionTest {
     func equalityAndOrderingRejectFloatingPointTransitively(): Unit {
         let ctx = analysisTestContext()
         try {
-            ctx.options.deriveEq = true
-            ctx.options.deriveOrd = true
-            ctx.options.derivePartialEq = true
-            ctx.options.derivePartialOrd = true
+            ctx.deriveEq = true
+            ctx.deriveOrd = true
+            ctx.derivePartialEq = true
+            ctx.derivePartialOrd = true
             let integer = addAnalysisTestType(
                 ctx,
                 "Integer",

@@ -993,7 +993,8 @@ public class Type <: Equatable<Type> {
 
     public func declaration(): Cursor {
         unsafe {
-            return Cursor(clang_getTypeDeclaration(x))
+            let declaration = Cursor(clang_getTypeDeclaration(x))
+            return declaration.definition().getOrDefault({=> declaration})
         }
     }
 
@@ -1072,6 +1073,21 @@ public class Type <: Equatable<Type> {
 
     public func isValid(): Bool {
         return this.x.kind != CXTypeKind_CXType_Invalid
+    }
+
+    public func isFullyInstantiatedTemplate(): Bool {
+        let hasTemplateArguments = this
+            .templateArgs()
+            .map({ arguments => !arguments.isEmpty() })
+            .getOrDefault({=> false})
+        if (!hasTemplateArguments) {
+            return false
+        }
+
+        let declarationKind = this.declaration().kind()
+        return declarationKind != CXCursorKind_CXCursor_ClassTemplatePartialSpecialization &&
+            declarationKind != CXCursorKind_CXCursor_TypeAliasTemplateDecl &&
+            declarationKind != CXCursorKind_CXCursor_TemplateTemplateParameter
     }
 
     public func elemType(): ?Type {
@@ -1225,9 +1241,18 @@ public class Type <: Equatable<Type> {
         }
     }
 
-    public func canonicalDeclaration(_: ?Cursor): ?CanonicalTypeDeclaration {
-        let decl = this.declaration()
-        let canonical = decl.canonical()
+    public func canonicalDeclaration(location: ?Cursor): ?CanonicalTypeDeclaration {
+        var declaration = this.declaration()
+        if (!declaration.isValid()) {
+            if (let Some(source) <- location) {
+                let referenced = source.referenced().getOrDefault({=> source})
+                if (referenced.isTemplateLike()) {
+                    declaration = referenced
+                }
+            }
+        }
+
+        let canonical = declaration.canonical()
         if (canonical.isValid() && canonical.kind() != CXCursorKind_CXCursor_NoDeclFound) {
             return CanonicalTypeDeclaration(this, canonical)
         } else {

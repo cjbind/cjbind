@@ -2,7 +2,6 @@ package cjbind.ir
 
 import std.unittest.*
 import std.unittest.testmacro.*
-import cjbind.options.{ConfiguredCanDerive, ConfiguredDeriveTrait}
 
 @Test
 public class DerivePolicyAnalysisTest {
@@ -12,13 +11,13 @@ public class DerivePolicyAnalysisTest {
         try {
             let callbackCalls = Box(0)
             ctx.options.blocklistedTypes.add(#"^BlockedLeaf$"#)
-            ctx.options.blocklistedTypeImplementsTraitCallback = Some({
-                name: String, deriveTrait: ConfiguredDeriveTrait =>
+            ctx.blocklistedTypeImplementsTraitCallback = Some({
+                name: String, deriveTrait: DeriveTrait =>
                 callbackCalls.value += 1
-                if (name == "BlockedLeaf" && deriveTrait == ConfiguredDeriveTrait.Copy) {
-                    Some(ConfiguredCanDerive.Yes)
+                if (name == "BlockedLeaf" && deriveTrait == DeriveTrait.Copy) {
+                    Some(CanDerive.Yes)
                 } else {
-                    Some(ConfiguredCanDerive.No)
+                    Some(CanDerive.No)
                 }
             })
 
@@ -53,8 +52,8 @@ public class DerivePolicyAnalysisTest {
     func manualBlocklistedResultsJoinForRecordsButRejectArrays(): Unit {
         let ctx = analysisTestContext()
         try {
-            ctx.options.blocklistedTypeImplementsTraitCallback = Some({
-                _: String, _: ConfiguredDeriveTrait => Some(ConfiguredCanDerive.Manually)
+            ctx.blocklistedTypeImplementsTraitCallback = Some({
+                _: String, _: DeriveTrait => Some(CanDerive.Manually)
             })
             let external = addAnalysisTestType(
                 ctx,
@@ -79,11 +78,11 @@ public class DerivePolicyAnalysisTest {
     func noDerivePatternsAreAppliedPerTrait(): Unit {
         let ctx = analysisTestContext()
         try {
-            ctx.options.noCopyTypes.add(#"^NoCopy$"#)
-            ctx.options.noDebugTypes.add(#"^NoDebug$"#)
-            ctx.options.noDefaultTypes.add(#"^NoDefault$"#)
-            ctx.options.noHashTypes.add(#"^NoHash$"#)
-            ctx.options.noPartialEqTypes.add(#"^NoPartialEq$"#)
+            ctx.noCopyTypes.add(#"^NoCopy$"#)
+            ctx.noDebugTypes.add(#"^NoDebug$"#)
+            ctx.noDefaultTypes.add(#"^NoDefault$"#)
+            ctx.noHashTypes.add(#"^NoHash$"#)
+            ctx.noPartialEqTypes.add(#"^NoPartialEq$"#)
 
             let noCopy = addAnalysisTestType(ctx, "NoCopy", TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>())))
             let noDebug = addAnalysisTestType(ctx, "NoDebug", TypeKind.TypeKindComp(analysisTestRecord(Array<TypeId>())))
@@ -141,7 +140,7 @@ public class SemanticOpacityPolicyTest {
             packed.packedAttr = true
 
             @Expect(packed.isSemanticallyOpaque(ctx), false)
-            @Expect(packed.isOpaqueForItem(ctx, Some(Layout(1, 1))), true)
+            @Expect(packed.isCodegenOpaque(ctx, Some(Layout(1, 1))), true)
         } finally {
             ctx.close()
         }

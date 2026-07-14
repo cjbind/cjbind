@@ -3,7 +3,7 @@ package cjbind.ir
 import std.collection.{ArrayList, HashMap}
 
 /// The location of a record's virtual-table pointer.
-public enum HasVtableResult <: Equatable<HasVtableResult> {
+enum HasVtableResult <: Equatable<HasVtableResult> {
     No
     | SelfHasVtable
     | BaseHasVtable
@@ -33,21 +33,21 @@ public enum HasVtableResult <: Equatable<HasVtableResult> {
     }
 }
 
-public func hasVtableResultFor(
+func hasVtableResultFor(
     results: HashMap<ItemId, HasVtableResult>,
     id: ItemId
 ): HasVtableResult {
     return results.get(id).getOrDefault {=> HasVtableResult.No}
 }
 
-public func analysisHasVtable(
+func analysisHasVtable(
     results: HashMap<ItemId, HasVtableResult>,
     id: ItemId
 ): Bool {
     return hasVtableResultFor(results, id) != HasVtableResult.No
 }
 
-public func analysisHasVtablePointer(
+func analysisHasVtablePointer(
     results: HashMap<ItemId, HasVtableResult>,
     id: ItemId
 ): Bool {
@@ -55,7 +55,7 @@ public func analysisHasVtablePointer(
 }
 
 /// Computes whether each selected IR item contains a virtual-table pointer.
-public class HasVtableAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, HasVtableResult>> {
+class HasVtableAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, HasVtableResult>> {
     let ctx: CjbindContext
     let items: ItemSet
     let haveVtable: HashMap<ItemId, HasVtableResult> = HashMap()
@@ -105,9 +105,7 @@ public class HasVtableAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, HasV
         }
 
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                return this.forward(instantiation.definition, id)
-            }
+            return this.forward(instantiation.definition, id)
         }
 
         return match (ty.kind) {
@@ -148,7 +146,7 @@ func considerHasVtableEdge(kind: EdgeKind): Bool {
     }
 }
 
-public func computeHasVtable(
+func computeHasVtable(
     ctx: CjbindContext,
     items: ItemSet
 ): HashMap<ItemId, HasVtableResult> {

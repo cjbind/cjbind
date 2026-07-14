@@ -222,9 +222,6 @@ extend Module <: CodeGenerator<Item, Unit> {
             )
 
             result.headers.add(header)
-            if (ctx.options.useDistinctChar16T) {
-                result.headers.add(tokenStreamFromTemplate("public type cjbind_cchar16_t = UInt16"))
-            }
         }
     }
 }
@@ -270,10 +267,6 @@ extend Function <: CodeGenerator<Item, Unit> {
                 symbolName,
                 "calling convention '${signature.abi.diagnosticName()}' cannot be represented by the current Cangjie FFI"
             )
-            return
-        }
-        if (signature.isVariadicFunction() && signature.argumentTypes.isEmpty()) {
-            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because an unprototyped variadic ABI cannot be represented")
             return
         }
         if (usesCxxLanguage(ctx.options) && hasOpaqueValueAbi(signature, ctx)) {
@@ -341,10 +334,10 @@ extend Function <: CodeGenerator<Item, Unit> {
         let needsWrapper = this.mangledName.isSome() || ctx.options.makeFuncWrapper
         if (needsWrapper && !signature.getIsVariadic()) {
             let wrapperBase = if (this.mangledName.isSome()) {
-                let canonical = functionCanonicalName(ctx, item, name)
                 match (this.kind) {
-                    case FunctionKind.KindMethod(MethodKind.Constructor) => "${canonical}_constructor"
-                    case _ => canonical
+                    case FunctionKind.KindMethod(MethodKind.Constructor) =>
+                        "${constructorCanonicalName(ctx, item, name)}_constructor"
+                    case _ => item.canonicalName(ctx)
                 }
             } else {
                 "${name}${ctx.options.funcWrapperSuffix}"
@@ -415,7 +408,7 @@ func unsupportedFunctionSymbolReason(symbolName: String): String {
     return "the ABI symbol is not a valid foreign-function identifier in the current Cangjie FFI"
 }
 
-func functionCanonicalName(ctx: CjbindContext, item: Item, name: String): String {
+func constructorCanonicalName(ctx: CjbindContext, item: Item, name: String): String {
     let canonical = item.canonicalName(ctx)
     let repeatedSuffix = "_${name}"
     if (canonical.endsWith(repeatedSuffix) && canonical.size > repeatedSuffix.size) {
@@ -558,83 +551,46 @@ extend Type <: CodeGenerator<Item, Unit> {
     }
 }
 
-func isUnsupportedGenericRecordTarget(ctx: CjbindContext, item: Item): Bool {
-    let targetType = match (item.kind.asType()) {
-        case Some(value) => value
-        case None => return false
-    }
-    let comp = match (targetType.kind) {
-        case TypeKind.TypeKindComp(value) => value
-        case _ => return false
-    }
-    let isConcrete = ctx.templateInstantiationFor(item.id).isSome() ||
-        ctx.isMaterializedNestedTemplateType(item.id)
-    let hasTemplatedAncestor = allTemplateParams(item.id, ctx).size >
-        selfTemplateParams(item.id, ctx).size
-    return !isConcrete && (comp.hasNonTypeTemplateParams ||
-        ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)
-}
-
-func aliasTargetContainsUnsupportedGenericRecord(
+func validateTemplateAliasDefinition(
     ctx: CjbindContext,
-    typeId: TypeId,
-    visiting: ItemSet
-): Bool {
-    let item = ctx.resolveItem(typeId)
-    if (!visiting.add(item.id)) {
-        return false
+    item: Item,
+    inner: TypeId,
+    requiresCType!: Bool = false
+): Result<Bool, Error> {
+    if (item.isOpaque(ctx, ())) {
+        return Ok(true)
     }
-    let ty = match (item.kind.asType()) {
-        case Some(value) => value
-        case None =>
-            visiting.remove(item.id)
-            return false
+    let usedParameters = ctx.usedTemplateParams(item.id)
+    if (usedParameters.isEmpty()) {
+        return Ok(true)
     }
-    let unsupported = match (ty.kind) {
-        case TypeKind.ResolvedTypeRef(inner) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindAlias(inner) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindTemplateAlias(inner, _) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindPointer(inner) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindReference(inner) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindArray(inner, _) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindVector(inner, _) =>
-            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
-        case TypeKind.TypeKindFunction(signature) =>
-            var found = aliasTargetContainsUnsupportedGenericRecord(
-                ctx,
-                signature.returnType,
-                visiting
-            )
-            if (!found) {
-                for ((_, argument) in signature.argumentTypes) {
-                    if (aliasTargetContainsUnsupportedGenericRecord(ctx, argument, visiting)) {
-                        found = true
-                        break
-                    }
-                }
-            }
-            found
-        case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-            if (ctx.usesAnyTemplateParameters(item.id)) {
-                aliasTargetContainsUnsupportedGenericRecord(
-                    ctx,
-                    instantiation.definition,
-                    visiting
-                )
-            } else {
-                false
-            }
-        case TypeKind.TypeKindComp(_) => isUnsupportedGenericRecordTarget(ctx, item)
-        case _ => false
+    let substitutions = HashMap<ItemId, String>()
+    let seenParameterNames = HashSet<String>()
+    for (parameter in usedParameters) {
+        let parameterItem = ctx.resolveItem(parameter)
+        let parameterName = uniqueName(
+            seenParameterNames,
+            ctx.cjIdent(parameterItem.baseName(ctx))
+        )
+        substitutions.add(parameter, parameterName)
+        let resolvedParameter = parameter
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(ctx)
+        if (!substitutions.contains(resolvedParameter.id)) {
+            substitutions.add(resolvedParameter.id, parameterName)
+        }
     }
-    visiting.remove(item.id)
-    return unsupported
+    let degraded = Box(false)
+    return renderGenericAliasType(
+        ctx,
+        inner,
+        substitutions,
+        ItemSet(),
+        requiresCType: requiresCType,
+        degraded: degraded
+    ).map({ _ => !degraded.value })
 }
 
 func codegenTypeAlias(
@@ -654,17 +610,14 @@ func codegenTypeAlias(
     if (Utils.typeFromNamed(ctx, spelling).isSome() || result.seenType(name)) {
         return
     }
-    let usedParameters = ctx.usedTemplateParams(item.id)
-    let targetIsUnsupportedGenericRecord = aliasTargetContainsUnsupportedGenericRecord(
-        ctx,
-        inner,
-        ItemSet()
-    )
-    if (targetIsUnsupportedGenericRecord || (usedParameters.isEmpty() &&
-        (ctx.usesAnyTemplateParameters(innerItem.id) ||
-        ctx.usesAnyTemplateParameters(throughTypeAliases.id)))) {
+    let usedParameters = if (item.isOpaque(ctx, ())) {
+        Array<TypeId>()
+    } else {
+        ctx.usedTemplateParams(item.id)
+    }
+    if (let Err(error) <- validateTemplateAliasDefinition(ctx, item, inner)) {
         eprintln(
-            "Warning: skipping C++ template alias '${name}' because its generic RHS cannot be represented by the current Cangjie FFI"
+            "${genericAliasDiagnosticLevel(error)}: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
         )
         return
     }
@@ -694,17 +647,11 @@ func codegenTypeAlias(
             }
         }
     } else {
-        if (item.isOpaque(ctx, ())) {
-            eprintln(
-                "Warning: skipping C++ template alias '${name}' because an opaque generic alias cannot be represented by the current Cangjie FFI"
-            )
-            return
-        }
         match (renderGenericAliasType(ctx, inner, substitutions, ItemSet())) {
             case Ok(rendered) => rendered
             case Err(error) =>
                 eprintln(
-                    "Warning: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
+                    "${genericAliasDiagnosticLevel(error)}: skipping C++ template alias '${name}' because ${genericAliasErrorReason(error)}"
                 )
                 return
         }
@@ -731,14 +678,28 @@ func renderGenericAliasType(
     ctx: CjbindContext,
     typeId: TypeId,
     substitutions: HashMap<ItemId, String>,
-    visiting: ItemSet
+    visiting: ItemSet,
+    ctypeSubstitutions!: ItemSet = ItemSet(),
+    valueAbiSubstitutions!: ItemSet = ItemSet(),
+    requiresCType!: Bool = false,
+    degraded!: Box<Bool> = Box(false)
 ): Result<TokenStream, Error> {
     if (let Some(parameterName) <- substitutions.get(typeId)) {
+        if (requiresCType && !ctypeSubstitutions.contains(typeId)) {
+            return Err(Error.Unsupported(
+                "the generic alias requires a CType constraint that Cangjie type aliases cannot express"
+            ))
+        }
         return Ok(tokenStreamFromTemplate(parameterName))
     }
 
     let item = ctx.resolveItem(typeId)
     if (let Some(parameterName) <- substitutions.get(item.id)) {
+        if (requiresCType && !ctypeSubstitutions.contains(item.id)) {
+            return Err(Error.Unsupported(
+                "the generic alias requires a CType constraint that Cangjie type aliases cannot express"
+            ))
+        }
         return Ok(tokenStreamFromTemplate(parameterName))
     }
     if (!ctx.usesAnyTemplateParameters(item.id)) {
@@ -751,53 +712,188 @@ func renderGenericAliasType(
     let ty = item.kind.expectType()
     let rendered: Result<TokenStream, Error> = match (ty.kind) {
         case TypeKind.ResolvedTypeRef(inner) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting)
+            renderGenericAliasType(
+                ctx,
+                inner,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                requiresCType: requiresCType,
+                degraded: degraded
+            )
         case TypeKind.TypeKindAlias(inner) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting)
+            match (validateTemplateAliasDefinition(
+                ctx,
+                item,
+                inner,
+                requiresCType: requiresCType
+            )) {
+                case Err(error) => Err<TokenStream, Error>(error)
+                case Ok(exact) =>
+                    if (!exact) {
+                        degraded.value = true
+                    }
+                    renderGenericAliasPath(ctx, item, substitutions)
+            }
         case TypeKind.TypeKindTemplateAlias(inner, _) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting)
+            match (validateTemplateAliasDefinition(
+                ctx,
+                item,
+                inner,
+                requiresCType: requiresCType
+            )) {
+                case Err(error) => Err<TokenStream, Error>(error)
+                case Ok(exact) =>
+                    if (!exact) {
+                        degraded.value = true
+                    }
+                    renderGenericAliasPath(ctx, item, substitutions)
+            }
         case TypeKind.TypeKindTypeParam =>
             Err<TokenStream, Error>(Error.Unsupported(
                 "the alias RHS refers to an unmapped template parameter '${item.baseName(ctx)}'"
             ))
         case TypeKind.TypeKindPointer(inner) =>
-            match (renderGenericAliasType(ctx, inner, substitutions, visiting)) {
+            let canonicalInner = ctx.resolveType(inner).canonicalType(ctx)
+            let innerIsFunction = canonicalInner.isFunction()
+            let innerResult = renderGenericAliasType(
+                ctx,
+                inner,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                degraded: degraded
+            )
+            match (innerResult) {
                 case Ok(innerType) =>
-                    let innerIsFunction = ctx.resolveType(inner).canonicalType(ctx).isFunction()
                     if (innerIsFunction) {
                         Ok<TokenStream, Error>(innerType)
                     } else {
                         Ok<TokenStream, Error>(innerType.toPtr())
                     }
-                case Err(error) => Err<TokenStream, Error>(error)
+                case Err(error) =>
+                    if (let Error.UnsupportedAbi(_) <- error) {
+                        Err<TokenStream, Error>(error)
+                    } else {
+                        degraded.value = true
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate("CPointer<Unit>"))
+                    }
             }
         case TypeKind.TypeKindReference(inner) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
-                innerType => innerType.toPtr()
+            match (renderGenericAliasType(
+                ctx,
+                inner,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                degraded: degraded
+            )) {
+                case Ok(innerType) => Ok<TokenStream, Error>(innerType.toPtr())
+                case Err(_) =>
+                    degraded.value = true
+                    Ok<TokenStream, Error>(tokenStreamFromTemplate("CPointer<Unit>"))
             }
         case TypeKind.TypeKindArray(inner, length) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
-                innerType =>
-                if (length == 0) {
-                    tokenStreamFromTemplate("CPointer<${innerType}>")
-                } else {
-                    tokenStreamFromTemplate("VArray<${innerType}, \$${Int64(length)}>")
-                }
+            let innerResult = renderGenericAliasType(
+                ctx,
+                inner,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                requiresCType: length != 0,
+                degraded: degraded
+            )
+            match (innerResult) {
+                case Ok(innerType) =>
+                    if (length == 0) {
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate("CPointer<${innerType}>"))
+                    } else {
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate(
+                            "VArray<${innerType}, \$${Int64(length)}>"
+                        ))
+                    }
+                case Err(error) =>
+                    if (length == 0) {
+                        degraded.value = true
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate("CPointer<Unit>"))
+                    } else {
+                        Err<TokenStream, Error>(error)
+                    }
             }
         case TypeKind.TypeKindVector(inner, length) =>
-            renderGenericAliasType(ctx, inner, substitutions, visiting).map {
+            renderGenericAliasType(
+                ctx,
+                inner,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                requiresCType: true,
+                degraded: degraded
+            ).map {
                 innerType => tokenStreamFromTemplate("VArray<${innerType}, \$${Int64(length)}>")
             }
         case TypeKind.TypeKindFunction(signature) =>
-            renderGenericAliasFunction(ctx, signature, substitutions, visiting)
+            renderGenericAliasFunction(
+                ctx,
+                signature,
+                substitutions,
+                visiting,
+                ctypeSubstitutions,
+                valueAbiSubstitutions,
+                degraded
+            )
         case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-            let definition = ctx.resolveItem(instantiation.definition)
+            let definition = instantiation.definition
+                .intoResolver()
+                .throughTypeRefs()
+                .resolve(ctx)
             match (definition.kind.expectType().kind) {
-                case TypeKind.TypeKindTemplateAlias(inner, parameters) =>
-                    let nestedSubstitutions = HashMap<ItemId, String>()
-                    for ((substitutionId, substitution) in substitutions) {
-                        nestedSubstitutions.add(substitutionId, substitution)
+                case TypeKind.TypeKindTemplateAlias(inner, _) =>
+                    if (definition.isOpaque(ctx, ())) {
+                        visiting.remove(item.id)
+                        return Ok(tokenStreamFromTemplate(
+                            ctx.cjIdentRaw(definition.canonicalName(ctx))
+                        ))
                     }
+                    let parameters = selfTemplateParams(definition.id, ctx)
+                    let validation = validateTemplateAliasDefinition(
+                        ctx,
+                        definition,
+                        inner,
+                        requiresCType: requiresCType
+                    )
+                    let argumentsAreConcrete = instantiation.arguments.all {
+                        argument => !ctx.usesAnyTemplateParameters(argument)
+                    }
+                    let requiresConcreteRendering = match (validation) {
+                        case Ok(exact) => !exact && argumentsAreConcrete
+                        case Err(_) => true
+                    }
+                    if (let Ok(false) <- validation) {
+                        degraded.value = true
+                    }
+                    if (requiresConcreteRendering) {
+                        let result = renderConcreteTemplateAlias(
+                            ctx,
+                            inner,
+                            parameters,
+                            instantiation.arguments,
+                            substitutions,
+                            visiting,
+                            outerCTypeSubstitutions: ctypeSubstitutions,
+                            outerValueAbiSubstitutions: valueAbiSubstitutions,
+                            requiresCType: requiresCType,
+                            outerDegraded: degraded
+                        )
+                        visiting.remove(item.id)
+                        return result
+                    }
+                    let arguments = ArrayList<TokenStream>()
                     let count = min(parameters.size, instantiation.arguments.size)
                     for (index in 0..count) {
                         let parameter = parameters[index]
@@ -808,23 +904,25 @@ func renderGenericAliasType(
                             ctx,
                             instantiation.arguments[index],
                             substitutions,
-                            visiting
+                            visiting,
+                            ctypeSubstitutions: ctypeSubstitutions,
+                            valueAbiSubstitutions: valueAbiSubstitutions,
+                            degraded: degraded
                         )) {
                             case Ok(value) => value
-                            case Err(error) => return Err(error)
+                            case Err(error) =>
+                                visiting.remove(item.id)
+                                return Err(error)
                         }
-                        let argument = renderedArgument.toString()
-                        nestedSubstitutions.add(parameter, argument)
-                        let canonicalParameter = parameter
-                            .intoResolver()
-                            .throughTypeRefs()
-                            .throughTypeAliases()
-                            .resolve(ctx)
-                        if (!nestedSubstitutions.contains(canonicalParameter.id)) {
-                            nestedSubstitutions.add(canonicalParameter.id, argument)
-                        }
+                        arguments.add(renderedArgument)
                     }
-                    renderGenericAliasType(ctx, inner, nestedSubstitutions, visiting)
+                    let name = ctx.cjIdentRaw(definition.canonicalName(ctx))
+                    if (arguments.isEmpty()) {
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate(name))
+                    } else {
+                        let joined = joinStreams(arguments, ", ")
+                        Ok<TokenStream, Error>(tokenStreamFromTemplate("${name}<${joined}>"))
+                    }
                 case _ => Err<TokenStream, Error>(Error.Unsupported(
                     "a generic C++ record cannot be represented as an @C type by the current Cangjie FFI"
                 ))
@@ -855,15 +953,145 @@ func renderGenericAliasType(
     return rendered
 }
 
+func renderGenericAliasPath(
+    ctx: CjbindContext,
+    item: Item,
+    substitutions: HashMap<ItemId, String>
+): Result<TokenStream, Error> {
+    let arguments = ArrayList<TokenStream>()
+    for (parameter in ctx.usedTemplateParams(item.id)) {
+        let resolved = parameter
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(ctx)
+        let argument = match (substitutions.get(parameter)) {
+            case Some(value) => value
+            case None => match (substitutions.get(resolved.id)) {
+                case Some(value) => value
+                case None => return Err(Error.Unsupported(
+                    "the alias RHS refers to an unmapped template parameter '${ctx.resolveItem(parameter).baseName(ctx)}'"
+                ))
+            }
+        }
+        arguments.add(tokenStreamFromTemplate(argument))
+    }
+    let name = ctx.cjIdentRaw(item.canonicalName(ctx))
+    if (arguments.isEmpty()) {
+        return Ok(tokenStreamFromTemplate(name))
+    }
+    let joined = joinStreams(arguments, ", ")
+    return Ok(tokenStreamFromTemplate("${name}<${joined}>"))
+}
+
+func renderConcreteTemplateAlias(
+    ctx: CjbindContext,
+    inner: TypeId,
+    parameters: Array<TypeId>,
+    arguments: Array<TypeId>,
+    outerSubstitutions: HashMap<ItemId, String>,
+    visiting: ItemSet,
+    outerCTypeSubstitutions!: ItemSet = ItemSet(),
+    outerValueAbiSubstitutions!: ItemSet = ItemSet(),
+    requiresCType!: Bool = false,
+    outerDegraded!: Box<Bool> = Box(false)
+): Result<TokenStream, Error> {
+    let substitutions = HashMap<ItemId, String>()
+    for ((key, value) in outerSubstitutions) {
+        substitutions[key] = value
+    }
+    let ctypeSubstitutions = ItemSet()
+    for (id in outerCTypeSubstitutions) {
+        ctypeSubstitutions.add(id)
+    }
+    let valueAbiSubstitutions = ItemSet()
+    for (id in outerValueAbiSubstitutions) {
+        valueAbiSubstitutions.add(id)
+    }
+
+    let count = min(parameters.size, arguments.size)
+    for (index in 0..count) {
+        let parameter = parameters[index]
+        let argument = arguments[index]
+        let renderedArgument = match (renderGenericAliasType(
+            ctx,
+            argument,
+            outerSubstitutions,
+            visiting,
+            ctypeSubstitutions: outerCTypeSubstitutions,
+            valueAbiSubstitutions: outerValueAbiSubstitutions,
+            degraded: outerDegraded
+        )) {
+            case Ok(value) => value.toString()
+            case Err(error) => return Err(error)
+        }
+        let resolvedParameter = parameter
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(ctx)
+        substitutions[parameter] = renderedArgument
+        substitutions[resolvedParameter.id] = renderedArgument
+
+        let resolvedArgument = argument
+            .intoResolver()
+            .throughTypeRefs()
+            .throughTypeAliases()
+            .resolve(ctx)
+        let argumentIsConcrete = !ctx.usesAnyTemplateParameters(argument)
+        let argumentIsCType = outerCTypeSubstitutions.contains(argument) ||
+            outerCTypeSubstitutions.contains(resolvedArgument.id) ||
+            (argumentIsConcrete && argument.tryToCjTy(ctx, ()).isOk())
+        if (argumentIsCType) {
+            ctypeSubstitutions.add(parameter)
+            ctypeSubstitutions.add(resolvedParameter.id)
+        }
+        let argumentHasRepresentableValueAbi = outerValueAbiSubstitutions.contains(argument) ||
+            outerValueAbiSubstitutions.contains(resolvedArgument.id) ||
+            (argumentIsConcrete && !typeHasOpaqueValueAbiForCodegen(argument, ctx))
+        if (argumentHasRepresentableValueAbi) {
+            valueAbiSubstitutions.add(parameter)
+            valueAbiSubstitutions.add(resolvedParameter.id)
+        }
+    }
+
+    return renderGenericAliasType(
+        ctx,
+        inner,
+        substitutions,
+        visiting,
+        ctypeSubstitutions: ctypeSubstitutions,
+        valueAbiSubstitutions: valueAbiSubstitutions,
+        requiresCType: requiresCType,
+        degraded: outerDegraded
+    )
+}
+
 func renderGenericAliasFunction(
     ctx: CjbindContext,
     signature: FunctionSig,
     substitutions: HashMap<ItemId, String>,
-    visiting: ItemSet
+    visiting: ItemSet,
+    ctypeSubstitutions: ItemSet,
+    valueAbiSubstitutions: ItemSet,
+    degraded: Box<Bool>
 ): Result<TokenStream, Error> {
-    if (signature.isVariadicFunction() || signature.valueAbiUnsupported ||
-        !signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
-        return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+    if (signature.getIsVariadic()) {
+        return Err(Error.Unsupported(
+            "variadic function pointers cannot be represented by the current Cangjie FFI"
+        ))
+    }
+    if (signature.valueAbiUnsupported || hasOpaqueValueAbiWithRepresentedTypeParams(
+        signature,
+        ctx,
+        valueAbiSubstitutions
+    )) {
+        return Err(Error.Unsupported(
+            "the function pointer value ABI cannot be represented safely by the current Cangjie FFI"
+        ))
+    }
+    if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+        return Err(Error.UnsupportedAbi(signature.abi.diagnosticName()))
     }
 
     let arguments = ArrayList<TokenStream>()
@@ -873,12 +1101,29 @@ func renderGenericAliasFunction(
         let argumentType = argumentItem.kind.expectType()
         let renderedArgument = if (!ctx.options.arrayPointersInArgs &&
             let TypeKind.TypeKindArray(element, _) <- argumentType.canonicalType(ctx).kind) {
-            match (renderGenericAliasType(ctx, element, substitutions, visiting)) {
+            match (renderGenericAliasType(
+                ctx,
+                element,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                degraded: degraded
+            )) {
                 case Ok(elementType) => elementType.toPtr()
                 case Err(error) => return Err(error)
             }
         } else {
-            match (renderGenericAliasType(ctx, argumentTypeId, substitutions, visiting)) {
+            match (renderGenericAliasType(
+                ctx,
+                argumentTypeId,
+                substitutions,
+                visiting,
+                ctypeSubstitutions: ctypeSubstitutions,
+                valueAbiSubstitutions: valueAbiSubstitutions,
+                requiresCType: true,
+                degraded: degraded
+            )) {
                 case Ok(value) => value
                 case Err(error) => return Err(error)
             }
@@ -896,7 +1141,16 @@ func renderGenericAliasFunction(
     let returnType = if (let TypeKind.TypeKindVoid <- returnItem.kind.expectType().canonicalType(ctx).kind) {
         tokenStreamFromTemplate("Unit")
     } else {
-        match (renderGenericAliasType(ctx, signature.returnType, substitutions, visiting)) {
+        match (renderGenericAliasType(
+            ctx,
+            signature.returnType,
+            substitutions,
+            visiting,
+            ctypeSubstitutions: ctypeSubstitutions,
+            valueAbiSubstitutions: valueAbiSubstitutions,
+            requiresCType: true,
+            degraded: degraded
+        )) {
             case Ok(value) => value
             case Err(error) => return Err(error)
         }
@@ -917,6 +1171,39 @@ func genericAliasErrorReason(error: Error): String {
     }
 }
 
+func genericAliasDiagnosticLevel(error: Error): String {
+    return match (error) {
+        case Error.UnsupportedAbi(_) => "Error"
+        case _ => "Warning"
+    }
+}
+
+func reportUnsupportedVirtualMethodAbis(
+    ctx: CjbindContext,
+    comp: CompInfo,
+    owner: Item
+): Unit {
+    for (method in comp.methods) {
+        if (!method.kind.isVirtual()) {
+            continue
+        }
+        let methodItem = ctx.resolveItem(method.signature)
+        let function = match (methodItem.kind) {
+            case ItemKind.KindFunction(value) => value
+            case _ => continue
+        }
+        let signature = match (ctx.resolveType(function.signature).canonicalType(ctx).kind) {
+            case TypeKind.TypeKindFunction(value) => value
+            case _ => continue
+        }
+        if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+            eprintln(
+                "Error: skipping virtual method '${methodItem.canonicalName(ctx)}' in generated vtable for '${owner.canonicalName(ctx)}' because calling convention '${signature.abi.diagnosticName()}' cannot be represented by the current Cangjie FFI"
+            )
+        }
+    }
+}
+
 extend CompInfo <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -start !G.FUN.01
     public func codegen(
@@ -924,33 +1211,13 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         result: CodegenResult,
         item: Item
     ): Unit {
-        if (let Some(instantiation) <- ctx.templateInstantiationFor(item.id)) {
-            let definition = instantiation.definition
-                .intoResolver()
-                .throughTypeRefs()
-                .throughTypeAliases()
-                .resolve(ctx)
-            let allowlisted = ctx.allowlistedItems.getOrThrow()
-            if (instantiation.kind.isPrimary() &&
-                !this.hasFields() && this.baseMembers.isEmpty() &&
-                (allowlisted.contains(instantiation.definition) || allowlisted.contains(definition.id)) &&
-                ctx.usedTemplateParams(definition.id).isEmpty()) {
-                return
-            }
-        }
-        let isConcreteInstantiation = ctx.templateInstantiationFor(item.id).isSome() ||
-            ctx.isMaterializedNestedTemplateType(item.id)
-        let hasTemplatedAncestor = allTemplateParams(item.id, ctx).size >
-            selfTemplateParams(item.id, ctx).size
-        if (this.hasNonTypeTemplateParams && !isConcreteInstantiation) {
+        if (this.hasNonTypeTemplateParams) {
             eprintln(
                 "Warning: skipping C++ record '${item.canonicalName(ctx)}' because non-type template parameters cannot be represented by the current Cangjie FFI"
             )
             return
         }
-        if (!isConcreteInstantiation &&
-            (ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor ||
-            ctx.recordContainsUnsupportedGenericType(item.id))) {
+        if (ctx.usesAnyTemplateParameters(item.id)) {
             eprintln(
                 "Warning: skipping C++ record '${item.canonicalName(ctx)}' because a generic @C record cannot be represented by the current Cangjie FFI"
             )
@@ -967,7 +1234,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             return
         }
         result.sawType(canonicalName)
-        var isOpaque = item.isOpaque(ctx, ())
+        var isOpaque = item.isOpaque(ctx, ()) || this.isCodegenOpaque(ctx, layout, itemId: item.id)
 
         let packed = this.isPacked(ctx, layout)
         if (packed && layout.isSome()) {
@@ -978,8 +1245,13 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             eprintln("警告：${canonicalName} 的对齐要求无法由当前 FFI 类型表达；该类型仅适合通过指针使用")
             isOpaque = true
         }
+        if (ctx.options.vtableGeneration && ctx.hasVtablePointer(item.id)) {
+            reportUnsupportedVirtualMethodAbis(ctx, this, item)
+        }
 
-        let hasBitfields = if (let CompFieldsAfter(v) <- this.fields) {
+        let hasBitfields = if (isOpaque) {
+            false
+        } else if (let CompFieldsAfter(v) <- this.fields) {
             !this.isUnion() && v.hasBitfieldUnits
         } else {
             throw Exception("${canonicalName} 的字段应该已经被正确计算")
@@ -1012,7 +1284,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             case ItemKind.KindFunction(function) => function
                             case _ => continue
                         }
-                        let fieldBase = functionCanonicalName(ctx, methodItem, methodFunction.name)
+                        let fieldBase = methodItem.canonicalName(ctx)
                         let fieldName = ctx.cjIdent(uniqueName(vtableNames, fieldBase))
                         let fieldTy = methodFunction.signature.toCjTyOrOpaque(ctx, ())
                         vtableFields.add(tokenStreamFromTemplate("public let ${fieldName} : ${fieldTy}"))
@@ -1318,37 +1590,6 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         if (this.isForwardDeclaration) {
             inits.add(tokenStreamFromTemplate("throw Exception(\"type should not be inited\")"))
-        }
-
-        for (member in codegenDerivedCoreMembers(
-            ctx,
-            item,
-            this,
-            canonicalIdent,
-            isOpaque,
-            layout
-        )) {
-            fields.add(member)
-        }
-        for (member in codegenDerivedDefaultAndHashMembers(
-            ctx,
-            item,
-            this,
-            canonicalIdent,
-            isOpaque,
-            layout
-        )) {
-            fields.add(member)
-        }
-        for (member in codegenDerivedOrderingMembers(
-            ctx,
-            item,
-            this,
-            canonicalIdent,
-            isOpaque,
-            layout
-        )) {
-            fields.add(member)
         }
 
         let commentToken: ?TokenStream = if (let Some(c) <- item.comment) {

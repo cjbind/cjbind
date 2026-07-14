@@ -1,6 +1,5 @@
 package cjbind.ir
 
-import cjbind.options.{ConfiguredCanDerive, ConfiguredDeriveTrait}
 import std.unittest.*
 import std.unittest.testmacro.*
 
@@ -14,14 +13,14 @@ public class DeriveAnalysisOptionGatingTest {
             let debugCalls = Box(0)
             let disabledCalls = Box(0)
             ctx.options.blocklistedTypes.add(#"^External$"#)
-            ctx.options.blocklistedTypeImplementsTraitCallback = Some({
-                _: String, deriveTrait: ConfiguredDeriveTrait =>
+            ctx.blocklistedTypeImplementsTraitCallback = Some({
+                _: String, deriveTrait: DeriveTrait =>
                 match (deriveTrait) {
-                    case ConfiguredDeriveTrait.Copy => copyCalls.value += 1
-                    case ConfiguredDeriveTrait.Debug => debugCalls.value += 1
+                    case DeriveTrait.Copy => copyCalls.value += 1
+                    case DeriveTrait.Debug => debugCalls.value += 1
                     case _ => disabledCalls.value += 1
                 }
-                Some(ConfiguredCanDerive.Yes)
+                Some(CanDerive.Yes)
             })
 
             let external = addAnalysisTestType(

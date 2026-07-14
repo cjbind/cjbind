@@ -2,7 +2,7 @@ package cjbind.ir
 
 import std.collection.*
 
-public class HasDestructorAnalysis <: MonotoneFramework<ItemId, ItemSet> {
+class HasDestructorAnalysis <: MonotoneFramework<ItemId, ItemSet> {
     let ctx: CjbindContext
     let allowlistedItems: ItemSet
     let haveDestructor = ItemSet()
@@ -39,19 +39,17 @@ public class HasDestructorAnalysis <: MonotoneFramework<ItemId, ItemSet> {
         }
 
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                if (this.haveDestructor.contains(instantiation.definition)) {
+            if (this.haveDestructor.contains(instantiation.definition)) {
+                this.haveDestructor.add(id)
+                return ConstrainResult.Changed
+            }
+            for (argument in instantiation.arguments) {
+                if (this.haveDestructor.contains(argument)) {
                     this.haveDestructor.add(id)
                     return ConstrainResult.Changed
                 }
-                for (argument in instantiation.arguments) {
-                    if (this.haveDestructor.contains(argument)) {
-                        this.haveDestructor.add(id)
-                        return ConstrainResult.Changed
-                    }
-                }
-                return ConstrainResult.Same
             }
+            return ConstrainResult.Same
         }
 
         let hasDestructor = match (ty.kind) {
@@ -103,7 +101,7 @@ public class HasDestructorAnalysis <: MonotoneFramework<ItemId, ItemSet> {
     }
 }
 
-public func analyzeHasDestructor(
+func analyzeHasDestructor(
     ctx: CjbindContext,
     allowlistedItems: ItemSet
 ): ItemSet {

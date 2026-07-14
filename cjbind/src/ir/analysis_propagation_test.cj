@@ -54,9 +54,7 @@ public class UsedTemplateParametersPropagationTest {
                 "UnusedU",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     unusedDefinition,
-                    [argument],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [argument]
                 ))
             )
 
@@ -68,9 +66,7 @@ public class UsedTemplateParametersPropagationTest {
                 "UsedU",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     usedDefinition,
-                    [argument],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [argument]
                 ))
             )
 
@@ -115,9 +111,7 @@ public class DestructorPropagationTest {
                 "BoxLeaf",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     holder,
-                    [leaf],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [leaf]
                 ))
             )
 
@@ -153,9 +147,7 @@ public class TypeParameterArrayPropagationTest {
                 "TemplateArray",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     pointer,
-                    [array],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [array]
                 ))
             )
 
@@ -199,9 +191,7 @@ public class FloatPropagationTest {
                 "TemplateFloat",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     pointer,
-                    [vector],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [vector]
                 ))
             )
 

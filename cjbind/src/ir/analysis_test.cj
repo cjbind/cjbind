@@ -31,45 +31,6 @@ class PropagationAnalysis <: MonotoneFramework<UIntNative, HashSet<UIntNative>> 
     }
 }
 
-class SeededPropagationAnalysis <: MonotoneFramework<UIntNative, HashSet<UIntNative>> {
-    let seed: UIntNative
-    let facts = HashSet<UIntNative>()
-
-    init(seed: UIntNative) {
-        this.seed = seed
-    }
-
-    public func initialWorklist(): Array<UIntNative> {
-        return [0, 1, 2, 3]
-    }
-
-    public func constrain(node: UIntNative): ConstrainResult {
-        let shouldHold = node == this.seed || (node < this.seed && this.facts.contains(node + 1))
-        if (shouldHold && this.facts.add(node)) {
-            return ConstrainResult.Changed
-        }
-        return ConstrainResult.Same
-    }
-
-    public func eachDependingOn(node: UIntNative): Array<UIntNative> {
-        if (node == 0) {
-            return Array<UIntNative>()
-        }
-        return [node - 1]
-    }
-
-    public func finish(): HashSet<UIntNative> {
-        return this.facts
-    }
-}
-
-class SeededPropagationFactory <:
-    MonotoneFrameworkFactory<UIntNative, UIntNative, HashSet<UIntNative>> {
-    public func create(seed: UIntNative): MonotoneFramework<UIntNative, HashSet<UIntNative>> {
-        return SeededPropagationAnalysis(seed)
-    }
-}
-
 @Test
 public class MonotoneFrameworkTest {
     @TestCase
@@ -100,24 +61,6 @@ public class MonotoneFrameworkTest {
         @Expect(facts.contains(3), true)
     }
 
-    @TestCase
-    func factoryConstructsFreshAnalysisFromExtraState(): Unit {
-        let factory = SeededPropagationFactory()
-        let first = analyzeWith<UIntNative, UIntNative, HashSet<UIntNative>>(factory, 2)
-        let second = analyzeWith<UIntNative, UIntNative, HashSet<UIntNative>>(factory, 1)
-
-        @Expect(first.size, 3)
-        @Expect(first.contains(0), true)
-        @Expect(first.contains(1), true)
-        @Expect(first.contains(2), true)
-        @Expect(first.contains(3), false)
-
-        @Expect(second.size, 2)
-        @Expect(second.contains(0), true)
-        @Expect(second.contains(1), true)
-        @Expect(second.contains(2), false)
-        @Expect(second.contains(3), false)
-    }
 }
 
 @Test

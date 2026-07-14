@@ -5,7 +5,7 @@ import std.collection.{ArrayList, HashMap}
 const DERIVE_ARRAY_LIMIT: UIntNative = 32
 const DERIVE_ALIGNMENT_LIMIT: Int32 = 32
 
-public enum CanDerive <: Equatable<CanDerive> {
+enum CanDerive <: Equatable<CanDerive> {
     Yes
     | Manually
     | No
@@ -33,7 +33,7 @@ public enum CanDerive <: Equatable<CanDerive> {
     }
 }
 
-public enum DeriveTrait <: Equatable<DeriveTrait> & ToString {
+enum DeriveTrait <: Equatable<DeriveTrait> & ToString {
     Copy
     | Debug
     | Default
@@ -71,7 +71,14 @@ func considerDeriveEdge(kind: EdgeKind): Bool {
             EdgeKind.TemplateArgumentEdge |
             EdgeKind.TemplateDeclarationEdge |
             EdgeKind.TemplateParameterDefinitionEdge => true
-        case _ => false
+        case EdgeKind.ConstructorEdge |
+            EdgeKind.DestructorEdge |
+            EdgeKind.FunctionReturnEdge |
+            EdgeKind.FunctionParameterEdge |
+            EdgeKind.InnerTypeEdge |
+            EdgeKind.InnerVarEdge |
+            EdgeKind.MethodEdge |
+            EdgeKind.GenericEdge => false
     }
 }
 
@@ -98,10 +105,9 @@ class DeriveJoinTracer <: Tracer {
     }
 }
 
-public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, CanDerive>> {
+class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, CanDerive>> {
     let ctx: CjbindContext
     let allowlistedItems: ItemSet
-    let analysisItems: ItemSet
     let deriveTrait: DeriveTrait
     let canDerive: HashMap<ItemId, CanDerive> = HashMap()
     let dependencies: HashMap<ItemId, ArrayList<ItemId>>
@@ -109,13 +115,12 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
     public init(ctx: CjbindContext, items: ItemSet, deriveTrait: DeriveTrait) {
         this.ctx = ctx
         this.allowlistedItems = items
-        this.analysisItems = reachableAnalysisItems(ctx, items)
         this.deriveTrait = deriveTrait
-        this.dependencies = generateAnalysisDependencies(ctx, this.analysisItems, considerDeriveEdge)
+        this.dependencies = generateAnalysisDependencies(ctx, items, considerDeriveEdge)
     }
 
     public func initialWorklist(): Array<ItemId> {
-        return analysisItemsToArray(this.analysisItems)
+        return analysisInitialWorklist(this.ctx, this.allowlistedItems)
     }
 
     public func eachDependingOn(id: ItemId): Array<ItemId> {
@@ -289,11 +294,7 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
 
     func compEdge(kind: EdgeKind): Bool {
         if (this.deriveTrait == DeriveTrait.PartialEqOrPartialOrd) {
-            return match (kind) {
-                case EdgeKind.TemplateArgumentEdge |
-                    EdgeKind.TemplateDeclarationEdge => false
-                case _ => considerDeriveEdge(kind)
-            }
+            return considerDeriveEdge(kind)
         }
         return match (kind) {
             case EdgeKind.BaseMemberEdge | EdgeKind.FieldEdge => true
@@ -312,6 +313,9 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
     }
 
     func constrainComp(item: Item, comp: CompInfo): CanDerive {
+        if (comp.hasNonTypeTemplateParams) {
+            throw Exception("non-type template parameters must be handled as opaque")
+        }
         if (!this.canDeriveCompoundForwardDeclaration() && comp.isForwardDeclaration) {
             return CanDerive.No
         }
@@ -355,12 +359,7 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
             return CanDerive.Yes
         }
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(item.id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                if (this.ctx.resolveItem(instantiation.definition).isOpaque(this.ctx, ())) {
-                    return CanDerive.Yes
-                }
-                return this.constrainInstantiation(item.id, instantiation)
-            }
+            return this.constrainInstantiation(item.id, instantiation)
         }
 
         return match (ty.kind) {
@@ -408,7 +407,7 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
         }
         if (result == CanDerive.Yes && !this.canDeriveLargeArray()) {
             if (let Some(itemType) <- item.asType()) {
-                if (let Some(layout) <- itemType.getLayout(this.ctx)) {
+                if (let Some(layout) <- analysisLayout(itemType, this.ctx)) {
                     if (layout.align > DERIVE_ALIGNMENT_LIMIT) {
                         result = CanDerive.Manually
                     }
@@ -419,7 +418,7 @@ public class CannotDeriveAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, C
     }
 }
 
-public func asCannotDeriveSet(results: HashMap<ItemId, CanDerive>): ItemSet {
+func asCannotDeriveSet(results: HashMap<ItemId, CanDerive>): ItemSet {
     let items = ItemSet()
     for ((id, result) in results) {
         if (result != CanDerive.Yes) {
@@ -429,7 +428,7 @@ public func asCannotDeriveSet(results: HashMap<ItemId, CanDerive>): ItemSet {
     return items
 }
 
-public func analyzeCanDerive(
+func analyzeCanDerive(
     ctx: CjbindContext,
     items: ItemSet,
     deriveTrait: DeriveTrait

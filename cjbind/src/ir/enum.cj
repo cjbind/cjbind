@@ -89,6 +89,10 @@ public class Enum {
                     }
 
                     if (let Some(val) <- value) {
+                        let annotations = parseAnnotations(cursor.comment())
+                        if (annotations.map({value => value.hide()}).getOrDefault({=> false})) {
+                            return clang.CXChildVisitResult_CXChildVisit_Continue
+                        }
                         let vname = cursor.spelling()
                         let comment = cursor.rawComment()
                         variants.add(EnumVariant(vname, comment, val))

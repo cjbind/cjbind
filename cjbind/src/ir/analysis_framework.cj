@@ -1,8 +1,8 @@
 package cjbind.ir
 
-import std.collection.{ArrayList, ArrayQueue, HashMap, Queue}
+import std.collection.{ArrayList, HashMap}
 
-public enum ConstrainResult <: Equatable<ConstrainResult> {
+enum ConstrainResult <: Equatable<ConstrainResult> {
     Changed
     | Same
 
@@ -32,30 +32,22 @@ public enum ConstrainResult <: Equatable<ConstrainResult> {
 /// `constrain` must only move the result for a node upwards in the lattice.
 /// When it reports a change, every node returned by `eachDependingOn` is put
 /// back into the worklist.
-public interface MonotoneFramework<Node, Output> {
+interface MonotoneFramework<Node, Output> {
     func initialWorklist(): Array<Node>
     func constrain(node: Node): ConstrainResult
     func eachDependingOn(node: Node): Array<Node>
     func finish(): Output
 }
 
-/// Constructs a fresh analysis from all external state needed by one run.
-///
-/// Analysis construction is represented separately because interface methods
-/// are instance-dispatched. The factory preserves a uniform `new(extra)`-like
-/// contract without requiring callers to construct a partially initialized
-/// analysis themselves.
-public interface MonotoneFrameworkFactory<Node, Extra, Output> {
-    func create(extra: Extra): MonotoneFramework<Node, Output>
-}
-
-public func analyze<Node, Output>(analysis: MonotoneFramework<Node, Output>): Output {
-    let worklist: Queue<Node> = ArrayQueue<Node>()
+func analyze<Node, Output>(analysis: MonotoneFramework<Node, Output>): Output {
+    let worklist = ArrayList<Node>()
     for (node in analysis.initialWorklist()) {
         worklist.add(node)
     }
 
-    while (let Some(node) <- worklist.remove()) {
+    while (!worklist.isEmpty()) {
+        let node = worklist[worklist.size - 1]
+        worklist.remove(at: worklist.size - 1)
         if (analysis.constrain(node) == ConstrainResult.Changed) {
             for (dependent in analysis.eachDependingOn(node)) {
                 worklist.add(dependent)
@@ -64,14 +56,6 @@ public func analyze<Node, Output>(analysis: MonotoneFramework<Node, Output>): Ou
     }
 
     return analysis.finish()
-}
-
-/// Constructs and runs one fresh analysis using the supplied external state.
-public func analyzeWith<Node, Extra, Output>(
-    factory: MonotoneFrameworkFactory<Node, Extra, Output>,
-    extra: Extra
-): Output {
-    return analyze<Node, Output>(factory.create(extra))
 }
 
 class DependencyTracer <: Tracer {
@@ -105,14 +89,14 @@ class DependencyTracer <: Tracer {
 }
 
 /// Builds the reverse dependency graph for a selected subset of IR edges.
-public func generateAnalysisDependencies(
+func generateAnalysisDependencies(
     ctx: CjbindContext,
     items: ItemSet,
     considerEdge: (EdgeKind) -> Bool
 ): HashMap<ItemId, ArrayList<ItemId>> {
     let dependencies = HashMap<ItemId, ArrayList<ItemId>>()
 
-    for (itemId in items) {
+    for (itemId in analysisItemsToArray(items)) {
         if (!dependencies.contains(itemId)) {
             dependencies.add(itemId, ArrayList<ItemId>())
         }
@@ -128,6 +112,13 @@ func analysisItemsToArray(items: ItemSet): Array<ItemId> {
     let result = ArrayList<ItemId>()
     for (item in items) {
         result.add(item)
+        var index = result.size - 1
+        while (index > 0 && result[index - 1] > result[index]) {
+            let previous = result[index - 1]
+            result[index - 1] = result[index]
+            result[index] = previous
+            index -= 1
+        }
     }
     return result.toArray()
 }

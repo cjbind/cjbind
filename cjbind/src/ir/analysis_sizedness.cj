@@ -3,7 +3,7 @@ package cjbind.ir
 import std.collection.{ArrayList, HashMap}
 
 /// The zero-sizedness lattice used while analyzing record layouts.
-public enum SizednessResult <: Equatable<SizednessResult> {
+enum SizednessResult <: Equatable<SizednessResult> {
     ZeroSized
     | DependsOnTypeParam
     | NonZeroSized
@@ -33,14 +33,14 @@ public enum SizednessResult <: Equatable<SizednessResult> {
     }
 }
 
-public func sizednessResultFor(
+func sizednessResultFor(
     results: HashMap<ItemId, SizednessResult>,
     id: ItemId
 ): SizednessResult {
     return results.get(id).getOrDefault {=> SizednessResult.ZeroSized}
 }
 
-public func analysisIsZeroSized(
+func analysisIsZeroSized(
     results: HashMap<ItemId, SizednessResult>,
     id: ItemId
 ): Bool {
@@ -48,7 +48,7 @@ public func analysisIsZeroSized(
 }
 
 /// Computes zero-sizedness for every selected IR type.
-public class SizednessAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, SizednessResult>> {
+class SizednessAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, SizednessResult>> {
     let ctx: CjbindContext
     let items: ItemSet
     let haveVtable: HashMap<ItemId, HasVtableResult>
@@ -63,12 +63,18 @@ public class SizednessAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, Size
         this.ctx = ctx
         this.items = items
         this.haveVtable = haveVtable
-        this.dependencies = generateAnalysisDependencies(ctx, items, considerSizednessEdge)
+        let typeItems = ItemSet()
+        for (id in analysisItemsToArray(items)) {
+            if (ctx.resolveItem(id).asType().isSome()) {
+                typeItems.add(id)
+            }
+        }
+        this.dependencies = generateAnalysisDependencies(ctx, typeItems, considerSizednessEdge)
     }
 
     public func initialWorklist(): Array<ItemId> {
         let result = ArrayList<ItemId>()
-        for (id in this.items) {
+        for (id in analysisItemsToArray(this.items)) {
             if (this.ctx.resolveItem(id).asType().isSome()) {
                 result.add(id)
             }
@@ -125,8 +131,7 @@ public class SizednessAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, Size
         }
 
         if (item.isOpaque(this.ctx, ())) {
-            let result = ty
-                .getLayout(this.ctx)
+            let result = analysisLayout(ty, this.ctx)
                 .map {
                     layout => if (layout.size == 0) {
                         SizednessResult.ZeroSized
@@ -139,22 +144,7 @@ public class SizednessAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, Size
         }
 
         if (let Some(instantiation) <- this.ctx.templateInstantiationFor(id)) {
-            if (!hasMaterializedSpecializationBody(ty, instantiation)) {
-                if (this.ctx.resolveItem(instantiation.definition).isOpaque(this.ctx, ())) {
-                    let instantiationResult = ty
-                        .getLayout(this.ctx)
-                        .map {
-                            layout => if (layout.size == 0) {
-                                SizednessResult.ZeroSized
-                            } else {
-                                SizednessResult.NonZeroSized
-                            }
-                        }
-                        .getOrDefault({=> SizednessResult.ZeroSized})
-                    return this.insert(id, instantiationResult)
-                }
-                return this.forward(instantiation.definition, id)
-            }
+            return this.forward(instantiation.definition, id)
         }
 
         return match (ty.kind) {
@@ -224,7 +214,7 @@ func considerSizednessEdge(kind: EdgeKind): Bool {
     }
 }
 
-public func computeSizedness(
+func computeSizedness(
     ctx: CjbindContext,
     items: ItemSet,
     haveVtable: HashMap<ItemId, HasVtableResult>

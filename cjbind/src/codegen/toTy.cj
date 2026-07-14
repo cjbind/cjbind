@@ -3,6 +3,31 @@ package cjbind.codegen
 import cjbind_token.*
 import cjbind.ir.*
 import cjbind.result.{Result}
+import std.collection.{ArrayList, HashMap}
+
+func templateInstantiationUsesOpaqueBlob(ctx: CjbindContext, item: Item): Bool {
+    if (ctx.templateInstantiationFor(item.id).isSome() && item.isSemanticallyOpaque(ctx)) {
+        return true
+    }
+    let ty = item.kind.expectType()
+    let instantiation = match (ty.kind) {
+        case TypeKind.TypeKindTemplateInstantiation(value) => value
+        case _ => return false
+    }
+    let definition = instantiation.definition
+        .intoResolver()
+        .throughTypeRefs()
+        .resolve(ctx)
+    if (ctx.isBlocklistedItem(definition.id)) {
+        return true
+    }
+    let definitionIsComp = match (definition.kind.expectType().kind) {
+        case TypeKind.TypeKindComp(_) => true
+        case _ => false
+    }
+    return ctx.codegenTemplateReplacement(item.id).isNone() && definitionIsComp &&
+        !ctx.usedTemplateParams(definition.id).isEmpty()
+}
 
 // 实现时应该添加对于 ToOpaque 的实现
 interface TryToOpaque<Extra> {
@@ -123,6 +148,50 @@ extend Type <: TryToCjTy<Item> {
         ctx: CjbindContext,
         item: Item
     ): Result<TokenStream, Error> {
+        if (let Some((definitionId, concreteArguments)) <- ctx.codegenAliasUse(item.id)) {
+            let definition = ctx.resolveItem(definitionId)
+            let name = ctx.cjIdentRaw(definition.canonicalName(ctx))
+            if (definition.isOpaque(ctx, ())) {
+                return Ok(tokenStreamFromTemplate(name))
+            }
+            let definitionInner: ?TypeId = match (definition.kind.expectType().kind) {
+                case TypeKind.TypeKindAlias(inner) => Some(inner)
+                case TypeKind.TypeKindTemplateAlias(inner, _) => Some(inner)
+                case _ => None
+            }
+            if (let Some(inner) <- definitionInner) {
+                let requiresConcreteRendering = match (validateTemplateAliasDefinition(
+                    ctx,
+                    definition,
+                    inner
+                )) {
+                    case Ok(exact) => !exact
+                    case Err(_) => true
+                }
+                if (requiresConcreteRendering) {
+                    return renderConcreteTemplateAlias(
+                        ctx,
+                        inner,
+                        ctx.usedTemplateParams(definition.id),
+                        concreteArguments,
+                        HashMap<ItemId, String>(),
+                        ItemSet()
+                    )
+                }
+            }
+            let arguments = ArrayList<TokenStream>()
+            for (argumentId in concreteArguments) {
+                match (argumentId.tryToCjTy(ctx, ())) {
+                    case Ok(argument) => arguments.add(argument)
+                    case Err(error) => return Err(error)
+                }
+            }
+            if (arguments.isEmpty()) {
+                return Ok(tokenStreamFromTemplate(name))
+            }
+            let joined = joinStreams(arguments, ", ")
+            return Ok(tokenStreamFromTemplate("${name}<${joined}>"))
+        }
         match (this.kind) {
             case TypeKind.TypeKindVoid => return Ok(AstTy.cVoid(ctx))
             case TypeKind.TypeKindNullPtr => return Ok(AstTy.cVoid(ctx).toPtr())
@@ -166,8 +235,7 @@ extend Type <: TryToCjTy<Item> {
                 return Ok(token)
             case TypeKind.TypeKindEnum(_) => return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.ResolvedTypeRef(inner) => return inner.tryToCjTy(ctx, ())
-            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTemplateAlias(_, _) | TypeKind.TypeKindTypeParam |
-                TypeKind.TypeKindTemplateInstantiation(_) =>
+            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTemplateAlias(_, _) | TypeKind.TypeKindTypeParam =>
                 if (let Some(n) <- this.name) {
                     let named = Utils.typeFromNamed(ctx, n)
                     if (let Some(nn) <- named) {
@@ -175,20 +243,75 @@ extend Type <: TryToCjTy<Item> {
                     }
                 }
                 return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
-            case TypeKind.TypeKindComp(info) =>
-                if (let Some(instantiation) <- ctx.templateInstantiationFor(item.id)) {
-                    let definition = instantiation.definition
-                        .intoResolver()
-                        .throughTypeRefs()
-                        .throughTypeAliases()
-                        .resolve(ctx)
-                    let allowlisted = ctx.allowlistedItems.getOrThrow()
-                    if (instantiation.kind.isPrimary() &&
-                        !info.hasFields() && info.baseMembers.isEmpty() &&
-                        (allowlisted.contains(instantiation.definition) || allowlisted.contains(definition.id)) &&
-                        ctx.usedTemplateParams(definition.id).isEmpty()) {
-                        return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(definition.canonicalName(ctx))))
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                if (templateInstantiationUsesOpaqueBlob(ctx, item)) {
+                    return this.tryToOpaque(ctx, item)
+                }
+                if (let Some(replacement) <- ctx.codegenTemplateReplacement(item.id)) {
+                    return replacement.tryToCjTy(ctx, ())
+                }
+                let definition = instantiation.definition
+                    .intoResolver()
+                    .throughTypeRefs()
+                    .resolve(ctx)
+                if (let TypeKind.TypeKindTemplateAlias(inner, _) <- definition.kind.expectType().kind) {
+                    if (definition.isOpaque(ctx, ())) {
+                        return Ok(tokenStreamFromTemplate(
+                            ctx.cjIdentRaw(definition.canonicalName(ctx))
+                        ))
                     }
+                    let parameters = selfTemplateParams(definition.id, ctx)
+                    let requiresConcreteRendering = match (validateTemplateAliasDefinition(
+                        ctx,
+                        definition,
+                        inner
+                    )) {
+                        case Ok(exact) => !exact && instantiation.arguments.all {
+                            argument => !ctx.usesAnyTemplateParameters(argument)
+                        }
+                        case Err(_) => true
+                    }
+                    if (requiresConcreteRendering) {
+                        return renderConcreteTemplateAlias(
+                            ctx,
+                            inner,
+                            parameters,
+                            instantiation.arguments,
+                            HashMap<ItemId, String>(),
+                            ItemSet()
+                        )
+                    }
+                    let arguments = ArrayList<TokenStream>()
+                    let count = min(parameters.size, instantiation.arguments.size)
+                    for (index in 0..count) {
+                        let parameter = parameters[index]
+                        if (!ctx.usesTemplateParameter(definition.id, parameter)) {
+                            continue
+                        }
+                        let argument = match (instantiation.arguments[index].tryToCjTy(ctx, ())) {
+                            case Ok(value) => value
+                            case Err(error) => return Err(error)
+                        }
+                        arguments.add(argument)
+                    }
+                    let name = ctx.cjIdentRaw(definition.canonicalName(ctx))
+                    if (arguments.isEmpty()) {
+                        return Ok(tokenStreamFromTemplate(name))
+                    }
+                    let joined = joinStreams(arguments, ", ")
+                    return Ok(tokenStreamFromTemplate("${name}<${joined}>") )
+                }
+                if (ctx.usedTemplateParams(definition.id).isEmpty()) {
+                    return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(definition.canonicalName(ctx))))
+                }
+                return Err(Error.Unsupported(
+                    "concrete C++ template type was not materialized"
+                ))
+            case TypeKind.TypeKindComp(info) =>
+                let templateParameters = allTemplateParams(item.id, ctx)
+                if (info.hasNonTypeTemplateParams ||
+                    (item.isOpaque(ctx, ()) && !templateParameters.isEmpty())) {
+                    return this.tryToOpaque(ctx, item)
                 }
                 return Ok(tokenStreamFromTemplate(ctx.cjIdentRaw(item.canonicalName(ctx))))
             case TypeKind.TypeKindOpaque => return this.tryToOpaque(ctx, item)
@@ -238,15 +361,27 @@ extend Type <: TryToCjTy<Item> {
 
                 let innerTy = inner.intoResolver().throughTypeRefs().resolve(ctx).kind.expectType()
 
-                let ty = inner.toCjTyOrOpaque(ctx, ())
-
                 let innerCanonicalType = innerTy.canonicalType(ctx)
 
                 if (innerCanonicalType.isFunction()) {
-                    return Ok(ty)
+                    return match (inner.tryToCjTy(ctx, ())) {
+                        case Ok(ty) => Ok(ty)
+                        case Err(Error.UnsupportedAbi(abi)) =>
+                            eprintln(
+                                "Error: representing a function pointer as CPointer<Unit> because calling convention '${abi}' cannot be represented by the current Cangjie FFI"
+                            )
+                            Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+                        case Err(Error.Unsupported(reason)) =>
+                            eprintln(
+                                "Warning: representing a function pointer as CPointer<Unit> because ${reason}"
+                            )
+                            Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+                        case Err(_) => Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+                    }
                 } else if (innerCanonicalType.isChar() && allowCString && ctx.options.autoCString) {
                     return Ok(tokenStreamFromTemplate("CString"))
                 } else {
+                    let ty = inner.toCjTyOrOpaque(ctx, ())
                     return Ok(ty.toPtr())
                 }
     }
@@ -273,9 +408,18 @@ extend FunctionSig <: TryToCjTy<Item> {
         ctx: CjbindContext,
         _: Item
     ): Result<TokenStream, Error> {
-        if (this.isVariadicFunction() || this.valueAbiUnsupported ||
-            hasOpaqueValueAbi(this, ctx) || !this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
-            return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
+        if (this.getIsVariadic()) {
+            return Err(Error.Unsupported(
+                "variadic function pointers cannot be represented by the current Cangjie FFI"
+            ))
+        }
+        if (this.valueAbiUnsupported || hasOpaqueValueAbi(this, ctx)) {
+            return Err(Error.Unsupported(
+                "the function pointer value ABI cannot be represented safely by the current Cangjie FFI"
+            ))
+        }
+        if (!this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
+            return Err(Error.UnsupportedAbi(this.abi.diagnosticName()))
         }
 
         let ret = Utils.fnsigReturnTy(ctx, this)

@@ -60,16 +60,8 @@ public class SizednessAnalysisRulesTest {
                 Layout(16, 8),
                 TypeKind.TypeKindComp(opaqueComp)
             )
-            let packedComp = analysisTestRecord(Array<TypeId>())
-            packedComp.packedAttr = true
-            let packedRecord = addDeriveTestTypeWithLayout(
-                ctx,
-                "PackedRecord",
-                Layout(4, 1),
-                TypeKind.TypeKindComp(packedComp)
-            )
             let items = analysisTestItems([
-                parameter, emptyArray, populatedArray, virtualRecord, opaqueRecord, packedRecord
+                parameter, emptyArray, populatedArray, virtualRecord, opaqueRecord
             ])
             let vtables = computeHasVtable(ctx, items)
             let results = computeSizedness(ctx, items, vtables)
@@ -78,7 +70,6 @@ public class SizednessAnalysisRulesTest {
             @Expect(sizednessResultFor(results, populatedArray), SizednessResult.NonZeroSized)
             @Expect(sizednessResultFor(results, virtualRecord), SizednessResult.NonZeroSized)
             @Expect(sizednessResultFor(results, opaqueRecord), SizednessResult.NonZeroSized)
-            @Expect(sizednessResultFor(results, packedRecord), SizednessResult.NonZeroSized)
         } finally {
             ctx.close()
         }
@@ -108,9 +99,7 @@ public class HasVtableAnalysisRulesTest {
                 "BaseInt",
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     base,
-                    [argument],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [argument]
                 ))
             )
             let items = analysisTestItems([base, alias, derived, argument, instantiation])

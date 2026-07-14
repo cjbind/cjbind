@@ -1,6 +1,7 @@
 package cjbind.ir
 
 import std.collection.HashMap
+import cjbind.clang
 import std.unittest.*
 import std.unittest.testmacro.*
 
@@ -81,9 +82,7 @@ func addCrtpUsageGraph(
         "DerivedU",
         TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
             derivedDefinition,
-            [derivedParameter],
-            ctx.translationUnit.cursor(),
-            None
+            [derivedParameter]
         ))
     )
     let baseInstantiation = addUsageType(
@@ -92,9 +91,7 @@ func addCrtpUsageGraph(
         "BaseDerivedU",
         TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
             baseDefinition,
-            [selfInstantiation],
-            ctx.translationUnit.cursor(),
-            None
+            [selfInstantiation]
         ))
     )
     let fields = if (derivedUsesParameter) { [derivedParameter] } else { [integer] }
@@ -120,6 +117,38 @@ func addCrtpUsageGraph(
 
 @Test
 public class UsedTemplateParameterBranchTest {
+    @TestCase
+    func opaqueAnnotationStopsFieldUsagePropagation(): Unit {
+        let ctx = analysisTestContext()
+        try {
+            let record = ctx.nextItemId()
+            let parameter = addUsageType(ctx, record, "T", TypeKind.TypeKindTypeParam)
+            let comp = analysisTestRecord([parameter])
+            comp.templateParams.add(parameter)
+            let annotations = parseAnnotationAttributes([
+                clang.CommentAttribute("cjbind", ""),
+                clang.CommentAttribute("opaque", "")
+            ]).getOrThrow()
+            ctx.addItem(
+                Item(
+                    record,
+                    None,
+                    ctx.rootModule,
+                    ItemKind.KindType(Type(Some("Opaque"), None, TypeKind.TypeKindComp(comp), false)),
+                    None,
+                    annotations: annotations
+                ),
+                None,
+                None
+            )
+
+            let results = usageResults(ctx, [record, parameter])
+            expectParameterUsage(results, record, parameter, false)
+        } finally {
+            ctx.close()
+        }
+    }
+
     @TestCase
     func usage0DirectFieldUsesTheParameter(): Unit {
         let ctx = analysisTestContext()
@@ -301,8 +330,8 @@ public class UsedTemplateParameterBranchTest {
             let definition = addUsageType(ctx, ctx.rootModule, "OwnsT", TypeKind.TypeKindComp(comp))
 
             let used = ItemSet()
-            used.add(canonicalItemId(ctx, ownParameter))
-            used.add(canonicalItemId(ctx, foreignParameter))
+            used.add(ownParameter)
+            used.add(foreignParameter)
             let results = HashMap<ItemId, ItemSet>()
             results.add(definition, used)
             ctx.usedTemplateParameters = Some(results)

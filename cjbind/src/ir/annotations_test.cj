@@ -27,6 +27,17 @@ public class AnnotationParsingTest {
     }
 
     @TestCase
+    func parsesEnumVariantHideAttribute(): Unit {
+        let annotations = parsedAnnotationAttributes([
+            annotationAttribute("cjbind"),
+            annotationAttribute("hide")
+        ])
+
+        @Expect(annotations.hide(), true)
+        @Expect(annotations.opaque(), false)
+    }
+
+    @TestCase
     func requiresMarkerAsTheFirstAttribute(): Unit {
         @Expect(parseAnnotationAttributes([
             annotationAttribute("opaque"),

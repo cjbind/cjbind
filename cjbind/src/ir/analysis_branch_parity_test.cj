@@ -38,9 +38,7 @@ func analysisInstantiation(
         name,
         TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
             definition,
-            arguments,
-            ctx.translationUnit.cursor(),
-            None
+            arguments
         ))
     )
 }
@@ -142,6 +140,16 @@ public class SizednessAnalysisBranchParityTest {
                 TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt)
             )
             let alias = addAnalysisTestType(ctx, "Alias", TypeKind.TypeKindAlias(integer))
+            let opaqueAlias = addAnalysisTestType(
+                ctx,
+                "OpaqueAlias",
+                TypeKind.TypeKindAlias(integer)
+            )
+            let opaqueArray = addAnalysisTestType(
+                ctx,
+                "OpaqueArray",
+                TypeKind.TypeKindArray(integer, 2)
+            )
             let templateAlias = addAnalysisTestType(
                 ctx,
                 "TemplateAlias",
@@ -171,9 +179,7 @@ public class SizednessAnalysisBranchParityTest {
                 Layout(16, 8),
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     empty,
-                    [integer],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [integer]
                 ))
             )
             let opaqueInstance = addDeriveTestTypeWithLayout(
@@ -182,9 +188,7 @@ public class SizednessAnalysisBranchParityTest {
                 Layout(16, 8),
                 TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                     opaqueZero,
-                    [integer],
-                    ctx.translationUnit.cursor(),
-                    None
+                    [integer]
                 ))
             )
             let parameter = addAnalysisTestType(ctx, "T", TypeKind.TypeKindTypeParam)
@@ -196,6 +200,8 @@ public class SizednessAnalysisBranchParityTest {
                 empty,
                 integer,
                 alias,
+                opaqueAlias,
+                opaqueArray,
                 templateAlias,
                 blockPointer,
                 resolved,
@@ -206,10 +212,18 @@ public class SizednessAnalysisBranchParityTest {
                 parameter,
                 joined
             ]
+            ctx.options.opaqueTypes.add(#"^OpaqueAlias$"#)
+            ctx.options.opaqueTypes.add(#"^array2_Integer$"#)
+            @Expect(ctx.isOpaqueByName(ctx.resolveItem(opaqueAlias)), true)
+            @Expect(ctx.isOpaqueByName(ctx.resolveItem(opaqueArray)), true)
+            @Expect(analysisLayout(ctx.resolveType(opaqueAlias), ctx).isNone(), true)
+            @Expect(analysisLayout(ctx.resolveType(opaqueArray), ctx).isNone(), true)
             let items = analysisTestItems(ids)
             let results = computeSizedness(ctx, items, computeHasVtable(ctx, items))
 
             @Expect(sizednessResultFor(results, alias), SizednessResult.NonZeroSized)
+            @Expect(sizednessResultFor(results, opaqueAlias), SizednessResult.ZeroSized)
+            @Expect(sizednessResultFor(results, opaqueArray), SizednessResult.ZeroSized)
             @Expect(sizednessResultFor(results, templateAlias), SizednessResult.NonZeroSized)
             @Expect(sizednessResultFor(results, blockPointer), SizednessResult.NonZeroSized)
             @Expect(sizednessResultFor(results, resolved), SizednessResult.NonZeroSized)
@@ -255,17 +269,6 @@ public class DestructorAnalysisBranchParityTest {
                 "UnionHolder",
                 TypeKind.TypeKindComp(deriveTestUnion([own]))
             )
-            let bitfieldData = RawField(Some("bits"), own, None, Some(1), Some(0))
-            let bitfieldComp = analysisTestRecord(Array<TypeId>())
-            bitfieldComp.fields = CompFields.CompFieldsAfter(CompFieldsAfterValue(
-                [Field.Bitfields(BitfieldUnit(0, Layout(1, 1), [Bitfield(0, bitfieldData)]))],
-                true
-            ))
-            let bitfieldHolder = addAnalysisTestType(
-                ctx,
-                "BitfieldHolder",
-                TypeKind.TypeKindComp(bitfieldComp)
-            )
             let cleanDefinition = addAnalysisTestType(
                 ctx,
                 "CleanDefinition",
@@ -293,7 +296,6 @@ public class DestructorAnalysisBranchParityTest {
                 baseHolder,
                 fieldHolder,
                 unionHolder,
-                bitfieldHolder,
                 cleanDefinition,
                 definitionInstance,
                 argumentInstance
@@ -308,7 +310,6 @@ public class DestructorAnalysisBranchParityTest {
             @Expect(results.contains(baseHolder), true)
             @Expect(results.contains(fieldHolder), true)
             @Expect(results.contains(unionHolder), false)
-            @Expect(results.contains(bitfieldHolder), false)
             @Expect(results.contains(definitionInstance), true)
             @Expect(results.contains(argumentInstance), true)
         } finally {
@@ -348,17 +349,6 @@ public class TypeParameterArrayAnalysisBranchParityTest {
                 TypeKind.TypeKindArray(pointerToParameter, 2)
             )
             let function = analysisFunctionType(ctx, "Function", array, [array])
-            let bitfieldData = RawField(Some("bits"), array, None, Some(1), Some(0))
-            let bitfieldComp = analysisTestRecord(Array<TypeId>())
-            bitfieldComp.fields = CompFields.CompFieldsAfter(CompFieldsAfterValue(
-                [Field.Bitfields(BitfieldUnit(0, Layout(1, 1), [Bitfield(0, bitfieldData)]))],
-                true
-            ))
-            let bitfieldHolder = addAnalysisTestType(
-                ctx,
-                "BitfieldHolder",
-                TypeKind.TypeKindComp(bitfieldComp)
-            )
             let definition = addAnalysisTestType(
                 ctx,
                 "Definition",
@@ -391,7 +381,6 @@ public class TypeParameterArrayAnalysisBranchParityTest {
                 pointerToParameter,
                 pointerArray,
                 function,
-                bitfieldHolder,
                 definition,
                 cleanDefinition,
                 definitionInstance,
@@ -406,7 +395,6 @@ public class TypeParameterArrayAnalysisBranchParityTest {
             @Expect(results.contains(pointerToParameter), false)
             @Expect(results.contains(pointerArray), false)
             @Expect(results.contains(function), false)
-            @Expect(results.contains(bitfieldHolder), false)
             @Expect(results.contains(definitionInstance), true)
             @Expect(results.contains(argumentInstance), true)
         } finally {
@@ -421,9 +409,10 @@ public class FloatAnalysisBranchParityTest {
     func propagatesComplexAndBitfieldValuesAcrossAliasesAndInstantiations(): Unit {
         let ctx = analysisTestContext()
         try {
-            let floating = addAnalysisTestType(
+            let floating = addDeriveTestTypeWithLayout(
                 ctx,
                 "Floating",
+                Layout(4, 4),
                 TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindFloat)
             )
             let complex = addAnalysisTestType(
@@ -567,6 +556,37 @@ public class UsedTemplateParameterEdgeParityTest {
             @Expect(results.get(destructorUse).getOrThrow().contains(parameter), true)
             @Expect(results.get(nested).getOrThrow().contains(parameter), true)
             @Expect(results.get(nestedOwner).getOrThrow().contains(parameter), false)
+        } finally {
+            ctx.close()
+        }
+    }
+}
+
+@Test
+public class TemplateArgumentIdentityTest {
+    @TestCase
+    func comparesExactTypeIdsWithoutAliasCanonicalization(): Unit {
+        let ctx = analysisTestContext()
+        try {
+            let integer = addAnalysisTestType(
+                ctx,
+                "Integer",
+                TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt)
+            )
+            let firstAlias = addAnalysisTestType(
+                ctx,
+                "FirstAlias",
+                TypeKind.TypeKindAlias(integer)
+            )
+            let secondAlias = addAnalysisTestType(
+                ctx,
+                "SecondAlias",
+                TypeKind.TypeKindAlias(integer)
+            )
+
+            @Expect(ctx.sameTemplateArguments([firstAlias], [firstAlias]), true)
+            @Expect(ctx.sameTemplateArguments([firstAlias], [secondAlias]), false)
+            @Expect(ctx.sameTemplateArguments([firstAlias], [integer]), false)
         } finally {
             ctx.close()
         }

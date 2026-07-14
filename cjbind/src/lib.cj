@@ -204,7 +204,6 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.representCxxOperators = opts.representCxxOperators
     ctxOpts.respectCxxAccessSpecs = opts.respectCxxAccessSpecs
     ctxOpts.useSpecificVirtualFunctionReceiver = opts.useSpecificVirtualFunctionReceiver
-    ctxOpts.useDistinctChar16T = opts.useDistinctChar16T
     ctxOpts.generateInlineFunctions = opts.generateInlineFunctions
     ctxOpts.generateDeletedFunctions = opts.generateDeletedFunctions
     ctxOpts.generatePureVirtualFunctions = opts.generatePureVirtualFunctions
@@ -214,18 +213,6 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.recordMatches = opts.recordMatches
     ctxOpts.untaggedUnion = opts.untaggedUnion
     ctxOpts.sizeTIsUsize = opts.sizeTIsUsize
-    ctxOpts.deriveCopy = opts.deriveCopy
-    ctxOpts.deriveDebug = opts.deriveDebug
-    ctxOpts.deriveDefault = opts.deriveDefault
-    ctxOpts.deriveHash = opts.deriveHash
-    ctxOpts.implDebug = opts.implDebug
-    ctxOpts.implPartialEq = opts.implPartialEq
-    ctxOpts.derivePartialEq = opts.derivePartialEq
-    ctxOpts.derivePartialOrd = opts.derivePartialOrd
-    ctxOpts.deriveEq = opts.deriveEq
-    if (opts.deriveOrd) {
-        ctxOpts.deriveOrd = true
-    }
     ctxOpts.blocklistedTypes.add(opts.blocklistedTypes.toArray())
     ctxOpts.blocklistedFunctions.add(opts.blocklistedFunctions.toArray())
     ctxOpts.blocklistedItems.add(opts.blocklistedItems.toArray())
@@ -237,12 +224,6 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.allowlistedItems.add(opts.allowlistedItems.toArray())
     ctxOpts.allowlistedVars.add(opts.allowlistedVars.toArray())
     ctxOpts.allowlistedFiles.add(opts.allowlistedFiles.toArray())
-    ctxOpts.noCopyTypes.add(opts.noCopyTypes.toArray())
-    ctxOpts.noDebugTypes.add(opts.noDebugTypes.toArray())
-    ctxOpts.noDefaultTypes.add(opts.noDefaultTypes.toArray())
-    ctxOpts.noHashTypes.add(opts.noHashTypes.toArray())
-    ctxOpts.noPartialEqTypes.add(opts.noPartialEqTypes.toArray())
-    ctxOpts.blocklistedTypeImplementsTraitCallback = opts.blocklistedTypeImplementsTraitCallback
     ctxOpts.fieldNameCallback = opts.fieldNameCallback
 
     let ctx = CjbindContext(ctxOpts)

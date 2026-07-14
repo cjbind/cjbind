@@ -43,8 +43,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "按 C++ 访问说明符设置生成项的可见性")
     let useSpecificVirtualFunctionReceiverFlag = BoolFlag(None, "use-specific-virtual-function-receiver",
         "use-specific-virtual-function-receiver", "虚函数使用具体类指针作为接收者")
-    let useDistinctChar16TFlag = BoolFlag(None, "use-distinct-char16-t", "use-distinct-char16-t",
-        "把 C++ char16_t 生成为独立类型")
     let generateInlineFunctionsFlag = BoolFlag(None, "generate-inline-functions", "generate-inline-functions",
         "生成 C++ inline 函数绑定")
     let generateDeletedFunctionsFlag = BoolFlag(None, "generate-deleted-functions", "generate-deleted-functions",
@@ -85,39 +83,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "禁用无标签 union 的原生分析规则")
     let noSizeTIsUsizeFlag = BoolFlag(None, "no-size_t-is-usize", "no-size_t-is-usize",
         "不把 size_t 自动映射为目标平台无符号整数")
-    let noDeriveCopyFlag = BoolFlag(None, "no-derive-copy", "no-derive-copy",
-        "禁用 Copy 派生")
-    let noDeriveDebugFlag = BoolFlag(None, "no-derive-debug", "no-derive-debug",
-        "禁用 Debug 派生")
-    let withDeriveDefaultFlag = BoolFlag(None, "with-derive-default", "with-derive-default",
-        "在可行时启用 Default 派生")
-    let noDeriveDefaultFlag = BoolFlag(None, "no-derive-default", "no-derive-default",
-        "禁用 Default 派生")
-    let withDeriveHashFlag = BoolFlag(None, "with-derive-hash", "with-derive-hash",
-        "在可行时启用 Hash 派生")
-    let withDerivePartialEqFlag = BoolFlag(None, "with-derive-partialeq", "with-derive-partialeq",
-        "在可行时启用 PartialEq 派生")
-    let withDeriveEqFlag = BoolFlag(None, "with-derive-eq", "with-derive-eq",
-        "在可行时启用 Eq 和 PartialEq 派生")
-    let withDerivePartialOrdFlag = BoolFlag(None, "with-derive-partialord", "with-derive-partialord",
-        "在可行时启用 PartialOrd 派生")
-    let withDeriveOrdFlag = BoolFlag(None, "with-derive-ord", "with-derive-ord",
-        "在可行时启用 Ord 和 PartialOrd 派生")
-    let implDebugFlag = BoolFlag(None, "impl-debug", "impl-debug",
-        "为需要手动实现的类型生成 toString")
-    let implPartialEqFlag = BoolFlag(None, "impl-partialeq", "impl-partialeq",
-        "为需要手动实现的类型生成相等运算符")
-    let noCopyFlag = StringListFlag(None, "no-copy", "no-copy",
-        "不为名称匹配正则表达式的类型派生 Copy", "REGEX")
-    let noDebugFlag = StringListFlag(None, "no-debug", "no-debug",
-        "不为名称匹配正则表达式的类型派生 Debug", "REGEX")
-    let noDefaultFlag = StringListFlag(None, "no-default", "no-default",
-        "不为名称匹配正则表达式的类型派生 Default", "REGEX")
-    let noHashFlag = StringListFlag(None, "no-hash", "no-hash",
-        "不为名称匹配正则表达式的类型派生 Hash", "REGEX")
-    let noPartialEqFlag = StringListFlag(None, "no-partialeq", "no-partialeq",
-        "不为名称匹配正则表达式的类型派生 PartialEq 或 PartialOrd", "REGEX")
-
     let outputFlag = StringFlag(Some("o"), "output", "output", "把生成的绑定输出到文件", "FILE", None)
     let packageFlag = StringFlag(Some("p"), "package", "package", "生成的绑定中的包名", "PACKAGE", "cjbind_ffi")
 
@@ -149,7 +114,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         representCxxOperatorsFlag,
         respectCxxAccessSpecsFlag,
         useSpecificVirtualFunctionReceiverFlag,
-        useDistinctChar16TFlag,
         generateInlineFunctionsFlag,
         generateDeletedFunctionsFlag,
         generatePureVirtualFunctionsFlag,
@@ -170,22 +134,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         noRecordMatchesFlag,
         disableUntaggedUnionFlag,
         noSizeTIsUsizeFlag,
-        noDeriveCopyFlag,
-        noDeriveDebugFlag,
-        withDeriveDefaultFlag,
-        noDeriveDefaultFlag,
-        withDeriveHashFlag,
-        withDerivePartialEqFlag,
-        withDeriveEqFlag,
-        withDerivePartialOrdFlag,
-        withDeriveOrdFlag,
-        implDebugFlag,
-        implPartialEqFlag,
-        noCopyFlag,
-        noDebugFlag,
-        noDefaultFlag,
-        noHashFlag,
-        noPartialEqFlag,
         outputFlag,
         packageFlag,
         versionFlag,
@@ -237,7 +185,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.representCxxOperators = representCxxOperatorsFlag.value
     opt.respectCxxAccessSpecs = respectCxxAccessSpecsFlag.value
     opt.useSpecificVirtualFunctionReceiver = useSpecificVirtualFunctionReceiverFlag.value
-    opt.useDistinctChar16T = useDistinctChar16TFlag.value
     opt.generateInlineFunctions = generateInlineFunctionsFlag.value
     opt.generateDeletedFunctions = generateDeletedFunctionsFlag.value
     opt.generatePureVirtualFunctions = generatePureVirtualFunctionsFlag.value
@@ -258,33 +205,6 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.recordMatches = !noRecordMatchesFlag.value
     opt.untaggedUnion = !disableUntaggedUnionFlag.value
     opt.sizeTIsUsize = !noSizeTIsUsizeFlag.value
-    opt.deriveCopy = !noDeriveCopyFlag.value
-    opt.deriveDebug = !noDeriveDebugFlag.value
-    if (withDeriveDefaultFlag.value && noDeriveDefaultFlag.value) {
-        eprintln("Error: --with-derive-default and --no-derive-default cannot be used together")
-        env.exit(1)
-    }
-    opt.deriveDefault = withDeriveDefaultFlag.value && !noDeriveDefaultFlag.value
-    opt.deriveHash = withDeriveHashFlag.value
-    if (withDerivePartialEqFlag.value) {
-        opt.derivePartialEq = true
-    }
-    if (withDeriveEqFlag.value) {
-        opt.deriveEq = true
-    }
-    if (withDerivePartialOrdFlag.value) {
-        opt.derivePartialOrd = true
-    }
-    if (withDeriveOrdFlag.value) {
-        opt.deriveOrd = true
-    }
-    opt.implDebug = implDebugFlag.value
-    opt.implPartialEq = implPartialEqFlag.value
-    opt.noCopyTypes.add(noCopyFlag.values)
-    opt.noDebugTypes.add(noDebugFlag.values)
-    opt.noDefaultTypes.add(noDefaultFlag.values)
-    opt.noHashTypes.add(noHashFlag.values)
-    opt.noPartialEqTypes.add(noPartialEqFlag.values)
     if (let Some(items) <- generateFlag.value) {
         opt.generateFunctions = false
         opt.generateTypes = false

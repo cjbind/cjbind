@@ -1,10 +1,32 @@
 package cjbind.ir
 
 import std.collection.{ArrayList, HashSet, contains}
+import std.regex.Regex
 import cjbind.clang
 import cjbind.result.Result
 
 public type ItemSet = HashSet<ItemId>
+
+func isAnonymousTypeParameterSpelling(spelling: String): Bool {
+    return Regex("^type-parameter-\\d+-\\d+$").matches(spelling)
+}
+
+func isTemplateParameterWithSpelling(cursor: clang.Cursor, spelling: String): Bool {
+    if (cursor.kind() != clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+        return false
+    }
+    let cursorSpelling = cursor.spelling()
+    return cursorSpelling == spelling ||
+        (cursorSpelling.isEmpty() && isAnonymousTypeParameterSpelling(spelling))
+}
+
+func isAssociatedType(ty: clang.Type): Bool {
+    if (ty.kind() != clang.CXTypeKind_CXType_Unexposed) {
+        return false
+    }
+    let pattern = Regex("typename type-parameter-\\d+-\\d+::.+")
+    return pattern.matches(ty.spelling()) || pattern.matches(ty.canonicalType().spelling())
+}
 
 public interface IsOpaque<Extra> {
     func isOpaque(ctx: CjbindContext, extra: Extra): Bool
@@ -40,7 +62,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     var nextChildLocalId: ItemId
     var canonicalNameCache: ?String
     public let comment: ?String
-    public let annotations: Annotations
+    let annotations: Annotations
     public let parentId: ItemId
     public var kind: ItemKind
     public let location: ?clang.SourceLocation
@@ -50,8 +72,30 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         comment: ?String,
         parentId: ItemId,
         kind: ItemKind,
+        location: ?clang.SourceLocation
+    ) {
+        if (!(id != parentId || kind.isModule())) {
+            throw Exception("item error")
+        }
+
+        this.id = id
+        this.localId = None
+        this.nextChildLocalId = 1
+        this.canonicalNameCache = None
+        this.parentId = parentId
+        this.comment = comment
+        this.annotations = Annotations()
+        this.kind = kind
+        this.location = location
+    }
+
+    init(
+        id: ItemId,
+        comment: ?String,
+        parentId: ItemId,
+        kind: ItemKind,
         location: ?clang.SourceLocation,
-        annotations!: Annotations = Annotations()
+        annotations!: Annotations
     ) {
         if (!(id != parentId || kind.isModule())) {
             throw Exception("item error")
@@ -129,11 +173,6 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 => "_cjbind_mod_${this.exposedId(ctx)}"
             }
             case ItemKind.KindType(ty) =>
-                if (ctx.usedTemplateParameters.isSome()) {
-                    if (let Some(instantiation) <- ctx.templateInstantiationFor(this.id)) {
-                        return templateInstantiationName(ctx.publicTemplateInstantiationSpelling(instantiation))
-                    }
-                }
                 ty.sanitizedName(ctx).getOrDefault {=> "_cjbind_ty_${this.exposedId(ctx)}"}
             case ItemKind.KindFunction(fun) => fun.name
         }
@@ -202,7 +241,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 case ItemKind.KindType(ty) => match (ty.kind) {
                     case TypeKind.ResolvedTypeRef(inner) => Some(inner)
                     case TypeKind.TypeKindTemplateInstantiation(instantiation) => Some(instantiation.definition)
-                    case _ => ctx.templateInstantiationFor(target.id).map({value => value.definition})
+                    case _ => None
                 }
                 case _ => None
             }
@@ -275,11 +314,55 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         return result
     }
 
+    func nameTarget(ctx: CjbindContext): Item {
+        let visited = ItemSet()
+        var target = this
+        while (visited.add(target.id)) {
+            let next: ?ItemId = match (target.kind) {
+                case ItemKind.KindType(ty) => match (ty.kind) {
+                    case TypeKind.ResolvedTypeRef(inner) => Some(inner)
+                    case TypeKind.TypeKindTemplateInstantiation(instantiation) => Some(instantiation.definition)
+                    case _ => None
+                }
+                case _ => None
+            }
+            match (next) {
+                case Some(id) => target = ctx.resolveItem(id)
+                case None => return target
+            }
+        }
+        return target
+    }
+
+    func pushDisambiguatedName(ctx: CjbindContext, output: StringBuilder, level: Int64): Unit {
+        let target = this.nameTarget(ctx)
+        output.append(target.realCanonicalName(ctx))
+        if (let Some(instantiation) <- ctx.templateInstantiationFor(this.id)) {
+            output.append("_open${level}_")
+            for (argument in instantiation.arguments) {
+                let argumentItem = argument
+                    .intoResolver()
+                    .throughTypeRefs()
+                    .resolve(ctx)
+                argumentItem.pushDisambiguatedName(ctx, output, level + 1)
+                output.append("_")
+            }
+            output.append("close${level}")
+        }
+    }
+
+    func fullDisambiguatedName(ctx: CjbindContext): String {
+        let output = StringBuilder()
+        this.pushDisambiguatedName(ctx, output, 0)
+        return output.toString()
+    }
+
     func realCanonicalName(ctx: CjbindContext): String {
-        let baseName = this.baseName(ctx)
+        let target = this.nameTarget(ctx)
+        let baseName = target.baseName(ctx)
 
         let ancestorIds = ArrayList<ItemId>()
-        for (id in this.ancestors(ctx)) {
+        for (id in target.parentId.ancestors(ctx)) {
             if (id != ctx.rootModule) {
                 ancestorIds.add(id)
             }
@@ -327,9 +410,6 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
 
     // cjlint-ignore -start !G.ITF.04
     public func trace(ctx: CjbindContext, tracer: Tracer, _: Unit): Unit {
-        if (let Some(instantiation) <- ctx.concreteTemplateInstantiations.get(this.id)) {
-            instantiation.trace(ctx, tracer, ())
-        }
         match (this.kind) {
             case ItemKind.KindType(ty) =>
                 if (ty.shouldBeTracedUnconditionally() || !this.isOpaque(ctx, ())) {
@@ -373,6 +453,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         }
 
         let comment = cursor.rawComment()
+        let annotations = parseAnnotations(cursor.comment()).getOrDefault({=> Annotations()})
         let relevantParentId = parentId ?? ctx.currentModule
 
         match (Function.parse(cursor, ctx)) {
@@ -385,7 +466,8 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                         comment,
                         relevantParentId,
                         ItemKind.KindFunction(item),
-                        Some(cursor.location())
+                        Some(cursor.location()),
+                        annotations: annotations
                     ),
                     decl,
                     Some(cursor)
@@ -407,7 +489,8 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                         comment,
                         relevantParentId,
                         ItemKind.KindVar(item),
-                        Some(cursor.location())
+                        Some(cursor.location()),
+                        annotations: annotations
                     ),
                     decl,
                     Some(cursor)
@@ -477,28 +560,36 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     public static func typeParam(
         withId: ?ItemId,
         location: clang.Cursor,
-        ctx: CjbindContext,
-        ty: clang.Type
+        ctx: CjbindContext
     ): ?TypeId {
-        if (ty.kind() != clang.CXTypeKind_CXType_Unexposed &&
-            ty.kind() != clang.CXTypeKind_CXType_Elaborated &&
-            ty.kind() != clang.CXTypeKind_CXType_Dependent &&
-            location.kind() != clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
+        let ty = location.curType()
+        if (ty.kind() != clang.CXTypeKind_CXType_Unexposed) {
             return None
         }
+        let tySpelling = ty.spelling()
+
         let definition: Box<?clang.Cursor> = Box(None)
-        if (location.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
-            definition.value = Some(location.canonical())
+        if (isTemplateParameterWithSpelling(location, tySpelling)) {
+            definition.value = Some(location)
         } else if (location.kind() == clang.CXCursorKind_CXCursor_TypeRef) {
             if (let Some(referenced) <- location.referenced()) {
-                if (referenced.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
-                    definition.value = Some(referenced.canonical())
+                if (isTemplateParameterWithSpelling(referenced, tySpelling)) {
+                    definition.value = Some(referenced)
                 }
             }
         } else {
-            let typeDeclaration = ty.declaration()
-            if (typeDeclaration.kind() == clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
-                definition.value = Some(typeDeclaration.canonical())
+            location.visit {
+                child =>
+                if (child.curType().kind() == clang.CXCursorKind_CXCursor_TypeRef &&
+                    child.curType().spelling() == tySpelling) {
+                    if (let Some(referenced) <- child.referenced()) {
+                        if (isTemplateParameterWithSpelling(referenced, tySpelling)) {
+                            definition.value = Some(referenced)
+                            return clang.CXChildVisitResult_CXChildVisit_Break
+                        }
+                    }
+                }
+                clang.CXChildVisitResult_CXChildVisit_Continue
             }
         }
 
@@ -513,10 +604,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
             return Some(existing)
         }
 
-        var name = definitionCursor.spelling()
-        if (name.isEmpty()) {
-            name = ty.spelling().replace("const ", "").replace(".", "")
-        }
+        let name = tySpelling.replace("const ", "").replace(".", "")
         let id = withId ?? ctx.nextItemId()
         let item = Item(
             id,
@@ -625,25 +713,15 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         ctx: CjbindContext
     ): Result<TypeId, ParseError> {
         let locationKind = location.kind()
-        let canBeTypeParameter = locationKind != clang.CXCursorKind_CXCursor_ClassTemplate &&
-            locationKind != clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization &&
-            locationKind != clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl
         let tyKind = ty.kind()
-        let typeMayBeParameter = tyKind == clang.CXTypeKind_CXType_Unexposed ||
-            tyKind == clang.CXTypeKind_CXType_Elaborated ||
-            tyKind == clang.CXTypeKind_CXType_Dependent
-        let locationTypeKind = if (typeMayBeParameter) {
-            clang.CXTypeKind_CXType_Invalid
-        } else {
-            location.curType().kind()
-        }
-        if (canBeTypeParameter &&
-            (typeMayBeParameter ||
-            locationTypeKind == clang.CXTypeKind_CXType_Unexposed ||
-            locationTypeKind == clang.CXTypeKind_CXType_Elaborated ||
-            locationTypeKind == clang.CXTypeKind_CXType_Dependent)) {
-            if (let Some(param) <- Item.typeParam(Some(id), location, ctx, ty)) {
-                return Ok(param)
+        let locationType = location.curType()
+        if (tyKind == clang.CXTypeKind_CXType_Unexposed ||
+            locationType.kind() == clang.CXTypeKind_CXType_Unexposed) {
+            if (isAssociatedType(ty) || isAssociatedType(locationType)) {
+                return Ok(Item.newOpaqueType(id, ty, ctx))
+            }
+            if (let Some(param) <- Item.typeParam(None, location, ctx)) {
+                return Ok(ctx.buildTyWrapper(id, param, None, ty))
             }
         }
 
@@ -663,42 +741,19 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         let decl: clang.Cursor = {
             =>
             let directDeclaration = ty.declaration()
-            if (let Some(directDefinition) <- directDeclaration.definition()) {
-                return directDefinition
-            }
-            if (tyKind == clang.CXTypeKind_CXType_Unexposed ||
-                tyKind == clang.CXTypeKind_CXType_Elaborated ||
-                tyKind == clang.CXTypeKind_CXType_Dependent) {
-                return directDeclaration
-            }
-            let canDef = ty.canonicalType().declaration().definition()
-            match (canDef) {
+            match (ty.canonicalType().declaration().definition()) {
                 case Some(v) => return v
                 case None => directDeclaration
             }
         }()
 
-        let carriesTypeAnnotations = locationKind == clang.CXCursorKind_CXCursor_StructDecl ||
-            locationKind == clang.CXCursorKind_CXCursor_UnionDecl ||
-            locationKind == clang.CXCursorKind_CXCursor_ClassDecl ||
-            locationKind == clang.CXCursorKind_CXCursor_ClassTemplate ||
-            locationKind == clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization ||
-            locationKind == clang.CXCursorKind_CXCursor_EnumDecl
-        let comment: ?String = if (carriesTypeAnnotations) {
-            match (location.rawComment()) {
-                case Some(value) => Some(value)
-                case None => decl.rawComment()
-            }
-        } else {
-            None
+        let comment: ?String = match (location.rawComment()) {
+            case Some(value) => Some(value)
+            case None => decl.rawComment()
         }
-        let annotations = if (carriesTypeAnnotations) {
-            match (parseAnnotations(decl.comment())) {
-                case Some(value) => value
-                case None => parseAnnotations(location.comment()).getOrDefault({=> Annotations()})
-            }
-        } else {
-            Annotations()
+        let annotations = match (parseAnnotations(decl.comment())) {
+            case Some(value) => value
+            case None => parseAnnotations(location.comment()).getOrDefault({=> Annotations()})
         }
         if (let Some(rty) <- ctx.builtinOrResolvedTy(id, parentId, ty, location)) {
             return Ok(rty)
@@ -707,6 +762,9 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         var validDecl = decl.kind() != clang.CXCursorKind_CXCursor_NoDeclFound
         let nxtDecl = if (validDecl) {
             decl.canonical()
+        } else if (locationKind == clang.CXCursorKind_CXCursor_ClassTemplate) {
+            validDecl = true
+            location
         } else {
             decl
         }
@@ -768,7 +826,10 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                 }
 
                 if (let Err(ParseError.Recurse) <- result2.value) {
-                    result2.value = Result<TypeId, ParseError>.Err(ParseError.Continue)
+                    result2.value = match (Item.typeParam(Some(id), location, ctx)) {
+                        case Some(param) => Ok(param)
+                        case None => Err(ParseError.Recurse)
+                    }
                 }
                 result2.value
         }

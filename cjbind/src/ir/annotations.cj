@@ -2,15 +2,15 @@ package cjbind.ir
 
 import cjbind.clang
 
-public class Annotations {
+class Annotations {
     private var opaqueValue = false
     private var hideValue = false
 
-    public func opaque(): Bool {
+    func opaque(): Bool {
         return this.opaqueValue
     }
 
-    public func hide(): Bool {
+    func hide(): Bool {
         return this.hideValue
     }
 

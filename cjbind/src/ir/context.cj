@@ -6,7 +6,7 @@ import std.fs.Path
 import std.env.getTempDirectory
 import cjbind.result.Result
 import cjbind.clang
-import cjbind.options.{CjbindOptions, ConfiguredCanDerive, ConfiguredDeriveTrait}
+import cjbind.options.{CjbindOptions, NamePatternSet}
 
 public type ItemId = UIntNative
 
@@ -81,147 +81,6 @@ public enum TypeKey <: Hashable & Equatable<TypeKey> {
     }
 }
 
-public func templateInstantiationName(spelling: String): String {
-    var name = spelling
-        .replace("::", "_")
-        .replace("&&", "_rref")
-        .replace("&", "_ref")
-        .replace("const ", "const_")
-        .replace("volatile ", "volatile_")
-        .replace("<", "_open0_")
-        .replace(">", "_close0")
-        .replace("*", "_ptr")
-        .replace("[", "_array_")
-        .replace("]", "_endarray_")
-        .replace("(", "_lparen_")
-        .replace(")", "_rparen_")
-        .replace("-", "_minus_")
-        .replace("+", "_plus_")
-        .replace("/", "_slash_")
-        .replace("=", "_equals_")
-        .replace("!", "_not_")
-        .replace("%", "_percent_")
-        .replace("^", "_xor_")
-        .replace("|", "_or_")
-        .replace("{", "_lbrace_")
-        .replace("}", "_rbrace_")
-        .replace("'", "_quote_")
-        .replace("?", "_question_")
-        .replace("~", "_tilde_")
-        .replace(".", "_dot_")
-        .replace(",", "_")
-        .replace(" ", "_")
-        .replace(":", "_")
-
-    while (name.contains("__")) {
-        name = name.replace("__", "_")
-    }
-    let safeName = StringBuilder()
-    for (rune in name.toRuneArray()) {
-        if (rune.isAsciiNumberOrLetter() || rune == r'_') {
-            safeName.append("${rune}")
-        } else {
-            safeName.append("_u${UInt32(rune)}_")
-        }
-    }
-    var result = safeName.toString().trimAscii()
-    if (!result.isEmpty() && result.toRuneArray()[0].isAsciiNumber()) {
-        result = "template_${result}"
-    }
-    return if (result.isEmpty()) { "template_instantiation" } else { result }
-}
-
-func isCppIdentifierByte(value: UInt8): Bool {
-    return (value >= 48u8 && value <= 57u8) ||
-        (value >= 65u8 && value <= 90u8) ||
-        (value >= 97u8 && value <= 122u8) || value == 95u8
-}
-
-func replaceCppIdentifier(input: String, identifier: String, replacement: String): String {
-    if (identifier.isEmpty() || input.size < identifier.size) {
-        return input
-    }
-    let result = StringBuilder()
-    var index = 0
-    while (index < input.size) {
-        let end = index + identifier.size
-        let leftBoundary = index == 0 || !isCppIdentifierByte(input[index - 1])
-        let rightBoundary = end == input.size || (end < input.size && !isCppIdentifierByte(input[end]))
-        if (end <= input.size && leftBoundary && rightBoundary && input[index..end] == identifier) {
-            result.append(replacement)
-            index = end
-        } else {
-            result.append(input[index..(index + 1)])
-            index += 1
-        }
-    }
-    return result.toString()
-}
-
-func mergeTemplateSemanticFlags(target: CompInfo, definition: CompInfo): Unit {
-    target.packedAttr ||= definition.packedAttr
-    target.hasUnevaluableBitFieldWidth ||= definition.hasUnevaluableBitFieldWidth
-    target.foundUnknownAttr ||= definition.foundUnknownAttr
-    target.hasOwnVirtualMethod ||= definition.hasOwnVirtualMethod
-    target.hasDestructor ||= definition.hasDestructor
-    target.hasUnrepresentedVirtualMethod ||= definition.hasUnrepresentedVirtualMethod
-    target.forceOpaque ||= definition.forceOpaque
-}
-
-func mergeSynthesizedTemplateComp(target: CompInfo, synthesized: CompInfo): Unit {
-    if (!synthesized.baseMembers.isEmpty()) {
-        while (!target.baseMembers.isEmpty()) {
-            target.baseMembers.remove(at: target.baseMembers.size - 1)
-        }
-        target.baseMembers.add(all: synthesized.baseMembers)
-    }
-
-    target.fields = match ((target.fields, synthesized.fields)) {
-        case (CompFields.CompFieldsBefore(parsed), CompFields.CompFieldsBefore(concrete)) =>
-            if (parsed.size != concrete.size) {
-                synthesized.fields
-            } else {
-                let fields = ArrayList<RawField>()
-                for (index in 0..parsed.size) {
-                    let parsedField = parsed[index]
-                    let concreteField = concrete[index]
-                    let offset = match (parsedField.offset) {
-                        case Some(value) => Some(value)
-                        case None => concreteField.offset
-                    }
-                    let bitfieldWidth = match (parsedField.bitfieldWidth) {
-                        case Some(value) => Some(value)
-                        case None => concreteField.bitfieldWidth
-                    }
-                    fields.add(RawField(
-                        concreteField.name,
-                        concreteField.ty,
-                        concreteField.comment,
-                        bitfieldWidth,
-                        offset,
-                        isPublic: parsedField.isPublic
-                    ))
-                }
-                CompFields.CompFieldsBefore(fields)
-            }
-        case (_, _) => synthesized.fields
-    }
-
-    for (inner in synthesized.innerTypes) {
-        if (!target.innerTypes.contains(inner)) {
-            target.innerTypes.add(inner)
-        }
-    }
-    while (!target.templateParams.isEmpty()) {
-        target.templateParams.remove(at: target.templateParams.size - 1)
-    }
-    while (!target.nonTypeTemplateParams.isEmpty()) {
-        target.nonTypeTemplateParams.remove(at: target.nonTypeTemplateParams.size - 1)
-    }
-    target.hasTemplateTypeParams = false
-    target.hasNonTypeTemplateParams = false
-}
-
 public class PartialType <: Equatable<PartialType> {
     public let decl: clang.Cursor
     public let id: ItemId
@@ -233,6 +92,49 @@ public class PartialType <: Equatable<PartialType> {
 
     public operator func ==(that: PartialType): Bool {
         return decl == that.decl && id == that.id
+    }
+
+    func numSelfTemplateParams(): Int64 {
+        let kind = this.decl.kind()
+        if (kind != clang.CXCursorKind_CXCursor_ClassTemplate &&
+            kind != clang.CXCursorKind_CXCursor_FunctionTemplate &&
+            kind != clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl) {
+            return 0
+        }
+
+        let count = Box(0)
+        this.decl.visit {
+            child =>
+            let childKind = child.kind()
+            if (childKind == clang.CXCursorKind_CXCursor_TemplateTypeParameter ||
+                childKind == clang.CXCursorKind_CXCursor_TemplateTemplateParameter ||
+                childKind == clang.CXCursorKind_CXCursor_NonTypeTemplateParameter) {
+                count.value += 1
+            }
+            clang.CXChildVisitResult_CXChildVisit_Continue
+        }
+        return count.value
+    }
+}
+
+class CodegenTemplateMaterialization {
+    let arguments: Array<TypeId>
+    let wrapper: TypeId
+    var failed: Bool = false
+
+    init(arguments: Array<TypeId>, wrapper: TypeId) {
+        this.arguments = arguments
+        this.wrapper = wrapper
+    }
+}
+
+class CodegenAliasUse {
+    let definition: TypeId
+    let arguments: Array<TypeId>
+
+    init(definition: TypeId, arguments: Array<TypeId>) {
+        this.definition = definition
+        this.arguments = arguments
     }
 }
 
@@ -252,13 +154,8 @@ public class CjbindContext <: Resource {
 
     public let items: ArrayList<?Item>
     public let types: HashMap<TypeKey, TypeId> = HashMap()
-    public let typeDeclarations: HashMap<clang.Cursor, TypeId> = HashMap()
     public let modules: HashMap<clang.Cursor, ModuleId> = HashMap()
     public let typeParams: HashMap<clang.Cursor, TypeId> = HashMap()
-    public let templateInstantiations: HashMap<String, TypeId> = HashMap()
-    public let concreteTemplateInstantiations: HashMap<ItemId, TemplateInstantiation> = HashMap()
-    let materializedNestedTemplateTypes: HashMap<String, TypeId> = HashMap()
-    let materializedNestedTemplateItems: ItemSet = ItemSet()
 
     public let rootModule: ModuleId
     public var currentModule: ModuleId
@@ -284,19 +181,71 @@ public class CjbindContext <: Resource {
 
     public var allowlistedItems: Option<ItemSet> = None
     public var codegenItems: Option<ItemSet> = None
+    let codegenTemplateReplacements: HashMap<ItemId, TypeId> = HashMap()
+    let codegenTemplateMaterializations: HashMap<ItemId, ArrayList<CodegenTemplateMaterialization>> = HashMap()
+    let codegenAnalysisOrigins: HashMap<ItemId, ItemId> = HashMap()
+    let codegenAliasUses: HashMap<ItemId, CodegenAliasUse> = HashMap()
 
     public var usedTemplateParameters: ?HashMap<ItemId, ItemSet> = None
-    public var haveVtable: ?HashMap<ItemId, HasVtableResult> = None
-    public var sizednessResults: ?HashMap<ItemId, SizednessResult> = None
-    public var haveDestructor: ?ItemSet = None
-    public var cannotDeriveDebug: ?HashMap<ItemId, CanDerive> = None
-    public var cannotDeriveDefault: ?HashMap<ItemId, CanDerive> = None
-    public var cannotDeriveCopy: ?HashMap<ItemId, CanDerive> = None
-    public var cannotDeriveHash: ?HashMap<ItemId, CanDerive> = None
-    public var cannotDerivePartialEqOrPartialOrd: ?HashMap<ItemId, CanDerive> = None
-    public var hasTypeParameterInArrayResults: ?ItemSet = None
-    public var hasFloatResults: ?ItemSet = None
+    var haveVtable: ?HashMap<ItemId, HasVtableResult> = None
+    var sizednessResults: ?HashMap<ItemId, SizednessResult> = None
+    var haveDestructor: ?ItemSet = None
+    var cannotDeriveDebug: ?HashMap<ItemId, CanDerive> = None
+    var cannotDeriveDefault: ?HashMap<ItemId, CanDerive> = None
+    var cannotDeriveCopy: ?HashMap<ItemId, CanDerive> = None
+    var cannotDeriveHash: ?HashMap<ItemId, CanDerive> = None
+    var cannotDerivePartialEqOrPartialOrd: ?HashMap<ItemId, CanDerive> = None
+    var hasTypeParameterInArrayResults: ?ItemSet = None
+    var hasFloatResults: ?ItemSet = None
     let blocklistedTraitResults: HashMap<String, CanDerive> = HashMap()
+    var deriveCopy: Bool = true
+    var deriveDebug: Bool = true
+    var deriveDefault: Bool = false
+    var deriveHash: Bool = false
+    private var derivePartialEqValue: Bool = false
+    private var derivePartialOrdValue: Bool = false
+    private var deriveEqValue: Bool = false
+    private var deriveOrdValue: Bool = false
+    mut prop derivePartialEq: Bool {
+        get() { this.derivePartialEqValue }
+        set(value) {
+            this.derivePartialEqValue = value
+            if (!value) {
+                this.deriveEqValue = false
+            }
+        }
+    }
+    mut prop deriveEq: Bool {
+        get() { this.deriveEqValue }
+        set(value) {
+            this.deriveEqValue = value
+            if (value) {
+                this.derivePartialEqValue = true
+            }
+        }
+    }
+    mut prop derivePartialOrd: Bool {
+        get() { this.derivePartialOrdValue }
+        set(value) {
+            this.derivePartialOrdValue = value
+            if (!value) {
+                this.deriveOrdValue = false
+            }
+        }
+    }
+    mut prop deriveOrd: Bool {
+        get() { this.deriveOrdValue }
+        set(value) {
+            this.deriveOrdValue = value
+            this.derivePartialOrdValue = value
+        }
+    }
+    let noCopyTypes: NamePatternSet = NamePatternSet()
+    let noDebugTypes: NamePatternSet = NamePatternSet()
+    let noDefaultTypes: NamePatternSet = NamePatternSet()
+    let noHashTypes: NamePatternSet = NamePatternSet()
+    let noPartialEqTypes: NamePatternSet = NamePatternSet()
+    var blocklistedTypeImplementsTraitCallback: ?((String, DeriveTrait) -> ?CanDerive) = None
 
     public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
@@ -486,11 +435,19 @@ public class CjbindContext <: Resource {
     public func addItem(
         item: Item,
         declaration: ?clang.Cursor,
-        _: ?clang.Cursor
+        location: ?clang.Cursor
     ): Unit {
         let id = item.id
         let isType = item.kind.isType()
         let isUnnamed = item.kind.isType() && item.kind.expectType().name.isNone()
+        let isTemplateInstantiation = if (isType) {
+            match (item.kind.expectType().kind) {
+                case TypeKind.TypeKindTemplateInstantiation(_) => true
+                case _ => false
+            }
+        } else {
+            false
+        }
 
         if (this.items[Int64(id)].isSome()) {
             throw Exception("Item with id ${id} already exists, WTF case")
@@ -506,12 +463,23 @@ public class CjbindContext <: Resource {
 
         this.items[Int64(id)] = item
 
-        if (!isType) {
+        if (!isType || isTemplateInstantiation) {
             return
         }
 
-        if (let Some(decl) <- declaration) {
-            this.typeDeclarations.add(decl, id)
+        if (let Some(sourceDeclaration) <- declaration) {
+            var decl = sourceDeclaration
+            if (!decl.isValid()) {
+                if (let Some(sourceLocation) <- location) {
+                    if (sourceLocation.isTemplateLike()) {
+                        decl = sourceLocation
+                    }
+                }
+            }
+            decl = decl.canonical()
+            if (!decl.isValid()) {
+                return
+            }
             let candecl = decl.canonical()
             if (!candecl.isValid()) {
                 return
@@ -577,11 +545,8 @@ public class CjbindContext <: Resource {
         isConst: Bool
     ): TypeId {
         let spelling = ty.spelling()
-        let targetItem = this.resolveItemFallible(wrapperId)
-        let layout = targetItem
-            .flatMap({item => item.kind.asType()})
-            .flatMap({target => target.layout})
-        let location = targetItem.flatMap({item => item.location})
+        let layout = ty.fallibleLayout(this).ok()
+        let location = Some(ty.declaration().location())
         let typeKind = TypeKind.ResolvedTypeRef(wrapperId)
         let ity = Type(Some(spelling), layout, typeKind, isConst)
         let item = Item(
@@ -649,9 +614,6 @@ public class CjbindContext <: Resource {
                 return TypeKind.TypeKindInt(IntKindWChar(false))
             }
             if (k == clang.CXTypeKind_CXType_Char16) {
-                if (this.options.useDistinctChar16T) {
-                    return TypeKind.TypeKindInt(IntKindChar16)
-                }
                 return TypeKind.TypeKindInt(IntKindU16)
             }
             if (k == clang.CXTypeKind_CXType_Char32) {
@@ -737,1364 +699,224 @@ public class CjbindContext <: Resource {
 
     // cjlint-ignore -end
 
+    func declarationInfoForTemplateInstantiation(
+        instantiation: clang.Cursor
+    ): ?(clang.Cursor, TypeId, Int64) {
+        if (let Some(declaration) <- instantiation.curType().canonicalDeclaration(Some(instantiation))) {
+            if (let Some(templateId) <- this.getResolvedType(declaration)) {
+                let parameterCount = selfTemplateParams(templateId, this).size
+                if (parameterCount > 0) {
+                    return Some((declaration.cursor, templateId, parameterCount))
+                }
+            }
+        }
+
+        let referenced = match (instantiation.referenced()) {
+            case Some(value) => value
+            case None => return None
+        }
+        for (partial in this.currentlyParsedTypes) {
+            if (partial.decl == referenced) {
+                let parameterCount = partial.numSelfTemplateParams()
+                if (parameterCount > 0) {
+                    return Some((partial.decl, partial.id, parameterCount))
+                }
+            }
+        }
+        return None
+    }
+
+    func instantiateTemplate(
+        withId: ItemId,
+        template: TypeId,
+        ty: clang.Type,
+        location: clang.Cursor
+    ): ?TypeId {
+        let expectedArgumentCount = selfTemplateParams(template, this).size
+        if (expectedArgumentCount == 0) {
+            eprintln(
+                "Warning: unable to inspect a C++ template instantiation because its template parameters are unknown"
+            )
+            return None
+        }
+
+        var children = location.collectChildren()
+        var childrenAreFlat = true
+        for (child in children) {
+            if (!child.collectChildren().isEmpty()) {
+                childrenAreFlat = false
+                break
+            }
+        }
+        if (childrenAreFlat) {
+            var templateReferenceIndex: ?Int64 = None
+            for ((index, child) in children.iterator().enumerate()) {
+                if (child.kind() == clang.CXCursorKind_CXCursor_TemplateRef) {
+                    templateReferenceIndex = Some(index)
+                    break
+                }
+            }
+            if (let Some(index) <- templateReferenceIndex) {
+                var onlyNamespacesBeforeTemplate = true
+                for (prefixIndex in 0..index) {
+                    if (children[prefixIndex].kind() != clang.CXCursorKind_CXCursor_NamespaceRef) {
+                        onlyNamespacesBeforeTemplate = false
+                        break
+                    }
+                }
+                if (onlyNamespacesBeforeTemplate) {
+                    let remaining = ArrayList<clang.Cursor>()
+                    for (childIndex in (index + 1)..children.size) {
+                        remaining.add(children[childIndex])
+                    }
+                    children = remaining
+                }
+            }
+        }
+
+        let arguments = ArrayList<TypeId>()
+        var foundNonTypeArgument = false
+        children.reverse()
+        for (child in children) {
+            let childKind = child.kind()
+            if (childKind == clang.CXCursorKind_CXCursor_TypeRef ||
+                childKind == clang.CXCursorKind_CXCursor_TypedefDecl ||
+                childKind == clang.CXCursorKind_CXCursor_TypeAliasDecl) {
+                arguments.add(Item.fromTyOrRef(
+                    child.curType(),
+                    child,
+                    Some(template),
+                    this
+                ))
+            } else if (childKind == clang.CXCursorKind_CXCursor_TemplateRef) {
+                let declarationInfo = match (this.declarationInfoForTemplateInstantiation(child)) {
+                    case Some(value) => value
+                    case None => return None
+                }
+                let (templateCursor, templateId, nestedArgumentCount) = declarationInfo
+                let nestedChildren = child.collectChildren()
+                if (nestedArgumentCount == 0 || nestedChildren.size >= nestedArgumentCount) {
+                    arguments.add(Item.fromTyOrRef(
+                        child.curType(),
+                        child,
+                        Some(template),
+                        this
+                    ))
+                } else {
+                    if (arguments.size < nestedArgumentCount) {
+                        eprintln(
+                            "Warning: found a C++ template instantiation without enough type arguments"
+                        )
+                        return None
+                    }
+                    let nestedArguments = ArrayList<TypeId>()
+                    let start = arguments.size - nestedArgumentCount
+                    for (index in start..arguments.size) {
+                        nestedArguments.add(arguments[index])
+                    }
+                    for (_ in 0..nestedArgumentCount) {
+                        arguments.remove(at: arguments.size - 1)
+                    }
+                    nestedArguments.reverse()
+                    let nestedInstantiation = TemplateInstantiation(
+                        templateId,
+                        nestedArguments.toArray()
+                    )
+                    let nestedId = this.nextItemId()
+                    this.addItem(
+                        Item(
+                            nestedId,
+                            None,
+                            this.currentModule,
+                            ItemKind.KindType(Type(
+                                Some(templateCursor.spelling()),
+                                templateCursor.curType().fallibleLayout(this).ok(),
+                                TypeKind.TypeKindTemplateInstantiation(nestedInstantiation),
+                                false
+                            )),
+                            Some(child.location())
+                        ),
+                        None,
+                        Some(child)
+                    )
+                    arguments.add(nestedId)
+                }
+            } else {
+                eprintln(
+                    "Warning: found an unsupported C++ template argument cursor '${child.spelling()}'"
+                )
+                foundNonTypeArgument = true
+            }
+        }
+
+        if (foundNonTypeArgument) {
+            eprintln("Warning: C++ templates with non-type arguments are not supported")
+            return None
+        }
+        if (arguments.size != expectedArgumentCount) {
+            eprintln(
+                "Warning: found a C++ template instantiation with an unexpected number of type arguments"
+            )
+            return None
+        }
+
+        arguments.reverse()
+        let instantiation = TemplateInstantiation(template, arguments.toArray())
+        let name = ty.spelling()
+        let item = Item(
+            withId,
+            None,
+            this.currentModule,
+            ItemKind.KindType(Type(
+                if (name.isEmpty()) { None } else { Some(name) },
+                ty.fallibleLayout(this).ok(),
+                TypeKind.TypeKindTemplateInstantiation(instantiation),
+                ty.isConst()
+            )),
+            Some(location.location())
+        )
+        this.addItem(item, None, Some(location))
+        return Some(withId)
+    }
+
     public func builtinOrResolvedTy(
         withId: ItemId,
         parentId: ?ItemId,
         ty: clang.Type,
         location: ?clang.Cursor
     ): ?TypeId {
-        let locationKind = location.map({cursor => cursor.kind()})
-        let isTemplateDefinition = locationKind == Some(clang.CXCursorKind_CXCursor_ClassTemplate) ||
-            locationKind == Some(clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization) ||
-            locationKind == Some(clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl)
-        if (isTemplateDefinition) {
-            return None
-        }
-        let canonicalTy = ty.canonicalType()
-        if (ty != canonicalTy &&
-            (ty.declaration().kind() == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl ||
-            (ty.kind() == clang.CXTypeKind_CXType_Typedef &&
-            (ty.templateArgs().isSome() || ty.spelling().contains("<"))))) {
-            return None
-        }
-        let isTemplateInstantiation = !isTemplateDefinition &&
-            ty.kind() != clang.CXTypeKind_CXType_Typedef &&
-            (ty.templateArgs().map({args => !args.isEmpty()}).getOrDefault({=> false}) ||
-            canonicalTy.templateArgs().map({args => !args.isEmpty()}).getOrDefault({=> false}))
-        if (isTemplateInstantiation) {
-            if (let Some(instantiation) <- TemplateInstantiation.fromTy(ty, this)) {
-                if (let Some(concrete) <- this.buildTemplateInstantiation(
-                    withId,
-                    instantiation,
-                    parentId,
-                    ty,
-                    location
-                )) {
-                    return Some(concrete)
-                }
-            }
-        }
-
         if (let Some(decl) <- ty.canonicalDeclaration(location)) {
-            let exactTid = this.getResolvedType(decl)
-            var knownTid = exactTid
-            if (knownTid.isNone()) {
-                if (let Some(primary) <- decl.cursor.specialized()) {
-                    knownTid = this.getResolvedType(
-                        clang.CanonicalTypeDeclaration(primary.curType(), primary.canonical())
-                    )
-                }
-            }
-            if (let Some(tid) <- knownTid) {
-                if (ty.spelling().contains("<")) {
-                    if (let Some(instantiation) <- this.templateInstantiationFromKnownDefinition(
-                        ty,
-                        tid,
-                        ty.spelling(),
-                        HashMap<TypeId, TypeId>(),
-                        parentId
-                    )) {
-                        if (let Some(concrete) <- this.buildTemplateInstantiation(
-                            withId,
-                            instantiation,
-                            parentId,
-                            ty,
-                            location
-                        )) {
-                            return Some(concrete)
+            if (let Some(tid) <- this.getResolvedType(decl)) {
+                if (let Some(instantiationCursor) <- location && decl.cursor.isTemplateLike() &&
+                    ty != decl.cursor.curType()) {
+                    var containsTypeRef = false
+                    for (child in instantiationCursor.collectChildren()) {
+                        if (child.kind() == clang.CXCursorKind_CXCursor_TypeRef) {
+                            containsTypeRef = true
+                            break
                         }
                     }
+                    let canonicalType = ty.canonicalType()
+                    if (decl.cursor.kind() == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl &&
+                        !containsTypeRef && canonicalType.isValid() &&
+                        canonicalType.kind() != clang.CXTypeKind_CXType_Unexposed) {
+                        return None
+                    }
+                    return match (this.instantiateTemplate(
+                        withId,
+                        tid,
+                        ty,
+                        instantiationCursor
+                    )) {
+                        case Some(value) => Some(value)
+                        case None => Some(tid)
+                    }
                 }
-            }
-            if (let Some(tid) <- exactTid) {
                 return Some(this.buildTyWrapper(withId, tid, parentId, ty))
             }
         }
 
         return this.buildBuiltinTy(ty)
-    }
-
-    func completeNestedTemplateInstantiation(
-        instantiation: TemplateInstantiation,
-        spelling: String,
-        concreteCursor!: ?clang.Cursor = None
-    ): TemplateInstantiation {
-        if (instantiation.isDependent) {
-            return instantiation
-        }
-        let parameterKinds = this.templateInstantiationParameterKinds(
-            instantiation,
-            concreteCursor: concreteCursor
-        )
-        if (parameterKinds.isEmpty()) {
-            return instantiation
-        }
-
-        let parsedSpellings = splitAllTemplateArgumentSpellings(spelling)
-        if (parsedSpellings.size < parameterKinds.size) {
-            return instantiation
-        }
-        let completedArguments = ArrayList<TypeId>()
-        let completedSpellings = ArrayList<String>()
-        let allSpellings = ArrayList<String>()
-        let nonTypeSpellings = ArrayList<String>()
-        let typePositions = ArrayList<Int64>()
-        for ((index, parameterKind) in parameterKinds.iterator().enumerate()) {
-            let spelling = parsedSpellings[index]
-            allSpellings.add(spelling)
-            if (parameterKind != clang.CXCursorKind_CXCursor_TemplateTypeParameter) {
-                nonTypeSpellings.add(spelling)
-                continue
-            }
-            let concreteType = match (this.tryEnsureFallbackTranslationUnit().flatMap {
-                fallback => fallback.probeType(spelling)
-            }) {
-                case Some(value) => value
-                case None => return instantiation
-            }
-            completedArguments.add(Item.fromTyOrRef(
-                concreteType,
-                concreteType.declaration(),
-                None,
-                this
-            ))
-            completedSpellings.add(spelling)
-            typePositions.add(index)
-        }
-        return TemplateInstantiation(
-            instantiation.definition,
-            completedArguments.toArray(),
-            instantiation.definitionCursor,
-            if (nonTypeSpellings.isEmpty()) { None } else { Some(spelling) },
-            kind: instantiation.kind,
-            spelling: instantiation.spelling,
-            argumentSpellings: completedSpellings.toArray(),
-            allArgumentSpellings: allSpellings.toArray(),
-            nonTypeArgumentSpellings: nonTypeSpellings.toArray(),
-            typeArgumentPositions: typePositions.toArray(),
-            isDependent: instantiation.isDependent
-        )
-    }
-
-    func templateInstantiationParameterKinds(
-        instantiation: TemplateInstantiation,
-        concreteCursor!: ?clang.Cursor = None
-    ): Array<clang.CXCursorKind> {
-        let owners = ArrayList<clang.Cursor>()
-        let seenOwners = HashSet<String>()
-        var current: ?clang.Cursor = concreteCursor
-        while (let Some(cursor) <- current) {
-            let owner = cursor.specialized().getOrDefault({=> cursor})
-            if (owner.isTemplateLike()) {
-                let identity = owner.usr().getOrDefault({=> owner.hashCode().toString()})
-                if (seenOwners.add(identity)) {
-                    owners.add(owner)
-                }
-            }
-            current = cursor.fallibleSemanticParent()
-        }
-        if (owners.isEmpty()) {
-            current = Some(instantiation.definitionCursor)
-            while (let Some(cursor) <- current) {
-                if (cursor.isTemplateLike()) {
-                    let identity = cursor.usr().getOrDefault({=> cursor.hashCode().toString()})
-                    if (seenOwners.add(identity)) {
-                        owners.add(cursor)
-                    }
-                }
-                current = cursor.fallibleSemanticParent()
-            }
-        }
-        owners.reverse()
-
-        let kinds = ArrayList<clang.CXCursorKind>()
-        for (owner in owners) {
-            owner.visit {
-                child =>
-                let kind = child.kind()
-                if (kind == clang.CXCursorKind_CXCursor_TemplateTypeParameter ||
-                    kind == clang.CXCursorKind_CXCursor_NonTypeTemplateParameter ||
-                    kind == clang.CXCursorKind_CXCursor_TemplateTemplateParameter) {
-                    kinds.add(kind)
-                }
-                return clang.CXChildVisitResult_CXChildVisit_Continue
-            }
-        }
-        return kinds.toArray()
-    }
-
-    func buildTemplateInstantiation(
-        withId: ItemId,
-        rawInstantiation: TemplateInstantiation,
-        parentId: ?ItemId,
-        ty: clang.Type,
-        location: ?clang.Cursor
-    ): ?TypeId {
-        let instantiation = this.completeNestedTemplateInstantiation(
-            rawInstantiation,
-            ty.spelling(),
-            concreteCursor: Some(ty.declaration())
-        )
-        let definitionId = this.templateDefinitionId(instantiation)
-            .getOrDefault({=> instantiation.definition})
-        let definitionIdentity = instantiation.definitionCursor.usr().getOrDefault {
-            => "cursor_${instantiation.definitionCursor.hashCode()}"
-        }
-        let dependentOwner = if (instantiation.isDependent) {
-            parentId.map({id => "|owner=${id}"}).getOrDefault({=> "|owner=root"})
-        } else {
-            ""
-        }
-        let argumentIdentity = if (instantiation.isDependent) {
-            let ids = ArrayList<String>()
-            for (argument in instantiation.arguments) {
-                ids.add(argument.toString())
-            }
-            "|arguments=${String.join(ids.toArray(), delimiter: ",")}"
-        } else {
-            ""
-        }
-        let key = "${definitionIdentity}|${ty.canonicalType().spelling()}${dependentOwner}${argumentIdentity}"
-        if (let Some(existing) <- this.templateInstantiations.get(key)) {
-            // A template definition can be encountered through the concrete type
-            // while its own declaration is still being parsed. It is not a
-            // materialized specialization and must not own the concrete cache key.
-            if (existing != instantiation.definition) {
-                return Some(this.buildTyWrapper(withId, existing, parentId, ty))
-            }
-        }
-
-        this.templateInstantiations.add(key, withId)
-        let spelling = ty.spelling()
-        let name = templateInstantiationName(spelling)
-        let declaration = ty.declaration()
-        let concreteDefinition = declaration.definition().getOrDefault({=> declaration})
-        let hasConcreteDefinition = !instantiation.isDependent &&
-            concreteDefinition.isDefinition() && declaration.specialized().isSome()
-        let templateType = Type(
-            Some(name),
-            ty.fallibleLayout(this).ok(),
-            TypeKind.TypeKindTemplateInstantiation(instantiation),
-            ty.isConst()
-        )
-        this.addItem(
-            Item(
-                withId,
-                None,
-                this.resolveItemFallible(definitionId)
-                    .map({item => item.parentId})
-                    .getOrDefault({=> this.rootModule}),
-                ItemKind.KindType(templateType),
-                location.map({cursor => cursor.location()})
-            ),
-            None,
-            location
-        )
-
-        if (hasConcreteDefinition) {
-            if (let Ok(comp) <- CompInfo.fromTy(withId, ty, Some(concreteDefinition), this)) {
-                if (instantiation.kind.isPrimary() || instantiation.kind.isPartialSpecialization()) {
-                    if (let Some(definitionComp) <- this.templateDefinitionComp(instantiation)) {
-                        mergeTemplateSemanticFlags(comp, definitionComp)
-                    }
-                    if (let Some(templateComp) <- this.instantiateTemplateComp(
-                        instantiation,
-                        ownerId: Some(withId)
-                    )) {
-                        mergeSynthesizedTemplateComp(comp, templateComp)
-                    }
-                }
-                let representsConcreteDefinition = comp.hasFields() || !comp.baseMembers.isEmpty() ||
-                    instantiation.kind.isExplicitSpecialization() ||
-                    ty.fallibleLayout(this).ok().map({layout => layout.size <= 1}).getOrDefault({=> false})
-                if (representsConcreteDefinition) {
-                    this.concreteTemplateInstantiations.add(withId, instantiation)
-                    this.resolveItem(withId).kind = ItemKind.KindType(
-                        Type(
-                            Some(name),
-                            ty.fallibleLayout(this).ok(),
-                            TypeKind.TypeKindComp(comp),
-                            ty.isConst()
-                        )
-                    )
-                    this.needBitfieldAllocation.add(withId)
-                }
-            }
-        }
-        return Some(withId)
-    }
-
-    func substituteTemplateSpelling(
-        source: String,
-        substitutionSpellings: HashMap<TypeId, String>,
-        namedSubstitutionSpellings!: HashMap<String, String> = HashMap<String, String>()
-    ): String {
-        var result = source
-        for ((parameter, replacement) in substitutionSpellings) {
-            let parameterName = parameter
-                .intoResolver()
-                .throughTypeRefs()
-                .throughTypeAliases()
-                .resolve(this)
-                .kind
-                .expectType()
-                .name
-            if (let Some(name) <- parameterName) {
-                result = replaceCppIdentifier(result, name, replacement)
-            }
-        }
-        for ((name, replacement) in namedSubstitutionSpellings) {
-            result = replaceCppIdentifier(result, name, replacement)
-        }
-        return result
-    }
-
-    func probeConcreteTemplateType(spelling: String): ?clang.Type {
-        let fallback = match (this.tryEnsureFallbackTranslationUnit()) {
-            case Some(value) => value
-            case None =>
-                eprintln("Warning: unable to inspect concrete C++ template type '${spelling}': fallback translation unit is unavailable")
-                return None
-        }
-        let concreteType = match (fallback.probeType(spelling)) {
-            case Some(value) => value
-            case None =>
-                eprintln("Warning: unable to inspect concrete C++ template type '${spelling}': type probe failed")
-                return None
-        }
-        if (concreteType.fallibleLayout(this).isErr()) {
-            eprintln("Warning: unable to inspect concrete C++ template type '${spelling}': layout is unavailable")
-            return None
-        }
-        return Some(concreteType)
-    }
-
-    func templateInstantiationFromKnownDefinition(
-        ty: clang.Type,
-        definition: TypeId,
-        spelling: String,
-        substitutions: HashMap<TypeId, TypeId>,
-        ownerId: ?ItemId
-    ): ?TemplateInstantiation {
-        let isDependent = match (ty.fallibleLayout(this)) {
-            case Err(LayoutError.LayoutErrorDependent) => true
-            case _ => false
-        }
-        let directArguments = ty.templateArgs().getOrDefault({=> Array<clang.Type>()})
-        let canonicalArguments = ty.canonicalType().templateArgs().getOrDefault({=> Array<clang.Type>()})
-        let parsedSpellings = splitTemplateArgumentSpellings(spelling)
-        let argumentCount = max(
-            max(directArguments.size, canonicalArguments.size),
-            parsedSpellings.size
-        )
-        if (argumentCount == 0) {
-            return None
-        }
-        let arguments = ArrayList<TypeId>()
-        let argumentSpellings = ArrayList<String>()
-        let allArgumentSpellings = ArrayList<String>()
-        let nonTypeArgumentSpellings = ArrayList<String>()
-        let typeArgumentPositions = ArrayList<Int64>()
-        var hasNonTypeArgument = false
-        for (index in 0..argumentCount) {
-            let argument: ?clang.Type = if (index < directArguments.size && directArguments[index].isValid()) {
-                Some(directArguments[index])
-            } else if (index < canonicalArguments.size && canonicalArguments[index].isValid()) {
-                Some(canonicalArguments[index])
-            } else {
-                None
-            }
-            match (argument) {
-                case Some(value) =>
-                    arguments.add(Item.fromTyOrRef(
-                        value,
-                        value.declaration(),
-                        None,
-                        this
-                    ))
-                    argumentSpellings.add(value.spelling())
-                    allArgumentSpellings.add(value.spelling())
-                    typeArgumentPositions.add(index)
-                case None =>
-                    let value = if (index < parsedSpellings.size) {
-                        parsedSpellings[index]
-                    } else {
-                        ""
-                    }
-                    let templatePrefix = value.indexOf("<")
-                        .map({open => value[0..open]})
-                        .getOrDefault({=> value})
-                    var ownerReplacement: ?TypeId = None
-                    for ((candidateDefinition, candidateOwner) in substitutions) {
-                        let definitionName = candidateDefinition
-                            .intoResolver()
-                            .throughTypeRefs()
-                            .throughTypeAliases()
-                            .resolve(this)
-                            .baseName(this)
-                        if (templatePrefix == definitionName ||
-                            templatePrefix.endsWith("::${definitionName}")) {
-                            ownerReplacement = Some(candidateOwner)
-                            break
-                        }
-                    }
-                    if (ownerReplacement.isNone() && isDependent) {
-                        if (let Some(owner) <- ownerId) {
-                            for (parameter in allTemplateParams(owner, this)) {
-                                let parameterItem = parameter
-                                    .intoResolver()
-                                    .throughTypeRefs()
-                                    .throughTypeAliases()
-                                    .resolve(this)
-                                if (parameterItem.baseName(this) == value) {
-                                    ownerReplacement = Some(parameterItem.id)
-                                    break
-                                }
-                            }
-                        }
-                    }
-                    match (ownerReplacement) {
-                        case Some(concreteOwner) =>
-                            arguments.add(concreteOwner)
-                            argumentSpellings.add(value)
-                            allArgumentSpellings.add(value)
-                            typeArgumentPositions.add(index)
-                        case None =>
-                            let probedArgument: ?clang.Type = if (isDependent) {
-                                None
-                            } else {
-                                this.tryEnsureFallbackTranslationUnit().flatMap {
-                                    fallback => fallback.probeType(value)
-                                }
-                            }
-                            match (probedArgument) {
-                                case Some(concreteType) =>
-                                    arguments.add(Item.fromTyOrRef(
-                                        concreteType,
-                                        concreteType.declaration(),
-                                        None,
-                                        this
-                                    ))
-                                    argumentSpellings.add(value)
-                                    allArgumentSpellings.add(value)
-                                    typeArgumentPositions.add(index)
-                                case None =>
-                                    hasNonTypeArgument = true
-                                    allArgumentSpellings.add(value)
-                                    nonTypeArgumentSpellings.add(value)
-                            }
-                    }
-            }
-        }
-        let declaration = ty.declaration()
-        let definitionCursor = declaration.specialized().getOrDefault {
-            => declaration.canonical()
-        }
-        return Some(TemplateInstantiation(
-            definition,
-            arguments.toArray(),
-            definitionCursor,
-            if (hasNonTypeArgument) { Some(ty.canonicalType().spelling()) } else { None },
-            spelling: Some(spelling),
-            argumentSpellings: argumentSpellings.toArray(),
-            allArgumentSpellings: allArgumentSpellings.toArray(),
-            nonTypeArgumentSpellings: nonTypeArgumentSpellings.toArray(),
-            typeArgumentPositions: typeArgumentPositions.toArray(),
-            isDependent: isDependent
-        ))
-    }
-
-    func buildSubstitutedTemplateInstantiation(
-        source: Type,
-        instantiation: TemplateInstantiation,
-        arguments: Array<TypeId>,
-        argumentSpellings: Array<String>,
-        allArgumentSpellings: Array<String>,
-        nonTypeArgumentSpellings: Array<String>,
-        spelling: String,
-        failed: Box<Bool>
-    ): TypeId {
-        let definitionIdentity = instantiation.definitionCursor.usr().getOrDefault {
-            => "cursor_${instantiation.definitionCursor.hashCode()}"
-        }
-        let key = "${definitionIdentity}|${spelling}"
-        if (let Some(existing) <- this.templateInstantiations.get(key)) {
-            return existing
-        }
-
-        let probedType = this.probeConcreteTemplateType(spelling)
-        if (instantiation.isDependent && probedType.isNone()) {
-            failed.value = true
-            return instantiation.definition
-        }
-        let concreteInstantiation = TemplateInstantiation(
-            instantiation.definition,
-            arguments,
-            instantiation.definitionCursor,
-            instantiation.nonTypeIdentity,
-            kind: instantiation.kind,
-            spelling: Some(spelling),
-            argumentSpellings: argumentSpellings,
-            allArgumentSpellings: allArgumentSpellings,
-            nonTypeArgumentSpellings: nonTypeArgumentSpellings,
-            typeArgumentPositions: instantiation.typeArgumentPositions,
-            isDependent: false
-        )
-        let layout = match (probedType.flatMap({value => value.fallibleLayout(this).ok()})) {
-            case Some(value) => Some(value)
-            case None => source.layout
-        }
-        let newId = this.nextItemId()
-        this.templateInstantiations.add(key, newId)
-        let definitionId = instantiation.definition
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this)
-            .id
-        this.addItem(
-            Item(
-                newId,
-                None,
-                this.resolveItem(definitionId).parentId,
-                ItemKind.KindType(Type(
-                    Some(templateInstantiationName(spelling)),
-                    layout,
-                    TypeKind.TypeKindTemplateInstantiation(concreteInstantiation),
-                    source.isConst
-                )),
-                None
-            ),
-            None,
-            None
-        )
-
-        var concreteComp: ?CompInfo = None
-                if (let Some(concreteType) <- probedType) {
-                    let concreteDeclaration = concreteType.declaration()
-                        .definition()
-                        .getOrDefault({=> concreteType.declaration()})
-                    if (let Ok(value) <- CompInfo.fromTy(
-                        newId,
-                        concreteType,
-                        Some(concreteDeclaration),
-                        this
-                    )) {
-                        if (let Some(definitionComp) <- this.templateDefinitionComp(concreteInstantiation)) {
-                            mergeTemplateSemanticFlags(value, definitionComp)
-                        }
-                        concreteComp = Some(value)
-                    }
-                }
-                if (concreteInstantiation.kind.isPrimary() ||
-                    concreteInstantiation.kind.isPartialSpecialization()) {
-                    if (let Some(synthesized) <- this.instantiateTemplateComp(
-                        concreteInstantiation,
-                        ownerId: Some(newId)
-                    )) {
-                        match (concreteComp) {
-                            case Some(value) =>
-                                mergeSynthesizedTemplateComp(value, synthesized)
-                            case None => concreteComp = Some(synthesized)
-                        }
-                    }
-                }
-                if (let Some(comp) <- concreteComp) {
-                    this.resolveItem(newId).kind = ItemKind.KindType(Type(
-                        Some(templateInstantiationName(spelling)),
-                        layout,
-                        TypeKind.TypeKindComp(comp),
-                        source.isConst
-                    ))
-                    this.needBitfieldAllocation.add(newId)
-                    this.concreteTemplateInstantiations.add(newId, concreteInstantiation)
-                } else {
-                    eprintln("Warning: unable to materialize concrete C++ template type '${spelling}'; preserving its layout as opaque")
-                    this.resolveItem(newId).kind = ItemKind.KindType(Type(
-                        Some(templateInstantiationName(spelling)),
-                        layout,
-                        TypeKind.TypeKindOpaque,
-                        source.isConst
-                    ))
-                }
-        return newId
-    }
-
-    func instantiateTemplateType(
-        sourceId: TypeId,
-        substitutions: HashMap<TypeId, TypeId>,
-        failed: Box<Bool>,
-        substitutionSpellings!: HashMap<TypeId, String> = HashMap<TypeId, String>(),
-        namedSubstitutionSpellings!: HashMap<String, String> = HashMap<String, String>(),
-        concreteParentId!: ?ItemId = None
-    ): TypeId {
-        if (let Some(substituted) <- substitutions.get(sourceId)) {
-            return substituted
-        }
-
-        let resolvedSourceId = sourceId
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this)
-            .id
-        for ((parameter, substituted) in substitutions) {
-            let resolvedParameter = parameter
-                .intoResolver()
-                .throughTypeRefs()
-                .throughTypeAliases()
-                .resolve(this)
-                .id
-            if (resolvedParameter == resolvedSourceId) {
-                return substituted
-            }
-        }
-
-        let source = match (this.safeResolveType(sourceId)) {
-            case Some(value) => value
-            case None => return sourceId
-        }
-        if (let Some(name) <- source.name) {
-            for ((parameter, substituted) in substitutions) {
-                if (let Some(parameterType) <- this.safeResolveType(parameter)) {
-                    if (parameterType.name == Some(name)) {
-                        return substituted
-                    }
-                }
-            }
-        }
-        let resolvedSource = this.safeResolveType(resolvedSourceId).getOrDefault({=> source})
-        let sourceName = this.resolveItem(resolvedSourceId).baseName(this)
-        for ((parameter, substituted) in substitutions) {
-            let resolvedParameterId = parameter
-                .intoResolver()
-                .throughTypeRefs()
-                .throughTypeAliases()
-                .resolve(this)
-                .id
-            if (this.resolveItem(resolvedParameterId).baseName(this) == sourceName) {
-                return substituted
-            }
-        }
-        if (let TypeKind.TypeKindTypeParam <- resolvedSource.kind) {
-            for ((parameter, substituted) in substitutions) {
-                if (this.resolveItem(parameter).baseName(this) == sourceName) {
-                    return substituted
-                }
-            }
-        }
-
-        let newKind: ?TypeKind = match (source.kind) {
-            case TypeKind.TypeKindPointer(inner) =>
-                TypeKind.TypeKindPointer(this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId))
-            case TypeKind.TypeKindReference(inner) =>
-                TypeKind.TypeKindReference(this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId))
-            case TypeKind.TypeKindArray(inner, length) =>
-                TypeKind.TypeKindArray(this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId), length)
-            case TypeKind.TypeKindVector(inner, length) =>
-                TypeKind.TypeKindVector(this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId), length)
-            case TypeKind.TypeKindAlias(inner) =>
-                TypeKind.TypeKindAlias(this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId))
-            case TypeKind.TypeKindTemplateAlias(inner, parameters) =>
-                TypeKind.TypeKindTemplateAlias(
-                    this.instantiateTemplateType(
-                        inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings,
-                        concreteParentId: concreteParentId),
-                    parameters
-                )
-            case TypeKind.TypeKindFunction(signature) =>
-                let arguments = ArrayList<(?String, TypeId)>()
-                for ((name, argument) in signature.argumentTypes) {
-                    arguments.add((name, this.instantiateTemplateType(
-                        argument, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings,
-                        concreteParentId: concreteParentId)))
-                }
-                TypeKind.TypeKindFunction(FunctionSig(
-                    signature.name,
-                    this.instantiateTemplateType(
-                        signature.returnType, substitutions, failed,
-                        substitutionSpellings: substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings,
-                        concreteParentId: concreteParentId),
-                    arguments.toArray(),
-                    signature.isVariadicFunction(),
-                    signature.abi,
-                    valueAbiUnsupported: signature.valueAbiUnsupported
-                ))
-            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-                let concreteArguments = ArrayList<TypeId>()
-                let concreteArgumentSpellings = ArrayList<String>()
-                for ((index, argument) in instantiation.arguments.iterator().enumerate()) {
-                    let concreteArgument = this.instantiateTemplateType(
-                        argument,
-                        substitutions,
-                        failed,
-                        substitutionSpellings: substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings,
-                        concreteParentId: concreteParentId
-                    )
-                    concreteArguments.add(concreteArgument)
-                    let sourceSpelling = if (index < instantiation.argumentSpellings.size) {
-                        instantiation.argumentSpellings[index]
-                    } else {
-                        this.resolveType(argument).name.getOrDefault({=> ""})
-                    }
-                    let concreteArgumentSpelling = this.substituteTemplateSpelling(
-                        sourceSpelling,
-                        substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings
-                    )
-                    if (concreteArgumentSpelling.isEmpty()) {
-                        failed.value = true
-                        return sourceId
-                    }
-                    concreteArgumentSpellings.add(concreteArgumentSpelling)
-                }
-                let concreteAllArgumentSpellings = ArrayList<String>()
-                let sourceAllArgumentSpellings = if (instantiation.allArgumentSpellings.isEmpty()) {
-                    instantiation.argumentSpellings
-                } else {
-                    instantiation.allArgumentSpellings
-                }
-                for (sourceSpelling in sourceAllArgumentSpellings) {
-                    let concreteSpellingPart = this.substituteTemplateSpelling(
-                        sourceSpelling,
-                        substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings
-                    )
-                    if (concreteSpellingPart.isEmpty()) {
-                        failed.value = true
-                        return sourceId
-                    }
-                    concreteAllArgumentSpellings.add(concreteSpellingPart)
-                }
-                let concreteNonTypeArgumentSpellings = ArrayList<String>()
-                for (sourceSpelling in instantiation.nonTypeArgumentSpellings) {
-                    concreteNonTypeArgumentSpellings.add(this.substituteTemplateSpelling(
-                        sourceSpelling,
-                        substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings
-                    ))
-                }
-                let templatePrefix = instantiation.spelling
-                    .flatMap {
-                        value => value.indexOf("<").map({index => value[0..index]})
-                    }
-                    .getOrDefault({=> instantiation.definitionCursor.spelling()})
-                let joinedArgumentSpellings = String.join(
-                    concreteAllArgumentSpellings.toArray(), delimiter: ", ")
-                let concreteSpelling = "${templatePrefix}<${joinedArgumentSpellings}>"
-                return this.buildSubstitutedTemplateInstantiation(
-                    source,
-                    instantiation,
-                    concreteArguments.toArray(),
-                    concreteArgumentSpellings.toArray(),
-                    concreteAllArgumentSpellings.toArray(),
-                    concreteNonTypeArgumentSpellings.toArray(),
-                    concreteSpelling,
-                    failed
-                )
-            case TypeKind.TypeKindComp(comp) =>
-                if (!comp.templateParams.isEmpty() || comp.hasTemplateTypeParams ||
-                    comp.hasNonTypeTemplateParams) {
-                    failed.value = true
-                }
-                return sourceId
-            case TypeKind.UnresolvedTypeRef(ty, location, parentId) =>
-                let resolved = match (Item.fromTy(ty, location, parentId, this)) {
-                    case Ok(value) => value
-                    case Err(_) =>
-                        failed.value = true
-                        return sourceId
-                }
-                return this.instantiateTemplateType(
-                    resolved,
-                    substitutions,
-                    failed,
-                    substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId
-                )
-            case TypeKind.ResolvedTypeRef(inner) =>
-                if (let Some(spelling) <- source.name) {
-                    if (spelling.contains("<")) {
-                    let concreteSpelling = this.substituteTemplateSpelling(
-                        spelling,
-                        substitutionSpellings,
-                        namedSubstitutionSpellings: namedSubstitutionSpellings
-                    )
-                    if (let Some(concreteType) <- this.probeConcreteTemplateType(concreteSpelling)) {
-                        let knownDefinition = inner
-                            .intoResolver()
-                            .throughTypeRefs()
-                            .throughTypeAliases()
-                            .resolve(this)
-                            .id
-                        let parsedInstantiation = match (TemplateInstantiation.fromTy(concreteType, this)) {
-                            case Some(value) => Some(value)
-                            case None => this.templateInstantiationFromKnownDefinition(
-                                concreteType,
-                                knownDefinition,
-                                concreteSpelling,
-                                substitutions,
-                                concreteParentId
-                            )
-                        }
-                        if (let Some(parsed) <- parsedInstantiation) {
-                        let concreteArguments = ArrayList<TypeId>()
-                        for (argument in parsed.arguments) {
-                            let replacement = this.templateInstantiationFor(argument).flatMap {
-                                nested =>
-                                if (let Some(value) <- substitutions.get(nested.definition)) {
-                                    return Some(value)
-                                }
-                                let definition = nested.definition
-                                    .intoResolver()
-                                    .throughTypeRefs()
-                                    .throughTypeAliases()
-                                    .resolve(this)
-                                    .id
-                                if (let Some(value) <- substitutions.get(definition)) {
-                                    return Some(value)
-                                }
-                                substitutions.get(canonicalItemId(this, definition))
-                            }
-                            concreteArguments.add(replacement.getOrDefault({=> argument}))
-                        }
-                        let concreteInstantiation = TemplateInstantiation(
-                            parsed.definition,
-                            concreteArguments.toArray(),
-                            parsed.definitionCursor,
-                            parsed.nonTypeIdentity,
-                            kind: parsed.kind,
-                            spelling: Some(concreteSpelling),
-                            argumentSpellings: parsed.argumentSpellings,
-                            allArgumentSpellings: parsed.allArgumentSpellings,
-                            nonTypeArgumentSpellings: parsed.nonTypeArgumentSpellings,
-                            typeArgumentPositions: parsed.typeArgumentPositions,
-                            isDependent: false
-                        )
-                        let newId = this.nextItemId()
-                        if (let Some(concrete) <- this.buildTemplateInstantiation(
-                            newId,
-                            concreteInstantiation,
-                            None,
-                            concreteType,
-                            Some(concreteType.declaration())
-                        )) {
-                            return concrete
-                        }
-                            }
-                        }
-                    }
-                }
-                return this.instantiateTemplateType(
-                    inner, substitutions, failed, substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: concreteParentId)
-            case _ => return sourceId
-        }
-
-        let instantiatedKind = newKind.getOrThrow()
-        let instantiatedLayout: ?Layout = match (instantiatedKind) {
-            case TypeKind.TypeKindArray(inner, length) =>
-                this.resolveType(inner).getLayout(this).map {
-                    layout => Layout(layout.size * Int32(length), layout.align)
-                }
-            case TypeKind.TypeKindVector(inner, length) =>
-                this.resolveType(inner).getLayout(this).map {
-                    layout => Layout(layout.size * Int32(length), layout.align)
-                }
-            case _ => source.layout
-        }
-        let newId = this.nextItemId()
-        this.addItem(
-            Item(
-                newId,
-                None,
-                concreteParentId.getOrDefault({=> this.rootModule}),
-                ItemKind.KindType(Type(source.name, instantiatedLayout, instantiatedKind, source.isConst)),
-                None
-            ),
-            None,
-            None
-        )
-        substitutions.add(sourceId, newId)
-        return newId
-    }
-
-    func instantiateNestedTemplateType(
-        sourceId: TypeId,
-        ownerId: ItemId,
-        ownerSpelling: String,
-        substitutions: HashMap<TypeId, TypeId>,
-        substitutionSpellings: HashMap<TypeId, String>,
-        namedSubstitutionSpellings: HashMap<String, String>,
-        failedSubstitution: Box<Bool>
-    ): ?TypeId {
-        if (let Some(existing) <- substitutions.get(sourceId)) {
-            return Some(existing)
-        }
-        let sourceItem = match (this.resolveItemFallible(sourceId)) {
-            case Some(value) => value
-            case None => return None
-        }
-        let sourceType = match (sourceItem.kind.asType()) {
-            case Some(value) => value
-            case None => return None
-        }
-        let sourceComp = match (sourceType.kind) {
-            case TypeKind.TypeKindComp(value) => value
-            case _ => return None
-        }
-        for (parameter in sourceComp.templateParams) {
-            let canonical = canonicalItemId(this, parameter)
-            if (!substitutions.contains(parameter) && !substitutions.contains(canonical)) {
-                return None
-            }
-        }
-        if (sourceComp.hasNonTypeTemplateParams) {
-            return None
-        }
-
-        let key = "${ownerId}|${sourceId}"
-        if (let Some(existing) <- this.materializedNestedTemplateTypes.get(key)) {
-            substitutions.add(sourceId, existing)
-            return Some(existing)
-        }
-
-        let sourceNestedName = sourceType.name.getOrDefault({=> sourceItem.baseName(this)})
-        let nestedSpelling = "${ownerSpelling}::${sourceNestedName}"
-        let nestedName = templateInstantiationName(nestedSpelling)
-        let newId = this.nextItemId()
-        this.materializedNestedTemplateTypes.add(key, newId)
-        this.materializedNestedTemplateItems.add(newId)
-        substitutions.add(sourceId, newId)
-        this.addItem(
-            Item(
-                newId,
-                sourceItem.comment,
-                ownerId,
-                ItemKind.KindType(Type(
-                    Some(nestedName),
-                    None,
-                    TypeKind.TypeKindOpaque,
-                    sourceType.isConst
-                )),
-                sourceItem.location
-            ),
-            None,
-            None
-        )
-
-        let concreteType = this.probeConcreteTemplateType(nestedSpelling)
-        let exactLayout = concreteType.flatMap({value => value.fallibleLayout(this).ok()})
-
-        let synthesized = this.instantiateCompWithSubstitutions(
-            sourceComp,
-            newId,
-            nestedSpelling,
-            substitutions,
-            substitutionSpellings,
-            namedSubstitutionSpellings,
-            failedSubstitution
-        )
-        if (failedSubstitution.value || exactLayout.isNone()) {
-            if (exactLayout.isNone()) {
-                eprintln(
-                    "Warning: unable to obtain the exact C++ layout for nested template type '${nestedSpelling}'; preserving it as opaque")
-            } else {
-                eprintln(
-                    "Warning: unable to substitute every field of nested template type '${nestedSpelling}'; preserving its exact layout as opaque")
-            }
-            this.resolveItem(newId).kind = ItemKind.KindType(Type(
-                Some(nestedName),
-                exactLayout,
-                TypeKind.TypeKindOpaque,
-                sourceType.isConst
-            ))
-            return Some(newId)
-        }
-        let concrete = match (concreteType) {
-            case Some(value) =>
-                let declaration = value.declaration().definition().getOrDefault {
-                    => value.declaration()
-                }
-                match (CompInfo.fromTy(newId, value, Some(declaration), this)) {
-                    case Ok(parsed) =>
-                        mergeSynthesizedTemplateComp(parsed, synthesized)
-                        parsed
-                    case Err(_) => synthesized
-                }
-            case None => synthesized
-        }
-        this.resolveItem(newId).kind = ItemKind.KindType(Type(
-            Some(nestedName),
-            exactLayout,
-            TypeKind.TypeKindComp(concrete),
-            sourceType.isConst
-        ))
-        this.needBitfieldAllocation.add(newId)
-        return Some(newId)
-    }
-
-    func instantiateCompWithSubstitutions(
-        definitionComp: CompInfo,
-        ownerId: ItemId,
-        ownerSpelling: String,
-        substitutions: HashMap<TypeId, TypeId>,
-        substitutionSpellings: HashMap<TypeId, String>,
-        namedSubstitutionSpellings: HashMap<String, String>,
-        failedSubstitution: Box<Bool>
-    ): CompInfo {
-        let concrete = CompInfo(definitionComp.kind, isCxxRecord: definitionComp.isCxxRecord)
-        concrete.isForwardDeclaration = false
-        mergeTemplateSemanticFlags(concrete, definitionComp)
-
-        for (inner in definitionComp.innerTypes) {
-            if (let Some(materialized) <- this.instantiateNestedTemplateType(
-                inner,
-                ownerId,
-                ownerSpelling,
-                substitutions,
-                substitutionSpellings,
-                namedSubstitutionSpellings,
-                failedSubstitution
-            )) {
-                concrete.innerTypes.add(materialized)
-            }
-        }
-
-        let rawFields = match (definitionComp.fields) {
-            case CompFields.CompFieldsBefore(value) => value
-            case _ =>
-                failedSubstitution.value = true
-                return concrete
-        }
-        let concreteFields = ArrayList<RawField>()
-        for (field in rawFields) {
-            concreteFields.add(RawField(
-                field.name,
-                this.instantiateTemplateType(
-                    field.ty,
-                    substitutions,
-                    failedSubstitution,
-                    substitutionSpellings: substitutionSpellings,
-                    namedSubstitutionSpellings: namedSubstitutionSpellings,
-                    concreteParentId: Some(ownerId)
-                ),
-                field.comment,
-                field.bitfieldWidth,
-                field.offset,
-                isPublic: field.isPublic
-            ))
-        }
-        concrete.fields = CompFields.CompFieldsBefore(concreteFields)
-
-        for (base in definitionComp.baseMembers) {
-            let concreteBase = this.instantiateTemplateType(
-                base.ty,
-                substitutions,
-                failedSubstitution,
-                substitutionSpellings: substitutionSpellings,
-                namedSubstitutionSpellings: namedSubstitutionSpellings,
-                concreteParentId: Some(ownerId)
-            )
-            concrete.baseMembers.add(Base(
-                concreteBase,
-                base.kind,
-                base.fieldName,
-                base.isPublic
-            ))
-        }
-        return concrete
-    }
-
-    func instantiateTemplateComp(
-        instantiation: TemplateInstantiation,
-        ownerId!: ?ItemId = None
-    ): ?CompInfo {
-        if (instantiation.isDependent) {
-            return None
-        }
-        let definitionComp = match (this.templateDefinitionComp(instantiation)) {
-            case Some(value) => value
-            case None => return None
-        }
-        this.populateTemplateDefinitionInnerTypes(instantiation, definitionComp)
-        let definitionId = instantiation.definition
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this)
-            .id
-        let templateParameters = this.templateInstantiationParameters(
-            instantiation,
-            definitionId
-        )
-        if (templateParameters.size > instantiation.arguments.size) {
-            return None
-        }
-
-        let substitutions = HashMap<TypeId, TypeId>()
-        let substitutionSpellings = HashMap<TypeId, String>()
-        let namedSubstitutionSpellings = HashMap<String, String>()
-        if (let Some(concreteOwner) <- ownerId) {
-            substitutions.add(instantiation.definition, concreteOwner)
-            substitutions.add(definitionId, concreteOwner)
-            let canonicalDefinition = canonicalItemId(this, definitionId)
-            substitutions.add(canonicalDefinition, concreteOwner)
-        }
-        for ((index, parameter) in templateParameters.iterator().enumerate()) {
-            substitutions.add(parameter, instantiation.arguments[index])
-            let canonical = canonicalItemId(this, parameter)
-            if (!substitutions.contains(canonical)) {
-                substitutions.add(canonical, instantiation.arguments[index])
-            }
-            if (index < instantiation.argumentSpellings.size) {
-                substitutionSpellings.add(parameter, instantiation.argumentSpellings[index])
-                if (!substitutionSpellings.contains(canonical)) {
-                    substitutionSpellings.add(canonical, instantiation.argumentSpellings[index])
-                }
-            }
-        }
-        for ((index, parameterName) in definitionComp.nonTypeTemplateParams.iterator().enumerate()) {
-            if (index < instantiation.nonTypeArgumentSpellings.size) {
-                namedSubstitutionSpellings.add(
-                    parameterName,
-                    instantiation.nonTypeArgumentSpellings[index]
-                )
-            }
-        }
-
-        let failedSubstitution = Box(false)
-        let concreteOwner = ownerId.getOrDefault({=> instantiation.definition})
-        let concreteSpelling = instantiation.spelling.getOrDefault {
-            => instantiation.definitionCursor.spelling()
-        }
-        let concrete = this.instantiateCompWithSubstitutions(
-            definitionComp,
-            concreteOwner,
-            concreteSpelling,
-            substitutions,
-            substitutionSpellings,
-            namedSubstitutionSpellings,
-            failedSubstitution
-        )
-        if (failedSubstitution.value) {
-            return None
-        }
-        return Some(concrete)
-    }
-
-    func populateTemplateDefinitionInnerTypes(
-        instantiation: TemplateInstantiation,
-        definitionComp: CompInfo
-    ): Unit {
-        let definitionId = instantiation.definition
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this)
-            .id
-        let seen = ItemSet()
-        for (inner in definitionComp.innerTypes) {
-            seen.add(inner)
-        }
-        let cursor = instantiation.definitionCursor.definition().getOrDefault {
-            => instantiation.definitionCursor
-        }
-        cursor.visit {
-            child =>
-            let kind = child.kind()
-            let isInnerType = kind == clang.CXCursorKind_CXCursor_EnumDecl ||
-                kind == clang.CXCursorKind_CXCursor_TypedefDecl ||
-                kind == clang.CXCursorKind_CXCursor_TypeAliasDecl ||
-                kind == clang.CXCursorKind_CXCursor_TypeAliasTemplateDecl ||
-                kind == clang.CXCursorKind_CXCursor_StructDecl ||
-                kind == clang.CXCursorKind_CXCursor_UnionDecl ||
-                kind == clang.CXCursorKind_CXCursor_ClassDecl ||
-                kind == clang.CXCursorKind_CXCursor_ClassTemplate
-            if (!isInnerType) {
-                return clang.CXChildVisitResult_CXChildVisit_Continue
-            }
-            if (let Ok(inner) <- Item.parse(child, Some(definitionId), this)) {
-                if (seen.add(inner)) {
-                    definitionComp.innerTypes.add(inner)
-                }
-            }
-            return clang.CXChildVisitResult_CXChildVisit_Continue
-        }
-    }
-
-    func templateDefinitionId(instantiation: TemplateInstantiation): ?TypeId {
-        let definitionCursor = instantiation.definitionCursor
-            .definition()
-            .getOrDefault({=> instantiation.definitionCursor})
-        let latestDefinition = this.typeDeclarations.get(definitionCursor).getOrDefault {
-            => this.getResolvedType(
-            clang.CanonicalTypeDeclaration(
-                instantiation.definitionCursor.curType(),
-                instantiation.definitionCursor
-            )
-            ).getOrDefault({=> instantiation.definition})
-        }
-        if (this.resolveItemFallible(latestDefinition).isNone()) {
-            return None
-        }
-        return Some(latestDefinition
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this).id)
-    }
-
-    func normalizeTemplateInstantiationDefinition(
-        instantiation: TemplateInstantiation
-    ): TemplateInstantiation {
-        let definition = match (this.templateDefinitionId(instantiation)) {
-            case Some(value) => value
-            case None => return instantiation
-        }
-        if (definition == instantiation.definition) {
-            return instantiation
-        }
-        return TemplateInstantiation(
-            definition,
-            instantiation.arguments,
-            instantiation.definitionCursor,
-            instantiation.nonTypeIdentity,
-            kind: instantiation.kind,
-            spelling: instantiation.spelling,
-            argumentSpellings: instantiation.argumentSpellings,
-            allArgumentSpellings: instantiation.allArgumentSpellings,
-            nonTypeArgumentSpellings: instantiation.nonTypeArgumentSpellings,
-            typeArgumentPositions: instantiation.typeArgumentPositions,
-            isDependent: instantiation.isDependent
-        )
-    }
-
-    func templateInstantiationParameters(
-        instantiation: TemplateInstantiation,
-        definitionId: TypeId
-    ): Array<TypeId> {
-        let owners = ArrayList<clang.Cursor>()
-        var current: ?clang.Cursor = Some(instantiation.definitionCursor)
-        while (let Some(cursor) <- current) {
-            if (cursor.isTemplateLike()) {
-                owners.add(cursor)
-            }
-            current = cursor.fallibleSemanticParent()
-        }
-        owners.reverse()
-
-        let parameters = ArrayList<TypeId>()
-        let seen = HashSet<TypeId>()
-        for (owner in owners) {
-            let definition = owner.definition().getOrDefault({=> owner})
-            var ownerId = this.typeDeclarations.get(definition)
-            if (ownerId.isNone()) {
-                ownerId = this.getResolvedType(clang.CanonicalTypeDeclaration(
-                    owner.curType(),
-                    owner.canonical()
-                ))
-            }
-            if (let Some(id) <- ownerId) {
-                for (parameter in selfTemplateParams(id, this)) {
-                    if (seen.add(parameter)) {
-                        parameters.add(parameter)
-                    }
-                }
-            }
-        }
-        for (parameter in allTemplateParams(definitionId, this)) {
-            if (seen.add(parameter)) {
-                parameters.add(parameter)
-            }
-        }
-        return parameters.toArray()
-    }
-
-    func templateDefinitionComp(instantiation: TemplateInstantiation): ?CompInfo {
-        let definitionId = match (this.templateDefinitionId(instantiation)) {
-            case Some(value) => value
-            case None => return None
-        }
-        let definitionItem = this.resolveItem(definitionId)
-        let definitionType = match (definitionItem.kind.asType()) {
-            case Some(value) => value
-            case None => return None
-        }
-        let definitionComp = match (definitionType.kind) {
-            case TypeKind.TypeKindComp(value) => value
-            case _ => return None
-        }
-        return Some(definitionComp)
-    }
-
-    func populateTemplateInstantiations(): Unit {
-        let concrete = ArrayList<(ItemId, TemplateInstantiation)>()
-        for ((id, instantiation) in this.concreteTemplateInstantiations) {
-            concrete.add((id, instantiation))
-        }
-        for ((id, instantiation) in concrete) {
-            this.concreteTemplateInstantiations.add(
-                id,
-                this.normalizeTemplateInstantiationDefinition(instantiation)
-            )
-        }
-
-        let ids = ArrayList<TypeId>()
-        for ((_, id) in this.templateInstantiations) {
-            ids.add(id)
-        }
-
-        for (id in ids) {
-            let item = match (this.resolveItemFallible(id)) {
-                case Some(value) => value
-                case None => continue
-            }
-            let ty = match (item.kind.asType()) {
-                case Some(value) => value
-                case None => continue
-            }
-            let rawInstantiation = match (ty.kind) {
-                case TypeKind.TypeKindTemplateInstantiation(value) => value
-                case _ => continue
-            }
-            if (rawInstantiation.isDependent) {
-                continue
-            }
-            let normalizedInstantiation = this.normalizeTemplateInstantiationDefinition(rawInstantiation)
-            let instantiation = this.completeNestedTemplateInstantiation(
-                normalizedInstantiation,
-                rawInstantiation.spelling.getOrDefault({=> rawInstantiation.definitionCursor.spelling()})
-            )
-            this.concreteTemplateInstantiations.add(id, instantiation)
-            if (let Some(comp) <- this.instantiateTemplateComp(instantiation, ownerId: Some(id))) {
-                item.kind = ItemKind.KindType(Type(ty.name, ty.layout, TypeKind.TypeKindComp(comp), ty.isConst))
-                this.needBitfieldAllocation.add(id)
-            } else {
-                item.kind = ItemKind.KindType(Type(ty.name, ty.layout, TypeKind.TypeKindOpaque, ty.isConst))
-            }
-        }
     }
 
     public func beginParsing(partialTy: PartialType): Unit {
@@ -2105,36 +927,31 @@ public class CjbindContext <: Resource {
         let ret = this.currentlyParsedTypes.last
         this.currentlyParsedTypes.remove(at: this.currentlyParsedTypes.size - 1)
         match (ret) {
-            case Some(v) => return v
+            case Some(value) => return value
             case None => throw Exception("finish parsing without begin")
         }
     }
 
     public func resolveItemFallible(id: ItemId): ?Item {
-        match (this.items.get(Int64(id))) {
-            case Some(v) => v
+        return match (this.items.get(Int64(id))) {
+            case Some(value) => value
             case None => None
         }
     }
 
     public func resolveItem(itemId: ItemId): Item {
-        this.resolveItemFallible(itemId).getOrThrow()
+        return this.resolveItemFallible(itemId).getOrThrow()
     }
 
     public func resolveType(typeId: TypeId): Type {
-        this.resolveItem(typeId).kind.expectType()
+        return this.resolveItem(typeId).kind.expectType()
     }
 
     public func safeResolveType(typeId: TypeId): ?Type {
-        this.resolveItemFallible(typeId).flatMap {
-            t => t.kind.asType()
-        }
+        return this.resolveItemFallible(typeId).flatMap {item => item.kind.asType()}
     }
 
     public func templateInstantiationFor(id: ItemId): ?TemplateInstantiation {
-        if (let Some(instantiation) <- this.concreteTemplateInstantiations.get(id)) {
-            return Some(instantiation)
-        }
         let ty = match (this.safeResolveType(id)) {
             case Some(value) => value
             case None => return None
@@ -2145,8 +962,485 @@ public class CjbindContext <: Resource {
         }
     }
 
-    public func isMaterializedNestedTemplateType(id: ItemId): Bool {
-        return this.materializedNestedTemplateItems.contains(id)
+    public func codegenTemplateReplacement(id: ItemId): ?TypeId {
+        return this.codegenTemplateReplacements.get(id)
+    }
+
+    public func codegenAliasUse(id: ItemId): ?(TypeId, Array<TypeId>) {
+        return this.codegenAliasUses.get(id).map({use => (use.definition, use.arguments)})
+    }
+
+    func sameTemplateArguments(left: Array<TypeId>, right: Array<TypeId>): Bool {
+        if (left.size != right.size) {
+            return false
+        }
+        for (index in 0..left.size) {
+            if (left[index] != right[index]) {
+                return false
+            }
+        }
+        return true
+    }
+
+    func findCodegenTemplateMaterialization(
+        definition: ItemId,
+        arguments: Array<TypeId>
+    ): ?CodegenTemplateMaterialization {
+        if (let Some(entries) <- this.codegenTemplateMaterializations.get(definition)) {
+            for (entry in entries) {
+                if (this.sameTemplateArguments(entry.arguments, arguments)) {
+                    return Some(entry)
+                }
+            }
+        }
+        return None
+    }
+
+    func addCodegenTemplateMaterialization(
+        definition: ItemId,
+        materialization: CodegenTemplateMaterialization
+    ): Unit {
+        let entries = match (this.codegenTemplateMaterializations.get(definition)) {
+            case Some(value) => value
+            case None =>
+                let value = ArrayList<CodegenTemplateMaterialization>()
+                this.codegenTemplateMaterializations.add(definition, value)
+                value
+        }
+        entries.add(materialization)
+    }
+
+    func addLoweredType(sourceItem: Item, sourceType: Type, kind: TypeKind, parentId: ItemId): TypeId {
+        let id = this.nextItemId()
+        this.addItem(
+            Item(
+                id,
+                sourceItem.comment,
+                parentId,
+                ItemKind.KindType(Type(sourceType.name, sourceType.layout, kind, sourceType.isConst)),
+                sourceItem.location
+            ),
+            None,
+            None
+        )
+        return id
+    }
+
+    func lowerTemplateAliasUse(
+        sourceItem: Item,
+        source: Type,
+        substitutions: HashMap<TypeId, TypeId>,
+        ownerId: ItemId,
+        failed: Box<Bool>
+    ): TypeId {
+        let arguments = ArrayList<TypeId>()
+        for (parameter in this.usedTemplateParams(sourceItem.id)) {
+            let argument = match (substitutions.get(parameter)) {
+                case Some(value) => value
+                case None => match (substitutions.get(canonicalItemId(this, parameter))) {
+                    case Some(value) => value
+                    case None =>
+                        failed.value = true
+                        return sourceItem.id
+                }
+            }
+            arguments.add(argument)
+        }
+        if (arguments.isEmpty()) {
+            return sourceItem.id
+        }
+        let lowered = this.addLoweredType(sourceItem, source, source.kind, ownerId)
+        this.codegenAliasUses.add(
+            lowered,
+            CodegenAliasUse(sourceItem.id, arguments.toArray())
+        )
+        return lowered
+    }
+
+    func lowerTemplateType(
+        sourceId: TypeId,
+        substitutions: HashMap<TypeId, TypeId>,
+        ownerId: ItemId,
+        failed: Box<Bool>
+    ): TypeId {
+        if (let Some(substituted) <- substitutions.get(sourceId)) {
+            return substituted
+        }
+        let canonical = canonicalItemId(this, sourceId)
+        if (let Some(substituted) <- substitutions.get(canonical)) {
+            return substituted
+        }
+        let sourceItem = match (this.resolveItemFallible(sourceId)) {
+            case Some(value) => value
+            case None => return sourceId
+        }
+        let source = match (sourceItem.kind.asType()) {
+            case Some(value) => value
+            case None => return sourceId
+        }
+
+        let kind: ?TypeKind = match (source.kind) {
+            case TypeKind.TypeKindTypeParam =>
+                failed.value = true
+                return sourceId
+            case TypeKind.ResolvedTypeRef(inner) =>
+                return this.lowerTemplateType(inner, substitutions, ownerId, failed)
+            case TypeKind.TypeKindAlias(_) | TypeKind.TypeKindTemplateAlias(_, _) =>
+                return this.lowerTemplateAliasUse(
+                    sourceItem,
+                    source,
+                    substitutions,
+                    ownerId,
+                    failed
+                )
+            case TypeKind.TypeKindPointer(inner) =>
+                let lowered = this.lowerTemplateType(inner, substitutions, ownerId, failed)
+                if (lowered == inner) {
+                    return sourceId
+                }
+                TypeKind.TypeKindPointer(lowered)
+            case TypeKind.TypeKindReference(inner) =>
+                let lowered = this.lowerTemplateType(inner, substitutions, ownerId, failed)
+                if (lowered == inner) {
+                    return sourceId
+                }
+                TypeKind.TypeKindReference(lowered)
+            case TypeKind.TypeKindArray(inner, length) =>
+                let lowered = this.lowerTemplateType(inner, substitutions, ownerId, failed)
+                if (lowered == inner) {
+                    return sourceId
+                }
+                TypeKind.TypeKindArray(lowered, length)
+            case TypeKind.TypeKindVector(inner, length) =>
+                let lowered = this.lowerTemplateType(inner, substitutions, ownerId, failed)
+                if (lowered == inner) {
+                    return sourceId
+                }
+                TypeKind.TypeKindVector(lowered, length)
+            case TypeKind.TypeKindObjCBlockPointer(inner) =>
+                let lowered = this.lowerTemplateType(inner, substitutions, ownerId, failed)
+                if (lowered == inner) {
+                    return sourceId
+                }
+                TypeKind.TypeKindObjCBlockPointer(lowered)
+            case TypeKind.TypeKindFunction(signature) =>
+                let arguments = ArrayList<(?String, TypeId)>()
+                var changed = false
+                for ((name, argument) in signature.argumentTypes) {
+                    let lowered = this.lowerTemplateType(
+                        argument,
+                        substitutions,
+                        ownerId,
+                        failed
+                    )
+                    changed ||= lowered != argument
+                    arguments.add((name, lowered))
+                }
+                let returnType = this.lowerTemplateType(
+                    signature.returnType,
+                    substitutions,
+                    ownerId,
+                    failed
+                )
+                changed ||= returnType != signature.returnType
+                if (!changed) {
+                    return sourceId
+                }
+                TypeKind.TypeKindFunction(FunctionSig(
+                    signature.name,
+                    returnType,
+                    arguments.toArray(),
+                    signature.rawIsVariadic(),
+                    signature.abi,
+                    valueAbiUnsupported: signature.valueAbiUnsupported
+                ))
+            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+                let arguments = ArrayList<TypeId>()
+                for (argument in instantiation.arguments) {
+                    arguments.add(this.lowerTemplateType(
+                        argument,
+                        substitutions,
+                        ownerId,
+                        failed
+                    ))
+                }
+                return this.lowerTemplateInstantiationType(
+                    sourceItem,
+                    source,
+                    TemplateInstantiation(instantiation.definition, arguments.toArray()),
+                    ownerId,
+                    failed
+                )
+            case TypeKind.TypeKindComp(info) =>
+                if (!this.usesAnyTemplateParameters(sourceId)) {
+                    return sourceId
+                }
+                failed.value = true
+                return sourceId
+            case TypeKind.UnresolvedTypeRef(_, _, _) =>
+                failed.value = true
+                return sourceId
+            case _ => return sourceId
+        }
+
+        let loweredKind = kind.getOrThrow()
+        return this.addLoweredType(sourceItem, source, loweredKind, ownerId)
+    }
+
+    func lowerTemplateFieldData(
+        data: FieldData,
+        substitutions: HashMap<TypeId, TypeId>,
+        ownerId: ItemId,
+        failed: Box<Bool>
+    ): FieldData {
+        return FieldData(
+            data.name,
+            this.lowerTemplateType(data.ty, substitutions, ownerId, failed),
+            data.comment,
+            data.bitfieldWidth,
+            data.offset,
+            isPublic: data.isPublic
+        )
+    }
+
+    func lowerTemplateComp(
+        definition: CompInfo,
+        ownerId: ItemId,
+        substitutions: HashMap<TypeId, TypeId>,
+        failed: Box<Bool>
+    ): CompInfo {
+        let concrete = CompInfo(definition.kind, isCxxRecord: definition.isCxxRecord)
+        concrete.isForwardDeclaration = definition.isForwardDeclaration
+        concrete.packedAttr = definition.packedAttr
+        concrete.hasUnevaluableBitFieldWidth = definition.hasUnevaluableBitFieldWidth
+        concrete.foundUnknownAttr = definition.foundUnknownAttr
+        concrete.hasOwnVirtualMethod = definition.hasOwnVirtualMethod
+        concrete.hasDestructor = definition.hasDestructor
+        concrete.hasUnrepresentedVirtualMethod = definition.hasUnrepresentedVirtualMethod ||
+            definition.methods.iterator().any({method => method.kind.isVirtual()})
+
+        let value = match (definition.fields) {
+            case CompFields.CompFieldsAfter(fields) => fields
+            case CompFields.CompFieldsError | CompFields.CompFieldsBefore(_) =>
+                failed.value = true
+                return concrete
+        }
+        let fields = ArrayList<Field>()
+        for (field in value.fields) {
+            match (field) {
+                case Field.DataMember(data) => fields.add(Field.DataMember(
+                    this.lowerTemplateFieldData(data, substitutions, ownerId, failed)
+                ))
+                case Field.Bitfields(unit) =>
+                    let bitfields = ArrayList<Bitfield>()
+                    for (bitfield in unit.bitfields) {
+                        bitfields.add(Bitfield(
+                            bitfield.offsetIntoUnit,
+                            this.lowerTemplateFieldData(bitfield.data, substitutions, ownerId, failed)
+                        ))
+                    }
+                    fields.add(Field.Bitfields(BitfieldUnit(
+                        unit.nth,
+                        unit.layout,
+                        bitfields.toArray()
+                    )))
+            }
+        }
+        concrete.fields = CompFields.CompFieldsAfter(CompFieldsAfterValue(
+            fields.toArray(),
+            value.hasBitfieldUnits
+        ))
+        for (base in definition.baseMembers) {
+            concrete.baseMembers.add(Base(
+                this.lowerTemplateType(base.ty, substitutions, ownerId, failed),
+                base.kind,
+                base.fieldName,
+                base.isPublic
+            ))
+        }
+        for (innerType in definition.innerTypes) {
+            if (!this.usesAnyTemplateParameters(innerType)) {
+                concrete.innerTypes.add(innerType)
+            }
+        }
+        return concrete
+    }
+
+    func templateCompHasExactLayoutEvidence(concrete: CompInfo): Bool {
+        if (concrete.foundUnknownAttr || !concrete.baseMembers.isEmpty() ||
+            concrete.hasOwnVirtualMethod || concrete.hasUnrepresentedVirtualMethod) {
+            return false
+        }
+        return match (concrete.fields) {
+            case CompFields.CompFieldsAfter(value) => value.fields.all {
+                field => match (field) {
+                    case Field.DataMember(data) => data.offset.isSome()
+                    case Field.Bitfields(_) => false
+                }
+            }
+            case CompFields.CompFieldsBefore(_) | CompFields.CompFieldsError => false
+        }
+    }
+
+    func opaqueTemplateComp(concrete: CompInfo): CompInfo {
+        let opaque = CompInfo(concrete.kind, isCxxRecord: concrete.isCxxRecord)
+        opaque.fields = CompFields.CompFieldsError
+        return opaque
+    }
+
+    func lowerTemplateInstantiationType(
+        sourceItem: Item,
+        source: Type,
+        instantiation: TemplateInstantiation,
+        ownerId: ItemId,
+        failed: Box<Bool>
+    ): TypeId {
+        let definitionItem = instantiation.definition
+            .intoResolver()
+            .throughTypeRefs()
+            .resolve(this)
+        if (this.isBlocklistedItem(definitionItem.id)) {
+            failed.value = true
+            return sourceItem.id
+        }
+        let parameters = selfTemplateParams(definitionItem.id, this)
+        let definitionType = match (definitionItem.kind.asType()) {
+            case Some(value) => value
+            case None => return sourceItem.id
+        }
+        if (let TypeKind.TypeKindTemplateAlias(_, _) <- definitionType.kind) {
+            let unchanged = match (source.kind) {
+                case TypeKind.TypeKindTemplateInstantiation(original) =>
+                    original.definition == instantiation.definition &&
+                        this.sameTemplateArguments(original.arguments, instantiation.arguments)
+                case _ => false
+            }
+            if (unchanged) {
+                return sourceItem.id
+            }
+            return this.addLoweredType(
+                sourceItem,
+                source,
+                TypeKind.TypeKindTemplateInstantiation(instantiation),
+                ownerId
+            )
+        }
+        if (parameters.isEmpty()) {
+            return sourceItem.id
+        }
+        if (sourceItem.isSemanticallyOpaque(this)) {
+            return sourceItem.id
+        }
+
+        let definition = match (definitionType.asComp()) {
+            case Some(value) => value
+            case None => return sourceItem.id
+        }
+        if (this.usedTemplateParams(definitionItem.id).isEmpty()) {
+            return definitionItem.id
+        }
+
+        if (let Some(existing) <- this.findCodegenTemplateMaterialization(
+            definitionItem.id,
+            instantiation.arguments
+        )) {
+            if (existing.failed) {
+                failed.value = true
+            }
+            return existing.wrapper
+        }
+
+        let concreteId = this.addLoweredType(
+            sourceItem,
+            source,
+            TypeKind.TypeKindTemplateInstantiation(instantiation),
+            this.rootModule
+        )
+        let concreteItem = this.resolveItem(concreteId)
+        let wrapperName = concreteItem.fullDisambiguatedName(this)
+
+        let materialization = CodegenTemplateMaterialization(instantiation.arguments, concreteId)
+        this.addCodegenTemplateMaterialization(definitionItem.id, materialization)
+        let substitutions = HashMap<TypeId, TypeId>()
+        substitutions.add(instantiation.definition, concreteId)
+        substitutions.add(definitionItem.id, concreteId)
+        substitutions.add(canonicalItemId(this, definitionItem.id), concreteId)
+        let substitutionCount = min(parameters.size, instantiation.arguments.size)
+        for (index in 0..substitutionCount) {
+            let parameter = parameters[index]
+            let argument = instantiation.arguments[index]
+            substitutions.add(parameter, argument)
+            substitutions.add(canonicalItemId(this, parameter), argument)
+        }
+        let concrete = this.lowerTemplateComp(definition, concreteId, substitutions, failed)
+        if (failed.value) {
+            materialization.failed = true
+            return concreteId
+        }
+
+        let concreteLayout = source.layout
+        if (concreteLayout.isNone()) {
+            failed.value = true
+            materialization.failed = true
+            return concreteId
+        }
+
+        let emitted = if (this.templateCompHasExactLayoutEvidence(concrete)) {
+            concrete
+        } else {
+            this.opaqueTemplateComp(concrete)
+        }
+        concreteItem.kind = ItemKind.KindType(Type(
+            Some(wrapperName),
+            concreteLayout,
+            TypeKind.TypeKindComp(emitted),
+            source.isConst
+        ))
+        this.codegenAnalysisOrigins.add(concreteId, sourceItem.id)
+        this.codegenItems.getOrThrow().add(concreteId)
+        return concreteId
+    }
+
+    func lowerTemplateInstantiationsForCodegen(): Unit {
+        let candidates = ArrayList<(TypeId, TemplateInstantiation)>()
+        for (id in this.codegenItems.getOrThrow()) {
+            if (let Some(ty) <- this.safeResolveType(id)) {
+                if (let TypeKind.TypeKindTemplateInstantiation(instantiation) <- ty.kind) {
+                    candidates.add((id, instantiation))
+                }
+            }
+        }
+        for ((id, instantiation) in candidates) {
+            if (this.usesAnyTemplateParameters(id)) {
+                continue
+            }
+            let item = this.resolveItem(id)
+            let source = item.kind.expectType()
+            let failed = Box(false)
+            let substitutions = HashMap<TypeId, TypeId>()
+            let arguments = ArrayList<TypeId>()
+            for (argument in instantiation.arguments) {
+                arguments.add(this.lowerTemplateType(
+                    argument,
+                    substitutions,
+                    this.rootModule,
+                    failed
+                ))
+            }
+            if (failed.value) {
+                continue
+            }
+            let lowered = this.lowerTemplateInstantiationType(
+                item,
+                source,
+                TemplateInstantiation(instantiation.definition, arguments.toArray()),
+                this.rootModule,
+                failed
+            )
+            if (!failed.value && lowered != id) {
+                this.codegenTemplateReplacements.add(id, lowered)
+            }
+        }
     }
 
     public func addSemanticParent(
@@ -2337,8 +1631,7 @@ public class CjbindContext <: Resource {
 
     public func isBlocklistedItem(id: ItemId): Bool {
         let item = this.resolveItem(id)
-        if (item.kind.isType() &&
-            (item.annotations.hide() || item.policyNameTarget(this).annotations.hide())) {
+        if (item.annotations.hide()) {
             return true
         }
         let name = this.itemPolicyName(item)
@@ -2367,9 +1660,6 @@ public class CjbindContext <: Resource {
         if (!item.kind.isType()) {
             return false
         }
-        if (item.annotations.opaque() || item.policyNameTarget(this).annotations.opaque()) {
-            return true
-        }
         if (this.options.opaqueTypes.matches(this.itemPolicyName(item))) {
             return true
         }
@@ -2377,53 +1667,26 @@ public class CjbindContext <: Resource {
             case Some(value) => value
             case None => return false
         }
-        if (let Some(spelling) <- instantiation.spelling) {
-            if (this.options.opaqueTypes.matches(spelling)) {
-                return true
-            }
-        }
         let definitionName = this.itemPolicyName(this.resolveItem(instantiation.definition))
-        let argumentNames = if (!instantiation.allArgumentSpellings.isEmpty()) {
-            instantiation.allArgumentSpellings
-        } else {
-            Array<String>(instantiation.arguments.size) {
-                index => this.itemPolicyName(this.resolveItem(instantiation.arguments[index]))
-            }
+        let argumentNames = Array<String>(instantiation.arguments.size) {
+            index => this.itemPolicyName(this.resolveItem(instantiation.arguments[index]))
         }
         let instantiatedName = "${definitionName}<${String.join(argumentNames, delimiter: ", ")}>"
         return this.options.opaqueTypes.matches(instantiatedName)
     }
 
-    public func noDeriveByName(item: Item, deriveTrait: DeriveTrait): Bool {
+    func noDeriveByName(item: Item, deriveTrait: DeriveTrait): Bool {
         let name = this.itemPolicyName(item)
         return match (deriveTrait) {
-            case DeriveTrait.Copy => this.options.noCopyTypes.matches(name)
-            case DeriveTrait.Debug => this.options.noDebugTypes.matches(name)
-            case DeriveTrait.Default => this.options.noDefaultTypes.matches(name)
-            case DeriveTrait.Hash => this.options.noHashTypes.matches(name)
-            case DeriveTrait.PartialEqOrPartialOrd => this.options.noPartialEqTypes.matches(name)
+            case DeriveTrait.Copy => this.noCopyTypes.matches(name)
+            case DeriveTrait.Debug => this.noDebugTypes.matches(name)
+            case DeriveTrait.Default => this.noDefaultTypes.matches(name)
+            case DeriveTrait.Hash => this.noHashTypes.matches(name)
+            case DeriveTrait.PartialEqOrPartialOrd => this.noPartialEqTypes.matches(name)
         }
     }
 
-    func configuredDeriveTrait(deriveTrait: DeriveTrait): ConfiguredDeriveTrait {
-        return match (deriveTrait) {
-            case DeriveTrait.Copy => ConfiguredDeriveTrait.Copy
-            case DeriveTrait.Debug => ConfiguredDeriveTrait.Debug
-            case DeriveTrait.Default => ConfiguredDeriveTrait.Default
-            case DeriveTrait.Hash => ConfiguredDeriveTrait.Hash
-            case DeriveTrait.PartialEqOrPartialOrd => ConfiguredDeriveTrait.PartialEqOrPartialOrd
-        }
-    }
-
-    func configuredCanDerive(result: ConfiguredCanDerive): CanDerive {
-        return match (result) {
-            case ConfiguredCanDerive.Yes => CanDerive.Yes
-            case ConfiguredCanDerive.Manually => CanDerive.Manually
-            case ConfiguredCanDerive.No => CanDerive.No
-        }
-    }
-
-    public func blocklistedTypeImplementsTrait(item: Item, deriveTrait: DeriveTrait): CanDerive {
+    func blocklistedTypeImplementsTrait(item: Item, deriveTrait: DeriveTrait): CanDerive {
         let cacheKey = "${item.id}:${deriveTraitCacheDiscriminant(deriveTrait)}"
         if (let Some(cached) <- this.blocklistedTraitResults.get(cacheKey)) {
             return cached
@@ -2441,9 +1704,8 @@ public class CjbindContext <: Resource {
                 return CanDerive.No
         }
         var result = CanDerive.No
-        if (let Some(callback) <- this.options.blocklistedTypeImplementsTraitCallback) {
-            if (let Some(configuredResult) <- callback(name, this.configuredDeriveTrait(deriveTrait))) {
-                let configured = this.configuredCanDerive(configuredResult)
+        if (let Some(callback) <- this.blocklistedTypeImplementsTraitCallback) {
+            if (let Some(configured) <- callback(name, deriveTrait)) {
                 this.blocklistedTraitResults.add(cacheKey, configured)
                 return configured
             }
@@ -2472,330 +1734,35 @@ public class CjbindContext <: Resource {
             return allTemplateParams(id, this)
         }
         let result = ArrayList<TypeId>()
-        let seen = ItemSet()
         let used = match (this.usedTemplateParameters) {
             case Some(results) => results.get(id).getOrDefault({=> ItemSet()})
             case None => throw Exception("template parameter usage analysis has not been computed")
         }
         for (parameter in allTemplateParams(id, this)) {
             let canonical = canonicalItemId(this, parameter)
-            if (used.contains(canonical) && seen.add(canonical)) {
+            if (used.contains(canonical)) {
                 result.add(parameter)
             }
         }
         return result.toArray()
     }
 
-    public func publicTemplateInstantiationSpelling(instantiation: TemplateInstantiation): String {
-        return this.publicTemplateInstantiationSpellingInner(instantiation, ItemSet())
-    }
-
-    public func recordContainsUnsupportedGenericType(id: ItemId): Bool {
-        let item = match (this.resolveItemFallible(id)) {
-            case Some(value) => value
-            case None => return false
-        }
-        let comp = match (item.kind.asType().flatMap({ty => ty.asComp()})) {
-            case Some(value) => value
-            case None => return false
-        }
-        let visiting = ItemSet()
-        visiting.add(item.id)
-        return this.compContainsUnsupportedGenericType(comp, visiting, true)
-    }
-
-    func recordContainsLayoutDependentGenericType(id: ItemId): Bool {
-        let item = match (this.resolveItemFallible(id)) {
-            case Some(value) => value
-            case None => return false
-        }
-        let comp = match (item.kind.asType().flatMap({ty => ty.asComp()})) {
-            case Some(value) => value
-            case None => return false
-        }
-        let visiting = ItemSet()
-        visiting.add(item.id)
-        return this.compContainsUnsupportedGenericType(comp, visiting, false)
-    }
-
-    func compContainsUnsupportedGenericType(
-        comp: CompInfo,
-        visiting: ItemSet,
-        followIndirect: Bool
-    ): Bool {
-        for (base in comp.baseMembers) {
-            if (this.typeContainsUnsupportedGenericType(base.ty, visiting, followIndirect)) {
-                return true
-            }
-        }
-        return match (comp.fields) {
-            case CompFields.CompFieldsBefore(fields) => fields.iterator().any {
-                field => this.typeContainsUnsupportedGenericType(field.ty, visiting, followIndirect)
-            }
-            case CompFields.CompFieldsAfter(value) => value.fields.iterator().any {
-                field => match (field) {
-                    case Field.DataMember(data) =>
-                        this.typeContainsUnsupportedGenericType(data.ty, visiting, followIndirect)
-                    case Field.Bitfields(unit) => unit.bitfields.iterator().any {
-                        bitfield => this.typeContainsUnsupportedGenericType(
-                            bitfield.data.ty,
-                            visiting,
-                            followIndirect
-                        )
-                    }
-                }
-            }
-            case CompFields.CompFieldsError => false
-        }
-    }
-
-    func typeContainsUnsupportedGenericType(
-        id: TypeId,
-        visiting: ItemSet,
-        followIndirect: Bool
-    ): Bool {
-        let item = match (this.resolveItemFallible(id)) {
-            case Some(value) => value
-            case None => return false
-        }
-        if (!visiting.add(item.id)) {
-            return false
-        }
-        let ty = match (item.kind.asType()) {
-            case Some(value) => value
-            case None =>
-                visiting.remove(item.id)
-                return false
-        }
-        let found = match (ty.kind) {
-            case TypeKind.ResolvedTypeRef(inner) =>
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            case TypeKind.TypeKindAlias(inner) =>
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            case TypeKind.TypeKindTemplateAlias(inner, _) =>
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            case TypeKind.TypeKindPointer(inner) => if (followIndirect) {
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            } else {
-                false
-            }
-            case TypeKind.TypeKindReference(inner) => if (followIndirect) {
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            } else {
-                false
-            }
-            case TypeKind.TypeKindArray(inner, _) =>
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            case TypeKind.TypeKindVector(inner, _) =>
-                this.typeContainsUnsupportedGenericType(inner, visiting, followIndirect)
-            case TypeKind.TypeKindFunction(signature) => if (followIndirect) {
-                var unsupported = this.typeContainsUnsupportedGenericType(
-                    signature.returnType,
-                    visiting,
-                    followIndirect
-                )
-                if (!unsupported) {
-                    for ((_, argument) in signature.argumentTypes) {
-                        if (this.typeContainsUnsupportedGenericType(
-                            argument,
-                            visiting,
-                            followIndirect
-                        )) {
-                            unsupported = true
-                            break
-                        }
-                    }
-                }
-                unsupported
-            } else {
-                false
-            }
-            case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-                if (this.concreteTemplateInstantiations.contains(item.id)) {
-                    false
-                } else {
-                    this.typeContainsUnsupportedGenericType(
-                        instantiation.definition,
-                        visiting,
-                        followIndirect
-                    )
-                }
-            case TypeKind.TypeKindComp(nested) =>
-                let isConcrete = this.concreteTemplateInstantiations.contains(item.id) ||
-                    this.isMaterializedNestedTemplateType(item.id)
-                let hasTemplatedAncestor = allTemplateParams(item.id, this).size >
-                    selfTemplateParams(item.id, this).size
-                (!isConcrete && (nested.hasNonTypeTemplateParams ||
-                    this.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)) ||
-                    this.compContainsUnsupportedGenericType(nested, visiting, followIndirect)
-            case TypeKind.TypeKindEnum(_) => this.usesAnyTemplateParameters(item.id)
-            case _ => false
-        }
-        visiting.remove(item.id)
-        return found
-    }
-
-    public func templateInstantiationRequiresConcreteIdentity(
-        instantiation: TemplateInstantiation
-    ): Bool {
-        let definition = instantiation.definition
-            .intoResolver()
-            .throughTypeRefs()
-            .throughTypeAliases()
-            .resolve(this)
-        let comp = match (definition.kind.asType().flatMap({ty => ty.asComp()})) {
-            case Some(value) => value
-            case None => return false
-        }
-        return (comp.hasNonTypeTemplateParams &&
-            this.recordStorageUsesOwnedTemplateParameter(definition.id, comp)) ||
-            this.recordContainsLayoutDependentGenericType(definition.id)
-    }
-
-    func recordStorageUsesOwnedTemplateParameter(
-        id: ItemId,
-        comp: CompInfo
-    ): Bool {
-        let parameters = selfTemplateParams(id, this)
-        if (parameters.isEmpty()) {
-            return false
-        }
-        let usage = this.usedTemplateParameters.getOrThrow()
-        let usesOwnedParameter = {
-            typeId: TypeId =>
-            let typeUsage = usage.get(typeId).getOrDefault({=> ItemSet()})
-            for (parameter in parameters) {
-                if (typeUsage.contains(canonicalItemId(this, parameter))) {
-                    return true
-                }
-            }
-            return false
-        }
-        for (base in comp.baseMembers) {
-            if (usesOwnedParameter(base.ty)) {
-                return true
-            }
-        }
-        return match (comp.fields) {
-            case CompFields.CompFieldsBefore(fields) => fields.iterator().any {
-                field => usesOwnedParameter(field.ty)
-            }
-            case CompFields.CompFieldsAfter(value) => value.fields.iterator().any {
-                field => match (field) {
-                    case Field.DataMember(data) => usesOwnedParameter(data.ty)
-                    case Field.Bitfields(unit) => unit.bitfields.iterator().any {
-                        bitfield => usesOwnedParameter(bitfield.data.ty)
-                    }
-                }
-            }
-            case CompFields.CompFieldsError => false
-        }
-    }
-
-    func publicTemplateInstantiationSpellingInner(
-        instantiation: TemplateInstantiation,
-        visiting: ItemSet
-    ): String {
-        let sourceSpelling = instantiation.spelling.getOrDefault {
-            => instantiation.definitionCursor.spelling()
-        }
-        if (!instantiation.kind.isPrimary()) {
-            return sourceSpelling
-        }
-        if (this.templateInstantiationRequiresConcreteIdentity(instantiation)) {
-            return sourceSpelling
-        }
-        let firstTemplateOpen = sourceSpelling.indexOf("<")
-        let firstScope = sourceSpelling.indexOf("::")
-        if (let Some(open) <- firstTemplateOpen) {
-            if (let Some(scope) <- firstScope) {
-                if (open < scope) {
-                    return sourceSpelling
-                }
-            }
-        }
-        let prefix = sourceSpelling.indexOf("<")
-            .map({index => sourceSpelling[0..index]})
-            .getOrDefault({=> sourceSpelling})
-        let allSpellings = if (!instantiation.allArgumentSpellings.isEmpty()) {
-            instantiation.allArgumentSpellings
-        } else {
-            instantiation.argumentSpellings
-        }
-        if (allSpellings.isEmpty()) {
-            return prefix
-        }
-
-        let typePositions = if (!instantiation.typeArgumentPositions.isEmpty()) {
-            instantiation.typeArgumentPositions
-        } else {
-            Array<Int64>(instantiation.arguments.size) {index => index}
-        }
-        let parameters = selfTemplateParams(instantiation.definition, this)
-        let selected = ArrayList<String>()
-        var typeArgumentIndex = 0
-        for ((position, spelling) in allSpellings.iterator().enumerate()) {
-            let isTypeArgument = typeArgumentIndex < typePositions.size &&
-                typePositions[typeArgumentIndex] == position
-            if (!isTypeArgument) {
-                selected.add(spelling)
-                continue
-            }
-            if (typeArgumentIndex >= parameters.size ||
-                this.usesTemplateParameter(instantiation.definition, parameters[typeArgumentIndex])) {
-                let argumentSpelling = if (typeArgumentIndex < instantiation.arguments.size) {
-                    let argument = instantiation.arguments[typeArgumentIndex]
-                        .intoResolver()
-                        .throughTypeRefs()
-                        .throughTypeAliases()
-                        .resolve(this)
-                        .id
-                    if (!visiting.contains(argument)) {
-                        match (this.templateInstantiationFor(argument)) {
-                            case Some(nested) =>
-                                visiting.add(argument)
-                                let nestedSpelling = this.publicTemplateInstantiationSpellingInner(
-                                    nested,
-                                    visiting
-                                )
-                                visiting.remove(argument)
-                                nestedSpelling
-                            case None => spelling
-                        }
-                    } else {
-                        spelling
-                    }
-                } else {
-                    spelling
-                }
-                selected.add(argumentSpelling)
-            }
-            typeArgumentIndex += 1
-        }
-        if (selected.isEmpty()) {
-            return prefix
-        }
-        return "${prefix}<${String.join(selected.toArray(), delimiter: ", ")}>"
-    }
-
     public func usesAnyTemplateParameters(id: ItemId): Bool {
-        if (this.isBlocklistedItem(id)) {
-            return !allTemplateParams(id, this).isEmpty()
-        }
         return match (this.usedTemplateParameters) {
             case Some(results) => results.get(id).map({parameters => !parameters.isEmpty()}).getOrDefault({=> false})
             case None => throw Exception("template parameter usage analysis has not been computed")
         }
     }
 
-    public func vtableResult(id: ItemId): HasVtableResult {
+    func vtableResult(id: ItemId): HasVtableResult {
+        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
         return match (this.haveVtable) {
-            case Some(results) => results.get(id).getOrDefault({=> HasVtableResult.No})
+            case Some(results) => results.get(analysisId).getOrDefault({=> HasVtableResult.No})
             case None => throw Exception("vtable analysis has not been computed")
         }
     }
 
-    public func hasVtable(id: ItemId): Bool {
+    func hasVtable(id: ItemId): Bool {
         return this.vtableResult(id) != HasVtableResult.No
     }
 
@@ -2803,9 +1770,10 @@ public class CjbindContext <: Resource {
         return this.vtableResult(id) == HasVtableResult.SelfHasVtable
     }
 
-    public func sizedness(id: TypeId): SizednessResult {
+    func sizedness(id: TypeId): SizednessResult {
+        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
         return match (this.sizednessResults) {
-            case Some(results) => results.get(id).getOrDefault({=> SizednessResult.ZeroSized})
+            case Some(results) => results.get(analysisId).getOrDefault({=> SizednessResult.ZeroSized})
             case None => throw Exception("sizedness analysis has not been computed")
         }
     }
@@ -2814,28 +1782,29 @@ public class CjbindContext <: Resource {
         return this.sizedness(id) == SizednessResult.ZeroSized
     }
 
-    public func hasDestructor(id: ItemId): Bool {
+    func hasDestructor(id: ItemId): Bool {
+        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
         return match (this.haveDestructor) {
-            case Some(results) => results.contains(id)
+            case Some(results) => results.contains(analysisId)
             case None => throw Exception("destructor analysis has not been computed")
         }
     }
 
-    public func hasTypeParameterInArray(id: ItemId): Bool {
+    func hasTypeParameterInArray(id: ItemId): Bool {
         return match (this.hasTypeParameterInArrayResults) {
             case Some(results) => results.contains(id)
             case None => throw Exception("array type parameter analysis has not been computed")
         }
     }
 
-    public func hasFloat(id: ItemId): Bool {
+    func hasFloat(id: ItemId): Bool {
         return match (this.hasFloatResults) {
             case Some(results) => results.contains(id)
             case None => throw Exception("floating-point analysis has not been computed")
         }
     }
 
-    public func canDerive(id: ItemId, deriveTrait: DeriveTrait): CanDerive {
+    func canDerive(id: ItemId, deriveTrait: DeriveTrait): CanDerive {
         let results = match (deriveTrait) {
             case DeriveTrait.Debug => this.cannotDeriveDebug
             case DeriveTrait.Default => this.cannotDeriveDefault
@@ -2853,24 +1822,24 @@ public class CjbindContext <: Resource {
         return result
     }
 
-    public func canDeriveEq(id: ItemId): Bool {
-        return this.options.deriveEq &&
+    func canDeriveEq(id: ItemId): Bool {
+        return this.deriveEq &&
             this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes &&
             !this.hasFloat(id)
     }
 
-    public func canDerivePartialEq(id: ItemId): Bool {
-        return this.options.derivePartialEq &&
+    func canDerivePartialEq(id: ItemId): Bool {
+        return this.derivePartialEq &&
             this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes
     }
 
-    public func canDerivePartialOrd(id: ItemId): Bool {
-        return this.options.derivePartialOrd &&
+    func canDerivePartialOrd(id: ItemId): Bool {
+        return this.derivePartialOrd &&
             this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes
     }
 
-    public func canDeriveOrd(id: ItemId): Bool {
-        return this.options.deriveOrd &&
+    func canDeriveOrd(id: ItemId): Bool {
+        return this.deriveOrd &&
             this.canDerive(id, DeriveTrait.PartialEqOrPartialOrd) == CanDerive.Yes &&
             !this.hasFloat(id)
     }
@@ -2891,7 +1860,7 @@ public class CjbindContext <: Resource {
             for (id in items) {
                 let parameters = ItemSet()
                 for (parameter in selfTemplateParams(id, this)) {
-                    parameters.add(canonicalItemId(this, parameter))
+                    parameters.add(parameter)
                 }
                 usage.add(id, parameters)
             }
@@ -2901,21 +1870,21 @@ public class CjbindContext <: Resource {
 
     func computeDeriveAnalyses(): Unit {
         let items = this.allowlistedItems.getOrThrow()
-        if (this.options.deriveDebug) {
+        if (this.deriveDebug) {
             this.cannotDeriveDebug = Some(analyzeCanDerive(this, items, DeriveTrait.Debug))
         }
-        if (this.options.deriveDefault) {
+        if (this.deriveDefault) {
             this.cannotDeriveDefault = Some(analyzeCanDerive(this, items, DeriveTrait.Default))
         }
         this.cannotDeriveCopy = Some(analyzeCanDerive(this, items, DeriveTrait.Copy))
         this.hasTypeParameterInArrayResults = Some(analyzeHasTypeParameterInArray(this, items))
-        if (this.options.deriveEq || this.options.deriveOrd) {
+        if (this.deriveEq || this.deriveOrd) {
             this.hasFloatResults = Some(analyzeHasFloat(this, items))
         }
-        if (this.options.deriveHash) {
+        if (this.deriveHash) {
             this.cannotDeriveHash = Some(analyzeCanDerive(this, items, DeriveTrait.Hash))
         }
-        if (this.options.derivePartialEq || this.options.derivePartialOrd || this.options.deriveEq) {
+        if (this.derivePartialEq || this.derivePartialOrd || this.deriveEq) {
             this.cannotDerivePartialEqOrPartialOrd = Some(
                 analyzeCanDerive(this, items, DeriveTrait.PartialEqOrPartialOrd)
             )
@@ -3158,17 +2127,15 @@ public class CjbindContext <: Resource {
         this.inCodegen = true
 
         this.resolveTypeRefs()
-        this.populateTemplateInstantiations()
         this.computeBitfieldUnits()
         this.assignFieldNames()
 
         this.computeCodegenItems()
-
         this.computeCoreAnalyses()
-
         this.computeEnumTypedefCombos()
-
         this.computeDeriveAnalyses()
+
+        this.lowerTemplateInstantiationsForCodegen()
 
         return cb(this)
     }
