@@ -101,7 +101,7 @@ public struct TemplateParameterAnalysisHolder {
     public let nestedTemplateIgnore: NestedTemplateIgnore
     public let aliasUse: AliasUse_open0_long_long_close0
     public let aliasOnly: AliasOnly
-    public let skipMiddle: SkipMiddleParameter_open0_int_bool_char_close0
+    public let skipMiddle: SkipMiddleParameter_open0_int_char_close0
     public let aliases: TypedefAndAliasUse_open0_unsigned_int_double_close0
     public let nestedAliasOnly: NestedAliasOnly
     public let doublyIndirect: VArray<UInt64, $2>
@@ -114,7 +114,7 @@ public struct TemplateParameterAnalysisHolder {
     public init(direct: DirectUse_open0_int_close0, unused: UnusedParameter, nested: UInt16,
         nestedTemplate: VArray<UInt64, $2>, nestedTemplateIgnore: NestedTemplateIgnore,
         aliasUse: AliasUse_open0_long_long_close0, aliasOnly: AliasOnly,
-        skipMiddle: SkipMiddleParameter_open0_int_bool_char_close0,
+        skipMiddle: SkipMiddleParameter_open0_int_char_close0,
         aliases: TypedefAndAliasUse_open0_unsigned_int_double_close0, nestedAliasOnly: NestedAliasOnly,
         doublyIndirect: VArray<UInt64, $2>, staticOnly: StaticOnlyUse, crtpDirect: VArray<UInt64, $2>,
         crtpIgnoringBase: CrtpUseWithIgnoringBase_open0_unsigned_short_close0, crtpIgnore: CrtpIgnoreWithIgnoringBase,
@@ -176,9 +176,11 @@ let _ = {
 
 @C
 public struct TypedefAndAliasUse_open0_unsigned_int_double_close0 {
-    let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
+    public let first: UInt32
+    public let second: Float64
+    public init(first: UInt32, second: Float64) {
+        this.first = first
+        this.second = second
     }
 }
 
@@ -197,31 +199,33 @@ let _ = {
 }
 
 @C
-public struct SkipMiddleParameter_open0_int_bool_char_close0 {
-    let _cjbind_opaque_blob: VArray<UInt32, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $2>>() }
+public struct SkipMiddleParameter_open0_int_char_close0 {
+    public let first: Int32
+    public let third: UInt8
+    public init(first: Int32, third: UInt8) {
+        this.first = first
+        this.third = third
     }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<SkipMiddleParameter_open0_int_bool_char_close0>()
+        let size = sizeOf<SkipMiddleParameter_open0_int_char_close0>()
         if (size != 8) {
-            throw Exception("Size of SkipMiddleParameter_open0_int_bool_char_close0 is not 8 but ${size} bytes")
+            throw Exception("Size of SkipMiddleParameter_open0_int_char_close0 is not 8 but ${size} bytes")
         }
-        let align = alignOf<SkipMiddleParameter_open0_int_bool_char_close0>()
+        let align = alignOf<SkipMiddleParameter_open0_int_char_close0>()
         if (align != 4) {
-            throw Exception("Alignment of SkipMiddleParameter_open0_int_bool_char_close0 is not 4 but ${align} bytes")
+            throw Exception("Alignment of SkipMiddleParameter_open0_int_char_close0 is not 4 but ${align} bytes")
         }
 }
 
 @C
 public struct AliasUse_open0_long_long_close0 {
-    let _cjbind_opaque_blob: UInt64
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
+    public let value: Int64
+    public init(value: Int64) {
+        this.value = value
     }
 }
 
@@ -240,9 +244,9 @@ let _ = {
 
 @C
 public struct DirectUse_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 

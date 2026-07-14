@@ -32,9 +32,9 @@ let _ = {
 
 @C
 public struct SelectiveOpaque_open0_float_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Float32
+    public init(value: Float32) {
+        this.value = value
     }
 }
 

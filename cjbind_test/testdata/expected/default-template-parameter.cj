@@ -2,9 +2,11 @@ package cjbind_ffi
 
 @C
 public struct Foo_open0_bool_int_close0 {
-    let _cjbind_opaque_blob: VArray<UInt32, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $2>>() }
+    public let t: Bool
+    public let u: Int32
+    public init(t: Bool, u: Int32) {
+        this.t = t
+        this.u = u
     }
 }
 

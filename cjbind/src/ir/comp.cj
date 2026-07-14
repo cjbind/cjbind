@@ -414,63 +414,6 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 return clang.CXChildVisitResult_CXChildVisit_Continue
             }
 
-        if (!ci.hasFields() && ty.templateArgs().map({args => !args.isEmpty()}).getOrDefault({=> false})) {
-            ty.visitFields {
-                cur =>
-                let bitWidth: ?UInt32 = if (cur.isBitField()) {
-                    let width = cur.bitWidth()
-                    if (width.isNone()) {
-                        ci.hasUnevaluableBitFieldWidth = true
-                        return clang.CXVisitorResult_CXVisit_Break
-                    }
-                    width
-                } else {
-                    None
-                }
-                let fieldType = Item.fromTyOrRef(cur.curType(), cur, potentialId, ctx)
-                let spelling = cur.spelling()
-                ci.fields.appendRawField(RawField(
-                    if (spelling.isEmpty()) { None } else { Some(spelling) },
-                    fieldType,
-                    cur.rawComment(),
-                    bitWidth,
-                    cur.offsetOfField().ok(),
-                    isPublic: cur.isPublic()
-                ))
-                cur.visit {
-                    attribute =>
-                    if (attribute.kind() == clang.CXCursorKind_CXCursor_UnexposedAttr) {
-                        ci.foundUnknownAttr = true
-                    }
-                    clang.CXChildVisitResult_CXChildVisit_Continue
-                }
-                clang.CXVisitorResult_CXVisit_Continue
-            }
-        }
-
-        if (ci.baseMembers.isEmpty() &&
-            ty.templateArgs().map({args => !args.isEmpty()}).getOrDefault({=> false})) {
-            ty.visitCxxBaseClasses {
-                baseCursor =>
-                let isVirtual = baseCursor.isVirtualBase()
-                ci.hasOwnVirtualMethod ||= isVirtual
-                let baseKind = if (isVirtual) { BaseKind.Virtual } else { BaseKind.Normal }
-                let fieldName = if (ci.baseMembers.isEmpty()) {
-                    "_base"
-                } else {
-                    "_base_${ci.baseMembers.size}"
-                }
-                let baseType = Item.fromTyOrRef(
-                    baseCursor.curType(),
-                    baseCursor,
-                    Some(potentialId),
-                    ctx
-                )
-                ci.baseMembers.add(Base(baseType, baseKind, fieldName, baseCursor.isPublic()))
-                clang.CXVisitorResult_CXVisit_Continue
-            }
-        }
-
         if (let Some((ty, _, offset)) <- maybeAnonymousStructField.value) {
             let tf = RawField(None, ty, None, None, offset)
             maybeAnonymousStructField.value = None

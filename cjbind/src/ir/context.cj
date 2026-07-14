@@ -1199,20 +1199,50 @@ public class CjbindContext <: Resource {
         return concrete
     }
 
-    func templateCompHasExactLayoutEvidence(concrete: CompInfo): Bool {
+    func templateCompHasExactLayoutEvidence(concrete: CompInfo, layout: Layout): Bool {
         if (concrete.foundUnknownAttr || !concrete.baseMembers.isEmpty() ||
             concrete.hasOwnVirtualMethod || concrete.hasUnrepresentedVirtualMethod) {
             return false
         }
-        return match (concrete.fields) {
+        let hasOnlyOrdinaryFields = match (concrete.fields) {
             case CompFields.CompFieldsAfter(value) => value.fields.all {
                 field => match (field) {
-                    case Field.DataMember(data) => data.offset.isSome()
+                    case Field.DataMember(_) => true
                     case Field.Bitfields(_) => false
                 }
             }
             case CompFields.CompFieldsBefore(_) | CompFields.CompFieldsError => false
         }
+        return hasOnlyOrdinaryFields && concrete.generatedRecordLayoutMatches(this, layout)
+    }
+
+    func concreteTemplateLayout(source: Type): ?Layout {
+        if (let Some(layout) <- source.layout) {
+            return Some(layout)
+        }
+        let spelling = match (source.name) {
+            case Some(value) => value
+            case None => return None
+        }
+        return this.tryEnsureFallbackTranslationUnit()
+            .flatMap({fallback => fallback.probeType(spelling)})
+            .flatMap({ty => ty.fallibleLayout(this).ok()})
+    }
+
+    func codegenTemplateArguments(
+        definition: ItemId,
+        parameters: Array<TypeId>,
+        arguments: Array<TypeId>
+    ): Array<TypeId> {
+        let used = this.usedTemplateParams(definition)
+        let result = ArrayList<TypeId>()
+        let count = min(parameters.size, arguments.size)
+        for (index in 0..count) {
+            if (used.contains(parameters[index])) {
+                result.add(arguments[index])
+            }
+        }
+        return result.toArray()
     }
 
     func opaqueTemplateComp(concrete: CompInfo): CompInfo {
@@ -1273,9 +1303,15 @@ public class CjbindContext <: Resource {
             return definitionItem.id
         }
 
+        let codegenArguments = this.codegenTemplateArguments(
+            definitionItem.id,
+            parameters,
+            instantiation.arguments
+        )
+
         if (let Some(existing) <- this.findCodegenTemplateMaterialization(
             definitionItem.id,
-            instantiation.arguments
+            codegenArguments
         )) {
             if (existing.failed) {
                 failed.value = true
@@ -1286,13 +1322,16 @@ public class CjbindContext <: Resource {
         let concreteId = this.addLoweredType(
             sourceItem,
             source,
-            TypeKind.TypeKindTemplateInstantiation(instantiation),
+            TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
+                instantiation.definition,
+                codegenArguments
+            )),
             this.rootModule
         )
         let concreteItem = this.resolveItem(concreteId)
         let wrapperName = concreteItem.fullDisambiguatedName(this)
 
-        let materialization = CodegenTemplateMaterialization(instantiation.arguments, concreteId)
+        let materialization = CodegenTemplateMaterialization(codegenArguments, concreteId)
         this.addCodegenTemplateMaterialization(definitionItem.id, materialization)
         let substitutions = HashMap<TypeId, TypeId>()
         substitutions.add(instantiation.definition, concreteId)
@@ -1311,21 +1350,22 @@ public class CjbindContext <: Resource {
             return concreteId
         }
 
-        let concreteLayout = source.layout
-        if (concreteLayout.isNone()) {
-            failed.value = true
-            materialization.failed = true
-            return concreteId
+        let concreteLayout = match (this.concreteTemplateLayout(source)) {
+            case Some(value) => value
+            case None =>
+                failed.value = true
+                materialization.failed = true
+                return concreteId
         }
 
-        let emitted = if (this.templateCompHasExactLayoutEvidence(concrete)) {
+        let emitted = if (this.templateCompHasExactLayoutEvidence(concrete, concreteLayout)) {
             concrete
         } else {
             this.opaqueTemplateComp(concrete)
         }
         concreteItem.kind = ItemKind.KindType(Type(
             Some(wrapperName),
-            concreteLayout,
+            Some(concreteLayout),
             TypeKind.TypeKindComp(emitted),
             source.isConst
         ))

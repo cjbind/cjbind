@@ -360,6 +360,41 @@ public class ParsedTemplateParameterAnalysisTest {
     }
 
     @TestCase
+    func usage7FiltersOnlyTheUnusedMiddleArgument(): Unit {
+        let ctx = parsedAnalysisTestContext(
+            integrationHeader("cxx-analysis-template-param-usage-7")
+        )
+        try {
+            let definition = namedType(ctx, "DoesNotUseU")
+            let parameters = selfTemplateParams(definition, ctx)
+            @Expect(parameters.size, 3)
+            expectUsedParameters(ctx, definition, [parameters[0], parameters[2]])
+
+            let alias = namedType(ctx, "Alias")
+            let instantiation = templateInstantiation(ctx, aliasTarget(ctx, alias))
+            @Expect(
+                instantiation.definition
+                    .intoResolver()
+                    .throughTypeRefs()
+                    .resolve(ctx)
+                    .id,
+                definition
+            )
+            @Expect(instantiation.arguments.size, 3)
+            let codegenArguments = ctx.codegenTemplateArguments(
+                definition,
+                parameters,
+                instantiation.arguments
+            )
+            @Expect(codegenArguments.size, 2)
+            @Expect(codegenArguments[0], instantiation.arguments[0])
+            @Expect(codegenArguments[1], instantiation.arguments[2])
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
     func usage10TransitiveNestedFieldUsesTwoParameters(): Unit {
         let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-10"))
         try {
@@ -395,6 +430,7 @@ public class ParsedTemplateParameterAnalysisTest {
             let baseUse = templateInstantiation(ctx, comp.baseMembers[0].ty)
             @Expect(baseUse.arguments.size, 1)
             let base = baseUse.definition
+            let baseParameter = selfTemplateParams(base, ctx)[0]
             let recursiveUse = templateInstantiation(ctx, baseUse.arguments[0])
             @Expect(recursiveUse.definition, derived)
             @Expect(recursiveUse.arguments.size, 1)
@@ -406,8 +442,15 @@ public class ParsedTemplateParameterAnalysisTest {
                     .id,
                 parameter
             )
-            recordInfo(ctx, base)
-            pointerTarget(ctx, fieldType(ctx, base, "t"))
+            @Expect(
+                pointerTarget(ctx, fieldType(ctx, base, "t"))
+                    .intoResolver()
+                    .throughTypeRefs()
+                    .resolve(ctx)
+                    .id,
+                baseParameter
+            )
+            expectUsedParameters(ctx, base, [baseParameter])
             @Expect(
                 fieldType(ctx, derived, "usage")
                     .intoResolver()
@@ -433,6 +476,7 @@ public class ParsedTemplateParameterAnalysisTest {
             let baseUse = templateInstantiation(ctx, comp.baseMembers[0].ty)
             @Expect(baseUse.arguments.size, 1)
             let base = baseUse.definition
+            let baseParameter = selfTemplateParams(base, ctx)[0]
             let recursiveUse = templateInstantiation(ctx, baseUse.arguments[0])
             @Expect(recursiveUse.definition, derived)
             @Expect(recursiveUse.arguments.size, 1)
@@ -444,17 +488,26 @@ public class ParsedTemplateParameterAnalysisTest {
                     .id,
                 parameter
             )
-            recordInfo(ctx, base)
-            pointerTarget(ctx, fieldType(ctx, base, "usage"))
             @Expect(
-                fieldType(ctx, derived, "y")
+                pointerTarget(ctx, fieldType(ctx, base, "usage"))
                     .intoResolver()
                     .throughTypeRefs()
                     .resolve(ctx)
-                    .kind
-                    .isType(),
-                true
+                    .id,
+                baseParameter
             )
+            expectUsedParameters(ctx, base, [baseParameter])
+            let y = fieldType(ctx, derived, "y")
+                .intoResolver()
+                .throughTypeRefs()
+                .resolve(ctx)
+                .kind
+                .expectType()
+                .canonicalType(ctx)
+            match (y.kind) {
+                case TypeKind.TypeKindInt(TypeKindIntKind.IntKindInt) => ()
+                case _ => @Assert(false)
+            }
             @Expect(ctx.usesTemplateParameter(derived, parameter), false)
             expectUsedParameters(ctx, derived, Array<TypeId>())
         } finally {

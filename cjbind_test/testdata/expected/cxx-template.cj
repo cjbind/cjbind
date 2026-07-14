@@ -73,11 +73,19 @@ let _ = {
         }
 }
 
+foreign func _Z7consume3BoxIiE(value: Box_open0_int_close0): Unit
+
+public unsafe func consume(value: Box_open0_int_close0): Unit {
+    return _Z7consume3BoxIiE(value)
+}
+
 @C
 public struct Box_open0_int_close0 {
-    let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
+    public let value: Int32
+    public let pointer: CPointer<Int32>
+    public init(value: Int32, pointer: CPointer<Int32>) {
+        this.value = value
+        this.pointer = pointer
     }
 }
 
@@ -96,9 +104,9 @@ let _ = {
 
 @C
 public struct DefaultBox_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 
@@ -138,9 +146,11 @@ let _ = {
 
 @C
 public struct Box_open0_double_close0 {
-    let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
+    public let value: Float64
+    public let pointer: CPointer<Float64>
+    public init(value: Float64, pointer: CPointer<Float64>) {
+        this.value = value
+        this.pointer = pointer
     }
 }
 

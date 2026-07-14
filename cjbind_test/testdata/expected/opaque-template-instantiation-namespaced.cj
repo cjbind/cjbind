@@ -86,9 +86,9 @@ let _ = {
 
 @C
 public struct zoidberg_Template_open0_zoidberg_Foo_close0 {
-    let _cjbind_opaque_blob: UInt8
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt8>() }
+    public let member: zoidberg_Foo
+    public init(member: zoidberg_Foo) {
+        this.member = member
     }
 }
 

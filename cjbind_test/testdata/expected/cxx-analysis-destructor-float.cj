@@ -419,9 +419,11 @@ let _ = {
 
 @C
 public struct TemplateDefinitionFloat_open0_int_close0 {
-    let _cjbind_opaque_blob: VArray<UInt32, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $2>>() }
+    public let value: Int32
+    public let fixed: Float32
+    public init(value: Int32, fixed: Float32) {
+        this.value = value
+        this.fixed = fixed
     }
 }
 
@@ -440,9 +442,9 @@ let _ = {
 
 @C
 public struct TemplateArgumentFloat_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 
@@ -461,9 +463,9 @@ let _ = {
 
 @C
 public struct TemplateArgumentFloat_open0_float_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Float32
+    public init(value: Float32) {
+        this.value = value
     }
 }
 
@@ -482,9 +484,9 @@ let _ = {
 
 @C
 public struct TemplateField_open0_TrivialValue_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: TrivialValue
+    public init(value: TrivialValue) {
+        this.value = value
     }
 }
 
@@ -503,9 +505,9 @@ let _ = {
 
 @C
 public struct TemplateField_open0_OwnDestructor_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: OwnDestructor
+    public init(value: OwnDestructor) {
+        this.value = value
     }
 }
 
@@ -524,9 +526,9 @@ let _ = {
 
 @C
 public struct TemplateOwnDestructor_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 

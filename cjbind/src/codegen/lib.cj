@@ -639,12 +639,18 @@ func codegenTypeAlias(
         }
     }
     let innerCjType = if (usedParameters.isEmpty()) {
-        if (item.isOpaque(ctx, ())) {
-            source.toOpaque(ctx, item)
+        let converted = if (item.isOpaque(ctx, ())) {
+            innerItem.tryToOpaque(ctx, ())
         } else {
-            innerItem.tryToCjTyOrOpaque(ctx, ()).unwrapOrElse {
-                _ => source.toOpaque(ctx, item)
-            }
+            innerItem.tryToCjTyOrOpaque(ctx, ())
+        }
+        match (converted) {
+            case Ok(value) => value
+            case Err(error) =>
+                eprintln(
+                    "Warning: skipping C++ type alias '${name}' because ${genericAliasErrorReason(error)}"
+                )
+                return
         }
     } else {
         match (renderGenericAliasType(ctx, inner, substitutions, ItemSet())) {

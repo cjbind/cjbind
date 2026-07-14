@@ -471,9 +471,9 @@ let _ = {
 
 @C
 public struct DependentSize_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 
@@ -492,9 +492,9 @@ let _ = {
 
 @C
 public struct BaseWithoutVtable_open0_int_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
     }
 }
 

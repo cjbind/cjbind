@@ -1,7 +1,5 @@
 package cjbind_ffi
 
-public type Fixed16 = UInt8
-
 public type FixedInts = VArray<UInt32, $4>
 
 @C
@@ -34,9 +32,11 @@ let _ = {
 
 @C
 public struct PairWithDefault_open0_bool_int_close0 {
-    let _cjbind_opaque_blob: VArray<UInt32, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $2>>() }
+    public let first: Bool
+    public let second: Int32
+    public init(first: Bool, second: Int32) {
+        this.first = first
+        this.second = second
     }
 }
 

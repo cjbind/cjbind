@@ -88,9 +88,9 @@ let _ = {
 
 @C
 public struct ScalarParameter_open0_float_close0 {
-    let _cjbind_opaque_blob: UInt32
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    public let value: Float32
+    public init(value: Float32) {
+        this.value = value
     }
 }
 
@@ -109,9 +109,9 @@ let _ = {
 
 @C
 public struct PointerToParameter_open0_double_close0 {
-    let _cjbind_opaque_blob: UInt64
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
+    public let values: CPointer<Float64>
+    public init(values: CPointer<Float64>) {
+        this.values = values
     }
 }
 
