@@ -38,7 +38,7 @@ public func getClangVersion(): String {
     }
 }
 
-public const MINIMUM_SUPPORTED_CLANG_MAJOR: Int64 = 20
+public const MINIMUM_SUPPORTED_CLANG_MAJOR: Int64 = 17
 
 func parseClangMajorVersion(version: String): ?Int64 {
     let markerParts = version.split("version ", 2)
@@ -75,9 +75,13 @@ func validateClangVersion(version: String): Unit {
     }
 }
 
+@When[libclang_linkage == "dynamic"]
 public func ensureSupportedClangVersion(): Unit {
     validateClangVersion(getClangVersion())
 }
+
+@When[libclang_linkage == "static"]
+public func ensureSupportedClangVersion(): Unit {}
 
 // workaround cfunc capture limit
 // thus we can only work as single thread

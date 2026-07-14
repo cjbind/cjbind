@@ -520,6 +520,10 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
 def main():
     base_env = os.environ.copy()
     cjpm_args, use_static = parse_wrapper_args(sys.argv[1:])
+    if use_static:
+        cjpm_args.append("--cfg_static_libclang")
+    else:
+        cjpm_args.append("--cfg_dynamic_libclang")
     processed_env = preprocess_environment(base_env, cjpm_args, use_static)
 
     command = ["cjpm"] + cjpm_args

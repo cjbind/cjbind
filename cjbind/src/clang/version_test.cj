@@ -8,7 +8,7 @@ public class ClangVersionCompatibilityTest {
     @TestCase
     func acceptsSupportedVersions(): Unit {
         for (version in [
-            "clang version 20.1.0",
+            "clang version 17.0.0",
             "Apple clang version 20.0.0 (clang-2000.0.0.0)",
             "clang version 21.0.0git"
         ]) {
@@ -20,13 +20,13 @@ public class ClangVersionCompatibilityTest {
     func rejectsOlderVersion(): Unit {
         var message = ""
         try {
-            validateClangVersion("Debian clang version 19.1.7")
+            validateClangVersion("Debian clang version 16.0.6")
         } catch (e: UnsupportedException) {
             message = e.message
         }
 
-        @Expect(message.contains("19.1.7"), true)
-        @Expect(message.contains("libclang 20 or newer"), true)
+        @Expect(message.contains("16.0.6"), true)
+        @Expect(message.contains("libclang 17 or newer"), true)
     }
 
     @TestCase
@@ -39,6 +39,6 @@ public class ClangVersionCompatibilityTest {
         }
 
         @Expect(message.contains("Unable to determine libclang version"), true)
-        @Expect(message.contains("libclang 20 or newer"), true)
+        @Expect(message.contains("libclang 17 or newer"), true)
     }
 }

@@ -36,7 +36,7 @@ cjbind -o libclang.cj -p cjbind.clang T:\cjbind-bootstrap\include\clang-c\Index.
 
 ## 拉取最新的 `libclang` 预编译包
 
-此程序依赖于 `libclang`，请确保你的系统中安装了 `llvm`。
+此程序依赖于 `libclang`，动态链接时请确保系统中安装了 LLVM 17 或更高版本。
 
 当前 `cjbind` 使用 `qt` 提供的预编译 `libclang`。使用以下命令下载 `libclang`：
 
@@ -58,8 +58,8 @@ uv run scripts/cjpm.py build -V
 
 通过 `--static` 参数控制是否静态链接：
 
-- 默认：动态链接系统 `libclang`，需要运行时有 `libclang` 可用
-- `--static`：静态链接 `libclang`，生成的二进制文件不依赖外部 `libclang`
+- 默认：动态链接系统 `libclang`，需要运行时有 LLVM 17 或更高版本的 `libclang` 可用
+- `--static`：静态链接 `libclang`，生成的二进制文件不依赖外部 `libclang`，启动时不检查其版本
 
 ```
 # 动态链接（默认）

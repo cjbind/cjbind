@@ -15,7 +15,9 @@
   version = "0.3.1"
 
 [profile.customized-option]
+  cfg_dynamic_libclang = "--cfg=libclang_linkage=dynamic"
   cfg_opt = "-O2"
+  cfg_static_libclang = "--cfg=libclang_linkage=static"
   cfg_verbose = "-V"
 
 [target.x86_64-w64-mingw32.release]
