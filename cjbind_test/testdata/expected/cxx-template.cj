@@ -31,8 +31,6 @@ let _ = {
         }
 }
 
-public type BoxPtr_BoxPtr = CPointer<Box_Box>
-
 public type Ptr_Ptr<T> = CPointer<T>
 
 @C

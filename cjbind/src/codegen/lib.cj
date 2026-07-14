@@ -558,6 +558,85 @@ extend Type <: CodeGenerator<Item, Unit> {
     }
 }
 
+func isUnsupportedGenericRecordTarget(ctx: CjbindContext, item: Item): Bool {
+    let targetType = match (item.kind.asType()) {
+        case Some(value) => value
+        case None => return false
+    }
+    let comp = match (targetType.kind) {
+        case TypeKind.TypeKindComp(value) => value
+        case _ => return false
+    }
+    let isConcrete = ctx.templateInstantiationFor(item.id).isSome() ||
+        ctx.isMaterializedNestedTemplateType(item.id)
+    let hasTemplatedAncestor = allTemplateParams(item.id, ctx).size >
+        selfTemplateParams(item.id, ctx).size
+    return !isConcrete && (comp.hasNonTypeTemplateParams ||
+        ctx.usesAnyTemplateParameters(item.id) || hasTemplatedAncestor)
+}
+
+func aliasTargetContainsUnsupportedGenericRecord(
+    ctx: CjbindContext,
+    typeId: TypeId,
+    visiting: ItemSet
+): Bool {
+    let item = ctx.resolveItem(typeId)
+    if (!visiting.add(item.id)) {
+        return false
+    }
+    let ty = match (item.kind.asType()) {
+        case Some(value) => value
+        case None =>
+            visiting.remove(item.id)
+            return false
+    }
+    let unsupported = match (ty.kind) {
+        case TypeKind.ResolvedTypeRef(inner) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindAlias(inner) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindTemplateAlias(inner, _) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindPointer(inner) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindReference(inner) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindArray(inner, _) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindVector(inner, _) =>
+            aliasTargetContainsUnsupportedGenericRecord(ctx, inner, visiting)
+        case TypeKind.TypeKindFunction(signature) =>
+            var found = aliasTargetContainsUnsupportedGenericRecord(
+                ctx,
+                signature.returnType,
+                visiting
+            )
+            if (!found) {
+                for ((_, argument) in signature.argumentTypes) {
+                    if (aliasTargetContainsUnsupportedGenericRecord(ctx, argument, visiting)) {
+                        found = true
+                        break
+                    }
+                }
+            }
+            found
+        case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+            if (ctx.usesAnyTemplateParameters(item.id)) {
+                aliasTargetContainsUnsupportedGenericRecord(
+                    ctx,
+                    instantiation.definition,
+                    visiting
+                )
+            } else {
+                false
+            }
+        case TypeKind.TypeKindComp(_) => isUnsupportedGenericRecordTarget(ctx, item)
+        case _ => false
+    }
+    visiting.remove(item.id)
+    return unsupported
+}
+
 func codegenTypeAlias(
     source: Type,
     inner: TypeId,
@@ -576,20 +655,11 @@ func codegenTypeAlias(
         return
     }
     let usedParameters = ctx.usedTemplateParams(item.id)
-    let targetIsUnsupportedGenericRecord = match (throughTypeAliases.kind.asType()) {
-        case Some(targetType) => match (targetType.kind) {
-            case TypeKind.TypeKindComp(comp) =>
-                let isConcrete = ctx.templateInstantiationFor(throughTypeAliases.id).isSome() ||
-                    ctx.isMaterializedNestedTemplateType(throughTypeAliases.id)
-                let hasTemplatedAncestor = allTemplateParams(throughTypeAliases.id, ctx).size >
-                    selfTemplateParams(throughTypeAliases.id, ctx).size
-                !isConcrete && (comp.hasNonTypeTemplateParams ||
-                    ctx.usesAnyTemplateParameters(throughTypeAliases.id) ||
-                    hasTemplatedAncestor)
-            case _ => false
-        }
-        case None => false
-    }
+    let targetIsUnsupportedGenericRecord = aliasTargetContainsUnsupportedGenericRecord(
+        ctx,
+        inner,
+        ItemSet()
+    )
     if (targetIsUnsupportedGenericRecord || (usedParameters.isEmpty() &&
         (ctx.usesAnyTemplateParameters(innerItem.id) ||
         ctx.usesAnyTemplateParameters(throughTypeAliases.id)))) {

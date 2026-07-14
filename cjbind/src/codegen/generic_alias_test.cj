@@ -136,16 +136,22 @@ public class GenericAliasRenderingTest {
         try {
             let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
             let comp = CompInfo(CompKind.CompKindStruct, isCxxRecord: true)
-            comp.hasNonTypeTemplateParams = true
+            comp.templateParams.add(parameter)
             let record = addGenericAliasTestType(ctx, "FixedArray", TypeKind.TypeKindComp(comp))
+            let pointer = addGenericAliasTestType(
+                ctx,
+                "FixedArrayPointer",
+                TypeKind.TypeKindPointer(record)
+            )
             let alias = addGenericAliasTestType(
                 ctx,
                 "Fixed16",
-                TypeKind.TypeKindTemplateAlias(record, [parameter])
+                TypeKind.TypeKindTemplateAlias(pointer, [parameter])
             )
             let usage = HashMap<ItemId, ItemSet>()
             markGenericAliasUsage(usage, parameter, [parameter])
-            markGenericAliasUsage(usage, record, Array<TypeId>())
+            markGenericAliasUsage(usage, record, [parameter])
+            markGenericAliasUsage(usage, pointer, Array<TypeId>())
             markGenericAliasUsage(usage, alias, Array<TypeId>())
             ctx.usedTemplateParameters = Some(usage)
 
@@ -153,7 +159,7 @@ public class GenericAliasRenderingTest {
             let aliasItem = ctx.resolveItem(alias)
             codegenTypeAlias(
                 aliasItem.kind.expectType(),
-                record,
+                pointer,
                 ctx,
                 result,
                 aliasItem
