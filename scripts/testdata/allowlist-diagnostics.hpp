@@ -1,0 +1,3 @@
+struct MatchedType {
+    int value;
+};

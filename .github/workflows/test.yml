@@ -61,6 +61,16 @@ jobs:
         shell: msys2 {0}
         run: uv run python scripts/cjpm.py --static test -m cjbind -V
 
+      - name: Test CLI (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: uv run python scripts/cjpm.py --static test -m cjbind_cli -V
+
+      - name: Test CLI (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: uv run python scripts/cjpm.py --static test -m cjbind_cli -V
+
   integration-test:
     name: "Integration / ${{ matrix.os.friendly }}"
     runs-on: ${{ matrix.os.runner }}
@@ -106,6 +116,10 @@ jobs:
       - name: Compile generated bindings
         if: matrix.os.sys == 'linux'
         run: uv run python scripts/compile_generated.py
+
+      - name: Test CLI diagnostics
+        if: matrix.os.sys == 'linux'
+        run: uv run python scripts/test_cli_diagnostics.py
 
       - name: Run C++ lifecycle integration
         if: matrix.os.sys == 'linux'
