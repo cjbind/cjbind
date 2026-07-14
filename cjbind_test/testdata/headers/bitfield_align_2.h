@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg --target=x86_64-unknown-linux-gnu
+// cjbind-options: -- --target=x86_64-unknown-linux-gnu
 enum MyEnum {
     ONE,
     TWO,

@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++17 --enable-cxx-namespaces
+// cjbind-options: --enable-cxx-namespaces -- -x c++ -std=c++17
 
 namespace alpha {
 class Forward;

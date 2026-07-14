@@ -1,19 +1,9 @@
 package cjbind_ffi
 
 @C
-public struct a_a {
-    public let val_a: CPointer<b_b>
-    public func clone(): a_a {
-        return this
-    }
-    public func toString(): String {
-        var output = "a_a {"
-        output += " val_a: "
-        output += CPointer<Unit>(this.val_a).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(val_a: CPointer<b_b>) {
+public struct a {
+    public let val_a: CPointer<b>
+    public init(val_a: CPointer<b>) {
         this.val_a = val_a
     }
 }
@@ -21,29 +11,19 @@ public struct a_a {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<a_a>()
+        let size = sizeOf<a>()
         if (size != 8) {
-            throw Exception("Size of a_a is not 8 but ${size} bytes")
+            throw Exception("Size of a is not 8 but ${size} bytes")
         }
-        let align = alignOf<a_a>()
+        let align = alignOf<a>()
         if (align != 8) {
-            throw Exception("Alignment of a_a is not 8 but ${align} bytes")
+            throw Exception("Alignment of a is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct b_b {
+public struct b {
     public let val_b: Int32
-    public func clone(): b_b {
-        return this
-    }
-    public func toString(): String {
-        var output = "b_b {"
-        output += " val_b: "
-        output += this.val_b.toString()
-        output += " }"
-        return output
-    }
     public init(val_b: Int32) {
         this.val_b = val_b
     }
@@ -52,12 +32,12 @@ public struct b_b {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<b_b>()
+        let size = sizeOf<b>()
         if (size != 4) {
-            throw Exception("Size of b_b is not 4 but ${size} bytes")
+            throw Exception("Size of b is not 4 but ${size} bytes")
         }
-        let align = alignOf<b_b>()
+        let align = alignOf<b>()
         if (align != 4) {
-            throw Exception("Alignment of b_b is not 4 but ${align} bytes")
+            throw Exception("Alignment of b is not 4 but ${align} bytes")
         }
 }

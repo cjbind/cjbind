@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --auto-cstring
+// cjbind-options: --auto-cstring -- -x c++ -std=c++14
 
 char* passString(char* value);
 char& passCharacter(char& value);

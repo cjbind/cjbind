@@ -1,21 +1,9 @@
 package cjbind_ffi
 
 @C
-public struct foo__cjbind_ty_1__cjbind_ty_1 {
+public struct foo__cjbind_ty_1 {
     public let x: UInt32
     public let y: UInt32
-    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
-    public func toString(): String {
-        var output = "foo__cjbind_ty_1__cjbind_ty_1 {"
-        output += " x: "
-        output += this.x.toString()
-        output += ", y: "
-        output += this.y.toString()
-        output += " }"
-        return output
-    }
     public init(x: UInt32, y: UInt32) {
         this.x = x
         this.y = y
@@ -25,30 +13,20 @@ public struct foo__cjbind_ty_1__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<foo__cjbind_ty_1>()
         if (size != 8) {
-            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1 is not 8 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1 is not 8 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<foo__cjbind_ty_1>()
         if (align != 4) {
-            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct foo_foo {
-    public let bar: foo__cjbind_ty_1__cjbind_ty_1
-    public func clone(): foo_foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "foo_foo {"
-        output += " bar: "
-        output += this.bar.toString()
-        output += " }"
-        return output
-    }
-    public init(bar: foo__cjbind_ty_1__cjbind_ty_1) {
+public struct foo {
+    public let bar: foo__cjbind_ty_1
+    public init(bar: foo__cjbind_ty_1) {
         this.bar = bar
     }
 }
@@ -56,12 +34,12 @@ public struct foo_foo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 8) {
-            throw Exception("Size of foo_foo is not 8 but ${size} bytes")
+            throw Exception("Size of foo is not 8 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 4) {
-            throw Exception("Alignment of foo_foo is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
 }

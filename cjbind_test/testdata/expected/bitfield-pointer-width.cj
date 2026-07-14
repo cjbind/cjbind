@@ -52,10 +52,10 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-public const POINTER_WIDTH_POINTER_WIDTH: UInt64 = 64
+public const POINTER_WIDTH: UInt64 = 64
 
 @C
-public struct Foo_Foo {
+public struct Foo {
     var _bitfield_1: VArray<UInt8, $32> = VArray<UInt8, $32>(repeat: 0)
     public func m_bitfield(): UInt64 {
         var s = this._bitfield_1
@@ -86,33 +86,17 @@ public struct Foo_Foo {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 192, 64, UInt64(val)) }
     }
     public init() {}
-    public func clone(): Foo_Foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "Foo_Foo {"
-        output += " m_bitfield: "
-        output += this.m_bitfield().toString()
-        output += ", m_bar: "
-        output += this.m_bar().toString()
-        output += ", foo: "
-        output += this.foo().toString()
-        output += ", bar: "
-        output += this.bar().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Foo_Foo>()
+        let size = sizeOf<Foo>()
         if (size != 32) {
-            throw Exception("Size of Foo_Foo is not 32 but ${size} bytes")
+            throw Exception("Size of Foo is not 32 but ${size} bytes")
         }
-        let align = alignOf<Foo_Foo>()
+        let align = alignOf<Foo>()
         if (align != 8) {
-            throw Exception("Alignment of Foo_Foo is not 8 but ${align} bytes")
+            throw Exception("Alignment of Foo is not 8 but ${align} bytes")
         }
 }

@@ -1,8 +1,8 @@
 package cjbind_ffi
 
-foreign func _ZNK9Selection3getEv(this_: CPointer<Selection_Selection>): Int32
+foreign func _ZNK9Selection3getEv(this_: CPointer<Selection>): Int32
 
-public unsafe func Selection_get(this_: CPointer<Selection_Selection>): Int32 {
+public unsafe func Selection_get(this_: CPointer<Selection>): Int32 {
     return _ZNK9Selection3getEv(this_)
 }
 
@@ -13,15 +13,8 @@ public unsafe func Selection_scale(value: Int32): Int32 {
 }
 
 @C
-public struct Selection_Selection {
+public struct Selection {
     public let stored: Int32
-    public func toString(): String {
-        var output = "Selection_Selection {"
-        output += " stored: "
-        output += this.stored.toString()
-        output += " }"
-        return output
-    }
     public init(stored: Int32) {
         this.stored = stored
     }
@@ -30,12 +23,12 @@ public struct Selection_Selection {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Selection_Selection>()
+        let size = sizeOf<Selection>()
         if (size != 4) {
-            throw Exception("Size of Selection_Selection is not 4 but ${size} bytes")
+            throw Exception("Size of Selection is not 4 but ${size} bytes")
         }
-        let align = alignOf<Selection_Selection>()
+        let align = alignOf<Selection>()
         if (align != 4) {
-            throw Exception("Alignment of Selection_Selection is not 4 but ${align} bytes")
+            throw Exception("Alignment of Selection is not 4 but ${align} bytes")
         }
 }

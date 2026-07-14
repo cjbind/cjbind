@@ -12,18 +12,8 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
 }
 
 @C
-public struct foo_foo {
+public struct foo {
     public let inner: UInt8
-    public func clone(): foo_foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "foo_foo {"
-        output += " inner: "
-        output += this.inner.toString()
-        output += " }"
-        return output
-    }
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -32,31 +22,21 @@ public struct foo_foo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 1) {
-            throw Exception("Size of foo_foo is not 1 but ${size} bytes")
+            throw Exception("Size of foo is not 1 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 1) {
-            throw Exception("Alignment of foo_foo is not 1 but ${align} bytes")
+            throw Exception("Alignment of foo is not 1 but ${align} bytes")
         }
 }
 
-public type foo_ptr_foo_ptr = CPointer<foo_foo>
+public type foo_ptr = CPointer<foo>
 
 @C
-public struct bar_bar {
+public struct bar {
     public let inner: UInt8
-    public func clone(): bar_bar {
-        return this
-    }
-    public func toString(): String {
-        var output = "bar_bar {"
-        output += " inner: "
-        output += this.inner.toString()
-        output += " }"
-        return output
-    }
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -65,34 +45,29 @@ public struct bar_bar {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<bar_bar>()
+        let size = sizeOf<bar>()
         if (size != 1) {
-            throw Exception("Size of bar_bar is not 1 but ${size} bytes")
+            throw Exception("Size of bar is not 1 but ${size} bytes")
         }
-        let align = alignOf<bar_bar>()
+        let align = alignOf<bar>()
         if (align != 1) {
-            throw Exception("Alignment of bar_bar is not 1 but ${align} bytes")
+            throw Exception("Alignment of bar is not 1 but ${align} bytes")
         }
 }
 
-public type bar_ptr_bar_ptr = CPointer<bar_bar>
+public type bar_ptr = CPointer<bar>
 
 @C
-public struct baz_baz {
-    public func toString(): String {
-        var output = "baz_baz {"
-        output += " }"
-        return output
-    }
+public struct baz {
     init() {
         throw Exception("type should not be inited")
     }
 }
 
-public type baz_ptr_baz_ptr = CPointer<baz_baz>
+public type baz_ptr = CPointer<baz>
 
 @C
-public struct cat_cat {
+public struct cat {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func standard_issue(): Int32 {
@@ -101,48 +76,45 @@ public struct cat_cat {
     public mut func standard_issue(val!: Int32): Unit {
         this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
     }
-    public func clone(): cat_cat {
-        return this
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<cat_cat>()
+        let size = sizeOf<cat>()
         if (size != 4) {
-            throw Exception("Size of cat_cat is not 4 but ${size} bytes")
+            throw Exception("Size of cat is not 4 but ${size} bytes")
         }
-        let align = alignOf<cat_cat>()
+        let align = alignOf<cat>()
         if (align != 4) {
-            throw Exception("Alignment of cat_cat is not 4 but ${align} bytes")
+            throw Exception("Alignment of cat is not 4 but ${align} bytes")
         }
 }
 
-public type cat_ptr_cat_ptr = CPointer<cat_cat>
+public type cat_ptr = CPointer<cat>
 
-public const mad_scientist: mad_mad = 0
+public const mad_scientist: mad = 0
 
-public type mad_mad = UInt32
+public type mad = UInt32
 
-public type mad_ptr_mad_ptr = CPointer<mad_mad>
+public type mad_ptr = CPointer<mad>
 
-foreign func takes_foo_ptr(arg1: foo_ptr_foo_ptr): Unit
+foreign func takes_foo_ptr(arg1: foo_ptr): Unit
 
-foreign func takes_foo_struct(arg1: foo_foo): Unit
+foreign func takes_foo_struct(arg1: foo): Unit
 
-foreign func takes_bar_ptr(arg1: bar_ptr_bar_ptr): Unit
+foreign func takes_bar_ptr(arg1: bar_ptr): Unit
 
-foreign func takes_bar_struct(arg1: bar_bar): Unit
+foreign func takes_bar_struct(arg1: bar): Unit
 
-foreign func takes_baz_ptr(arg1: baz_ptr_baz_ptr): Unit
+foreign func takes_baz_ptr(arg1: baz_ptr): Unit
 
-foreign func takes_baz_struct(arg1: baz_baz): Unit
+foreign func takes_baz_struct(arg1: baz): Unit
 
-foreign func takes_cat_ptr(arg1: cat_ptr_cat_ptr): Unit
+foreign func takes_cat_ptr(arg1: cat_ptr): Unit
 
-foreign func takes_cat_union(arg1: cat_cat): Unit
+foreign func takes_cat_union(arg1: cat): Unit
 
-foreign func takes_mad_ptr(arg1: mad_ptr_mad_ptr): Unit
+foreign func takes_mad_ptr(arg1: mad_ptr): Unit
 
-foreign func takes_mad_enum(arg1: mad_mad): Unit
+foreign func takes_mad_enum(arg1: mad): Unit

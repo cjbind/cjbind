@@ -1,3 +1,5 @@
 package cjbind_ffi
 
-public type FuncType_FuncType = CPointer<Unit>
+public type FuncType = CFunc<() -> Unit>
+
+foreign func Func(): Unit

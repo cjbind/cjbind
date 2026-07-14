@@ -52,108 +52,106 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_dcb_tx_conf {
     var s = storage
-    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
+    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(
-    storage: VArray<UInt32, $3>, val: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): VArray<UInt32, $3> {
+func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
+    val: rte_eth_vmdq_dcb_tx_conf): VArray<UInt32, $3> {
     var s = storage
-    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
     return s
 }
 
-func __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+func __cjbind_read_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_dcb_tx_conf {
     var s = storage
-    return unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
+    return unsafe { CPointer<rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
-    val: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): VArray<UInt32, $3> {
+func __cjbind_write_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>, val: rte_eth_dcb_tx_conf): VArray<UInt32, $3> {
     var s = storage
-    unsafe { CPointer<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    unsafe { CPointer<rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
     return s
 }
 
-func __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+func __cjbind_read_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_tx_conf {
     var s = storage
-    return unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).read() }
+    return unsafe { CPointer<rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
-    val: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): VArray<UInt32, $3> {
+func __cjbind_write_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>, val: rte_eth_vmdq_tx_conf): VArray<UInt32, $3> {
     var s = storage
-    unsafe { CPointer<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
+    unsafe { CPointer<rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
     return s
 }
 
-public const ETH_MQ_RX_RSS_FLAG_ETH_MQ_RX_RSS_FLAG: Int64 = 1
-public const ETH_MQ_RX_DCB_FLAG_ETH_MQ_RX_DCB_FLAG: Int64 = 2
-public const ETH_MQ_RX_VMDQ_FLAG_ETH_MQ_RX_VMDQ_FLAG: Int64 = 4
-public const ETH_VMDQ_MAX_VLAN_FILTERS_ETH_VMDQ_MAX_VLAN_FILTERS: Int64 = 64
-public const ETH_DCB_NUM_USER_PRIORITIES_ETH_DCB_NUM_USER_PRIORITIES: Int64 = 8
-public const ETH_VMDQ_DCB_NUM_QUEUES_ETH_VMDQ_DCB_NUM_QUEUES: Int64 = 128
-public const ETH_DCB_NUM_QUEUES_ETH_DCB_NUM_QUEUES: Int64 = 128
-public const RTE_ETH_FDIR_MAX_FLEXLEN_RTE_ETH_FDIR_MAX_FLEXLEN: Int64 = 16
-public const RTE_ETH_INSET_SIZE_MAX_RTE_ETH_INSET_SIZE_MAX: Int64 = 128
-public const RTE_ETH_FLOW_UNKNOWN_RTE_ETH_FLOW_UNKNOWN: Int64 = 0
-public const RTE_ETH_FLOW_RAW_RTE_ETH_FLOW_RAW: Int64 = 1
-public const RTE_ETH_FLOW_IPV4_RTE_ETH_FLOW_IPV4: Int64 = 2
-public const RTE_ETH_FLOW_FRAG_IPV4_RTE_ETH_FLOW_FRAG_IPV4: Int64 = 3
-public const RTE_ETH_FLOW_NONFRAG_IPV4_TCP_RTE_ETH_FLOW_NONFRAG_IPV4_TCP: Int64 = 4
-public const RTE_ETH_FLOW_NONFRAG_IPV4_UDP_RTE_ETH_FLOW_NONFRAG_IPV4_UDP: Int64 = 5
-public const RTE_ETH_FLOW_NONFRAG_IPV4_SCTP_RTE_ETH_FLOW_NONFRAG_IPV4_SCTP: Int64 = 6
-public const RTE_ETH_FLOW_NONFRAG_IPV4_OTHER_RTE_ETH_FLOW_NONFRAG_IPV4_OTHER: Int64 = 7
-public const RTE_ETH_FLOW_IPV6_RTE_ETH_FLOW_IPV6: Int64 = 8
-public const RTE_ETH_FLOW_FRAG_IPV6_RTE_ETH_FLOW_FRAG_IPV6: Int64 = 9
-public const RTE_ETH_FLOW_NONFRAG_IPV6_TCP_RTE_ETH_FLOW_NONFRAG_IPV6_TCP: Int64 = 10
-public const RTE_ETH_FLOW_NONFRAG_IPV6_UDP_RTE_ETH_FLOW_NONFRAG_IPV6_UDP: Int64 = 11
-public const RTE_ETH_FLOW_NONFRAG_IPV6_SCTP_RTE_ETH_FLOW_NONFRAG_IPV6_SCTP: Int64 = 12
-public const RTE_ETH_FLOW_NONFRAG_IPV6_OTHER_RTE_ETH_FLOW_NONFRAG_IPV6_OTHER: Int64 = 13
-public const RTE_ETH_FLOW_L2_PAYLOAD_RTE_ETH_FLOW_L2_PAYLOAD: Int64 = 14
-public const RTE_ETH_FLOW_IPV6_EX_RTE_ETH_FLOW_IPV6_EX: Int64 = 15
-public const RTE_ETH_FLOW_IPV6_TCP_EX_RTE_ETH_FLOW_IPV6_TCP_EX: Int64 = 16
-public const RTE_ETH_FLOW_IPV6_UDP_EX_RTE_ETH_FLOW_IPV6_UDP_EX: Int64 = 17
-public const RTE_ETH_FLOW_PORT_RTE_ETH_FLOW_PORT: Int64 = 18
-public const RTE_ETH_FLOW_VXLAN_RTE_ETH_FLOW_VXLAN: Int64 = 19
-public const RTE_ETH_FLOW_GENEVE_RTE_ETH_FLOW_GENEVE: Int64 = 20
-public const RTE_ETH_FLOW_NVGRE_RTE_ETH_FLOW_NVGRE: Int64 = 21
-public const RTE_ETH_FLOW_MAX_RTE_ETH_FLOW_MAX: Int64 = 22
+public const ETH_MQ_RX_RSS_FLAG: Int64 = 1
+public const ETH_MQ_RX_DCB_FLAG: Int64 = 2
+public const ETH_MQ_RX_VMDQ_FLAG: Int64 = 4
+public const ETH_VMDQ_MAX_VLAN_FILTERS: Int64 = 64
+public const ETH_DCB_NUM_USER_PRIORITIES: Int64 = 8
+public const ETH_VMDQ_DCB_NUM_QUEUES: Int64 = 128
+public const ETH_DCB_NUM_QUEUES: Int64 = 128
+public const RTE_ETH_FDIR_MAX_FLEXLEN: Int64 = 16
+public const RTE_ETH_INSET_SIZE_MAX: Int64 = 128
+public const RTE_ETH_FLOW_UNKNOWN: Int64 = 0
+public const RTE_ETH_FLOW_RAW: Int64 = 1
+public const RTE_ETH_FLOW_IPV4: Int64 = 2
+public const RTE_ETH_FLOW_FRAG_IPV4: Int64 = 3
+public const RTE_ETH_FLOW_NONFRAG_IPV4_TCP: Int64 = 4
+public const RTE_ETH_FLOW_NONFRAG_IPV4_UDP: Int64 = 5
+public const RTE_ETH_FLOW_NONFRAG_IPV4_SCTP: Int64 = 6
+public const RTE_ETH_FLOW_NONFRAG_IPV4_OTHER: Int64 = 7
+public const RTE_ETH_FLOW_IPV6: Int64 = 8
+public const RTE_ETH_FLOW_FRAG_IPV6: Int64 = 9
+public const RTE_ETH_FLOW_NONFRAG_IPV6_TCP: Int64 = 10
+public const RTE_ETH_FLOW_NONFRAG_IPV6_UDP: Int64 = 11
+public const RTE_ETH_FLOW_NONFRAG_IPV6_SCTP: Int64 = 12
+public const RTE_ETH_FLOW_NONFRAG_IPV6_OTHER: Int64 = 13
+public const RTE_ETH_FLOW_L2_PAYLOAD: Int64 = 14
+public const RTE_ETH_FLOW_IPV6_EX: Int64 = 15
+public const RTE_ETH_FLOW_IPV6_TCP_EX: Int64 = 16
+public const RTE_ETH_FLOW_IPV6_UDP_EX: Int64 = 17
+public const RTE_ETH_FLOW_PORT: Int64 = 18
+public const RTE_ETH_FLOW_VXLAN: Int64 = 19
+public const RTE_ETH_FLOW_GENEVE: Int64 = 20
+public const RTE_ETH_FLOW_NVGRE: Int64 = 21
+public const RTE_ETH_FLOW_MAX: Int64 = 22
 
 // None of DCB,RSS or VMDQ mode *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_NONE: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 0
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_NONE: rte_eth_rx_mq_mode = 0
 
 // For RX side, only RSS is on *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_RSS: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 1
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_RSS: rte_eth_rx_mq_mode = 1
 
 // For RX side,only DCB is on. *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 2
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB: rte_eth_rx_mq_mode = 2
 
 // Both DCB and RSS enable *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB_RSS: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 3
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_DCB_RSS: rte_eth_rx_mq_mode = 3
 
 // Only VMDQ, no RSS nor DCB *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_ONLY: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 4
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_ONLY: rte_eth_rx_mq_mode = 4
 
 // RSS mode with VMDQ *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_RSS: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 5
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_RSS: rte_eth_rx_mq_mode = 5
 
 // Use VMDQ+DCB to route traffic to queues *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 6
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB: rte_eth_rx_mq_mode = 6
 
 // Enable both VMDQ and DCB in VMDq *
-public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB_RSS: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = 7
+public const rte_eth_rx_mq_mode_ETH_MQ_RX_VMDQ_DCB_RSS: rte_eth_rx_mq_mode = 7
 
 //  A set of values to identify what method is to be used to route
 //  packets to multiple queues.
-public type rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = UInt32
+public type rte_eth_rx_mq_mode = UInt32
 
 // A structure used to configure the RX features of an Ethernet port.
 @C
-public struct rte_eth_rxmode_rte_eth_rxmode {
+public struct rte_eth_rxmode {
     // The multi-queue packet distribution mode to be used, e.g. RSS. *
-    public var mq_mode: rte_eth_rx_mq_mode_rte_eth_rx_mq_mode = unsafe { zeroValue<rte_eth_rx_mq_mode_rte_eth_rx_mq_mode>() }
+    public var mq_mode: rte_eth_rx_mq_mode = unsafe { zeroValue<rte_eth_rx_mq_mode>() }
     //< Only used if jumbo_frame enabled. *
     public var max_rx_pkt_len: UInt32 = unsafe { zeroValue<UInt32>() }
     //< hdr buf size (header_split enabled).*
@@ -223,74 +221,42 @@ public struct rte_eth_rxmode_rte_eth_rxmode {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): rte_eth_rxmode_rte_eth_rxmode {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_rxmode_rte_eth_rxmode {"
-        output += " mq_mode: "
-        output += this.mq_mode.toString()
-        output += ", max_rx_pkt_len: "
-        output += this.max_rx_pkt_len.toString()
-        output += ", split_hdr_size: "
-        output += this.split_hdr_size.toString()
-        output += ", header_split: "
-        output += this.header_split().toString()
-        output += ", hw_ip_checksum: "
-        output += this.hw_ip_checksum().toString()
-        output += ", hw_vlan_filter: "
-        output += this.hw_vlan_filter().toString()
-        output += ", hw_vlan_strip: "
-        output += this.hw_vlan_strip().toString()
-        output += ", hw_vlan_extend: "
-        output += this.hw_vlan_extend().toString()
-        output += ", jumbo_frame: "
-        output += this.jumbo_frame().toString()
-        output += ", hw_strip_crc: "
-        output += this.hw_strip_crc().toString()
-        output += ", enable_scatter: "
-        output += this.enable_scatter().toString()
-        output += ", enable_lro: "
-        output += this.enable_lro().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_rxmode_rte_eth_rxmode>()
+        let size = sizeOf<rte_eth_rxmode>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_rxmode_rte_eth_rxmode is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_rxmode is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_rxmode_rte_eth_rxmode>()
+        let align = alignOf<rte_eth_rxmode>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_rxmode_rte_eth_rxmode is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_rxmode is not 4 but ${align} bytes")
         }
 }
 
 //< It is in neither DCB nor VT mode. *
-public const rte_eth_tx_mq_mode_ETH_MQ_TX_NONE: rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 0
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_NONE: rte_eth_tx_mq_mode = 0
 
 //< For TX side,only DCB is on. *
-public const rte_eth_tx_mq_mode_ETH_MQ_TX_DCB: rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 1
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_DCB: rte_eth_tx_mq_mode = 1
 
 //< For TX side,both DCB and VT is on. *
-public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_DCB: rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 2
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_DCB: rte_eth_tx_mq_mode = 2
 
 //< Only VT on, no DCB *
-public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_ONLY: rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = 3
+public const rte_eth_tx_mq_mode_ETH_MQ_TX_VMDQ_ONLY: rte_eth_tx_mq_mode = 3
 
 // A set of values to identify what method is to be used to transmit
 // packets using multi-TCs.
-public type rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = UInt32
+public type rte_eth_tx_mq_mode = UInt32
 
 // A structure used to configure the TX features of an Ethernet port.
 @C
-public struct rte_eth_txmode_rte_eth_txmode {
+public struct rte_eth_txmode {
     //< TX multi-queues mode. *
-    public var mq_mode: rte_eth_tx_mq_mode_rte_eth_tx_mq_mode = unsafe { zeroValue<rte_eth_tx_mq_mode_rte_eth_tx_mq_mode>() }
+    public var mq_mode: rte_eth_tx_mq_mode = unsafe { zeroValue<rte_eth_tx_mq_mode>() }
     public var pvid: UInt16 = unsafe { zeroValue<UInt16>() }
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public func hw_vlan_reject_tagged(): UInt8 {
@@ -315,36 +281,18 @@ public struct rte_eth_txmode_rte_eth_txmode {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): rte_eth_txmode_rte_eth_txmode {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_txmode_rte_eth_txmode {"
-        output += " mq_mode: "
-        output += this.mq_mode.toString()
-        output += ", pvid: "
-        output += this.pvid.toString()
-        output += ", hw_vlan_reject_tagged: "
-        output += this.hw_vlan_reject_tagged().toString()
-        output += ", hw_vlan_reject_untagged: "
-        output += this.hw_vlan_reject_untagged().toString()
-        output += ", hw_vlan_insert_pvid: "
-        output += this.hw_vlan_insert_pvid().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_txmode_rte_eth_txmode>()
+        let size = sizeOf<rte_eth_txmode>()
         if (size != 8) {
-            throw Exception("Size of rte_eth_txmode_rte_eth_txmode is not 8 but ${size} bytes")
+            throw Exception("Size of rte_eth_txmode is not 8 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_txmode_rte_eth_txmode>()
+        let align = alignOf<rte_eth_txmode>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_txmode_rte_eth_txmode is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_txmode is not 4 but ${align} bytes")
         }
 }
 
@@ -364,27 +312,13 @@ let _ = {
 // types of IPv4/IPv6 packets to which the RSS hashing must be applied.
 // Supplying an *rss_hf* equal to zero disables the RSS feature.
 @C
-public struct rte_eth_rss_conf_rte_eth_rss_conf {
+public struct rte_eth_rss_conf {
     //< If not NULL, 40-byte hash key. *
     public let rss_key: CPointer<UInt8>
     //< hash key length in bytes. *
     public let rss_key_len: UInt8
     //< Hash functions to apply - see below. *
     public let rss_hf: UInt64
-    public func clone(): rte_eth_rss_conf_rte_eth_rss_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_rss_conf_rte_eth_rss_conf {"
-        output += " rss_key: "
-        output += CPointer<Unit>(this.rss_key).toUIntNative().toString()
-        output += ", rss_key_len: "
-        output += this.rss_key_len.toString()
-        output += ", rss_hf: "
-        output += this.rss_hf.toString()
-        output += " }"
-        return output
-    }
     public init(rss_key: CPointer<UInt8>, rss_key_len: UInt8, rss_hf: UInt64) {
         this.rss_key = rss_key
         this.rss_key_len = rss_key_len
@@ -395,60 +329,48 @@ public struct rte_eth_rss_conf_rte_eth_rss_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_rss_conf_rte_eth_rss_conf>()
+        let size = sizeOf<rte_eth_rss_conf>()
         if (size != 24) {
-            throw Exception("Size of rte_eth_rss_conf_rte_eth_rss_conf is not 24 but ${size} bytes")
+            throw Exception("Size of rte_eth_rss_conf is not 24 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_rss_conf_rte_eth_rss_conf>()
+        let align = alignOf<rte_eth_rss_conf>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_rss_conf_rte_eth_rss_conf is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_rss_conf is not 8 but ${align} bytes")
         }
 }
 
 //< 4 TCs with DCB. *
-public const rte_eth_nb_tcs_ETH_4_TCS: rte_eth_nb_tcs_rte_eth_nb_tcs = 4
+public const rte_eth_nb_tcs_ETH_4_TCS: rte_eth_nb_tcs = 4
 
 //< 8 TCs with DCB. *
-public const rte_eth_nb_tcs_ETH_8_TCS: rte_eth_nb_tcs_rte_eth_nb_tcs = 8
+public const rte_eth_nb_tcs_ETH_8_TCS: rte_eth_nb_tcs = 8
 
 // This enum indicates the possible number of traffic classes
 // in DCB configratioins
-public type rte_eth_nb_tcs_rte_eth_nb_tcs = UInt32
+public type rte_eth_nb_tcs = UInt32
 
 //< 8 VMDq pools. *
-public const rte_eth_nb_pools_ETH_8_POOLS: rte_eth_nb_pools_rte_eth_nb_pools = 8
+public const rte_eth_nb_pools_ETH_8_POOLS: rte_eth_nb_pools = 8
 
 //< 16 VMDq pools. *
-public const rte_eth_nb_pools_ETH_16_POOLS: rte_eth_nb_pools_rte_eth_nb_pools = 16
+public const rte_eth_nb_pools_ETH_16_POOLS: rte_eth_nb_pools = 16
 
 //< 32 VMDq pools. *
-public const rte_eth_nb_pools_ETH_32_POOLS: rte_eth_nb_pools_rte_eth_nb_pools = 32
+public const rte_eth_nb_pools_ETH_32_POOLS: rte_eth_nb_pools = 32
 
 //< 64 VMDq pools. *
-public const rte_eth_nb_pools_ETH_64_POOLS: rte_eth_nb_pools_rte_eth_nb_pools = 64
+public const rte_eth_nb_pools_ETH_64_POOLS: rte_eth_nb_pools = 64
 
 // This enum indicates the possible number of queue pools
 // in VMDQ configurations.
-public type rte_eth_nb_pools_rte_eth_nb_pools = UInt32
+public type rte_eth_nb_pools = UInt32
 
 @C
-public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
+public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {
     //< The vlan ID of the received frame *
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
     public let pools: UInt64
-    public func clone(): rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {"
-        output += " vlan_id: "
-        output += this.vlan_id.toString()
-        output += ", pools: "
-        output += this.pools.toString()
-        output += " }"
-        return output
-    }
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -458,13 +380,13 @@ public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
         if (size != 16) {
-            throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 is not 16 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 16 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<rte_eth_vmdq_dcb_conf__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
@@ -478,9 +400,9 @@ let _ = {
 // A default pool may be used, if desired, to route all traffic which
 // does not match the vlan filter rules.
 @C
-public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
+public struct rte_eth_vmdq_dcb_conf {
     //< With DCB, 16 or 32 pools *
-    public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
+    public let nb_queue_pools: rte_eth_nb_pools
     //< If non-zero, use a default pool *
     public let enable_default_pool: UInt8
     //< The default pool, if applicable *
@@ -488,45 +410,10 @@ public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
     //< We can have up to 64 filters/mappings *
     public let nb_pool_maps: UInt8
     //< VMDq vlan pool maps. *
-    public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>
+    public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>
     public let dcb_tc: VArray<UInt8, $8>
-    public func clone(): rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {"
-        output += " nb_queue_pools: "
-        output += this.nb_queue_pools.toString()
-        output += ", enable_default_pool: "
-        output += this.enable_default_pool.toString()
-        output += ", default_pool: "
-        output += this.default_pool.toString()
-        output += ", nb_pool_maps: "
-        output += this.nb_pool_maps.toString()
-        output += ", pool_map: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..64) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.pool_map[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += ", dcb_tc: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..8) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.dcb_tc[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
-        nb_pool_maps: UInt8, pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>,
-        dcb_tc: VArray<UInt8, $8>) {
+    public init(nb_queue_pools: rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8, nb_pool_maps: UInt8,
+        pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>, dcb_tc: VArray<UInt8, $8>) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
@@ -539,42 +426,23 @@ public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()
+        let size = sizeOf<rte_eth_vmdq_dcb_conf>()
         if (size != 1040) {
-            throw Exception("Size of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 1040 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_dcb_conf is not 1040 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf>()
+        let align = alignOf<rte_eth_vmdq_dcb_conf>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_dcb_conf is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
+public struct rte_eth_dcb_rx_conf {
     //< Possible DCB TCs, 4 or 8 TCs *
-    public let nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs
+    public let nb_tcs: rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
-    public func clone(): rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {"
-        output += " nb_tcs: "
-        output += this.nb_tcs.toString()
-        output += ", dcb_tc: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..8) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.dcb_tc[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
+    public init(nb_tcs: rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
         this.nb_tcs = nb_tcs
         this.dcb_tc = dcb_tc
     }
@@ -583,42 +451,23 @@ public struct rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()
+        let size = sizeOf<rte_eth_dcb_rx_conf>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_dcb_rx_conf is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf>()
+        let align = alignOf<rte_eth_dcb_rx_conf>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_dcb_rx_conf is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+public struct rte_eth_vmdq_dcb_tx_conf {
     //< With DCB, 16 or 32 pools. *
-    public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
+    public let nb_queue_pools: rte_eth_nb_pools
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
-    public func clone(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {"
-        output += " nb_queue_pools: "
-        output += this.nb_queue_pools.toString()
-        output += ", dcb_tc: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..8) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.dcb_tc[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, dcb_tc: VArray<UInt8, $8>) {
+    public init(nb_queue_pools: rte_eth_nb_pools, dcb_tc: VArray<UInt8, $8>) {
         this.nb_queue_pools = nb_queue_pools
         this.dcb_tc = dcb_tc
     }
@@ -627,43 +476,23 @@ public struct rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()
+        let size = sizeOf<rte_eth_vmdq_dcb_tx_conf>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_dcb_tx_conf is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf>()
+        let align = alignOf<rte_eth_vmdq_dcb_tx_conf>()
         if (align != 4) {
-            throw Exception(
-                "Alignment of rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_dcb_tx_conf is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+public struct rte_eth_dcb_tx_conf {
     //< Possible DCB TCs, 4 or 8 TCs. *
-    public let nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs
+    public let nb_tcs: rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
-    public func clone(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {"
-        output += " nb_tcs: "
-        output += this.nb_tcs.toString()
-        output += ", dcb_tc: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..8) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.dcb_tc[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
+    public init(nb_tcs: rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
         this.nb_tcs = nb_tcs
         this.dcb_tc = dcb_tc
     }
@@ -672,31 +501,21 @@ public struct rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()
+        let size = sizeOf<rte_eth_dcb_tx_conf>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_dcb_tx_conf is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf>()
+        let align = alignOf<rte_eth_dcb_tx_conf>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_dcb_tx_conf is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+public struct rte_eth_vmdq_tx_conf {
     //< VMDq mode, 64 pools. *
-    public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
-    public func clone(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {"
-        output += " nb_queue_pools: "
-        output += this.nb_queue_pools.toString()
-        output += " }"
-        return output
-    }
-    public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools) {
+    public let nb_queue_pools: rte_eth_nb_pools
+    public init(nb_queue_pools: rte_eth_nb_pools) {
         this.nb_queue_pools = nb_queue_pools
     }
 }
@@ -704,34 +523,22 @@ public struct rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()
+        let size = sizeOf<rte_eth_vmdq_tx_conf>()
         if (size != 4) {
-            throw Exception("Size of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_tx_conf is not 4 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf>()
+        let align = alignOf<rte_eth_vmdq_tx_conf>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_tx_conf is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
+public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
     //< The vlan ID of the received frame *
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
     public let pools: UInt64
-    public func clone(): rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {"
-        output += " vlan_id: "
-        output += this.vlan_id.toString()
-        output += ", pools: "
-        output += this.pools.toString()
-        output += " }"
-        return output
-    }
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -741,20 +548,20 @@ public struct rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
         if (size != 16) {
-            throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 is not 16 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 16 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<rte_eth_vmdq_rx_conf__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
+public struct rte_eth_vmdq_rx_conf {
     //< VMDq only mode, 8 or 64 pools *
-    public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
+    public let nb_queue_pools: rte_eth_nb_pools
     //< If non-zero, use a default pool *
     public let enable_default_pool: UInt8
     //< The default pool, if applicable *
@@ -766,39 +573,10 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
     //< Flags from ETH_VMDQ_ACCEPT_* *
     public let rx_mode: UInt32
     //< VMDq vlan pool maps. *
-    public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>
-    public func clone(): rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {"
-        output += " nb_queue_pools: "
-        output += this.nb_queue_pools.toString()
-        output += ", enable_default_pool: "
-        output += this.enable_default_pool.toString()
-        output += ", default_pool: "
-        output += this.default_pool.toString()
-        output += ", enable_loop_back: "
-        output += this.enable_loop_back.toString()
-        output += ", nb_pool_maps: "
-        output += this.nb_pool_maps.toString()
-        output += ", rx_mode: "
-        output += this.rx_mode.toString()
-        output += ", pool_map: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..64) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.pool_map[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
+    public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>
+    public init(nb_queue_pools: rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         enable_loop_back: UInt8, nb_pool_maps: UInt8, rx_mode: UInt32,
-        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>) {
+        pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>) {
         this.nb_queue_pools = nb_queue_pools
         this.enable_default_pool = enable_default_pool
         this.default_pool = default_pool
@@ -812,62 +590,62 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()
+        let size = sizeOf<rte_eth_vmdq_rx_conf>()
         if (size != 1040) {
-            throw Exception("Size of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 1040 but ${size} bytes")
+            throw Exception("Size of rte_eth_vmdq_rx_conf is not 1040 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf>()
+        let align = alignOf<rte_eth_vmdq_rx_conf>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_vmdq_rx_conf is not 8 but ${align} bytes")
         }
 }
 
 //< Disable FDIR support. *
-public const rte_fdir_mode_RTE_FDIR_MODE_NONE: rte_fdir_mode_rte_fdir_mode = 0
+public const rte_fdir_mode_RTE_FDIR_MODE_NONE: rte_fdir_mode = 0
 
 //< Enable FDIR signature filter mode. *
-public const rte_fdir_mode_RTE_FDIR_MODE_SIGNATURE: rte_fdir_mode_rte_fdir_mode = 1
+public const rte_fdir_mode_RTE_FDIR_MODE_SIGNATURE: rte_fdir_mode = 1
 
 //< Enable FDIR perfect filter mode. *
-public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT: rte_fdir_mode_rte_fdir_mode = 2
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT: rte_fdir_mode = 2
 
 //< Enable FDIR filter mode - MAC VLAN. *
-public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_MAC_VLAN: rte_fdir_mode_rte_fdir_mode = 3
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_MAC_VLAN: rte_fdir_mode = 3
 
 //< Enable FDIR filter mode - tunnel. *
-public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_TUNNEL: rte_fdir_mode_rte_fdir_mode = 4
+public const rte_fdir_mode_RTE_FDIR_MODE_PERFECT_TUNNEL: rte_fdir_mode = 4
 
 //  Flow Director setting modes: none, signature or perfect.
-public type rte_fdir_mode_rte_fdir_mode = UInt32
+public type rte_fdir_mode = UInt32
 
 //< 64k. *
-public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_64K: rte_fdir_pballoc_type_rte_fdir_pballoc_type = 0
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_64K: rte_fdir_pballoc_type = 0
 
 //< 128k. *
-public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_128K: rte_fdir_pballoc_type_rte_fdir_pballoc_type = 1
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_128K: rte_fdir_pballoc_type = 1
 
 //< 256k. *
-public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_256K: rte_fdir_pballoc_type_rte_fdir_pballoc_type = 2
+public const rte_fdir_pballoc_type_RTE_FDIR_PBALLOC_256K: rte_fdir_pballoc_type = 2
 
 //  Memory space that can be configured to store Flow Director filters
 //  in the board memory.
-public type rte_fdir_pballoc_type_rte_fdir_pballoc_type = UInt32
+public type rte_fdir_pballoc_type = UInt32
 
 //< Never report FDIR hash. *
-public const rte_fdir_status_mode_RTE_FDIR_NO_REPORT_STATUS: rte_fdir_status_mode_rte_fdir_status_mode = 0
+public const rte_fdir_status_mode_RTE_FDIR_NO_REPORT_STATUS: rte_fdir_status_mode = 0
 
 //< Only report FDIR hash for matching pkts. *
-public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS: rte_fdir_status_mode_rte_fdir_status_mode = 1
+public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS: rte_fdir_status_mode = 1
 
 //< Always report FDIR hash. *
-public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS_ALWAYS: rte_fdir_status_mode_rte_fdir_status_mode = 2
+public const rte_fdir_status_mode_RTE_FDIR_REPORT_STATUS_ALWAYS: rte_fdir_status_mode = 2
 
 //  Select report mode of FDIR hash information in RX descriptors.
-public type rte_fdir_status_mode_rte_fdir_status_mode = UInt32
+public type rte_fdir_status_mode = UInt32
 
 // A structure used to define the input for IPV4 flow
 @C
-public struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {
+public struct rte_eth_ipv4_flow {
     //< IPv4 source address in big endian. *
     public let src_ip: UInt32
     //< IPv4 destination address in big endian. *
@@ -878,24 +656,6 @@ public struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {
     public let ttl: UInt8
     //< Protocol, next header in big endian. *
     public let proto: UInt8
-    public func clone(): rte_eth_ipv4_flow_rte_eth_ipv4_flow {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_ipv4_flow_rte_eth_ipv4_flow {"
-        output += " src_ip: "
-        output += this.src_ip.toString()
-        output += ", dst_ip: "
-        output += this.dst_ip.toString()
-        output += ", tos: "
-        output += this.tos.toString()
-        output += ", ttl: "
-        output += this.ttl.toString()
-        output += ", proto: "
-        output += this.proto.toString()
-        output += " }"
-        return output
-    }
     public init(src_ip: UInt32, dst_ip: UInt32, tos: UInt8, ttl: UInt8, proto: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -908,19 +668,19 @@ public struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()
+        let size = sizeOf<rte_eth_ipv4_flow>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_ipv4_flow is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_ipv4_flow_rte_eth_ipv4_flow>()
+        let align = alignOf<rte_eth_ipv4_flow>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_ipv4_flow_rte_eth_ipv4_flow is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_ipv4_flow is not 4 but ${align} bytes")
         }
 }
 
 // A structure used to define the input for IPV6 flow
 @C
-public struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {
+public struct rte_eth_ipv6_flow {
     //< IPv6 source address in big endian. *
     public let src_ip: VArray<UInt32, $4>
     //< IPv6 destination address in big endian. *
@@ -931,38 +691,6 @@ public struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {
     public let proto: UInt8
     //< Hop limits to match. *
     public let hop_limits: UInt8
-    public func clone(): rte_eth_ipv6_flow_rte_eth_ipv6_flow {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_ipv6_flow_rte_eth_ipv6_flow {"
-        output += " src_ip: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..4) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.src_ip[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += ", dst_ip: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..4) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.dst_ip[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += ", tc: "
-        output += this.tc.toString()
-        output += ", proto: "
-        output += this.proto.toString()
-        output += ", hop_limits: "
-        output += this.hop_limits.toString()
-        output += " }"
-        return output
-    }
     public init(src_ip: VArray<UInt32, $4>, dst_ip: VArray<UInt32, $4>, tc: UInt8, proto: UInt8, hop_limits: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -975,26 +703,26 @@ public struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()
+        let size = sizeOf<rte_eth_ipv6_flow>()
         if (size != 36) {
-            throw Exception("Size of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 36 but ${size} bytes")
+            throw Exception("Size of rte_eth_ipv6_flow is not 36 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_ipv6_flow_rte_eth_ipv6_flow>()
+        let align = alignOf<rte_eth_ipv6_flow>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_ipv6_flow_rte_eth_ipv6_flow is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_ipv6_flow is not 4 but ${align} bytes")
         }
 }
 
 //  A structure used to configure FDIR masks that are used by the device
 //  to match the various fields of RX packet headers.
 @C
-public struct rte_eth_fdir_masks_rte_eth_fdir_masks {
+public struct rte_eth_fdir_masks {
     //< Bit mask for vlan_tci in big endian *
     public let vlan_tci_mask: UInt16
     // Bit mask for ipv4 flow in big endian. *
-    public let ipv4_mask: rte_eth_ipv4_flow_rte_eth_ipv4_flow
+    public let ipv4_mask: rte_eth_ipv4_flow
     // Bit maks for ipv6 flow in big endian. *
-    public let ipv6_mask: rte_eth_ipv6_flow_rte_eth_ipv6_flow
+    public let ipv6_mask: rte_eth_ipv6_flow
     // Bit mask for L4 source port in big endian. *
     public let src_port_mask: UInt16
     // Bit mask for L4 destination port in big endian. *
@@ -1007,33 +735,9 @@ public struct rte_eth_fdir_masks_rte_eth_fdir_masks {
     //< 1 - Match tunnel type,
     //0 - Ignore tunnel type. *
     public let tunnel_type_mask: UInt8
-    public func clone(): rte_eth_fdir_masks_rte_eth_fdir_masks {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_fdir_masks_rte_eth_fdir_masks {"
-        output += " vlan_tci_mask: "
-        output += this.vlan_tci_mask.toString()
-        output += ", ipv4_mask: "
-        output += this.ipv4_mask.toString()
-        output += ", ipv6_mask: "
-        output += this.ipv6_mask.toString()
-        output += ", src_port_mask: "
-        output += this.src_port_mask.toString()
-        output += ", dst_port_mask: "
-        output += this.dst_port_mask.toString()
-        output += ", mac_addr_byte_mask: "
-        output += this.mac_addr_byte_mask.toString()
-        output += ", tunnel_id_mask: "
-        output += this.tunnel_id_mask.toString()
-        output += ", tunnel_type_mask: "
-        output += this.tunnel_type_mask.toString()
-        output += " }"
-        return output
-    }
-    public init(vlan_tci_mask: UInt16, ipv4_mask: rte_eth_ipv4_flow_rte_eth_ipv4_flow,
-        ipv6_mask: rte_eth_ipv6_flow_rte_eth_ipv6_flow, src_port_mask: UInt16, dst_port_mask: UInt16,
-        mac_addr_byte_mask: UInt8, tunnel_id_mask: UInt32, tunnel_type_mask: UInt8) {
+    public init(vlan_tci_mask: UInt16, ipv4_mask: rte_eth_ipv4_flow, ipv6_mask: rte_eth_ipv6_flow,
+        src_port_mask: UInt16, dst_port_mask: UInt16, mac_addr_byte_mask: UInt8, tunnel_id_mask: UInt32,
+        tunnel_type_mask: UInt8) {
         this.vlan_tci_mask = vlan_tci_mask
         this.ipv4_mask = ipv4_mask
         this.ipv6_mask = ipv6_mask
@@ -1048,53 +752,34 @@ public struct rte_eth_fdir_masks_rte_eth_fdir_masks {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()
+        let size = sizeOf<rte_eth_fdir_masks>()
         if (size != 68) {
-            throw Exception("Size of rte_eth_fdir_masks_rte_eth_fdir_masks is not 68 but ${size} bytes")
+            throw Exception("Size of rte_eth_fdir_masks is not 68 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_fdir_masks_rte_eth_fdir_masks>()
+        let align = alignOf<rte_eth_fdir_masks>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_fdir_masks_rte_eth_fdir_masks is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_fdir_masks is not 4 but ${align} bytes")
         }
 }
 
-public const rte_eth_payload_type_RTE_ETH_PAYLOAD_UNKNOWN: rte_eth_payload_type_rte_eth_payload_type = 0
-public const rte_eth_payload_type_RTE_ETH_RAW_PAYLOAD: rte_eth_payload_type_rte_eth_payload_type = 1
-public const rte_eth_payload_type_RTE_ETH_L2_PAYLOAD: rte_eth_payload_type_rte_eth_payload_type = 2
-public const rte_eth_payload_type_RTE_ETH_L3_PAYLOAD: rte_eth_payload_type_rte_eth_payload_type = 3
-public const rte_eth_payload_type_RTE_ETH_L4_PAYLOAD: rte_eth_payload_type_rte_eth_payload_type = 4
-public const rte_eth_payload_type_RTE_ETH_PAYLOAD_MAX: rte_eth_payload_type_rte_eth_payload_type = 8
+public const rte_eth_payload_type_RTE_ETH_PAYLOAD_UNKNOWN: rte_eth_payload_type = 0
+public const rte_eth_payload_type_RTE_ETH_RAW_PAYLOAD: rte_eth_payload_type = 1
+public const rte_eth_payload_type_RTE_ETH_L2_PAYLOAD: rte_eth_payload_type = 2
+public const rte_eth_payload_type_RTE_ETH_L3_PAYLOAD: rte_eth_payload_type = 3
+public const rte_eth_payload_type_RTE_ETH_L4_PAYLOAD: rte_eth_payload_type = 4
+public const rte_eth_payload_type_RTE_ETH_PAYLOAD_MAX: rte_eth_payload_type = 8
 
 // Payload type
-public type rte_eth_payload_type_rte_eth_payload_type = UInt32
+public type rte_eth_payload_type = UInt32
 
 // A structure used to select bytes extracted from the protocol layers to
 // flexible payload for filter
 @C
-public struct rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
+public struct rte_eth_flex_payload_cfg {
     //< Payload type *
-    public let type_: rte_eth_payload_type_rte_eth_payload_type
+    public let type_: rte_eth_payload_type
     public let src_offset: VArray<UInt16, $16>
-    public func clone(): rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {"
-        output += " type: "
-        output += this.type_.toString()
-        output += ", src_offset: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..16) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.src_offset[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(type_: rte_eth_payload_type_rte_eth_payload_type, src_offset: VArray<UInt16, $16>) {
+    public init(type_: rte_eth_payload_type, src_offset: VArray<UInt16, $16>) {
         this.type_ = type_
         this.src_offset = src_offset
     }
@@ -1103,42 +788,22 @@ public struct rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()
+        let size = sizeOf<rte_eth_flex_payload_cfg>()
         if (size != 36) {
-            throw Exception("Size of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 36 but ${size} bytes")
+            throw Exception("Size of rte_eth_flex_payload_cfg is not 36 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg>()
+        let align = alignOf<rte_eth_flex_payload_cfg>()
         if (align != 4) {
-            throw Exception(
-                "Alignment of rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_flex_payload_cfg is not 4 but ${align} bytes")
         }
 }
 
 // A structure used to define FDIR masks for flexible payload
 // for each flow type
 @C
-public struct rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
+public struct rte_eth_fdir_flex_mask {
     public let flow_type: UInt16
     public let mask: VArray<UInt8, $16>
-    public func clone(): rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {"
-        output += " flow_type: "
-        output += this.flow_type.toString()
-        output += ", mask: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..16) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.mask[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
     public init(flow_type: UInt16, mask: VArray<UInt8, $16>) {
         this.flow_type = flow_type
         this.mask = mask
@@ -1148,59 +813,28 @@ public struct rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()
+        let size = sizeOf<rte_eth_fdir_flex_mask>()
         if (size != 18) {
-            throw Exception("Size of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 18 but ${size} bytes")
+            throw Exception("Size of rte_eth_fdir_flex_mask is not 18 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask>()
+        let align = alignOf<rte_eth_fdir_flex_mask>()
         if (align != 2) {
-            throw Exception("Alignment of rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask is not 2 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_fdir_flex_mask is not 2 but ${align} bytes")
         }
 }
 
 // A structure used to define all flexible payload related setting
 // include flex payload and flex mask
 @C
-public struct rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
+public struct rte_eth_fdir_flex_conf {
     //< The number of following payload cfg *
     public let nb_payloads: UInt16
     //< The number of following mask *
     public let nb_flexmasks: UInt16
-    public let flex_set: VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>
-    public let flex_mask: VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>
-    public func clone(): rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {"
-        output += " nb_payloads: "
-        output += this.nb_payloads.toString()
-        output += ", nb_flexmasks: "
-        output += this.nb_flexmasks.toString()
-        output += ", flex_set: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..8) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.flex_set[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += ", flex_mask: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..22) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.flex_mask[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(nb_payloads: UInt16, nb_flexmasks: UInt16,
-        flex_set: VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>,
-        flex_mask: VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>) {
+    public let flex_set: VArray<rte_eth_flex_payload_cfg, $8>
+    public let flex_mask: VArray<rte_eth_fdir_flex_mask, $22>
+    public init(nb_payloads: UInt16, nb_flexmasks: UInt16, flex_set: VArray<rte_eth_flex_payload_cfg, $8>,
+        flex_mask: VArray<rte_eth_fdir_flex_mask, $22>) {
         this.nb_payloads = nb_payloads
         this.nb_flexmasks = nb_flexmasks
         this.flex_set = flex_set
@@ -1211,13 +845,13 @@ public struct rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()
+        let size = sizeOf<rte_eth_fdir_flex_conf>()
         if (size != 688) {
-            throw Exception("Size of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 688 but ${size} bytes")
+            throw Exception("Size of rte_eth_fdir_flex_conf is not 688 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf>()
+        let align = alignOf<rte_eth_fdir_flex_conf>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_fdir_flex_conf is not 4 but ${align} bytes")
         }
 }
 
@@ -1226,40 +860,19 @@ let _ = {
 //
 // If mode is RTE_FDIR_DISABLE, the pballoc value is ignored.
 @C
-public struct rte_fdir_conf_rte_fdir_conf {
+public struct rte_fdir_conf {
     //< Flow Director mode. *
-    public let mode: rte_fdir_mode_rte_fdir_mode
+    public let mode: rte_fdir_mode
     //< Space for FDIR filters. *
-    public let pballoc: rte_fdir_pballoc_type_rte_fdir_pballoc_type
+    public let pballoc: rte_fdir_pballoc_type
     //< How to report FDIR hash. *
-    public let status: rte_fdir_status_mode_rte_fdir_status_mode
+    public let status: rte_fdir_status_mode
     // RX queue of packets matching a "drop" filter in perfect mode. *
     public let drop_queue: UInt8
-    public let mask: rte_eth_fdir_masks_rte_eth_fdir_masks
-    public let flex_conf: rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf
-    public func clone(): rte_fdir_conf_rte_fdir_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_fdir_conf_rte_fdir_conf {"
-        output += " mode: "
-        output += this.mode.toString()
-        output += ", pballoc: "
-        output += this.pballoc.toString()
-        output += ", status: "
-        output += this.status.toString()
-        output += ", drop_queue: "
-        output += this.drop_queue.toString()
-        output += ", mask: "
-        output += this.mask.toString()
-        output += ", flex_conf: "
-        output += this.flex_conf.toString()
-        output += " }"
-        return output
-    }
-    public init(mode: rte_fdir_mode_rte_fdir_mode, pballoc: rte_fdir_pballoc_type_rte_fdir_pballoc_type,
-        status: rte_fdir_status_mode_rte_fdir_status_mode, drop_queue: UInt8,
-        mask: rte_eth_fdir_masks_rte_eth_fdir_masks, flex_conf: rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf) {
+    public let mask: rte_eth_fdir_masks
+    public let flex_conf: rte_eth_fdir_flex_conf
+    public init(mode: rte_fdir_mode, pballoc: rte_fdir_pballoc_type, status: rte_fdir_status_mode, drop_queue: UInt8,
+        mask: rte_eth_fdir_masks, flex_conf: rte_eth_fdir_flex_conf) {
         this.mode = mode
         this.pballoc = pballoc
         this.status = status
@@ -1272,35 +885,23 @@ public struct rte_fdir_conf_rte_fdir_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_fdir_conf_rte_fdir_conf>()
+        let size = sizeOf<rte_fdir_conf>()
         if (size != 772) {
-            throw Exception("Size of rte_fdir_conf_rte_fdir_conf is not 772 but ${size} bytes")
+            throw Exception("Size of rte_fdir_conf is not 772 but ${size} bytes")
         }
-        let align = alignOf<rte_fdir_conf_rte_fdir_conf>()
+        let align = alignOf<rte_fdir_conf>()
         if (align != 4) {
-            throw Exception("Alignment of rte_fdir_conf_rte_fdir_conf is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_fdir_conf is not 4 but ${align} bytes")
         }
 }
 
 // A structure used to enable/disable specific device interrupts.
 @C
-public struct rte_intr_conf_rte_intr_conf {
+public struct rte_intr_conf {
     // enable/disable lsc interrupt. 0 (default) - disable, 1 enable *
     public let lsc: UInt16
     // enable/disable rxq interrupt. 0 (default) - disable, 1 enable *
     public let rxq: UInt16
-    public func clone(): rte_intr_conf_rte_intr_conf {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_intr_conf_rte_intr_conf {"
-        output += " lsc: "
-        output += this.lsc.toString()
-        output += ", rxq: "
-        output += this.rxq.toString()
-        output += " }"
-        return output
-    }
     public init(lsc: UInt16, rxq: UInt16) {
         this.lsc = lsc
         this.rxq = rxq
@@ -1310,41 +911,25 @@ public struct rte_intr_conf_rte_intr_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_intr_conf_rte_intr_conf>()
+        let size = sizeOf<rte_intr_conf>()
         if (size != 4) {
-            throw Exception("Size of rte_intr_conf_rte_intr_conf is not 4 but ${size} bytes")
+            throw Exception("Size of rte_intr_conf is not 4 but ${size} bytes")
         }
-        let align = alignOf<rte_intr_conf_rte_intr_conf>()
+        let align = alignOf<rte_intr_conf>()
         if (align != 2) {
-            throw Exception("Alignment of rte_intr_conf_rte_intr_conf is not 2 but ${align} bytes")
+            throw Exception("Alignment of rte_intr_conf is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
+public struct rte_eth_conf__cjbind_ty_1 {
     //< Port RSS configuration *
-    public let rss_conf: rte_eth_rss_conf_rte_eth_rss_conf
-    public let vmdq_dcb_conf: rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf
-    public let dcb_rx_conf: rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf
-    public let vmdq_rx_conf: rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf
-    public func clone(): rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {"
-        output += " rss_conf: "
-        output += this.rss_conf.toString()
-        output += ", vmdq_dcb_conf: "
-        output += this.vmdq_dcb_conf.toString()
-        output += ", dcb_rx_conf: "
-        output += this.dcb_rx_conf.toString()
-        output += ", vmdq_rx_conf: "
-        output += this.vmdq_rx_conf.toString()
-        output += " }"
-        return output
-    }
-    public init(rss_conf: rte_eth_rss_conf_rte_eth_rss_conf, vmdq_dcb_conf: rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf,
-        dcb_rx_conf: rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf, vmdq_rx_conf: rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf) {
+    public let rss_conf: rte_eth_rss_conf
+    public let vmdq_dcb_conf: rte_eth_vmdq_dcb_conf
+    public let dcb_rx_conf: rte_eth_dcb_rx_conf
+    public let vmdq_rx_conf: rte_eth_vmdq_rx_conf
+    public init(rss_conf: rte_eth_rss_conf, vmdq_dcb_conf: rte_eth_vmdq_dcb_conf, dcb_rx_conf: rte_eth_dcb_rx_conf,
+        vmdq_rx_conf: rte_eth_vmdq_rx_conf) {
         this.rss_conf = rss_conf
         this.vmdq_dcb_conf = vmdq_dcb_conf
         this.dcb_rx_conf = dcb_rx_conf
@@ -1355,55 +940,50 @@ public struct rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_conf__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<rte_eth_conf__cjbind_ty_1>()
         if (size != 2120) {
-            throw Exception("Size of rte_eth_conf__cjbind_ty_1__cjbind_ty_1 is not 2120 but ${size} bytes")
+            throw Exception("Size of rte_eth_conf__cjbind_ty_1 is not 2120 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_conf__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<rte_eth_conf__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_conf__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
+public struct rte_eth_conf__cjbind_ty_2 {
     var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }
     public init() {}
-    public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
-        return __cjbind_read_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
+    public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf {
+        return __cjbind_read_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
-    public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(
-            this._storage, val)
+    public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf): Unit {
+        this._storage = __cjbind_write_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
     }
-    public func dcb_tx_conf(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
-        return __cjbind_read_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
+    public func dcb_tx_conf(): rte_eth_dcb_tx_conf {
+        return __cjbind_read_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
-    public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
+    public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf): Unit {
+        this._storage = __cjbind_write_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
     }
-    public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
-        return __cjbind_read_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage)
+    public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf {
+        return __cjbind_read_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage)
     }
-    public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage,
-            val)
-    }
-    public func clone(): rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
-        return this
+    public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf): Unit {
+        this._storage = __cjbind_write_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage, val)
     }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_conf__cjbind_ty_2__cjbind_ty_2>()
+        let size = sizeOf<rte_eth_conf__cjbind_ty_2>()
         if (size != 12) {
-            throw Exception("Size of rte_eth_conf__cjbind_ty_2__cjbind_ty_2 is not 12 but ${size} bytes")
+            throw Exception("Size of rte_eth_conf__cjbind_ty_2 is not 12 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_conf__cjbind_ty_2__cjbind_ty_2>()
+        let align = alignOf<rte_eth_conf__cjbind_ty_2>()
         if (align != 4) {
-            throw Exception("Alignment of rte_eth_conf__cjbind_ty_2__cjbind_ty_2 is not 4 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_conf__cjbind_ty_2 is not 4 but ${align} bytes")
         }
 }
 
@@ -1411,7 +991,7 @@ let _ = {
 // Depending upon the RX multi-queue mode, extra advanced
 // configuration settings may be needed.
 @C
-public struct rte_eth_conf_rte_eth_conf {
+public struct rte_eth_conf {
     //< bitmap of ETH_LINK_SPEED_XXX of speeds to be
     //used. ETH_LINK_SPEED_FIXED disables link
     //autonegotiation, and a unique speed shall be
@@ -1421,9 +1001,9 @@ public struct rte_eth_conf_rte_eth_conf {
     //supported are advertised. *
     public let link_speeds: UInt32
     //< Port RX configuration. *
-    public let rxmode: rte_eth_rxmode_rte_eth_rxmode
+    public let rxmode: rte_eth_rxmode
     //< Port TX configuration. *
-    public let txmode: rte_eth_txmode_rte_eth_txmode
+    public let txmode: rte_eth_txmode
     //< Loopback operation mode. By default the value
     //is 0, meaning the loopback mode is disabled.
     //Read the datasheet of given ethernet controller
@@ -1431,23 +1011,19 @@ public struct rte_eth_conf_rte_eth_conf {
     //are defined in implementation of each driver. *
     public let lpbk_mode: UInt32
     //< Port RX filtering configuration (union). *
-    public let rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1
+    public let rx_adv_conf: rte_eth_conf__cjbind_ty_1
     //< Port TX DCB configuration (union). *
-    public let tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2
+    public let tx_adv_conf: rte_eth_conf__cjbind_ty_2
     // Currently,Priority Flow Control(PFC) are supported,if DCB with PFC
     //is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *
     public let dcb_capability_en: UInt32
     //< FDIR configuration. *
-    public let fdir_conf: rte_fdir_conf_rte_fdir_conf
+    public let fdir_conf: rte_fdir_conf
     //< Interrupt mode configuration. *
-    public let intr_conf: rte_intr_conf_rte_intr_conf
-    public func clone(): rte_eth_conf_rte_eth_conf {
-        return this
-    }
-    public init(link_speeds: UInt32, rxmode: rte_eth_rxmode_rte_eth_rxmode, txmode: rte_eth_txmode_rte_eth_txmode,
-        lpbk_mode: UInt32, rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1,
-        tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2, dcb_capability_en: UInt32,
-        fdir_conf: rte_fdir_conf_rte_fdir_conf, intr_conf: rte_intr_conf_rte_intr_conf) {
+    public let intr_conf: rte_intr_conf
+    public init(link_speeds: UInt32, rxmode: rte_eth_rxmode, txmode: rte_eth_txmode, lpbk_mode: UInt32,
+        rx_adv_conf: rte_eth_conf__cjbind_ty_1, tx_adv_conf: rte_eth_conf__cjbind_ty_2, dcb_capability_en: UInt32,
+        fdir_conf: rte_fdir_conf, intr_conf: rte_intr_conf) {
         this.link_speeds = link_speeds
         this.rxmode = rxmode
         this.txmode = txmode
@@ -1463,12 +1039,12 @@ public struct rte_eth_conf_rte_eth_conf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_conf_rte_eth_conf>()
+        let size = sizeOf<rte_eth_conf>()
         if (size != 2944) {
-            throw Exception("Size of rte_eth_conf_rte_eth_conf is not 2944 but ${size} bytes")
+            throw Exception("Size of rte_eth_conf is not 2944 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_conf_rte_eth_conf>()
+        let align = alignOf<rte_eth_conf>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_conf_rte_eth_conf is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_conf is not 8 but ${align} bytes")
         }
 }

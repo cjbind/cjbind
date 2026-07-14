@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 template <typename T, typename U>
 class DoesNotUse {
@@ -9,9 +9,4 @@ class DoesNotUse {
         Aliased member;
         Typedefed another;
     };
-};
-
-struct TemplateParamUsage9Holder {
-    DoesNotUse<long, float> value;
-    DoesNotUse<char, short> other;
 };

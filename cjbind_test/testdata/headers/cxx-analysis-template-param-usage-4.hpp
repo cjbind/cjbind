@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 template <typename T>
 class UsesTemplateParameter {
@@ -8,8 +8,4 @@ class UsesTemplateParameter {
     class DoesNotUseTemplateParameters {
         int x;
     };
-};
-
-struct TemplateParamUsage4Holder {
-    UsesTemplateParameter<unsigned short> value;
 };

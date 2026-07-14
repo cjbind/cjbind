@@ -1,24 +1,14 @@
 package cjbind_ffi
 
-public const FOO_A: foo__cjbind_ty_1__cjbind_ty_1 = 0
-public const FOO_B: foo__cjbind_ty_1__cjbind_ty_1 = 1
+public const FOO_A: foo__cjbind_ty_1 = 0
+public const FOO_B: foo__cjbind_ty_1 = 1
 
-public type foo__cjbind_ty_1__cjbind_ty_1 = UInt32
+public type foo__cjbind_ty_1 = UInt32
 
 @C
-public struct foo_foo {
-    public let member: foo__cjbind_ty_1__cjbind_ty_1
-    public func clone(): foo_foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "foo_foo {"
-        output += " member: "
-        output += this.member.toString()
-        output += " }"
-        return output
-    }
-    public init(member: foo__cjbind_ty_1__cjbind_ty_1) {
+public struct foo {
+    public let member: foo__cjbind_ty_1
+    public init(member: foo__cjbind_ty_1) {
         this.member = member
     }
 }
@@ -26,34 +16,32 @@ public struct foo_foo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 4) {
-            throw Exception("Size of foo_foo is not 4 but ${size} bytes")
+            throw Exception("Size of foo is not 4 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 4) {
-            throw Exception("Alignment of foo_foo is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
 }
 
-public const Foo_Bar: Foo_Foo = 0
-public const Foo_Qux: Foo_Foo = 1
+public const Foo_Bar: Foo = 0
+public const Foo_Qux: Foo = 1
 
-public type Foo_Foo = UInt32
+public type Foo = UInt32
 
-public const Neg_MinusOne: Neg_Neg = -1
-public const Neg_One: Neg_Neg = 1
+public const Neg_MinusOne: Neg = -1
+public const Neg_One: Neg = 1
 
-public type Neg_Neg = Int32
+public type Neg = Int32
 
-public const NoDebug_NoDebug1: NoDebug_NoDebug = 0
-public const NoDebug_NoDebug2: NoDebug_NoDebug = 1
+public const NoDebug_NoDebug1: NoDebug = 0
+public const NoDebug_NoDebug2: NoDebug = 1
 
-// <div rustbindgen nodebug></div> *
-public type NoDebug_NoDebug = UInt32
+public type NoDebug = UInt32
 
-public const Debug_Debug1: Debug_Debug = 0
-public const Debug_Debug2: Debug_Debug = 1
+public const Debug_Debug1: Debug = 0
+public const Debug_Debug2: Debug = 1
 
-// <div rustbindgen derive="Debug"></div> *
-public type Debug_Debug = UInt32
+public type Debug = UInt32

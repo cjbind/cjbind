@@ -1,32 +1,32 @@
 package cjbind_ffi
 
-foreign func _ZN6WidgetC1Ev(this_: CPointer<Widget_Widget>): Unit
+foreign func _ZN6WidgetC1Ev(this_: CPointer<Widget>): Unit
 
-public unsafe func Widget_Widget_constructor(this_: CPointer<Widget_Widget>): Unit {
+public unsafe func Widget_constructor(this_: CPointer<Widget>): Unit {
     return _ZN6WidgetC1Ev(this_)
 }
 
-foreign func _ZN6WidgetC1Ei(this_: CPointer<Widget_Widget>, initial: Int32): Unit
+foreign func _ZN6WidgetC1Ei(this_: CPointer<Widget>, initial: Int32): Unit
 
-public unsafe func Widget_Widget_constructor1(this_: CPointer<Widget_Widget>, initial: Int32): Unit {
+public unsafe func Widget_constructor1(this_: CPointer<Widget>, initial: Int32): Unit {
     return _ZN6WidgetC1Ei(this_, initial)
 }
 
-foreign func _ZN6WidgetD1Ev(this_: CPointer<Widget_Widget>): Unit
+foreign func _ZN6WidgetD1Ev(this_: CPointer<Widget>): Unit
 
-public unsafe func Widget_Widget_destructor(this_: CPointer<Widget_Widget>): Unit {
+public unsafe func Widget_Widget_destructor(this_: CPointer<Widget>): Unit {
     return _ZN6WidgetD1Ev(this_)
 }
 
-foreign func _ZNK6Widget3getEv(this_: CPointer<Widget_Widget>): Int32
+foreign func _ZNK6Widget3getEv(this_: CPointer<Widget>): Int32
 
-public unsafe func Widget_get(this_: CPointer<Widget_Widget>): Int32 {
+public unsafe func Widget_get(this_: CPointer<Widget>): Int32 {
     return _ZNK6Widget3getEv(this_)
 }
 
-foreign func _ZN6Widget3setEi(this_: CPointer<Widget_Widget>, next: Int32): Unit
+foreign func _ZN6Widget3setEi(this_: CPointer<Widget>, next: Int32): Unit
 
-public unsafe func Widget_set(this_: CPointer<Widget_Widget>, next: Int32): Unit {
+public unsafe func Widget_set(this_: CPointer<Widget>, next: Int32): Unit {
     return _ZN6Widget3setEi(this_, next)
 }
 
@@ -37,15 +37,8 @@ public unsafe func Widget_twice(input: Int32): Int32 {
 }
 
 @C
-public struct Widget_Widget {
+public struct Widget {
     private let value: Int32
-    public func toString(): String {
-        var output = "Widget_Widget {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     private init(value: Int32) {
         this.value = value
     }
@@ -54,13 +47,13 @@ public struct Widget_Widget {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Widget_Widget>()
+        let size = sizeOf<Widget>()
         if (size != 4) {
-            throw Exception("Size of Widget_Widget is not 4 but ${size} bytes")
+            throw Exception("Size of Widget is not 4 but ${size} bytes")
         }
-        let align = alignOf<Widget_Widget>()
+        let align = alignOf<Widget>()
         if (align != 4) {
-            throw Exception("Alignment of Widget_Widget is not 4 but ${align} bytes")
+            throw Exception("Alignment of Widget is not 4 but ${align} bytes")
         }
 }
 
@@ -76,23 +69,15 @@ public unsafe func overloaded1(input: Float64): Float64 {
     return _Z10overloadedd(input)
 }
 
-foreign func _ZN1C1EC1Ev(this_: CPointer<C_E_E>): Unit
+foreign func _ZN1C1EC1Ev(this_: CPointer<C_E>): Unit
 
-public unsafe func C_E_E_constructor(this_: CPointer<C_E_E>): Unit {
+public unsafe func C_E_constructor(this_: CPointer<C_E>): Unit {
     return _ZN1C1EC1Ev(this_)
 }
 
 @C
-public struct C_E_E {
+public struct C_E {
     let _cjbind_empty: UInt8
-    public func clone(): C_E_E {
-        return this
-    }
-    public func toString(): String {
-        var output = "C_E_E {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -101,30 +86,25 @@ public struct C_E_E {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<C_E_E>()
+        let size = sizeOf<C_E>()
         if (size != 1) {
-            throw Exception("Size of C_E_E is not 1 but ${size} bytes")
+            throw Exception("Size of C_E is not 1 but ${size} bytes")
         }
-        let align = alignOf<C_E_E>()
+        let align = alignOf<C_E>()
         if (align != 1) {
-            throw Exception("Alignment of C_E_E is not 1 but ${align} bytes")
+            throw Exception("Alignment of C_E is not 1 but ${align} bytes")
         }
 }
 
-foreign func _ZN1D1ED1Ev(this_: CPointer<D_E_E>): Unit
+foreign func _ZN1D1ED1Ev(this_: CPointer<D_E>): Unit
 
-public unsafe func D_E_E_destructor(this_: CPointer<D_E_E>): Unit {
+public unsafe func D_E_E_destructor(this_: CPointer<D_E>): Unit {
     return _ZN1D1ED1Ev(this_)
 }
 
 @C
-public struct D_E_E {
+public struct D_E {
     let _cjbind_empty: UInt8
-    public func toString(): String {
-        var output = "D_E_E {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -133,27 +113,19 @@ public struct D_E_E {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<D_E_E>()
+        let size = sizeOf<D_E>()
         if (size != 1) {
-            throw Exception("Size of D_E_E is not 1 but ${size} bytes")
+            throw Exception("Size of D_E is not 1 but ${size} bytes")
         }
-        let align = alignOf<D_E_E>()
+        let align = alignOf<D_E>()
         if (align != 1) {
-            throw Exception("Alignment of D_E_E is not 1 but ${align} bytes")
+            throw Exception("Alignment of D_E is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct ManglingArgument_ManglingArgument {
+public struct ManglingArgument {
     let _cjbind_empty: UInt8
-    public func clone(): ManglingArgument_ManglingArgument {
-        return this
-    }
-    public func toString(): String {
-        var output = "ManglingArgument_ManglingArgument {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -162,12 +134,12 @@ public struct ManglingArgument_ManglingArgument {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ManglingArgument_ManglingArgument>()
+        let size = sizeOf<ManglingArgument>()
         if (size != 1) {
-            throw Exception("Size of ManglingArgument_ManglingArgument is not 1 but ${size} bytes")
+            throw Exception("Size of ManglingArgument is not 1 but ${size} bytes")
         }
-        let align = alignOf<ManglingArgument_ManglingArgument>()
+        let align = alignOf<ManglingArgument>()
         if (align != 1) {
-            throw Exception("Alignment of ManglingArgument_ManglingArgument is not 1 but ${align} bytes")
+            throw Exception("Alignment of ManglingArgument is not 1 but ${align} bytes")
         }
 }

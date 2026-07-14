@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 template <typename T, typename U, typename NeverUsed>
 class DoublyIndirectUsage {
@@ -11,8 +11,4 @@ class DoublyIndirectUsage {
     };
 
     IndirectUsage doubly_indirect;
-};
-
-struct TemplateParamUsage10Holder {
-    DoublyIndirectUsage<long, float, bool> value;
 };

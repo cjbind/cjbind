@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct foo_foo {
+public struct foo {
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public func a(): UInt8 {
         var s = this._bitfield_1
@@ -64,26 +64,17 @@ public struct foo_foo {
     }
     public var b: CPointer<CPointer<Unit>> = unsafe { zeroValue<CPointer<CPointer<Unit>>>() }
     public init() {}
-    public func toString(): String {
-        var output = "foo_foo {"
-        output += " a: "
-        output += this.a().toString()
-        output += ", b: "
-        output += "<incomplete array>"
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 8) {
-            throw Exception("Size of foo_foo is not 8 but ${size} bytes")
+            throw Exception("Size of foo is not 8 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 8) {
-            throw Exception("Alignment of foo_foo is not 8 but ${align} bytes")
+            throw Exception("Alignment of foo is not 8 but ${align} bytes")
         }
 }

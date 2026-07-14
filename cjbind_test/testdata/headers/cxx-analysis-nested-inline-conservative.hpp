@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++20 --enable-cxx-namespaces --conservative-inline-namespaces
+// cjbind-options: --enable-cxx-namespaces --conservative-inline-namespaces -- -x c++ -std=c++20
 
 namespace ranges::inline v1::detail {
 struct Value {

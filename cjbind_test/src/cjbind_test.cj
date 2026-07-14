@@ -6,13 +6,7 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.{
-    CjbindOptions,
-    ConfiguredCanDerive,
-    ConfiguredDeriveTrait,
-    DefaultEnumStyle,
-    FieldInfo
-}
+import cjbind.options.{CjbindOptions, DefaultEnumStyle, FieldInfo}
 import cjbind.utils.formatString
 import std.env.{getCommandLine, getVariable}
 
@@ -36,219 +30,201 @@ func searchTestCases(): Array<String> {
     return paths.toArray()
 }
 
+func testOptionValue(
+    parts: Array<String>,
+    index: Int64,
+    option: String,
+    testcase: String
+): String {
+    let valueIndex = index + 1
+    if (valueIndex >= parts.size || parts[valueIndex] == "--" || parts[valueIndex].startsWith("--")) {
+        throw Exception("${testcase}: missing value for test option '${option}'")
+    }
+    return parts[valueIndex].trimAscii()
+}
+
+func configureStructFieldRenameCallback(opt: CjbindOptions): Unit {
+    opt.fieldNameCallback = {
+        info: FieldInfo =>
+            if (info.typeName != "RenameMe") {
+                return None
+            }
+            if (info.fieldTypeName == Some("char")) {
+                return Some("char_${info.fieldName}")
+            }
+            return match (info.fieldName) {
+                case "renamed_member" => Some("rust_friendly")
+                case "bitfield_uGlyName" => Some("bitfield_less_ugly_name")
+                case "bitfieldWorse_name" => Some("bitfield_better_name")
+                case _ => None
+            }
+    }
+}
+
+func applyTestParseCallback(opt: CjbindOptions, callback: String, testcase: String): Unit {
+    match (callback) {
+        case "struct-field-rename" => configureStructFieldRenameCallback(opt)
+        case "" => throw Exception("${testcase}: missing cjbind parse callback name")
+        case _ => throw Exception("${testcase}: unknown cjbind parse callback '${callback}'")
+    }
+}
+
+func applyTestOptionLine(opt: CjbindOptions, optsStr: String, testcase: String): Unit {
+    let parts = optsStr.split(" ", removeEmpty: true)
+    if (parts.isEmpty()) {
+        throw Exception("${testcase}: missing cjbind test option")
+    }
+    var i = 0
+    while (i < parts.size) {
+        let part = parts[i].trimAscii()
+        if (part == "--") {
+            if (i + 1 >= parts.size) {
+                throw Exception("${testcase}: missing Clang arguments after '--'")
+            }
+            i += 1
+            while (i < parts.size) {
+                opt.clangArgs.add(parts[i].trimAscii())
+                i += 1
+            }
+        } else if (part == "--default-enum-style") {
+            let value = testOptionValue(parts, i, part, testcase)
+            opt.defaultEnumStyle = match (value) {
+                case "newtype" => DefaultEnumStyle.NewType
+                case "consts" => DefaultEnumStyle.Consts
+                case _ => throw Exception("${testcase}: invalid value '${value}' for test option '${part}'")
+            }
+            i += 2
+        } else if (part == "--objc") {
+            opt.objc = true
+            i += 1
+        } else if (part == "--no-enum-prefix") {
+            opt.noEnumPrefix = true
+            i += 1
+        } else if (part == "--fit-macro-constants") {
+            opt.fitMacroConstants = true
+            i += 1
+        } else if (part == "--no-union-accessor-workaround") {
+            opt.useUnionAccessorWorkaround = false
+            i += 1
+        } else if (part == "--auto-cstring") {
+            opt.autoCString = true
+            i += 1
+        } else if (part == "--enable-cxx-namespaces") {
+            opt.enableCxxNamespaces = true
+            i += 1
+        } else if (part == "--conservative-inline-namespaces") {
+            opt.conservativeInlineNamespaces = true
+            i += 1
+        } else if (part == "--ignore-methods") {
+            opt.generateMethods = false
+            i += 1
+        } else if (part == "--generate") {
+            let value = testOptionValue(parts, i, part, testcase)
+            opt.generateFunctions = false
+            opt.generateTypes = false
+            opt.generateVars = false
+            opt.generateMethods = false
+            opt.generateConstructors = false
+            opt.generateDestructors = false
+            for (item in value.split(",")) {
+                match (item.trimAscii()) {
+                    case "methods" => opt.generateMethods = true
+                    case "constructors" => opt.generateConstructors = true
+                    case "destructors" => opt.generateDestructors = true
+                    case "functions" => opt.generateFunctions = true
+                    case "types" => opt.generateTypes = true
+                    case "vars" => opt.generateVars = true
+                    case invalid => throw Exception("${testcase}: invalid generation item '${invalid}'")
+                }
+            }
+            i += 2
+        } else if (part == "--represent-cxx-operators") {
+            opt.representCxxOperators = true
+            i += 1
+        } else if (part == "--respect-cxx-access-specs") {
+            opt.respectCxxAccessSpecs = true
+            i += 1
+        } else if (part == "--use-specific-virtual-function-receiver") {
+            opt.useSpecificVirtualFunctionReceiver = true
+            i += 1
+        } else if (part == "--generate-inline-functions") {
+            opt.generateInlineFunctions = true
+            i += 1
+        } else if (part == "--generate-deleted-functions") {
+            opt.generateDeletedFunctions = true
+            i += 1
+        } else if (part == "--generate-pure-virtual-functions") {
+            opt.generatePureVirtualFunctions = true
+            i += 1
+        } else if (part == "--generate-private-functions") {
+            opt.generatePrivateFunctions = true
+            i += 1
+        } else if (part == "--vtable-generation") {
+            opt.vtableGeneration = true
+            i += 1
+        } else if (part == "--blocklist-type") {
+            opt.blocklistedTypes.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--blocklist-function") {
+            opt.blocklistedFunctions.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--blocklist-item") {
+            opt.blocklistedItems.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--blocklist-var") {
+            opt.blocklistedVars.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--blocklist-file") {
+            opt.blocklistedFiles.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--opaque-type") {
+            opt.opaqueTypes.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--allowlist-type") {
+            opt.allowlistedTypes.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--allowlist-function") {
+            opt.allowlistedFunctions.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--allowlist-item") {
+            opt.allowlistedItems.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--allowlist-var") {
+            opt.allowlistedVars.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--allowlist-file") {
+            opt.allowlistedFiles.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--no-recursive-allowlist") {
+            opt.allowlistRecursively = false
+            i += 1
+        } else if (part == "--no-record-matches") {
+            opt.recordMatches = false
+            i += 1
+        } else if (part == "--disable-untagged-union") {
+            opt.untaggedUnion = false
+            i += 1
+        } else if (part == "--no-size_t-is-usize") {
+            opt.sizeTIsUsize = false
+            i += 1
+        } else {
+            throw Exception("${testcase}: unknown test option '${part}'")
+        }
+    }
+}
+
 func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
     let content = String.fromUtf8(File.readFrom(Path(testcase)))
     for (line in content.split("\n")) {
         let trimmed = line.trimAscii()
         if (trimmed.startsWith("// cjbind-options:")) {
             let optsStr = trimmed["// cjbind-options:".size..].trimAscii()
-            let parts = optsStr.split(" ", removeEmpty: true)
-            var i = 0
-            while (i < parts.size) {
-                let part = parts[i].trimAscii()
-                if (part == "--default-enum-style" && i + 1 < parts.size) {
-                    opt.defaultEnumStyle = match (parts[i + 1].trimAscii()) {
-                        case "newtype" => DefaultEnumStyle.NewType
-                        case _ => DefaultEnumStyle.Consts
-                    }
-                    i += 2
-                } else if (part == "--objc") {
-                    opt.objc = true
-                    i += 1
-                } else if (part == "--no-enum-prefix") {
-                    opt.noEnumPrefix = true
-                    i += 1
-                } else if (part == "--fit-macro-constants") {
-                    opt.fitMacroConstants = true
-                    i += 1
-                } else if (part == "--no-union-accessor-workaround") {
-                    opt.useUnionAccessorWorkaround = false
-                    i += 1
-                } else if (part == "--auto-cstring") {
-                    opt.autoCString = true
-                    i += 1
-                } else if (part == "--enable-cxx-namespaces") {
-                    opt.enableCxxNamespaces = true
-                    i += 1
-                } else if (part == "--conservative-inline-namespaces") {
-                    opt.conservativeInlineNamespaces = true
-                    i += 1
-                } else if (part == "--ignore-methods") {
-                    opt.generateMethods = false
-                    i += 1
-                } else if (part == "--generate" && i + 1 < parts.size) {
-                    opt.generateFunctions = false
-                    opt.generateTypes = false
-                    opt.generateVars = false
-                    opt.generateMethods = false
-                    opt.generateConstructors = false
-                    opt.generateDestructors = false
-                    for (item in parts[i + 1].trimAscii().split(",")) {
-                        match (item.trimAscii()) {
-                            case "methods" => opt.generateMethods = true
-                            case "constructors" => opt.generateConstructors = true
-                            case "destructors" => opt.generateDestructors = true
-                            case "functions" => opt.generateFunctions = true
-                            case "types" => opt.generateTypes = true
-                            case "vars" => opt.generateVars = true
-                            case value => eprintln("Warning: unrecognized generation item: ${value}")
-                        }
-                    }
-                    i += 2
-                } else if (part == "--represent-cxx-operators") {
-                    opt.representCxxOperators = true
-                    i += 1
-                } else if (part == "--respect-cxx-access-specs") {
-                    opt.respectCxxAccessSpecs = true
-                    i += 1
-                } else if (part == "--use-specific-virtual-function-receiver") {
-                    opt.useSpecificVirtualFunctionReceiver = true
-                    i += 1
-                } else if (part == "--use-distinct-char16-t") {
-                    opt.useDistinctChar16T = true
-                    i += 1
-                } else if (part == "--generate-inline-functions") {
-                    opt.generateInlineFunctions = true
-                    i += 1
-                } else if (part == "--generate-deleted-functions") {
-                    opt.generateDeletedFunctions = true
-                    i += 1
-                } else if (part == "--generate-pure-virtual-functions") {
-                    opt.generatePureVirtualFunctions = true
-                    i += 1
-                } else if (part == "--generate-private-functions") {
-                    opt.generatePrivateFunctions = true
-                    i += 1
-                } else if (part == "--vtable-generation") {
-                    opt.vtableGeneration = true
-                    i += 1
-                } else if (part == "--blocklist-type" && i + 1 < parts.size) {
-                    opt.blocklistedTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--blocklist-function" && i + 1 < parts.size) {
-                    opt.blocklistedFunctions.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--blocklist-item" && i + 1 < parts.size) {
-                    opt.blocklistedItems.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--blocklist-var" && i + 1 < parts.size) {
-                    opt.blocklistedVars.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--blocklist-file" && i + 1 < parts.size) {
-                    opt.blocklistedFiles.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--opaque-type" && i + 1 < parts.size) {
-                    opt.opaqueTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--allowlist-type" && i + 1 < parts.size) {
-                    opt.allowlistedTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--allowlist-function" && i + 1 < parts.size) {
-                    opt.allowlistedFunctions.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--allowlist-item" && i + 1 < parts.size) {
-                    opt.allowlistedItems.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--allowlist-var" && i + 1 < parts.size) {
-                    opt.allowlistedVars.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--allowlist-file" && i + 1 < parts.size) {
-                    opt.allowlistedFiles.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--no-recursive-allowlist") {
-                    opt.allowlistRecursively = false
-                    i += 1
-                } else if (part == "--no-record-matches") {
-                    opt.recordMatches = false
-                    i += 1
-                } else if (part == "--disable-untagged-union") {
-                    opt.untaggedUnion = false
-                    i += 1
-                } else if (part == "--no-size_t-is-usize") {
-                    opt.sizeTIsUsize = false
-                    i += 1
-                } else if (part == "--no-derive-copy") {
-                    opt.deriveCopy = false
-                    i += 1
-                } else if (part == "--no-derive-debug") {
-                    opt.deriveDebug = false
-                    i += 1
-                } else if (part == "--with-derive-default") {
-                    opt.deriveDefault = true
-                    i += 1
-                } else if (part == "--no-derive-default") {
-                    opt.deriveDefault = false
-                    i += 1
-                } else if (part == "--with-derive-hash") {
-                    opt.deriveHash = true
-                    i += 1
-                } else if (part == "--with-derive-partialeq") {
-                    opt.derivePartialEq = true
-                    i += 1
-                } else if (part == "--with-derive-eq") {
-                    opt.deriveEq = true
-                    i += 1
-                } else if (part == "--with-derive-partialord") {
-                    opt.derivePartialOrd = true
-                    i += 1
-                } else if (part == "--with-derive-ord") {
-                    opt.deriveOrd = true
-                    i += 1
-                } else if (part == "--impl-debug") {
-                    opt.implDebug = true
-                    i += 1
-                } else if (part == "--impl-partialeq") {
-                    opt.implPartialEq = true
-                    i += 1
-                } else if (part == "--blocklisted-traits-manually") {
-                    opt.blocklistedTypeImplementsTraitCallback = Some({
-                        _: String, _: ConfiguredDeriveTrait =>
-                            Some(ConfiguredCanDerive.Manually)
-                    })
-                    i += 1
-                } else if (part == "--blocklisted-traits-yes") {
-                    opt.blocklistedTypeImplementsTraitCallback = Some({
-                        _: String, _: ConfiguredDeriveTrait =>
-                            Some(ConfiguredCanDerive.Yes)
-                    })
-                    i += 1
-                } else if (part == "--no-copy" && i + 1 < parts.size) {
-                    opt.noCopyTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--no-debug" && i + 1 < parts.size) {
-                    opt.noDebugTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--no-default" && i + 1 < parts.size) {
-                    opt.noDefaultTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--no-hash" && i + 1 < parts.size) {
-                    opt.noHashTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--no-partialeq" && i + 1 < parts.size) {
-                    opt.noPartialEqTypes.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else if (part == "--field-rename-callback") {
-                    opt.fieldNameCallback = {
-                        info: FieldInfo =>
-                        if (info.typeName != "RenameMe_RenameMe") {
-                            return None
-                        }
-                        return match (info.fieldName) {
-                            case "renamed_member" => Some("cj_friendly")
-                            case "bitfield_uGlyName" => Some("bitfield_less_ugly_name")
-                            case "bitfieldWorse_name" => Some("bitfield_better_name")
-                            case _ => None
-                        }
-                    }
-                    i += 1
-                } else if (part == "--clang-arg" && i + 1 < parts.size) {
-                    opt.clangArgs.add(parts[i + 1].trimAscii())
-                    i += 2
-                } else {
-                    eprintln("Warning: unrecognized test option: ${part}")
-                    i += 1
-                }
-            }
+            applyTestOptionLine(opt, optsStr, testcase)
+        } else if (trimmed.startsWith("// cjbind-parse-callbacks:")) {
+            let callback = trimmed["// cjbind-parse-callbacks:".size..].trimAscii()
+            applyTestParseCallback(opt, callback, testcase)
+        } else if (trimmed.startsWith("// cjbind-options") || trimmed.startsWith("// cjbind-parse-callbacks")) {
+            throw Exception("${testcase}: malformed cjbind test directive '${trimmed}'")
         }
     }
 }
@@ -297,7 +273,7 @@ func processTestCase(testcase: String): Unit {
     let expectedPath = Path("${testdataDir}/expected/${baseName}.cj")
 
     let args = getCommandLine()
-    let shouldUpdate = getVariable("CJBIND_UPDATE_EXPECTED").isSome() || args.any { arg: String => arg == "update" }
+    let shouldUpdate = getVariable("CJBIND_UPDATE_EXPECTED").isSome() || args.any {arg: String => arg == "update"}
 
     let normalizedOutput = output.replace("\r\n", "\n")
 

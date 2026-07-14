@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --allowlist-function ^selected_api$
+// cjbind-options: --allowlist-function ^selected_api$ -- -x c++ -std=c++14
 
 struct SelectedDependency {
     int value;

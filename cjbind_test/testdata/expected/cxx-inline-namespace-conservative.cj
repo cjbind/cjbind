@@ -1,18 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct api_v1_Item_Item {
+public struct api_v1_Item {
     public let value: Int32
-    public func clone(): api_v1_Item_Item {
-        return this
-    }
-    public func toString(): String {
-        var output = "api_v1_Item_Item {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -21,18 +11,18 @@ public struct api_v1_Item_Item {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<api_v1_Item_Item>()
+        let size = sizeOf<api_v1_Item>()
         if (size != 4) {
-            throw Exception("Size of api_v1_Item_Item is not 4 but ${size} bytes")
+            throw Exception("Size of api_v1_Item is not 4 but ${size} bytes")
         }
-        let align = alignOf<api_v1_Item_Item>()
+        let align = alignOf<api_v1_Item>()
         if (align != 4) {
-            throw Exception("Alignment of api_v1_Item_Item is not 4 but ${align} bytes")
+            throw Exception("Alignment of api_v1_Item is not 4 but ${align} bytes")
         }
 }
 
-foreign func _ZN3api2v14pingENS0_4ItemE(input: api_v1_Item_Item): Int32
+foreign func _ZN3api2v14pingENS0_4ItemE(input: api_v1_Item): Int32
 
-public unsafe func api_v1_ping(input: api_v1_Item_Item): Int32 {
+public unsafe func api_v1_ping(input: api_v1_Item): Int32 {
     return _ZN3api2v14pingENS0_4ItemE(input)
 }

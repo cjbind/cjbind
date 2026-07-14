@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --respect-cxx-access-specs --use-distinct-char16-t
+// cjbind-options: --respect-cxx-access-specs -- -x c++ -std=c++14
 
 enum class Color : unsigned short {
     Red = 1,

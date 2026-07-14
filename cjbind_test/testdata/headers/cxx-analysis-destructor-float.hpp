@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --generate types,destructors
+// cjbind-options: --generate types,destructors -- -x c++ -std=c++14
 
 struct TrivialValue {
     int value;

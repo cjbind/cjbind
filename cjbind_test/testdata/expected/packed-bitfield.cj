@@ -1,17 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct Date_Date {
+public struct Date {
     let _cjbind_opaque_blob: VArray<UInt8, $3>
-    public func clone(): Date_Date {
-        return this
-    }
-    public func toString(): String {
-        var output = "Date_Date {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $3>>() }
     }
@@ -20,12 +11,12 @@ public struct Date_Date {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Date_Date>()
+        let size = sizeOf<Date>()
         if (size != 3) {
-            throw Exception("Size of Date_Date is not 3 but ${size} bytes")
+            throw Exception("Size of Date is not 3 but ${size} bytes")
         }
-        let align = alignOf<Date_Date>()
+        let align = alignOf<Date>()
         if (align != 1) {
-            throw Exception("Alignment of Date_Date is not 1 but ${align} bytes")
+            throw Exception("Alignment of Date is not 1 but ${align} bytes")
         }
 }

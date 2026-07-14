@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++20
+// cjbind-options: -- -x c++ -std=c++20
 
 struct alignas(16) Wide {
     long long values[2];

@@ -7,7 +7,7 @@ public unsafe func VirtualArgument_value(this_: CPointer<Unit>): Int32 {
 }
 
 @C
-public struct VirtualArgument_VirtualArgument__cjbind_vtable {
+public struct VirtualArgument__cjbind_vtable {
     public let VirtualArgument_value: CFunc<(this_: CPointer<Unit>) -> Int32>
     public init(VirtualArgument_value: CFunc<(this_: CPointer<Unit>) -> Int32>) {
         this.VirtualArgument_value = VirtualArgument_value
@@ -15,9 +15,9 @@ public struct VirtualArgument_VirtualArgument__cjbind_vtable {
 }
 
 @C
-public struct VirtualArgument_VirtualArgument {
-    public let vtable_: CPointer<VirtualArgument_VirtualArgument__cjbind_vtable>
-    public init(vtable_: CPointer<VirtualArgument_VirtualArgument__cjbind_vtable>) {
+public struct VirtualArgument {
+    public let vtable_: CPointer<VirtualArgument__cjbind_vtable>
+    public init(vtable_: CPointer<VirtualArgument__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -25,18 +25,18 @@ public struct VirtualArgument_VirtualArgument {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualArgument_VirtualArgument>()
+        let size = sizeOf<VirtualArgument>()
         if (size != 8) {
-            throw Exception("Size of VirtualArgument_VirtualArgument is not 8 but ${size} bytes")
+            throw Exception("Size of VirtualArgument is not 8 but ${size} bytes")
         }
-        let align = alignOf<VirtualArgument_VirtualArgument>()
+        let align = alignOf<VirtualArgument>()
         if (align != 8) {
-            throw Exception("Alignment of VirtualArgument_VirtualArgument is not 8 but ${align} bytes")
+            throw Exception("Alignment of VirtualArgument is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct PlainTemplate_PlainTemplate {
+public struct PlainTemplate {
     public let marker: Int32
     public init(marker: Int32) {
         this.marker = marker
@@ -44,10 +44,10 @@ public struct PlainTemplate_PlainTemplate {
 }
 
 @C
-public struct TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable {
-    public let _base: PlainTemplate_PlainTemplate
+public struct TemplateArgumentMustNotAddVtable {
+    public let _base: PlainTemplate
     public let payload: Int32
-    public init(_base: PlainTemplate_PlainTemplate, payload: Int32) {
+    public init(_base: PlainTemplate, payload: Int32) {
         this._base = _base
         this.payload = payload
     }
@@ -56,23 +56,21 @@ public struct TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable>()
+        let size = sizeOf<TemplateArgumentMustNotAddVtable>()
         if (size != 8) {
-            throw Exception(
-                "Size of TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable is not 8 but ${size} bytes")
+            throw Exception("Size of TemplateArgumentMustNotAddVtable is not 8 but ${size} bytes")
         }
-        let align = alignOf<TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable>()
+        let align = alignOf<TemplateArgumentMustNotAddVtable>()
         if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable is not 4 but ${align} bytes")
+            throw Exception("Alignment of TemplateArgumentMustNotAddVtable is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct FieldMustNotAddVtable_FieldMustNotAddVtable {
-    public let member: VirtualArgument_VirtualArgument
+public struct FieldMustNotAddVtable {
+    public let member: VirtualArgument
     public let payload: Int32
-    public init(member: VirtualArgument_VirtualArgument, payload: Int32) {
+    public init(member: VirtualArgument, payload: Int32) {
         this.member = member
         this.payload = payload
     }
@@ -81,13 +79,13 @@ public struct FieldMustNotAddVtable_FieldMustNotAddVtable {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<FieldMustNotAddVtable_FieldMustNotAddVtable>()
+        let size = sizeOf<FieldMustNotAddVtable>()
         if (size != 16) {
-            throw Exception("Size of FieldMustNotAddVtable_FieldMustNotAddVtable is not 16 but ${size} bytes")
+            throw Exception("Size of FieldMustNotAddVtable is not 16 but ${size} bytes")
         }
-        let align = alignOf<FieldMustNotAddVtable_FieldMustNotAddVtable>()
+        let align = alignOf<FieldMustNotAddVtable>()
         if (align != 8) {
-            throw Exception("Alignment of FieldMustNotAddVtable_FieldMustNotAddVtable is not 8 but ${align} bytes")
+            throw Exception("Alignment of FieldMustNotAddVtable is not 8 but ${align} bytes")
         }
 }
 
@@ -98,7 +96,7 @@ public unsafe func OuterMustNotUseNestedVtable_NestedVirtual_run(this_: CPointer
 }
 
 @C
-public struct OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual__cjbind_vtable {
+public struct OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable {
     public let OuterMustNotUseNestedVtable_NestedVirtual_run: CFunc<(this_: CPointer<Unit>) -> Unit>
     public init(OuterMustNotUseNestedVtable_NestedVirtual_run: CFunc<(this_: CPointer<Unit>) -> Unit>) {
         this.OuterMustNotUseNestedVtable_NestedVirtual_run = OuterMustNotUseNestedVtable_NestedVirtual_run
@@ -106,9 +104,9 @@ public struct OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual__cjbind_vt
 }
 
 @C
-public struct OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual {
-    public let vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual__cjbind_vtable>
-    public init(vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual__cjbind_vtable>) {
+public struct OuterMustNotUseNestedVtable_NestedVirtual {
+    public let vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable>
+    public init(vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -116,20 +114,18 @@ public struct OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual>()
+        let size = sizeOf<OuterMustNotUseNestedVtable_NestedVirtual>()
         if (size != 8) {
-            throw Exception(
-                "Size of OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual is not 8 but ${size} bytes")
+            throw Exception("Size of OuterMustNotUseNestedVtable_NestedVirtual is not 8 but ${size} bytes")
         }
-        let align = alignOf<OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual>()
+        let align = alignOf<OuterMustNotUseNestedVtable_NestedVirtual>()
         if (align != 8) {
-            throw Exception(
-                "Alignment of OuterMustNotUseNestedVtable_NestedVirtual_NestedVirtual is not 8 but ${align} bytes")
+            throw Exception("Alignment of OuterMustNotUseNestedVtable_NestedVirtual is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable {
+public struct OuterMustNotUseNestedVtable {
     public let payload: Int32
     public init(payload: Int32) {
         this.payload = payload
@@ -139,26 +135,23 @@ public struct OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable>()
+        let size = sizeOf<OuterMustNotUseNestedVtable>()
         if (size != 4) {
-            throw Exception(
-                "Size of OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable is not 4 but ${size} bytes")
+            throw Exception("Size of OuterMustNotUseNestedVtable is not 4 but ${size} bytes")
         }
-        let align = alignOf<OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable>()
+        let align = alignOf<OuterMustNotUseNestedVtable>()
         if (align != 4) {
-            throw Exception(
-                "Alignment of OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable is not 4 but ${align} bytes")
+            throw Exception("Alignment of OuterMustNotUseNestedVtable is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder {
-    public let templateArgument: TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable
-    public let field: FieldMustNotAddVtable_FieldMustNotAddVtable
-    public let nested: OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable
-    public init(templateArgument: TemplateArgumentMustNotAddVtable_TemplateArgumentMustNotAddVtable,
-        field: FieldMustNotAddVtable_FieldMustNotAddVtable,
-        nested: OuterMustNotUseNestedVtable_OuterMustNotUseNestedVtable) {
+public struct AnalysisVtableIsolationHolder {
+    public let templateArgument: TemplateArgumentMustNotAddVtable
+    public let field: FieldMustNotAddVtable
+    public let nested: OuterMustNotUseNestedVtable
+    public init(templateArgument: TemplateArgumentMustNotAddVtable, field: FieldMustNotAddVtable,
+        nested: OuterMustNotUseNestedVtable) {
         this.templateArgument = templateArgument
         this.field = field
         this.nested = nested
@@ -168,14 +161,12 @@ public struct AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder>()
+        let size = sizeOf<AnalysisVtableIsolationHolder>()
         if (size != 32) {
-            throw Exception(
-                "Size of AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder is not 32 but ${size} bytes")
+            throw Exception("Size of AnalysisVtableIsolationHolder is not 32 but ${size} bytes")
         }
-        let align = alignOf<AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder>()
+        let align = alignOf<AnalysisVtableIsolationHolder>()
         if (align != 8) {
-            throw Exception(
-                "Alignment of AnalysisVtableIsolationHolder_AnalysisVtableIsolationHolder is not 8 but ${align} bytes")
+            throw Exception("Alignment of AnalysisVtableIsolationHolder is not 8 but ${align} bytes")
         }
 }

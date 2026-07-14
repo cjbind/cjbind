@@ -1,23 +1,13 @@
 package cjbind_ffi
 
-public type api_v1_Word_Word = Int32
+public type api_v1_Word = Int32
 
-public type api_Word_Word = Int64
+public type api_Word = Int64
 
 @C
-public struct UsesInlineAlias_UsesInlineAlias {
-    public let value: api_v1_Word_Word
-    public func clone(): UsesInlineAlias_UsesInlineAlias {
-        return this
-    }
-    public func toString(): String {
-        var output = "UsesInlineAlias_UsesInlineAlias {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: api_v1_Word_Word) {
+public struct UsesInlineAlias {
+    public let value: api_v1_Word
+    public init(value: api_v1_Word) {
         this.value = value
     }
 }
@@ -25,12 +15,12 @@ public struct UsesInlineAlias_UsesInlineAlias {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<UsesInlineAlias_UsesInlineAlias>()
+        let size = sizeOf<UsesInlineAlias>()
         if (size != 4) {
-            throw Exception("Size of UsesInlineAlias_UsesInlineAlias is not 4 but ${size} bytes")
+            throw Exception("Size of UsesInlineAlias is not 4 but ${size} bytes")
         }
-        let align = alignOf<UsesInlineAlias_UsesInlineAlias>()
+        let align = alignOf<UsesInlineAlias>()
         if (align != 4) {
-            throw Exception("Alignment of UsesInlineAlias_UsesInlineAlias is not 4 but ${align} bytes")
+            throw Exception("Alignment of UsesInlineAlias is not 4 but ${align} bytes")
         }
 }

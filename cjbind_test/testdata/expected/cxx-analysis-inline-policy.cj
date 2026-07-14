@@ -1,3 +1,3 @@
 package cjbind_ffi
 
-public type std_string_string = CPointer<UInt8>
+public type std_string = CPointer<UInt8>

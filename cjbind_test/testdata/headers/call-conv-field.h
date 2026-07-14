@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg --target=i686-pc-win32
+// cjbind-options: -- --target=i686-pc-win32
 //
 // We can only check that this builds, but not that it actually passes, because
 // we have no CI on the target platform.

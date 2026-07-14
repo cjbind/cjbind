@@ -38,13 +38,6 @@ HEADERS = [
     ROOT / "cjbind_test/testdata/headers/cxx-virtual-signatures.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-inheritance-virtual.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-template.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-analysis-derive-codegen.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-compile-smoke.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-function-pointer.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-blob-float.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-blocklisted-manual.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-blocklisted-yes.hpp",
-    ROOT / "cjbind_test/testdata/headers/cxx-derive-template-instance.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-2.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-3.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-7.hpp",
@@ -55,119 +48,13 @@ HEADERS = [
     ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-opacity.hpp",
 ]
 
-HEADER_OPTIONS = {
-    "cxx-derive-compile-smoke.hpp": [
-        "--with-derive-default",
-        "--with-derive-hash",
-        "--with-derive-eq",
-        "--with-derive-ord",
-    ],
-    "cxx-analysis-derive-codegen.hpp": [
-        "--with-derive-default",
-        "--with-derive-hash",
-        "--with-derive-eq",
-        "--with-derive-ord",
-        "--impl-debug",
-        "--impl-partialeq",
-        "--disable-untagged-union",
-        "--opaque-type",
-        "^OpaqueWord$",
-        "--no-hash",
-        "^NoHash$",
-        "--no-partialeq",
-        "^NoPartialEq$",
-    ],
-    "cxx-derive-function-pointer.hpp": [
-        "--with-derive-default",
-        "--with-derive-hash",
-        "--with-derive-eq",
-        "--with-derive-ord",
-    ],
-    "cxx-derive-blob-float.hpp": [
-        "--with-derive-default",
-        "--with-derive-hash",
-        "--with-derive-eq",
-        "--with-derive-ord",
-    ],
-    "cxx-derive-template-instance.hpp": [
-        "--with-derive-default",
-        "--with-derive-hash",
-        "--with-derive-eq",
-        "--with-derive-ord",
-        "--opaque-type",
-        "^ConflictTemplate<int>$",
-    ],
-}
+HEADER_OPTIONS: dict[str, list[str]] = {}
 
-HEADER_CLANG_ARGS = {
-    "cxx-derive-blob-float.hpp": ["--target=i686-unknown-linux-gnu"],
-}
+HEADER_CLANG_ARGS: dict[str, list[str]] = {}
 
-EXPECTED_GENERATED = {
-    "cxx-derive-blocklisted-manual.hpp":
-        ROOT / "cjbind_test/testdata/expected/cxx-derive-blocklisted-manual.cj",
-    "cxx-derive-blocklisted-yes.hpp":
-        ROOT / "cjbind_test/testdata/expected/cxx-derive-blocklisted-yes.cj",
-}
+EXPECTED_GENERATED: dict[str, Path] = {}
 
-SUPPORT_SOURCES = {
-    "cxx-derive-blocklisted-manual.hpp": """package cjbind_ffi
-
-@C
-public struct ManualExternal_ManualExternal {
-    public let value: Int32
-    public init(value: Int32) {
-        this.value = value
-    }
-    public operator func ==(right: ManualExternal_ManualExternal): Bool {
-        return this.value == right.value
-    }
-    public operator func !=(right: ManualExternal_ManualExternal): Bool {
-        return !(this == right)
-    }
-}
-""",
-    "cxx-derive-blocklisted-yes.hpp": """package cjbind_ffi
-
-@C
-public struct ExternalCapabilities_ExternalCapabilities {
-    public let first: Int32
-    public let second: Int32
-    public let third: Int32
-    public init(first: Int32, second: Int32, third: Int32) {
-        this.first = first
-        this.second = second
-        this.third = third
-    }
-    public func toString(): String {
-        return "ExternalCapabilities_ExternalCapabilities(${first}, ${second}, ${third})"
-    }
-    public func hashCode(): Int64 {
-        var hash = this.first.hashCode()
-        hash = ((hash << 5) | (hash >> 59)) ^ this.second.hashCode()
-        return ((hash << 5) | (hash >> 59)) ^ this.third.hashCode()
-    }
-    public operator func ==(right: ExternalCapabilities_ExternalCapabilities): Bool {
-        return this.first == right.first && this.second == right.second && this.third == right.third
-    }
-    public operator func !=(right: ExternalCapabilities_ExternalCapabilities): Bool {
-        return !(this == right)
-    }
-    public operator func <(right: ExternalCapabilities_ExternalCapabilities): Bool {
-        if (this.first != right.first) {
-            return this.first < right.first
-        }
-        if (this.second != right.second) {
-            return this.second < right.second
-        }
-        return this.third < right.third
-    }
-    public operator func >(right: ExternalCapabilities_ExternalCapabilities): Bool {
-        return right < this
-    }
-}
-""",
-}
+SUPPORT_SOURCES: dict[str, str] = {}
 
 
 def run(cmd: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:

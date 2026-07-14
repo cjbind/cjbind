@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --vtable-generation
+// cjbind-options: --vtable-generation -- -x c++ -std=c++14
 
 template<typename T>
 class BaseWithVtable {

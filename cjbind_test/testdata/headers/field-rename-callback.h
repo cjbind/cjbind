@@ -1,8 +1,9 @@
-// cjbind-options: --field-rename-callback
+// cjbind-parse-callbacks: struct-field-rename
 
 struct RenameMe {
     int plain;
     int renamed_member;
-    int bitfield_uGlyName : 1;
-    int bitfieldWorse_name : 1;
+    char a;
+    int bitfield_uGlyName: 1;
+    int bitfieldWorse_name: 1;
 };

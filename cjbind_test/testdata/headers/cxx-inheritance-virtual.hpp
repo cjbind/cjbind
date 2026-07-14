@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --vtable-generation --generate-pure-virtual-functions --use-specific-virtual-function-receiver
+// cjbind-options: --vtable-generation --generate-pure-virtual-functions --use-specific-virtual-function-receiver -- -x c++ -std=c++14
 
 struct Base {
     int base;

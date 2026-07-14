@@ -1,17 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct Packed_Packed {
+public struct Packed {
     let _cjbind_opaque_blob: VArray<UInt16, $5>
-    public func clone(): Packed_Packed {
-        return this
-    }
-    public func toString(): String {
-        var output = "Packed_Packed {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $5>>() }
     }
@@ -20,28 +11,19 @@ public struct Packed_Packed {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Packed_Packed>()
+        let size = sizeOf<Packed>()
         if (size != 10) {
-            throw Exception("Size of Packed_Packed is not 10 but ${size} bytes")
+            throw Exception("Size of Packed is not 10 but ${size} bytes")
         }
-        let align = alignOf<Packed_Packed>()
+        let align = alignOf<Packed>()
         if (align != 2) {
-            throw Exception("Alignment of Packed_Packed is not 2 but ${align} bytes")
+            throw Exception("Alignment of Packed is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct PackedLongWithChars_PackedLongWithChars {
+public struct PackedLongWithChars {
     let _cjbind_opaque_blob: VArray<UInt16, $6>
-    public func clone(): PackedLongWithChars_PackedLongWithChars {
-        return this
-    }
-    public func toString(): String {
-        var output = "PackedLongWithChars_PackedLongWithChars {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $6>>() }
     }
@@ -50,12 +32,12 @@ public struct PackedLongWithChars_PackedLongWithChars {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<PackedLongWithChars_PackedLongWithChars>()
+        let size = sizeOf<PackedLongWithChars>()
         if (size != 12) {
-            throw Exception("Size of PackedLongWithChars_PackedLongWithChars is not 12 but ${size} bytes")
+            throw Exception("Size of PackedLongWithChars is not 12 but ${size} bytes")
         }
-        let align = alignOf<PackedLongWithChars_PackedLongWithChars>()
+        let align = alignOf<PackedLongWithChars>()
         if (align != 2) {
-            throw Exception("Alignment of PackedLongWithChars_PackedLongWithChars is not 2 but ${align} bytes")
+            throw Exception("Alignment of PackedLongWithChars is not 2 but ${align} bytes")
         }
 }

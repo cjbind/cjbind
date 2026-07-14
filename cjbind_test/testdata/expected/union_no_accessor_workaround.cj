@@ -17,7 +17,7 @@ func __cjbind_write_UInt16_from_UInt32(ptr: CPointer<UInt8>, val: UInt16): Unit 
 }
 
 @C
-public struct simple_union_simple_union {
+public struct simple_union {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func u32(): UInt32 {
@@ -34,22 +34,19 @@ public struct simple_union_simple_union {
     public mut func u16(val!: UInt16): Unit {
         unsafe { __cjbind_write_UInt16_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
     }
-    public func clone(): simple_union_simple_union {
-        return this
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<simple_union_simple_union>()
+        let size = sizeOf<simple_union>()
         if (size != 4) {
-            throw Exception("Size of simple_union_simple_union is not 4 but ${size} bytes")
+            throw Exception("Size of simple_union is not 4 but ${size} bytes")
         }
-        let align = alignOf<simple_union_simple_union>()
+        let align = alignOf<simple_union>()
         if (align != 4) {
-            throw Exception("Alignment of simple_union_simple_union is not 4 but ${align} bytes")
+            throw Exception("Alignment of simple_union is not 4 but ${align} bytes")
         }
 }
 
-public type simple_union_t_simple_union_t = simple_union_simple_union
+public type simple_union_t = simple_union

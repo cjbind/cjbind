@@ -53,47 +53,28 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct WithBitfield_WithBitfield {
+public struct WithBitfield {
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public var a: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func clone(): WithBitfield_WithBitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "WithBitfield_WithBitfield {"
-        output += " a: "
-        output += this.a.toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<WithBitfield_WithBitfield>()
+        let size = sizeOf<WithBitfield>()
         if (size != 8) {
-            throw Exception("Size of WithBitfield_WithBitfield is not 8 but ${size} bytes")
+            throw Exception("Size of WithBitfield is not 8 but ${size} bytes")
         }
-        let align = alignOf<WithBitfield_WithBitfield>()
+        let align = alignOf<WithBitfield>()
         if (align != 4) {
-            throw Exception("Alignment of WithBitfield_WithBitfield is not 4 but ${align} bytes")
+            throw Exception("Alignment of WithBitfield is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
+public struct WithBitfieldAndAttrPacked {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
-    public func clone(): WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
-        return this
-    }
-    public func toString(): String {
-        var output = "WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
@@ -102,29 +83,19 @@ public struct WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked>()
+        let size = sizeOf<WithBitfieldAndAttrPacked>()
         if (size != 5) {
-            throw Exception("Size of WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked is not 5 but ${size} bytes")
+            throw Exception("Size of WithBitfieldAndAttrPacked is not 5 but ${size} bytes")
         }
-        let align = alignOf<WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked>()
+        let align = alignOf<WithBitfieldAndAttrPacked>()
         if (align != 1) {
-            throw Exception(
-                "Alignment of WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked is not 1 but ${align} bytes")
+            throw Exception("Alignment of WithBitfieldAndAttrPacked is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct WithBitfieldAndPacked_WithBitfieldAndPacked {
+public struct WithBitfieldAndPacked {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
-    public func clone(): WithBitfieldAndPacked_WithBitfieldAndPacked {
-        return this
-    }
-    public func toString(): String {
-        var output = "WithBitfieldAndPacked_WithBitfieldAndPacked {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
@@ -133,12 +104,12 @@ public struct WithBitfieldAndPacked_WithBitfieldAndPacked {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<WithBitfieldAndPacked_WithBitfieldAndPacked>()
+        let size = sizeOf<WithBitfieldAndPacked>()
         if (size != 5) {
-            throw Exception("Size of WithBitfieldAndPacked_WithBitfieldAndPacked is not 5 but ${size} bytes")
+            throw Exception("Size of WithBitfieldAndPacked is not 5 but ${size} bytes")
         }
-        let align = alignOf<WithBitfieldAndPacked_WithBitfieldAndPacked>()
+        let align = alignOf<WithBitfieldAndPacked>()
         if (align != 1) {
-            throw Exception("Alignment of WithBitfieldAndPacked_WithBitfieldAndPacked is not 1 but ${align} bytes")
+            throw Exception("Alignment of WithBitfieldAndPacked is not 1 but ${align} bytes")
         }
 }

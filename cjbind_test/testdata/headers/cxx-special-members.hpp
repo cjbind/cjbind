@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --respect-cxx-access-specs
+// cjbind-options: --respect-cxx-access-specs -- -x c++ -std=c++14
 
 class OverloadedCtor {
     OverloadedCtor();

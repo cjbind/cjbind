@@ -1,16 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct Empty_Empty {
+public struct Empty {
     let _cjbind_empty: UInt8
-    public func clone(): Empty_Empty {
-        return this
-    }
-    public func toString(): String {
-        var output = "Empty_Empty {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -19,27 +11,19 @@ public struct Empty_Empty {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Empty_Empty>()
+        let size = sizeOf<Empty>()
         if (size != 1) {
-            throw Exception("Size of Empty_Empty is not 1 but ${size} bytes")
+            throw Exception("Size of Empty is not 1 but ${size} bytes")
         }
-        let align = alignOf<Empty_Empty>()
+        let align = alignOf<Empty>()
         if (align != 1) {
-            throw Exception("Alignment of Empty_Empty is not 1 but ${align} bytes")
+            throw Exception("Alignment of Empty is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct EmptyDerived_EmptyDerived {
+public struct EmptyDerived {
     let _cjbind_empty: UInt8
-    public func clone(): EmptyDerived_EmptyDerived {
-        return this
-    }
-    public func toString(): String {
-        var output = "EmptyDerived_EmptyDerived {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -48,29 +32,19 @@ public struct EmptyDerived_EmptyDerived {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<EmptyDerived_EmptyDerived>()
+        let size = sizeOf<EmptyDerived>()
         if (size != 1) {
-            throw Exception("Size of EmptyDerived_EmptyDerived is not 1 but ${size} bytes")
+            throw Exception("Size of EmptyDerived is not 1 but ${size} bytes")
         }
-        let align = alignOf<EmptyDerived_EmptyDerived>()
+        let align = alignOf<EmptyDerived>()
         if (align != 1) {
-            throw Exception("Alignment of EmptyDerived_EmptyDerived is not 1 but ${align} bytes")
+            throw Exception("Alignment of EmptyDerived is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct InheritsEmpty_InheritsEmpty {
+public struct InheritsEmpty {
     public let value: Bool
-    public func clone(): InheritsEmpty_InheritsEmpty {
-        return this
-    }
-    public func toString(): String {
-        var output = "InheritsEmpty_InheritsEmpty {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Bool) {
         this.value = value
     }
@@ -79,33 +53,21 @@ public struct InheritsEmpty_InheritsEmpty {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<InheritsEmpty_InheritsEmpty>()
+        let size = sizeOf<InheritsEmpty>()
         if (size != 1) {
-            throw Exception("Size of InheritsEmpty_InheritsEmpty is not 1 but ${size} bytes")
+            throw Exception("Size of InheritsEmpty is not 1 but ${size} bytes")
         }
-        let align = alignOf<InheritsEmpty_InheritsEmpty>()
+        let align = alignOf<InheritsEmpty>()
         if (align != 1) {
-            throw Exception("Alignment of InheritsEmpty_InheritsEmpty is not 1 but ${align} bytes")
+            throw Exception("Alignment of InheritsEmpty is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct ContainsEmpty_ContainsEmpty {
-    public let empty: Empty_Empty
+public struct ContainsEmpty {
+    public let empty: Empty
     public let value: Bool
-    public func clone(): ContainsEmpty_ContainsEmpty {
-        return this
-    }
-    public func toString(): String {
-        var output = "ContainsEmpty_ContainsEmpty {"
-        output += " empty: "
-        output += this.empty.toString()
-        output += ", value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(empty: Empty_Empty, value: Bool) {
+    public init(empty: Empty, value: Bool) {
         this.empty = empty
         this.value = value
     }
@@ -114,37 +76,20 @@ public struct ContainsEmpty_ContainsEmpty {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ContainsEmpty_ContainsEmpty>()
+        let size = sizeOf<ContainsEmpty>()
         if (size != 2) {
-            throw Exception("Size of ContainsEmpty_ContainsEmpty is not 2 but ${size} bytes")
+            throw Exception("Size of ContainsEmpty is not 2 but ${size} bytes")
         }
-        let align = alignOf<ContainsEmpty_ContainsEmpty>()
+        let align = alignOf<ContainsEmpty>()
         if (align != 1) {
-            throw Exception("Alignment of ContainsEmpty_ContainsEmpty is not 1 but ${align} bytes")
+            throw Exception("Alignment of ContainsEmpty is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct ContainsEmptyArray_ContainsEmptyArray {
-    public let values: VArray<Empty_Empty, $4>
-    public func clone(): ContainsEmptyArray_ContainsEmptyArray {
-        return this
-    }
-    public func toString(): String {
-        var output = "ContainsEmptyArray_ContainsEmptyArray {"
-        output += " values: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..4) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.values[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
-    public init(values: VArray<Empty_Empty, $4>) {
+public struct ContainsEmptyArray {
+    public let values: VArray<Empty, $4>
+    public init(values: VArray<Empty, $4>) {
         this.values = values
     }
 }
@@ -152,45 +97,27 @@ public struct ContainsEmptyArray_ContainsEmptyArray {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ContainsEmptyArray_ContainsEmptyArray>()
+        let size = sizeOf<ContainsEmptyArray>()
         if (size != 4) {
-            throw Exception("Size of ContainsEmptyArray_ContainsEmptyArray is not 4 but ${size} bytes")
+            throw Exception("Size of ContainsEmptyArray is not 4 but ${size} bytes")
         }
-        let align = alignOf<ContainsEmptyArray_ContainsEmptyArray>()
+        let align = alignOf<ContainsEmptyArray>()
         if (align != 1) {
-            throw Exception("Alignment of ContainsEmptyArray_ContainsEmptyArray is not 1 but ${align} bytes")
+            throw Exception("Alignment of ContainsEmptyArray is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct EmptyTemplate_EmptyTemplate {
+public struct EmptyTemplate {
     let _cjbind_empty: UInt8
-    public func clone(): EmptyTemplate_EmptyTemplate {
-        return this
-    }
-    public func toString(): String {
-        var output = "EmptyTemplate_EmptyTemplate {"
-        output += " }"
-        return output
-    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
 
 @C
-public struct TemplateEmptyBase_TemplateEmptyBase {
+public struct TemplateEmptyBase {
     public let value: UInt8
-    public func clone(): TemplateEmptyBase_TemplateEmptyBase {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateEmptyBase_TemplateEmptyBase {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: UInt8) {
         this.value = value
     }
@@ -199,33 +126,21 @@ public struct TemplateEmptyBase_TemplateEmptyBase {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TemplateEmptyBase_TemplateEmptyBase>()
+        let size = sizeOf<TemplateEmptyBase>()
         if (size != 1) {
-            throw Exception("Size of TemplateEmptyBase_TemplateEmptyBase is not 1 but ${size} bytes")
+            throw Exception("Size of TemplateEmptyBase is not 1 but ${size} bytes")
         }
-        let align = alignOf<TemplateEmptyBase_TemplateEmptyBase>()
+        let align = alignOf<TemplateEmptyBase>()
         if (align != 1) {
-            throw Exception("Alignment of TemplateEmptyBase_TemplateEmptyBase is not 1 but ${align} bytes")
+            throw Exception("Alignment of TemplateEmptyBase is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct TemplateEmptyMember_TemplateEmptyMember {
-    public let empty: EmptyTemplate_EmptyTemplate
+public struct TemplateEmptyMember {
+    public let empty: EmptyTemplate
     public let value: UInt8
-    public func clone(): TemplateEmptyMember_TemplateEmptyMember {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateEmptyMember_TemplateEmptyMember {"
-        output += " empty: "
-        output += this.empty.toString()
-        output += ", value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(empty: EmptyTemplate_EmptyTemplate, value: UInt8) {
+    public init(empty: EmptyTemplate, value: UInt8) {
         this.empty = empty
         this.value = value
     }
@@ -234,29 +149,19 @@ public struct TemplateEmptyMember_TemplateEmptyMember {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TemplateEmptyMember_TemplateEmptyMember>()
+        let size = sizeOf<TemplateEmptyMember>()
         if (size != 2) {
-            throw Exception("Size of TemplateEmptyMember_TemplateEmptyMember is not 2 but ${size} bytes")
+            throw Exception("Size of TemplateEmptyMember is not 2 but ${size} bytes")
         }
-        let align = alignOf<TemplateEmptyMember_TemplateEmptyMember>()
+        let align = alignOf<TemplateEmptyMember>()
         if (align != 1) {
-            throw Exception("Alignment of TemplateEmptyMember_TemplateEmptyMember is not 1 but ${align} bytes")
+            throw Exception("Alignment of TemplateEmptyMember is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct DeepEmptyBase_DeepEmptyBase {
+public struct DeepEmptyBase {
     public let value: UInt8
-    public func clone(): DeepEmptyBase_DeepEmptyBase {
-        return this
-    }
-    public func toString(): String {
-        var output = "DeepEmptyBase_DeepEmptyBase {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: UInt8) {
         this.value = value
     }
@@ -265,67 +170,20 @@ public struct DeepEmptyBase_DeepEmptyBase {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DeepEmptyBase_DeepEmptyBase>()
+        let size = sizeOf<DeepEmptyBase>()
         if (size != 1) {
-            throw Exception("Size of DeepEmptyBase_DeepEmptyBase is not 1 but ${size} bytes")
+            throw Exception("Size of DeepEmptyBase is not 1 but ${size} bytes")
         }
-        let align = alignOf<DeepEmptyBase_DeepEmptyBase>()
+        let align = alignOf<DeepEmptyBase>()
         if (align != 1) {
-            throw Exception("Alignment of DeepEmptyBase_DeepEmptyBase is not 1 but ${align} bytes")
+            throw Exception("Alignment of DeepEmptyBase is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0 {
-    public let vtable_: CPointer<Unit>
-    public let value: CPointer<UInt8>
-    public func clone(): BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0 {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += ", value: "
-        output += CPointer<Unit>(this.value).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<Unit>, value: CPointer<UInt8>) {
-        this.vtable_ = vtable_
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0>()
-        if (size != 16) {
-            throw Exception(
-                "Size of BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0 is not 16 but ${size} bytes")
-        }
-        let align = alignOf<BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0>()
-        if (align != 8) {
-            throw Exception(
-                "Alignment of BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0 is not 8 but ${align} bytes")
-        }
-}
-
-@C
-public struct DerivedFromVtable_DerivedFromVtable {
-    public let _base: BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0
-    public func clone(): DerivedFromVtable_DerivedFromVtable {
-        return this
-    }
-    public func toString(): String {
-        var output = "DerivedFromVtable_DerivedFromVtable {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0) {
+public struct DerivedFromVtable {
+    public let _base: BaseWithVtable_open0_ptr_char_close0
+    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -333,13 +191,13 @@ public struct DerivedFromVtable_DerivedFromVtable {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DerivedFromVtable_DerivedFromVtable>()
+        let size = sizeOf<DerivedFromVtable>()
         if (size != 16) {
-            throw Exception("Size of DerivedFromVtable_DerivedFromVtable is not 16 but ${size} bytes")
+            throw Exception("Size of DerivedFromVtable is not 16 but ${size} bytes")
         }
-        let align = alignOf<DerivedFromVtable_DerivedFromVtable>()
+        let align = alignOf<DerivedFromVtable>()
         if (align != 8) {
-            throw Exception("Alignment of DerivedFromVtable_DerivedFromVtable is not 8 but ${align} bytes")
+            throw Exception("Alignment of DerivedFromVtable is not 8 but ${align} bytes")
         }
 }
 
@@ -350,19 +208,9 @@ public unsafe func DerivedAddsVirtual_extra(this_: CPointer<Unit>): Int32 {
 }
 
 @C
-public struct DerivedAddsVirtual_DerivedAddsVirtual {
-    public let _base: BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0
-    public func clone(): DerivedAddsVirtual_DerivedAddsVirtual {
-        return this
-    }
-    public func toString(): String {
-        var output = "DerivedAddsVirtual_DerivedAddsVirtual {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: BaseWithVtable_open0_char_ptr_close0_BaseWithVtable_open0_char_ptr_close0) {
+public struct DerivedAddsVirtual {
+    public let _base: BaseWithVtable_open0_ptr_char_close0
+    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -370,46 +218,13 @@ public struct DerivedAddsVirtual_DerivedAddsVirtual {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DerivedAddsVirtual_DerivedAddsVirtual>()
+        let size = sizeOf<DerivedAddsVirtual>()
         if (size != 16) {
-            throw Exception("Size of DerivedAddsVirtual_DerivedAddsVirtual is not 16 but ${size} bytes")
+            throw Exception("Size of DerivedAddsVirtual is not 16 but ${size} bytes")
         }
-        let align = alignOf<DerivedAddsVirtual_DerivedAddsVirtual>()
+        let align = alignOf<DerivedAddsVirtual>()
         if (align != 8) {
-            throw Exception("Alignment of DerivedAddsVirtual_DerivedAddsVirtual is not 8 but ${align} bytes")
-        }
-}
-
-@C
-public struct BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0 {
-    public let value: Int32
-    public func clone(): BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0 is not 4 but ${align} bytes")
+            throw Exception("Alignment of DerivedAddsVirtual is not 8 but ${align} bytes")
         }
 }
 
@@ -420,22 +235,10 @@ public unsafe func DerivedIntroducesVtable_run(this_: CPointer<Unit>): Unit {
 }
 
 @C
-public struct DerivedIntroducesVtable_DerivedIntroducesVtable {
+public struct DerivedIntroducesVtable {
     public let vtable_: CPointer<Unit>
-    public let _base: BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0
-    public func clone(): DerivedIntroducesVtable_DerivedIntroducesVtable {
-        return this
-    }
-    public func toString(): String {
-        var output = "DerivedIntroducesVtable_DerivedIntroducesVtable {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += ", _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<Unit>, _base: BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0) {
+    public let _base: BaseWithoutVtable_open0_int_close0
+    public init(vtable_: CPointer<Unit>, _base: BaseWithoutVtable_open0_int_close0) {
         this.vtable_ = vtable_
         this._base = _base
     }
@@ -444,30 +247,20 @@ public struct DerivedIntroducesVtable_DerivedIntroducesVtable {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DerivedIntroducesVtable_DerivedIntroducesVtable>()
+        let size = sizeOf<DerivedIntroducesVtable>()
         if (size != 16) {
-            throw Exception("Size of DerivedIntroducesVtable_DerivedIntroducesVtable is not 16 but ${size} bytes")
+            throw Exception("Size of DerivedIntroducesVtable is not 16 but ${size} bytes")
         }
-        let align = alignOf<DerivedIntroducesVtable_DerivedIntroducesVtable>()
+        let align = alignOf<DerivedIntroducesVtable>()
         if (align != 8) {
-            throw Exception("Alignment of DerivedIntroducesVtable_DerivedIntroducesVtable is not 8 but ${align} bytes")
+            throw Exception("Alignment of DerivedIntroducesVtable is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct DerivedWithoutVtable_DerivedWithoutVtable {
-    public let _base: BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0
-    public func clone(): DerivedWithoutVtable_DerivedWithoutVtable {
-        return this
-    }
-    public func toString(): String {
-        var output = "DerivedWithoutVtable_DerivedWithoutVtable {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: BaseWithoutVtable_open0_int_close0_BaseWithoutVtable_open0_int_close0) {
+public struct DerivedWithoutVtable {
+    public let _base: BaseWithoutVtable_open0_int_close0
+    public init(_base: BaseWithoutVtable_open0_int_close0) {
         this._base = _base
     }
 }
@@ -475,44 +268,34 @@ public struct DerivedWithoutVtable_DerivedWithoutVtable {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DerivedWithoutVtable_DerivedWithoutVtable>()
+        let size = sizeOf<DerivedWithoutVtable>()
         if (size != 4) {
-            throw Exception("Size of DerivedWithoutVtable_DerivedWithoutVtable is not 4 but ${size} bytes")
+            throw Exception("Size of DerivedWithoutVtable is not 4 but ${size} bytes")
         }
-        let align = alignOf<DerivedWithoutVtable_DerivedWithoutVtable>()
+        let align = alignOf<DerivedWithoutVtable>()
         if (align != 4) {
-            throw Exception("Alignment of DerivedWithoutVtable_DerivedWithoutVtable is not 4 but ${align} bytes")
+            throw Exception("Alignment of DerivedWithoutVtable is not 4 but ${align} bytes")
         }
 }
 
-foreign func _ZN11VirtualRoot4rootEv(this_: CPointer<Unit>): CPointer<VirtualRoot_VirtualRoot>
+foreign func _ZN11VirtualRoot4rootEv(this_: CPointer<Unit>): CPointer<VirtualRoot>
 
-public unsafe func VirtualRoot_root(this_: CPointer<Unit>): CPointer<VirtualRoot_VirtualRoot> {
+public unsafe func VirtualRoot_root(this_: CPointer<Unit>): CPointer<VirtualRoot> {
     return _ZN11VirtualRoot4rootEv(this_)
 }
 
 @C
-public struct VirtualRoot_VirtualRoot__cjbind_vtable {
-    public let VirtualRoot_root: CFunc<(this_: CPointer<Unit>) -> CPointer<VirtualRoot_VirtualRoot>>
-    public init(VirtualRoot_root: CFunc<(this_: CPointer<Unit>) -> CPointer<VirtualRoot_VirtualRoot>>) {
+public struct VirtualRoot__cjbind_vtable {
+    public let VirtualRoot_root: CFunc<(this_: CPointer<Unit>) -> CPointer<VirtualRoot>>
+    public init(VirtualRoot_root: CFunc<(this_: CPointer<Unit>) -> CPointer<VirtualRoot>>) {
         this.VirtualRoot_root = VirtualRoot_root
     }
 }
 
 @C
-public struct VirtualRoot_VirtualRoot {
-    public let vtable_: CPointer<VirtualRoot_VirtualRoot__cjbind_vtable>
-    public func clone(): VirtualRoot_VirtualRoot {
-        return this
-    }
-    public func toString(): String {
-        var output = "VirtualRoot_VirtualRoot {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<VirtualRoot_VirtualRoot__cjbind_vtable>) {
+public struct VirtualRoot {
+    public let vtable_: CPointer<VirtualRoot__cjbind_vtable>
+    public init(vtable_: CPointer<VirtualRoot__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -520,30 +303,20 @@ public struct VirtualRoot_VirtualRoot {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualRoot_VirtualRoot>()
+        let size = sizeOf<VirtualRoot>()
         if (size != 8) {
-            throw Exception("Size of VirtualRoot_VirtualRoot is not 8 but ${size} bytes")
+            throw Exception("Size of VirtualRoot is not 8 but ${size} bytes")
         }
-        let align = alignOf<VirtualRoot_VirtualRoot>()
+        let align = alignOf<VirtualRoot>()
         if (align != 8) {
-            throw Exception("Alignment of VirtualRoot_VirtualRoot is not 8 but ${align} bytes")
+            throw Exception("Alignment of VirtualRoot is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct VirtualMiddle_VirtualMiddle {
-    public let _base: VirtualRoot_VirtualRoot
-    public func clone(): VirtualMiddle_VirtualMiddle {
-        return this
-    }
-    public func toString(): String {
-        var output = "VirtualMiddle_VirtualMiddle {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: VirtualRoot_VirtualRoot) {
+public struct VirtualMiddle {
+    public let _base: VirtualRoot
+    public init(_base: VirtualRoot) {
         this._base = _base
     }
 }
@@ -551,30 +324,20 @@ public struct VirtualMiddle_VirtualMiddle {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualMiddle_VirtualMiddle>()
+        let size = sizeOf<VirtualMiddle>()
         if (size != 8) {
-            throw Exception("Size of VirtualMiddle_VirtualMiddle is not 8 but ${size} bytes")
+            throw Exception("Size of VirtualMiddle is not 8 but ${size} bytes")
         }
-        let align = alignOf<VirtualMiddle_VirtualMiddle>()
+        let align = alignOf<VirtualMiddle>()
         if (align != 8) {
-            throw Exception("Alignment of VirtualMiddle_VirtualMiddle is not 8 but ${align} bytes")
+            throw Exception("Alignment of VirtualMiddle is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct VirtualLeaf_VirtualLeaf {
-    public let _base: VirtualMiddle_VirtualMiddle
-    public func clone(): VirtualLeaf_VirtualLeaf {
-        return this
-    }
-    public func toString(): String {
-        var output = "VirtualLeaf_VirtualLeaf {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: VirtualMiddle_VirtualMiddle) {
+public struct VirtualLeaf {
+    public let _base: VirtualMiddle
+    public init(_base: VirtualMiddle) {
         this._base = _base
     }
 }
@@ -582,44 +345,34 @@ public struct VirtualLeaf_VirtualLeaf {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualLeaf_VirtualLeaf>()
+        let size = sizeOf<VirtualLeaf>()
         if (size != 8) {
-            throw Exception("Size of VirtualLeaf_VirtualLeaf is not 8 but ${size} bytes")
+            throw Exception("Size of VirtualLeaf is not 8 but ${size} bytes")
         }
-        let align = alignOf<VirtualLeaf_VirtualLeaf>()
+        let align = alignOf<VirtualLeaf>()
         if (align != 8) {
-            throw Exception("Alignment of VirtualLeaf_VirtualLeaf is not 8 but ${align} bytes")
+            throw Exception("Alignment of VirtualLeaf is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN13RecursiveBase7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived_RecursiveDerived>
+foreign func _ZN13RecursiveBase7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived>
 
-public unsafe func RecursiveBase_derived(this_: CPointer<Unit>): CPointer<RecursiveDerived_RecursiveDerived> {
+public unsafe func RecursiveBase_derived(this_: CPointer<Unit>): CPointer<RecursiveDerived> {
     return _ZN13RecursiveBase7derivedEv(this_)
 }
 
 @C
-public struct RecursiveBase_RecursiveBase__cjbind_vtable {
-    public let RecursiveBase_derived: CFunc<(this_: CPointer<Unit>) -> CPointer<RecursiveDerived_RecursiveDerived>>
-    public init(RecursiveBase_derived: CFunc<(this_: CPointer<Unit>) -> CPointer<RecursiveDerived_RecursiveDerived>>) {
+public struct RecursiveBase__cjbind_vtable {
+    public let RecursiveBase_derived: CFunc<(this_: CPointer<Unit>) -> CPointer<RecursiveDerived>>
+    public init(RecursiveBase_derived: CFunc<(this_: CPointer<Unit>) -> CPointer<RecursiveDerived>>) {
         this.RecursiveBase_derived = RecursiveBase_derived
     }
 }
 
 @C
-public struct RecursiveBase_RecursiveBase {
-    public let vtable_: CPointer<RecursiveBase_RecursiveBase__cjbind_vtable>
-    public func clone(): RecursiveBase_RecursiveBase {
-        return this
-    }
-    public func toString(): String {
-        var output = "RecursiveBase_RecursiveBase {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<RecursiveBase_RecursiveBase__cjbind_vtable>) {
+public struct RecursiveBase {
+    public let vtable_: CPointer<RecursiveBase__cjbind_vtable>
+    public init(vtable_: CPointer<RecursiveBase__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -627,36 +380,26 @@ public struct RecursiveBase_RecursiveBase {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<RecursiveBase_RecursiveBase>()
+        let size = sizeOf<RecursiveBase>()
         if (size != 8) {
-            throw Exception("Size of RecursiveBase_RecursiveBase is not 8 but ${size} bytes")
+            throw Exception("Size of RecursiveBase is not 8 but ${size} bytes")
         }
-        let align = alignOf<RecursiveBase_RecursiveBase>()
+        let align = alignOf<RecursiveBase>()
         if (align != 8) {
-            throw Exception("Alignment of RecursiveBase_RecursiveBase is not 8 but ${align} bytes")
+            throw Exception("Alignment of RecursiveBase is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN16RecursiveDerived7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived_RecursiveDerived>
+foreign func _ZN16RecursiveDerived7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived>
 
-public unsafe func RecursiveDerived_derived(this_: CPointer<Unit>): CPointer<RecursiveDerived_RecursiveDerived> {
+public unsafe func RecursiveDerived_derived(this_: CPointer<Unit>): CPointer<RecursiveDerived> {
     return _ZN16RecursiveDerived7derivedEv(this_)
 }
 
 @C
-public struct RecursiveDerived_RecursiveDerived {
-    public let _base: RecursiveBase_RecursiveBase
-    public func clone(): RecursiveDerived_RecursiveDerived {
-        return this
-    }
-    public func toString(): String {
-        var output = "RecursiveDerived_RecursiveDerived {"
-        output += " _base: "
-        output += this._base.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: RecursiveBase_RecursiveBase) {
+public struct RecursiveDerived {
+    public let _base: RecursiveBase
+    public init(_base: RecursiveBase) {
         this._base = _base
     }
 }
@@ -664,110 +407,38 @@ public struct RecursiveDerived_RecursiveDerived {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<RecursiveDerived_RecursiveDerived>()
+        let size = sizeOf<RecursiveDerived>()
         if (size != 8) {
-            throw Exception("Size of RecursiveDerived_RecursiveDerived is not 8 but ${size} bytes")
+            throw Exception("Size of RecursiveDerived is not 8 but ${size} bytes")
         }
-        let align = alignOf<RecursiveDerived_RecursiveDerived>()
+        let align = alignOf<RecursiveDerived>()
         if (align != 8) {
-            throw Exception("Alignment of RecursiveDerived_RecursiveDerived is not 8 but ${align} bytes")
+            throw Exception("Alignment of RecursiveDerived is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct DependentSize_open0_int_close0_DependentSize_open0_int_close0 {
-    public let value: Int32
-    public func clone(): DependentSize_open0_int_close0_DependentSize_open0_int_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "DependentSize_open0_int_close0_DependentSize_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<DependentSize_open0_int_close0_DependentSize_open0_int_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of DependentSize_open0_int_close0_DependentSize_open0_int_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<DependentSize_open0_int_close0_DependentSize_open0_int_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of DependentSize_open0_int_close0_DependentSize_open0_int_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct LayoutAnalysisHolder_LayoutAnalysisHolder {
-    public let empty: Empty_Empty
-    public let emptyDerived: EmptyDerived_EmptyDerived
-    public let inherits: InheritsEmpty_InheritsEmpty
-    public let contains: ContainsEmpty_ContainsEmpty
-    public let array: ContainsEmptyArray_ContainsEmptyArray
-    public let templateBase: TemplateEmptyBase_TemplateEmptyBase
-    public let templateMember: TemplateEmptyMember_TemplateEmptyMember
-    public let deepBase: DeepEmptyBase_DeepEmptyBase
-    public let dependentNonZero: DependentSize_open0_int_close0_DependentSize_open0_int_close0
-    public let inheritedVtable: CPointer<DerivedFromVtable_DerivedFromVtable>
-    public let introducedVtable: CPointer<DerivedIntroducesVtable_DerivedIntroducesVtable>
-    public let noVtable: CPointer<DerivedWithoutVtable_DerivedWithoutVtable>
-    public let deepVtable: CPointer<VirtualLeaf_VirtualLeaf>
-    public let recursiveVtable: CPointer<RecursiveDerived_RecursiveDerived>
-    public func clone(): LayoutAnalysisHolder_LayoutAnalysisHolder {
-        return this
-    }
-    public func toString(): String {
-        var output = "LayoutAnalysisHolder_LayoutAnalysisHolder {"
-        output += " empty: "
-        output += this.empty.toString()
-        output += ", emptyDerived: "
-        output += this.emptyDerived.toString()
-        output += ", inherits: "
-        output += this.inherits.toString()
-        output += ", contains: "
-        output += this.contains.toString()
-        output += ", array: "
-        output += this.array.toString()
-        output += ", templateBase: "
-        output += this.templateBase.toString()
-        output += ", templateMember: "
-        output += this.templateMember.toString()
-        output += ", deepBase: "
-        output += this.deepBase.toString()
-        output += ", dependentNonZero: "
-        output += this.dependentNonZero.toString()
-        output += ", inheritedVtable: "
-        output += CPointer<Unit>(this.inheritedVtable).toUIntNative().toString()
-        output += ", introducedVtable: "
-        output += CPointer<Unit>(this.introducedVtable).toUIntNative().toString()
-        output += ", noVtable: "
-        output += CPointer<Unit>(this.noVtable).toUIntNative().toString()
-        output += ", deepVtable: "
-        output += CPointer<Unit>(this.deepVtable).toUIntNative().toString()
-        output += ", recursiveVtable: "
-        output += CPointer<Unit>(this.recursiveVtable).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(empty: Empty_Empty, emptyDerived: EmptyDerived_EmptyDerived, inherits: InheritsEmpty_InheritsEmpty,
-        contains: ContainsEmpty_ContainsEmpty, array: ContainsEmptyArray_ContainsEmptyArray,
-        templateBase: TemplateEmptyBase_TemplateEmptyBase, templateMember: TemplateEmptyMember_TemplateEmptyMember,
-        deepBase: DeepEmptyBase_DeepEmptyBase,
-        dependentNonZero: DependentSize_open0_int_close0_DependentSize_open0_int_close0,
-        inheritedVtable: CPointer<DerivedFromVtable_DerivedFromVtable>,
-        introducedVtable: CPointer<DerivedIntroducesVtable_DerivedIntroducesVtable>,
-        noVtable: CPointer<DerivedWithoutVtable_DerivedWithoutVtable>, deepVtable: CPointer<VirtualLeaf_VirtualLeaf>,
-        recursiveVtable: CPointer<RecursiveDerived_RecursiveDerived>) {
+public struct LayoutAnalysisHolder {
+    public let empty: Empty
+    public let emptyDerived: EmptyDerived
+    public let inherits: InheritsEmpty
+    public let contains: ContainsEmpty
+    public let array: ContainsEmptyArray
+    public let templateBase: TemplateEmptyBase
+    public let templateMember: TemplateEmptyMember
+    public let deepBase: DeepEmptyBase
+    public let dependentNonZero: DependentSize_open0_int_close0
+    public let inheritedVtable: CPointer<DerivedFromVtable>
+    public let introducedVtable: CPointer<DerivedIntroducesVtable>
+    public let noVtable: CPointer<DerivedWithoutVtable>
+    public let deepVtable: CPointer<VirtualLeaf>
+    public let recursiveVtable: CPointer<RecursiveDerived>
+    public init(empty: Empty, emptyDerived: EmptyDerived, inherits: InheritsEmpty, contains: ContainsEmpty,
+        array: ContainsEmptyArray, templateBase: TemplateEmptyBase, templateMember: TemplateEmptyMember,
+        deepBase: DeepEmptyBase, dependentNonZero: DependentSize_open0_int_close0,
+        inheritedVtable: CPointer<DerivedFromVtable>, introducedVtable: CPointer<DerivedIntroducesVtable>,
+        noVtable: CPointer<DerivedWithoutVtable>, deepVtable: CPointer<VirtualLeaf>,
+        recursiveVtable: CPointer<RecursiveDerived>) {
         this.empty = empty
         this.emptyDerived = emptyDerived
         this.inherits = inherits
@@ -788,12 +459,75 @@ public struct LayoutAnalysisHolder_LayoutAnalysisHolder {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<LayoutAnalysisHolder_LayoutAnalysisHolder>()
+        let size = sizeOf<LayoutAnalysisHolder>()
         if (size != 64) {
-            throw Exception("Size of LayoutAnalysisHolder_LayoutAnalysisHolder is not 64 but ${size} bytes")
+            throw Exception("Size of LayoutAnalysisHolder is not 64 but ${size} bytes")
         }
-        let align = alignOf<LayoutAnalysisHolder_LayoutAnalysisHolder>()
+        let align = alignOf<LayoutAnalysisHolder>()
         if (align != 8) {
-            throw Exception("Alignment of LayoutAnalysisHolder_LayoutAnalysisHolder is not 8 but ${align} bytes")
+            throw Exception("Alignment of LayoutAnalysisHolder is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct DependentSize_open0_int_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<DependentSize_open0_int_close0>()
+        if (size != 4) {
+            throw Exception("Size of DependentSize_open0_int_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<DependentSize_open0_int_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of DependentSize_open0_int_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct BaseWithoutVtable_open0_int_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<BaseWithoutVtable_open0_int_close0>()
+        if (size != 4) {
+            throw Exception("Size of BaseWithoutVtable_open0_int_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<BaseWithoutVtable_open0_int_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of BaseWithoutVtable_open0_int_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct BaseWithVtable_open0_ptr_char_close0 {
+    let _cjbind_opaque_blob: VArray<UInt64, $2>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<BaseWithVtable_open0_ptr_char_close0>()
+        if (size != 16) {
+            throw Exception("Size of BaseWithVtable_open0_ptr_char_close0 is not 16 but ${size} bytes")
+        }
+        let align = alignOf<BaseWithVtable_open0_ptr_char_close0>()
+        if (align != 8) {
+            throw Exception("Alignment of BaseWithVtable_open0_ptr_char_close0 is not 8 but ${align} bytes")
         }
 }

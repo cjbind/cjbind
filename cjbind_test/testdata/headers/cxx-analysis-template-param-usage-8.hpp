@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 template <typename T, typename U>
 class IndirectUsage {
@@ -7,8 +7,4 @@ class IndirectUsage {
 
     Typedefed member1;
     Aliased member2;
-};
-
-struct TemplateParamUsage8Holder {
-    IndirectUsage<unsigned int, double> value;
 };

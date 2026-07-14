@@ -23,7 +23,7 @@ func __cjbind_write_UInt64_from_UInt64(storage: UInt64, val: UInt64): UInt64 {
 }
 
 @C
-public struct rte_memseg__cjbind_ty_1__cjbind_ty_1 {
+public struct rte_memseg__cjbind_ty_1 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
     public init() {}
     public func addr(): CPointer<Unit> {
@@ -38,36 +38,24 @@ public struct rte_memseg__cjbind_ty_1__cjbind_ty_1 {
     public mut func addr_64(val!: UInt64): Unit {
         this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
     }
-    public func clone(): rte_memseg__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_memseg__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<rte_memseg__cjbind_ty_1>()
         if (size != 8) {
-            throw Exception("Size of rte_memseg__cjbind_ty_1__cjbind_ty_1 is not 8 but ${size} bytes")
+            throw Exception("Size of rte_memseg__cjbind_ty_1 is not 8 but ${size} bytes")
         }
-        let align = alignOf<rte_memseg__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<rte_memseg__cjbind_ty_1>()
         if (align != 8) {
-            throw Exception("Alignment of rte_memseg__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_memseg__cjbind_ty_1 is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_memseg_rte_memseg {
+public struct rte_memseg {
     let _cjbind_opaque_blob: VArray<UInt8, $44>
-    public func clone(): rte_memseg_rte_memseg {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_memseg_rte_memseg {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $44>>() }
     }
@@ -76,12 +64,12 @@ public struct rte_memseg_rte_memseg {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_memseg_rte_memseg>()
+        let size = sizeOf<rte_memseg>()
         if (size != 44) {
-            throw Exception("Size of rte_memseg_rte_memseg is not 44 but ${size} bytes")
+            throw Exception("Size of rte_memseg is not 44 but ${size} bytes")
         }
-        let align = alignOf<rte_memseg_rte_memseg>()
+        let align = alignOf<rte_memseg>()
         if (align != 1) {
-            throw Exception("Alignment of rte_memseg_rte_memseg is not 1 but ${align} bytes")
+            throw Exception("Alignment of rte_memseg is not 1 but ${align} bytes")
         }
 }

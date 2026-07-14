@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct FullWordWidth_FullWordWidth {
+public struct FullWordWidth {
     var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
     public func full(): UInt64 {
         var s = this._bitfield_1
@@ -63,33 +63,23 @@ public struct FullWordWidth_FullWordWidth {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 64, UInt64(val)) }
     }
     public init() {}
-    public func clone(): FullWordWidth_FullWordWidth {
-        return this
-    }
-    public func toString(): String {
-        var output = "FullWordWidth_FullWordWidth {"
-        output += " full: "
-        output += this.full().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<FullWordWidth_FullWordWidth>()
+        let size = sizeOf<FullWordWidth>()
         if (size != 8) {
-            throw Exception("Size of FullWordWidth_FullWordWidth is not 8 but ${size} bytes")
+            throw Exception("Size of FullWordWidth is not 8 but ${size} bytes")
         }
-        let align = alignOf<FullWordWidth_FullWordWidth>()
+        let align = alignOf<FullWordWidth>()
         if (align != 8) {
-            throw Exception("Alignment of FullWordWidth_FullWordWidth is not 8 but ${align} bytes")
+            throw Exception("Alignment of FullWordWidth is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct ShiftedWordWidth_ShiftedWordWidth {
+public struct ShiftedWordWidth {
     var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
     public func first(): UInt64 {
         var s = this._bitfield_1
@@ -106,29 +96,17 @@ public struct ShiftedWordWidth_ShiftedWordWidth {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 63, UInt64(val)) }
     }
     public init() {}
-    public func clone(): ShiftedWordWidth_ShiftedWordWidth {
-        return this
-    }
-    public func toString(): String {
-        var output = "ShiftedWordWidth_ShiftedWordWidth {"
-        output += " first: "
-        output += this.first().toString()
-        output += ", rest: "
-        output += this.rest().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ShiftedWordWidth_ShiftedWordWidth>()
+        let size = sizeOf<ShiftedWordWidth>()
         if (size != 8) {
-            throw Exception("Size of ShiftedWordWidth_ShiftedWordWidth is not 8 but ${size} bytes")
+            throw Exception("Size of ShiftedWordWidth is not 8 but ${size} bytes")
         }
-        let align = alignOf<ShiftedWordWidth_ShiftedWordWidth>()
+        let align = alignOf<ShiftedWordWidth>()
         if (align != 8) {
-            throw Exception("Alignment of ShiftedWordWidth_ShiftedWordWidth is not 8 but ${align} bytes")
+            throw Exception("Alignment of ShiftedWordWidth is not 8 but ${align} bytes")
         }
 }

@@ -1,21 +1,11 @@
 package cjbind_ffi
 
-public type baz_baz = Int32
+public type baz = Int32
 
 @C
-public struct Foo_Foo {
-    public let bar: CFunc<(x: Int32, y: Int32) -> baz_baz>
-    public func clone(): Foo_Foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "Foo_Foo {"
-        output += " bar: "
-        output += CPointer<Unit>(this.bar).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(bar: CFunc<(x: Int32, y: Int32) -> baz_baz>) {
+public struct Foo {
+    public let bar: CFunc<(x: Int32, y: Int32) -> baz>
+    public init(bar: CFunc<(x: Int32, y: Int32) -> baz>) {
         this.bar = bar
     }
 }
@@ -23,12 +13,12 @@ public struct Foo_Foo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Foo_Foo>()
+        let size = sizeOf<Foo>()
         if (size != 8) {
-            throw Exception("Size of Foo_Foo is not 8 but ${size} bytes")
+            throw Exception("Size of Foo is not 8 but ${size} bytes")
         }
-        let align = alignOf<Foo_Foo>()
+        let align = alignOf<Foo>()
         if (align != 8) {
-            throw Exception("Alignment of Foo_Foo is not 8 but ${align} bytes")
+            throw Exception("Alignment of Foo is not 8 but ${align} bytes")
         }
 }

@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --opaque-type ^SelectiveOpaque<int>$
+// cjbind-options: --opaque-type ^SelectiveOpaque<int>$ -- -x c++ -std=c++14
 
 template <typename T>
 struct __attribute__((packed)) PackedTemplate {

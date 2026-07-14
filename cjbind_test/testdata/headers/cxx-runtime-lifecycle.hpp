@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --respect-cxx-access-specs --use-specific-virtual-function-receiver
+// cjbind-options: --respect-cxx-access-specs --use-specific-virtual-function-receiver -- -x c++ -std=c++14
 
 #ifndef CJBIND_TEST_CXX_RUNTIME_LIFECYCLE_HPP
 #define CJBIND_TEST_CXX_RUNTIME_LIFECYCLE_HPP

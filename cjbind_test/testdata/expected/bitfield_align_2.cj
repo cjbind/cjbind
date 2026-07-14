@@ -52,21 +52,21 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
     return Int64(raw)
 }
 
-public const MyEnum_ONE: MyEnum_MyEnum = 0
-public const MyEnum_TWO: MyEnum_MyEnum = 1
-public const MyEnum_THREE: MyEnum_MyEnum = 2
-public const MyEnum_FOUR: MyEnum_MyEnum = 3
+public const MyEnum_ONE: MyEnum = 0
+public const MyEnum_TWO: MyEnum = 1
+public const MyEnum_THREE: MyEnum = 2
+public const MyEnum_FOUR: MyEnum = 3
 
-public type MyEnum_MyEnum = UInt32
+public type MyEnum = UInt32
 
 @C
-public struct TaggedPtr_TaggedPtr {
+public struct TaggedPtr {
     var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
-    public func tag(): MyEnum_MyEnum {
+    public func tag(): MyEnum {
         var s = this._bitfield_1
-        return MyEnum_MyEnum(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
+        return MyEnum(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
     }
-    public mut func tag(val!: MyEnum_MyEnum): Unit {
+    public mut func tag(val!: MyEnum): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 2, UInt64(val)) }
     }
     public func ptr(): Int64 {
@@ -77,29 +77,17 @@ public struct TaggedPtr_TaggedPtr {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 62, UInt64(val)) }
     }
     public init() {}
-    public func clone(): TaggedPtr_TaggedPtr {
-        return this
-    }
-    public func toString(): String {
-        var output = "TaggedPtr_TaggedPtr {"
-        output += " tag: "
-        output += this.tag().toString()
-        output += ", ptr: "
-        output += this.ptr().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TaggedPtr_TaggedPtr>()
+        let size = sizeOf<TaggedPtr>()
         if (size != 8) {
-            throw Exception("Size of TaggedPtr_TaggedPtr is not 8 but ${size} bytes")
+            throw Exception("Size of TaggedPtr is not 8 but ${size} bytes")
         }
-        let align = alignOf<TaggedPtr_TaggedPtr>()
+        let align = alignOf<TaggedPtr>()
         if (align != 8) {
-            throw Exception("Alignment of TaggedPtr_TaggedPtr is not 8 but ${align} bytes")
+            throw Exception("Alignment of TaggedPtr is not 8 but ${align} bytes")
         }
 }

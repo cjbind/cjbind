@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct A_A {
+public struct A {
     public var name: VArray<UInt8, $7> = unsafe { zeroValue<VArray<UInt8, $7>>() }
     var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
     public func firmness(): UInt8 {
@@ -109,52 +109,17 @@ public struct A_A {
     }
     public var description1: CPointer<UInt8> = unsafe { zeroValue<CPointer<UInt8>>() }
     public init() {}
-    public func clone(): A_A {
-        return this
-    }
-    public func toString(): String {
-        var output = "A_A {"
-        output += " name: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..7) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.name[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += ", firmness: "
-        output += this.firmness().toString()
-        output += ", color: "
-        output += this.color().toString()
-        output += ", weedsBonus: "
-        output += this.weedsBonus().toString()
-        output += ", pestsBonus: "
-        output += this.pestsBonus().toString()
-        output += ", size: "
-        output += this.size().toString()
-        output += ", maxYield: "
-        output += this.maxYield.toString()
-        output += ", minYield: "
-        output += this.minYield().toString()
-        output += ", waterBonus: "
-        output += this.waterBonus().toString()
-        output += ", description1: "
-        output += CPointer<Unit>(this.description1).toUIntNative().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<A_A>()
+        let size = sizeOf<A>()
         if (size != 24) {
-            throw Exception("Size of A_A is not 24 but ${size} bytes")
+            throw Exception("Size of A is not 24 but ${size} bytes")
         }
-        let align = alignOf<A_A>()
+        let align = alignOf<A>()
         if (align != 8) {
-            throw Exception("Alignment of A_A is not 8 but ${align} bytes")
+            throw Exception("Alignment of A is not 8 but ${align} bytes")
         }
 }

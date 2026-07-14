@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --blocklist-type ^ExternalPtr$
+// cjbind-options: --blocklist-type ^ExternalPtr$ -- -x c++ -std=c++14
 
 template <typename>
 struct ExternalPtr {};
@@ -15,4 +15,8 @@ struct ExternalHandle {
 
 struct BlocklistedNestedArgumentHolder {
     ExternalHandle<int> value;
+};
+
+struct BlocklistedPointerHolder {
+    ExternalPtr<int>* value;
 };

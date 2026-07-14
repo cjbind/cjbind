@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 template <typename T, typename U, typename V>
 class DoesNotUseU {
@@ -6,8 +6,5 @@ class DoesNotUseU {
     V v;
 };
 
+// The bool should go away because U is not used.
 using Alias = DoesNotUseU<int, bool, char>;
-
-struct TemplateParamUsage7Holder {
-    Alias value;
-};

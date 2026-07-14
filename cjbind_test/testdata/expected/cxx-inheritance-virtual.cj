@@ -1,30 +1,21 @@
 package cjbind_ffi
 
-foreign func _ZN4Base3runEi(this_: CPointer<Base_Base>, input: Int32): Int32
+foreign func _ZN4Base3runEi(this_: CPointer<Base>, input: Int32): Int32
 
-public unsafe func Base_run(this_: CPointer<Base_Base>, input: Int32): Int32 {
+public unsafe func Base_run(this_: CPointer<Base>, input: Int32): Int32 {
     return _ZN4Base3runEi(this_, input)
 }
 
-foreign func _ZN4BaseD1Ev(this_: CPointer<Base_Base>): Unit
+foreign func _ZN4BaseD1Ev(this_: CPointer<Base>): Unit
 
-public unsafe func Base_Base_destructor(this_: CPointer<Base_Base>): Unit {
+public unsafe func Base_Base_destructor(this_: CPointer<Base>): Unit {
     return _ZN4BaseD1Ev(this_)
 }
 
 @C
-public struct Base_Base {
+public struct Base {
     public let vtable_: CPointer<Unit>
     public let base: Int32
-    public func toString(): String {
-        var output = "Base_Base {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += ", base: "
-        output += this.base.toString()
-        output += " }"
-        return output
-    }
     public init(vtable_: CPointer<Unit>, base: Int32) {
         this.vtable_ = vtable_
         this.base = base
@@ -34,29 +25,19 @@ public struct Base_Base {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Base_Base>()
+        let size = sizeOf<Base>()
         if (size != 16) {
-            throw Exception("Size of Base_Base is not 16 but ${size} bytes")
+            throw Exception("Size of Base is not 16 but ${size} bytes")
         }
-        let align = alignOf<Base_Base>()
+        let align = alignOf<Base>()
         if (align != 8) {
-            throw Exception("Alignment of Base_Base is not 8 but ${align} bytes")
+            throw Exception("Alignment of Base is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct Extra_Extra {
+public struct Extra {
     public let extra: Int64
-    public func clone(): Extra_Extra {
-        return this
-    }
-    public func toString(): String {
-        var output = "Extra_Extra {"
-        output += " extra: "
-        output += this.extra.toString()
-        output += " }"
-        return output
-    }
     public init(extra: Int64) {
         this.extra = extra
     }
@@ -65,39 +46,28 @@ public struct Extra_Extra {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Extra_Extra>()
+        let size = sizeOf<Extra>()
         if (size != 8) {
-            throw Exception("Size of Extra_Extra is not 8 but ${size} bytes")
+            throw Exception("Size of Extra is not 8 but ${size} bytes")
         }
-        let align = alignOf<Extra_Extra>()
+        let align = alignOf<Extra>()
         if (align != 8) {
-            throw Exception("Alignment of Extra_Extra is not 8 but ${align} bytes")
+            throw Exception("Alignment of Extra is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN7Derived3runEi(this_: CPointer<Derived_Derived>, input: Int32): Int32
+foreign func _ZN7Derived3runEi(this_: CPointer<Derived>, input: Int32): Int32
 
-public unsafe func Derived_run(this_: CPointer<Derived_Derived>, input: Int32): Int32 {
+public unsafe func Derived_run(this_: CPointer<Derived>, input: Int32): Int32 {
     return _ZN7Derived3runEi(this_, input)
 }
 
 @C
-public struct Derived_Derived {
-    public let _base: Base_Base
-    public let _base_1: Extra_Extra
+public struct Derived {
+    public let _base: Base
+    public let _base_1: Extra
     public let value: Int32
-    public func toString(): String {
-        var output = "Derived_Derived {"
-        output += " _base: "
-        output += this._base.toString()
-        output += ", _base_1: "
-        output += this._base_1.toString()
-        output += ", value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: Base_Base, _base_1: Extra_Extra, value: Int32) {
+    public init(_base: Base, _base_1: Extra, value: Int32) {
         this._base = _base
         this._base_1 = _base_1
         this.value = value
@@ -107,44 +77,34 @@ public struct Derived_Derived {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Derived_Derived>()
+        let size = sizeOf<Derived>()
         if (size != 32) {
-            throw Exception("Size of Derived_Derived is not 32 but ${size} bytes")
+            throw Exception("Size of Derived is not 32 but ${size} bytes")
         }
-        let align = alignOf<Derived_Derived>()
+        let align = alignOf<Derived>()
         if (align != 8) {
-            throw Exception("Alignment of Derived_Derived is not 8 but ${align} bytes")
+            throw Exception("Alignment of Derived is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN9Interface5applyEi(this_: CPointer<Interface_Interface>, input: Int32): Int32
+foreign func _ZN9Interface5applyEi(this_: CPointer<Interface>, input: Int32): Int32
 
-public unsafe func Interface_apply(this_: CPointer<Interface_Interface>, input: Int32): Int32 {
+public unsafe func Interface_apply(this_: CPointer<Interface>, input: Int32): Int32 {
     return _ZN9Interface5applyEi(this_, input)
 }
 
 @C
-public struct Interface_Interface__cjbind_vtable {
-    public let Interface_apply: CFunc<(this_: CPointer<Interface_Interface>, input: Int32) -> Int32>
-    public init(Interface_apply: CFunc<(this_: CPointer<Interface_Interface>, input: Int32) -> Int32>) {
+public struct Interface__cjbind_vtable {
+    public let Interface_apply: CFunc<(this_: CPointer<Interface>, input: Int32) -> Int32>
+    public init(Interface_apply: CFunc<(this_: CPointer<Interface>, input: Int32) -> Int32>) {
         this.Interface_apply = Interface_apply
     }
 }
 
 @C
-public struct Interface_Interface {
-    public let vtable_: CPointer<Interface_Interface__cjbind_vtable>
-    public func clone(): Interface_Interface {
-        return this
-    }
-    public func toString(): String {
-        var output = "Interface_Interface {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<Interface_Interface__cjbind_vtable>) {
+public struct Interface {
+    public let vtable_: CPointer<Interface__cjbind_vtable>
+    public init(vtable_: CPointer<Interface__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -152,50 +112,36 @@ public struct Interface_Interface {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Interface_Interface>()
+        let size = sizeOf<Interface>()
         if (size != 8) {
-            throw Exception("Size of Interface_Interface is not 8 but ${size} bytes")
+            throw Exception("Size of Interface is not 8 but ${size} bytes")
         }
-        let align = alignOf<Interface_Interface>()
+        let align = alignOf<Interface>()
         if (align != 8) {
-            throw Exception("Alignment of Interface_Interface is not 8 but ${align} bytes")
+            throw Exception("Alignment of Interface is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN8TailBase3tagEv(this_: CPointer<TailBase_TailBase>): Int32
+foreign func _ZN8TailBase3tagEv(this_: CPointer<TailBase>): Int32
 
-public unsafe func TailBase_tag(this_: CPointer<TailBase_TailBase>): Int32 {
+public unsafe func TailBase_tag(this_: CPointer<TailBase>): Int32 {
     return _ZN8TailBase3tagEv(this_)
 }
 
 @C
-public struct TailBase_TailBase__cjbind_vtable {
-    public let TailBase_tag: CFunc<(this_: CPointer<TailBase_TailBase>) -> Int32>
-    public init(TailBase_tag: CFunc<(this_: CPointer<TailBase_TailBase>) -> Int32>) {
+public struct TailBase__cjbind_vtable {
+    public let TailBase_tag: CFunc<(this_: CPointer<TailBase>) -> Int32>
+    public init(TailBase_tag: CFunc<(this_: CPointer<TailBase>) -> Int32>) {
         this.TailBase_tag = TailBase_tag
     }
 }
 
 @C
-public struct TailBase_TailBase {
-    public let vtable_: CPointer<TailBase_TailBase__cjbind_vtable>
+public struct TailBase {
+    public let vtable_: CPointer<TailBase__cjbind_vtable>
     public let payload: Int32
     public let marker: UInt8
-    public func clone(): TailBase_TailBase {
-        return this
-    }
-    public func toString(): String {
-        var output = "TailBase_TailBase {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += ", payload: "
-        output += this.payload.toString()
-        output += ", marker: "
-        output += this.marker.toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<TailBase_TailBase__cjbind_vtable>, payload: Int32, marker: UInt8) {
+    public init(vtable_: CPointer<TailBase__cjbind_vtable>, payload: Int32, marker: UInt8) {
         this.vtable_ = vtable_
         this.payload = payload
         this.marker = marker
@@ -205,34 +151,25 @@ public struct TailBase_TailBase {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TailBase_TailBase>()
+        let size = sizeOf<TailBase>()
         if (size != 16) {
-            throw Exception("Size of TailBase_TailBase is not 16 but ${size} bytes")
+            throw Exception("Size of TailBase is not 16 but ${size} bytes")
         }
-        let align = alignOf<TailBase_TailBase>()
+        let align = alignOf<TailBase>()
         if (align != 8) {
-            throw Exception("Alignment of TailBase_TailBase is not 8 but ${align} bytes")
+            throw Exception("Alignment of TailBase is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN11TailDerived3tagEv(this_: CPointer<TailDerived_TailDerived>): Int32
+foreign func _ZN11TailDerived3tagEv(this_: CPointer<TailDerived>): Int32
 
-public unsafe func TailDerived_tag(this_: CPointer<TailDerived_TailDerived>): Int32 {
+public unsafe func TailDerived_tag(this_: CPointer<TailDerived>): Int32 {
     return _ZN11TailDerived3tagEv(this_)
 }
 
 @C
-public struct TailDerived_TailDerived {
+public struct TailDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public func clone(): TailDerived_TailDerived {
-        return this
-    }
-    public func toString(): String {
-        var output = "TailDerived_TailDerived {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
@@ -241,29 +178,19 @@ public struct TailDerived_TailDerived {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TailDerived_TailDerived>()
+        let size = sizeOf<TailDerived>()
         if (size != 16) {
-            throw Exception("Size of TailDerived_TailDerived is not 16 but ${size} bytes")
+            throw Exception("Size of TailDerived is not 16 but ${size} bytes")
         }
-        let align = alignOf<TailDerived_TailDerived>()
+        let align = alignOf<TailDerived>()
         if (align != 8) {
-            throw Exception("Alignment of TailDerived_TailDerived is not 8 but ${align} bytes")
+            throw Exception("Alignment of TailDerived is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct Plain_Plain {
+public struct Plain {
     public let plain: Int32
-    public func clone(): Plain_Plain {
-        return this
-    }
-    public func toString(): String {
-        var output = "Plain_Plain {"
-        output += " plain: "
-        output += this.plain.toString()
-        output += " }"
-        return output
-    }
     public init(plain: Int32) {
         this.plain = plain
     }
@@ -272,47 +199,35 @@ public struct Plain_Plain {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Plain_Plain>()
+        let size = sizeOf<Plain>()
         if (size != 4) {
-            throw Exception("Size of Plain_Plain is not 4 but ${size} bytes")
+            throw Exception("Size of Plain is not 4 but ${size} bytes")
         }
-        let align = alignOf<Plain_Plain>()
+        let align = alignOf<Plain>()
         if (align != 4) {
-            throw Exception("Alignment of Plain_Plain is not 4 but ${align} bytes")
+            throw Exception("Alignment of Plain is not 4 but ${align} bytes")
         }
 }
 
-foreign func _ZN4Poly3actEv(this_: CPointer<Poly_Poly>): Int32
+foreign func _ZN4Poly3actEv(this_: CPointer<Poly>): Int32
 
-public unsafe func Poly_act(this_: CPointer<Poly_Poly>): Int32 {
+public unsafe func Poly_act(this_: CPointer<Poly>): Int32 {
     return _ZN4Poly3actEv(this_)
 }
 
 @C
-public struct Poly_Poly__cjbind_vtable {
-    public let Poly_act: CFunc<(this_: CPointer<Poly_Poly>) -> Int32>
-    public init(Poly_act: CFunc<(this_: CPointer<Poly_Poly>) -> Int32>) {
+public struct Poly__cjbind_vtable {
+    public let Poly_act: CFunc<(this_: CPointer<Poly>) -> Int32>
+    public init(Poly_act: CFunc<(this_: CPointer<Poly>) -> Int32>) {
         this.Poly_act = Poly_act
     }
 }
 
 @C
-public struct Poly_Poly {
-    public let vtable_: CPointer<Poly_Poly__cjbind_vtable>
+public struct Poly {
+    public let vtable_: CPointer<Poly__cjbind_vtable>
     public let poly: Int32
-    public func clone(): Poly_Poly {
-        return this
-    }
-    public func toString(): String {
-        var output = "Poly_Poly {"
-        output += " vtable_: "
-        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
-        output += ", poly: "
-        output += this.poly.toString()
-        output += " }"
-        return output
-    }
-    public init(vtable_: CPointer<Poly_Poly__cjbind_vtable>, poly: Int32) {
+    public init(vtable_: CPointer<Poly__cjbind_vtable>, poly: Int32) {
         this.vtable_ = vtable_
         this.poly = poly
     }
@@ -321,28 +236,19 @@ public struct Poly_Poly {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Poly_Poly>()
+        let size = sizeOf<Poly>()
         if (size != 16) {
-            throw Exception("Size of Poly_Poly is not 16 but ${size} bytes")
+            throw Exception("Size of Poly is not 16 but ${size} bytes")
         }
-        let align = alignOf<Poly_Poly>()
+        let align = alignOf<Poly>()
         if (align != 8) {
-            throw Exception("Alignment of Poly_Poly is not 8 but ${align} bytes")
+            throw Exception("Alignment of Poly is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct Reordered_Reordered {
+public struct Reordered {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public func clone(): Reordered_Reordered {
-        return this
-    }
-    public func toString(): String {
-        var output = "Reordered_Reordered {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
@@ -351,29 +257,19 @@ public struct Reordered_Reordered {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Reordered_Reordered>()
+        let size = sizeOf<Reordered>()
         if (size != 16) {
-            throw Exception("Size of Reordered_Reordered is not 16 but ${size} bytes")
+            throw Exception("Size of Reordered is not 16 but ${size} bytes")
         }
-        let align = alignOf<Reordered_Reordered>()
+        let align = alignOf<Reordered>()
         if (align != 8) {
-            throw Exception("Alignment of Reordered_Reordered is not 8 but ${align} bytes")
+            throw Exception("Alignment of Reordered is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct VirtualBase_VirtualBase {
+public struct VirtualBase {
     public let value: Int32
-    public func clone(): VirtualBase_VirtualBase {
-        return this
-    }
-    public func toString(): String {
-        var output = "VirtualBase_VirtualBase {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -382,28 +278,19 @@ public struct VirtualBase_VirtualBase {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualBase_VirtualBase>()
+        let size = sizeOf<VirtualBase>()
         if (size != 4) {
-            throw Exception("Size of VirtualBase_VirtualBase is not 4 but ${size} bytes")
+            throw Exception("Size of VirtualBase is not 4 but ${size} bytes")
         }
-        let align = alignOf<VirtualBase_VirtualBase>()
+        let align = alignOf<VirtualBase>()
         if (align != 4) {
-            throw Exception("Alignment of VirtualBase_VirtualBase is not 4 but ${align} bytes")
+            throw Exception("Alignment of VirtualBase is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct VirtualDerived_VirtualDerived {
+public struct VirtualDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public func clone(): VirtualDerived_VirtualDerived {
-        return this
-    }
-    public func toString(): String {
-        var output = "VirtualDerived_VirtualDerived {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
@@ -412,12 +299,12 @@ public struct VirtualDerived_VirtualDerived {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<VirtualDerived_VirtualDerived>()
+        let size = sizeOf<VirtualDerived>()
         if (size != 16) {
-            throw Exception("Size of VirtualDerived_VirtualDerived is not 16 but ${size} bytes")
+            throw Exception("Size of VirtualDerived is not 16 but ${size} bytes")
         }
-        let align = alignOf<VirtualDerived_VirtualDerived>()
+        let align = alignOf<VirtualDerived>()
         if (align != 8) {
-            throw Exception("Alignment of VirtualDerived_VirtualDerived is not 8 but ${align} bytes")
+            throw Exception("Alignment of VirtualDerived is not 8 but ${align} bytes")
         }
 }

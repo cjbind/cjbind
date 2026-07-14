@@ -12,18 +12,8 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
 }
 
 @C
-public struct TrivialValue_TrivialValue {
+public struct TrivialValue {
     public let value: Int32
-    public func clone(): TrivialValue_TrivialValue {
-        return this
-    }
-    public func toString(): String {
-        var output = "TrivialValue_TrivialValue {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -32,32 +22,25 @@ public struct TrivialValue_TrivialValue {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TrivialValue_TrivialValue>()
+        let size = sizeOf<TrivialValue>()
         if (size != 4) {
-            throw Exception("Size of TrivialValue_TrivialValue is not 4 but ${size} bytes")
+            throw Exception("Size of TrivialValue is not 4 but ${size} bytes")
         }
-        let align = alignOf<TrivialValue_TrivialValue>()
+        let align = alignOf<TrivialValue>()
         if (align != 4) {
-            throw Exception("Alignment of TrivialValue_TrivialValue is not 4 but ${align} bytes")
+            throw Exception("Alignment of TrivialValue is not 4 but ${align} bytes")
         }
 }
 
-foreign func _ZN13OwnDestructorD1Ev(this_: CPointer<OwnDestructor_OwnDestructor>): Unit
+foreign func _ZN13OwnDestructorD1Ev(this_: CPointer<OwnDestructor>): Unit
 
-public unsafe func OwnDestructor_OwnDestructor_destructor(this_: CPointer<OwnDestructor_OwnDestructor>): Unit {
+public unsafe func OwnDestructor_OwnDestructor_destructor(this_: CPointer<OwnDestructor>): Unit {
     return _ZN13OwnDestructorD1Ev(this_)
 }
 
 @C
-public struct OwnDestructor_OwnDestructor {
+public struct OwnDestructor {
     public let value: Int32
-    public func toString(): String {
-        var output = "OwnDestructor_OwnDestructor {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -66,26 +49,19 @@ public struct OwnDestructor_OwnDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<OwnDestructor_OwnDestructor>()
+        let size = sizeOf<OwnDestructor>()
         if (size != 4) {
-            throw Exception("Size of OwnDestructor_OwnDestructor is not 4 but ${size} bytes")
+            throw Exception("Size of OwnDestructor is not 4 but ${size} bytes")
         }
-        let align = alignOf<OwnDestructor_OwnDestructor>()
+        let align = alignOf<OwnDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of OwnDestructor_OwnDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of OwnDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct DeletedDestructor_DeletedDestructor {
+public struct DeletedDestructor {
     public let value: Int32
-    public func toString(): String {
-        var output = "DeletedDestructor_DeletedDestructor {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -94,27 +70,20 @@ public struct DeletedDestructor_DeletedDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DeletedDestructor_DeletedDestructor>()
+        let size = sizeOf<DeletedDestructor>()
         if (size != 4) {
-            throw Exception("Size of DeletedDestructor_DeletedDestructor is not 4 but ${size} bytes")
+            throw Exception("Size of DeletedDestructor is not 4 but ${size} bytes")
         }
-        let align = alignOf<DeletedDestructor_DeletedDestructor>()
+        let align = alignOf<DeletedDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of DeletedDestructor_DeletedDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of DeletedDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct ContainsDestructor_ContainsDestructor {
-    public let value: OwnDestructor_OwnDestructor
-    public func toString(): String {
-        var output = "ContainsDestructor_ContainsDestructor {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: OwnDestructor_OwnDestructor) {
+public struct ContainsDestructor {
+    public let value: OwnDestructor
+    public init(value: OwnDestructor) {
         this.value = value
     }
 }
@@ -122,30 +91,21 @@ public struct ContainsDestructor_ContainsDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ContainsDestructor_ContainsDestructor>()
+        let size = sizeOf<ContainsDestructor>()
         if (size != 4) {
-            throw Exception("Size of ContainsDestructor_ContainsDestructor is not 4 but ${size} bytes")
+            throw Exception("Size of ContainsDestructor is not 4 but ${size} bytes")
         }
-        let align = alignOf<ContainsDestructor_ContainsDestructor>()
+        let align = alignOf<ContainsDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of ContainsDestructor_ContainsDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of ContainsDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct InheritsDestructor_InheritsDestructor {
-    public let _base: OwnDestructor_OwnDestructor
+public struct InheritsDestructor {
+    public let _base: OwnDestructor
     public let marker: Int32
-    public func toString(): String {
-        var output = "InheritsDestructor_InheritsDestructor {"
-        output += " _base: "
-        output += this._base.toString()
-        output += ", marker: "
-        output += this.marker.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: OwnDestructor_OwnDestructor, marker: Int32) {
+    public init(_base: OwnDestructor, marker: Int32) {
         this._base = _base
         this.marker = marker
     }
@@ -154,27 +114,20 @@ public struct InheritsDestructor_InheritsDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<InheritsDestructor_InheritsDestructor>()
+        let size = sizeOf<InheritsDestructor>()
         if (size != 8) {
-            throw Exception("Size of InheritsDestructor_InheritsDestructor is not 8 but ${size} bytes")
+            throw Exception("Size of InheritsDestructor is not 8 but ${size} bytes")
         }
-        let align = alignOf<InheritsDestructor_InheritsDestructor>()
+        let align = alignOf<InheritsDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of InheritsDestructor_InheritsDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of InheritsDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct DeepDestructor_DeepDestructor {
-    public let value: ContainsDestructor_ContainsDestructor
-    public func toString(): String {
-        var output = "DeepDestructor_DeepDestructor {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: ContainsDestructor_ContainsDestructor) {
+public struct DeepDestructor {
+    public let value: ContainsDestructor
+    public init(value: ContainsDestructor) {
         this.value = value
     }
 }
@@ -182,30 +135,20 @@ public struct DeepDestructor_DeepDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DeepDestructor_DeepDestructor>()
+        let size = sizeOf<DeepDestructor>()
         if (size != 4) {
-            throw Exception("Size of DeepDestructor_DeepDestructor is not 4 but ${size} bytes")
+            throw Exception("Size of DeepDestructor is not 4 but ${size} bytes")
         }
-        let align = alignOf<DeepDestructor_DeepDestructor>()
+        let align = alignOf<DeepDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of DeepDestructor_DeepDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of DeepDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct PointerOnlyDestructor_PointerOnlyDestructor {
-    public let value: CPointer<OwnDestructor_OwnDestructor>
-    public func clone(): PointerOnlyDestructor_PointerOnlyDestructor {
-        return this
-    }
-    public func toString(): String {
-        var output = "PointerOnlyDestructor_PointerOnlyDestructor {"
-        output += " value: "
-        output += CPointer<Unit>(this.value).toUIntNative().toString()
-        output += " }"
-        return output
-    }
-    public init(value: CPointer<OwnDestructor_OwnDestructor>) {
+public struct PointerOnlyDestructor {
+    public let value: CPointer<OwnDestructor>
+    public init(value: CPointer<OwnDestructor>) {
         this.value = value
     }
 }
@@ -213,25 +156,24 @@ public struct PointerOnlyDestructor_PointerOnlyDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<PointerOnlyDestructor_PointerOnlyDestructor>()
+        let size = sizeOf<PointerOnlyDestructor>()
         if (size != 8) {
-            throw Exception("Size of PointerOnlyDestructor_PointerOnlyDestructor is not 8 but ${size} bytes")
+            throw Exception("Size of PointerOnlyDestructor is not 8 but ${size} bytes")
         }
-        let align = alignOf<PointerOnlyDestructor_PointerOnlyDestructor>()
+        let align = alignOf<PointerOnlyDestructor>()
         if (align != 8) {
-            throw Exception("Alignment of PointerOnlyDestructor_PointerOnlyDestructor is not 8 but ${align} bytes")
+            throw Exception("Alignment of PointerOnlyDestructor is not 8 but ${align} bytes")
         }
 }
 
-foreign func _ZN18UnionOwnDestructorD1Ev(this_: CPointer<UnionOwnDestructor_UnionOwnDestructor>): Unit
+foreign func _ZN18UnionOwnDestructorD1Ev(this_: CPointer<UnionOwnDestructor>): Unit
 
-public unsafe func UnionOwnDestructor_UnionOwnDestructor_destructor(
-    this_: CPointer<UnionOwnDestructor_UnionOwnDestructor>): Unit {
+public unsafe func UnionOwnDestructor_UnionOwnDestructor_destructor(this_: CPointer<UnionOwnDestructor>): Unit {
     return _ZN18UnionOwnDestructorD1Ev(this_)
 }
 
 @C
-public struct UnionOwnDestructor_UnionOwnDestructor {
+public struct UnionOwnDestructor {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func value(): Int32 {
@@ -245,128 +187,23 @@ public struct UnionOwnDestructor_UnionOwnDestructor {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<UnionOwnDestructor_UnionOwnDestructor>()
+        let size = sizeOf<UnionOwnDestructor>()
         if (size != 4) {
-            throw Exception("Size of UnionOwnDestructor_UnionOwnDestructor is not 4 but ${size} bytes")
+            throw Exception("Size of UnionOwnDestructor is not 4 but ${size} bytes")
         }
-        let align = alignOf<UnionOwnDestructor_UnionOwnDestructor>()
+        let align = alignOf<UnionOwnDestructor>()
         if (align != 4) {
-            throw Exception("Alignment of UnionOwnDestructor_UnionOwnDestructor is not 4 but ${align} bytes")
+            throw Exception("Alignment of UnionOwnDestructor is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0 {
-    public let value: Int32
-    public func toString(): String {
-        var output = "TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0 {
-    public let value: OwnDestructor_OwnDestructor
-    public func toString(): String {
-        var output = "TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: OwnDestructor_OwnDestructor) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0 {
-    public let value: TrivialValue_TrivialValue
-    public func clone(): TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: TrivialValue_TrivialValue) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct DestructorTemplateHolder_DestructorTemplateHolder {
-    public let own: TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0
-    public let propagated: TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0
-    public let trivial: TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0
-    public func toString(): String {
-        var output = "DestructorTemplateHolder_DestructorTemplateHolder {"
-        output += " own: "
-        output += this.own.toString()
-        output += ", propagated: "
-        output += this.propagated.toString()
-        output += ", trivial: "
-        output += this.trivial.toString()
-        output += " }"
-        return output
-    }
-    public init(own: TemplateOwnDestructor_open0_int_close0_TemplateOwnDestructor_open0_int_close0,
-        propagated: TemplateField_open0_OwnDestructor_close0_TemplateField_open0_OwnDestructor_close0,
-        trivial: TemplateField_open0_TrivialValue_close0_TemplateField_open0_TrivialValue_close0) {
+public struct DestructorTemplateHolder {
+    public let own: TemplateOwnDestructor_open0_int_close0
+    public let propagated: TemplateField_open0_OwnDestructor_close0
+    public let trivial: TemplateField_open0_TrivialValue_close0
+    public init(own: TemplateOwnDestructor_open0_int_close0, propagated: TemplateField_open0_OwnDestructor_close0,
+        trivial: TemplateField_open0_TrivialValue_close0) {
         this.own = own
         this.propagated = propagated
         this.trivial = trivial
@@ -376,30 +213,19 @@ public struct DestructorTemplateHolder_DestructorTemplateHolder {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DestructorTemplateHolder_DestructorTemplateHolder>()
+        let size = sizeOf<DestructorTemplateHolder>()
         if (size != 12) {
-            throw Exception("Size of DestructorTemplateHolder_DestructorTemplateHolder is not 12 but ${size} bytes")
+            throw Exception("Size of DestructorTemplateHolder is not 12 but ${size} bytes")
         }
-        let align = alignOf<DestructorTemplateHolder_DestructorTemplateHolder>()
+        let align = alignOf<DestructorTemplateHolder>()
         if (align != 4) {
-            throw Exception(
-                "Alignment of DestructorTemplateHolder_DestructorTemplateHolder is not 4 but ${align} bytes")
+            throw Exception("Alignment of DestructorTemplateHolder is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct IntegerOnly_IntegerOnly {
+public struct IntegerOnly {
     public let value: Int32
-    public func clone(): IntegerOnly_IntegerOnly {
-        return this
-    }
-    public func toString(): String {
-        var output = "IntegerOnly_IntegerOnly {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -408,29 +234,19 @@ public struct IntegerOnly_IntegerOnly {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<IntegerOnly_IntegerOnly>()
+        let size = sizeOf<IntegerOnly>()
         if (size != 4) {
-            throw Exception("Size of IntegerOnly_IntegerOnly is not 4 but ${size} bytes")
+            throw Exception("Size of IntegerOnly is not 4 but ${size} bytes")
         }
-        let align = alignOf<IntegerOnly_IntegerOnly>()
+        let align = alignOf<IntegerOnly>()
         if (align != 4) {
-            throw Exception("Alignment of IntegerOnly_IntegerOnly is not 4 but ${align} bytes")
+            throw Exception("Alignment of IntegerOnly is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct DirectFloat_DirectFloat {
+public struct DirectFloat {
     public let value: Float32
-    public func clone(): DirectFloat_DirectFloat {
-        return this
-    }
-    public func toString(): String {
-        var output = "DirectFloat_DirectFloat {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Float32) {
         this.value = value
     }
@@ -439,36 +255,19 @@ public struct DirectFloat_DirectFloat {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<DirectFloat_DirectFloat>()
+        let size = sizeOf<DirectFloat>()
         if (size != 4) {
-            throw Exception("Size of DirectFloat_DirectFloat is not 4 but ${size} bytes")
+            throw Exception("Size of DirectFloat is not 4 but ${size} bytes")
         }
-        let align = alignOf<DirectFloat_DirectFloat>()
+        let align = alignOf<DirectFloat>()
         if (align != 4) {
-            throw Exception("Alignment of DirectFloat_DirectFloat is not 4 but ${align} bytes")
+            throw Exception("Alignment of DirectFloat is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct FloatArray_FloatArray {
+public struct FloatArray {
     public let values: VArray<Float64, $3>
-    public func clone(): FloatArray_FloatArray {
-        return this
-    }
-    public func toString(): String {
-        var output = "FloatArray_FloatArray {"
-        output += " values: "
-        output += "["
-        for (__cjbindDebugIndex0 in 0..3) {
-            if (__cjbindDebugIndex0 != 0) {
-                output += ", "
-            }
-            output += this.values[__cjbindDebugIndex0].toString()
-        }
-        output += "]"
-        output += " }"
-        return output
-    }
     public init(values: VArray<Float64, $3>) {
         this.values = values
     }
@@ -477,30 +276,20 @@ public struct FloatArray_FloatArray {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<FloatArray_FloatArray>()
+        let size = sizeOf<FloatArray>()
         if (size != 24) {
-            throw Exception("Size of FloatArray_FloatArray is not 24 but ${size} bytes")
+            throw Exception("Size of FloatArray is not 24 but ${size} bytes")
         }
-        let align = alignOf<FloatArray_FloatArray>()
+        let align = alignOf<FloatArray>()
         if (align != 8) {
-            throw Exception("Alignment of FloatArray_FloatArray is not 8 but ${align} bytes")
+            throw Exception("Alignment of FloatArray is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct ContainsFloat_ContainsFloat {
-    public let value: DirectFloat_DirectFloat
-    public func clone(): ContainsFloat_ContainsFloat {
-        return this
-    }
-    public func toString(): String {
-        var output = "ContainsFloat_ContainsFloat {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: DirectFloat_DirectFloat) {
+public struct ContainsFloat {
+    public let value: DirectFloat
+    public init(value: DirectFloat) {
         this.value = value
     }
 }
@@ -508,33 +297,21 @@ public struct ContainsFloat_ContainsFloat {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<ContainsFloat_ContainsFloat>()
+        let size = sizeOf<ContainsFloat>()
         if (size != 4) {
-            throw Exception("Size of ContainsFloat_ContainsFloat is not 4 but ${size} bytes")
+            throw Exception("Size of ContainsFloat is not 4 but ${size} bytes")
         }
-        let align = alignOf<ContainsFloat_ContainsFloat>()
+        let align = alignOf<ContainsFloat>()
         if (align != 4) {
-            throw Exception("Alignment of ContainsFloat_ContainsFloat is not 4 but ${align} bytes")
+            throw Exception("Alignment of ContainsFloat is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct InheritsFloat_InheritsFloat {
-    public let _base: DirectFloat_DirectFloat
+public struct InheritsFloat {
+    public let _base: DirectFloat
     public let marker: Int32
-    public func clone(): InheritsFloat_InheritsFloat {
-        return this
-    }
-    public func toString(): String {
-        var output = "InheritsFloat_InheritsFloat {"
-        output += " _base: "
-        output += this._base.toString()
-        output += ", marker: "
-        output += this.marker.toString()
-        output += " }"
-        return output
-    }
-    public init(_base: DirectFloat_DirectFloat, marker: Int32) {
+    public init(_base: DirectFloat, marker: Int32) {
         this._base = _base
         this.marker = marker
     }
@@ -543,32 +320,22 @@ public struct InheritsFloat_InheritsFloat {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<InheritsFloat_InheritsFloat>()
+        let size = sizeOf<InheritsFloat>()
         if (size != 8) {
-            throw Exception("Size of InheritsFloat_InheritsFloat is not 8 but ${size} bytes")
+            throw Exception("Size of InheritsFloat is not 8 but ${size} bytes")
         }
-        let align = alignOf<InheritsFloat_InheritsFloat>()
+        let align = alignOf<InheritsFloat>()
         if (align != 4) {
-            throw Exception("Alignment of InheritsFloat_InheritsFloat is not 4 but ${align} bytes")
+            throw Exception("Alignment of InheritsFloat is not 4 but ${align} bytes")
         }
 }
 
-public type FloatAlias_FloatAlias = Float32
+public type FloatAlias = Float32
 
 @C
-public struct AliasedFloat_AliasedFloat {
-    public let value: FloatAlias_FloatAlias
-    public func clone(): AliasedFloat_AliasedFloat {
-        return this
-    }
-    public func toString(): String {
-        var output = "AliasedFloat_AliasedFloat {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: FloatAlias_FloatAlias) {
+public struct AliasedFloat {
+    public let value: FloatAlias
+    public init(value: FloatAlias) {
         this.value = value
     }
 }
@@ -576,29 +343,19 @@ public struct AliasedFloat_AliasedFloat {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<AliasedFloat_AliasedFloat>()
+        let size = sizeOf<AliasedFloat>()
         if (size != 4) {
-            throw Exception("Size of AliasedFloat_AliasedFloat is not 4 but ${size} bytes")
+            throw Exception("Size of AliasedFloat is not 4 but ${size} bytes")
         }
-        let align = alignOf<AliasedFloat_AliasedFloat>()
+        let align = alignOf<AliasedFloat>()
         if (align != 4) {
-            throw Exception("Alignment of AliasedFloat_AliasedFloat is not 4 but ${align} bytes")
+            throw Exception("Alignment of AliasedFloat is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct FloatPointerOnly_FloatPointerOnly {
+public struct FloatPointerOnly {
     public let value: CPointer<Float32>
-    public func clone(): FloatPointerOnly_FloatPointerOnly {
-        return this
-    }
-    public func toString(): String {
-        var output = "FloatPointerOnly_FloatPointerOnly {"
-        output += " value: "
-        output += CPointer<Unit>(this.value).toUIntNative().toString()
-        output += " }"
-        return output
-    }
     public init(value: CPointer<Float32>) {
         this.value = value
     }
@@ -607,165 +364,33 @@ public struct FloatPointerOnly_FloatPointerOnly {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<FloatPointerOnly_FloatPointerOnly>()
+        let size = sizeOf<FloatPointerOnly>()
         if (size != 8) {
-            throw Exception("Size of FloatPointerOnly_FloatPointerOnly is not 8 but ${size} bytes")
+            throw Exception("Size of FloatPointerOnly is not 8 but ${size} bytes")
         }
-        let align = alignOf<FloatPointerOnly_FloatPointerOnly>()
+        let align = alignOf<FloatPointerOnly>()
         if (align != 8) {
-            throw Exception("Alignment of FloatPointerOnly_FloatPointerOnly is not 8 but ${align} bytes")
+            throw Exception("Alignment of FloatPointerOnly is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0 {
-    public let value: Float32
-    public func clone(): TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Float32) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0 {
-    public let value: Int32
-    public func clone(): TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32) {
-        this.value = value
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0>()
-        if (size != 4) {
-            throw Exception(
-                "Size of TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0 is not 4 but ${size} bytes")
-        }
-        let align = alignOf<TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0 {
-    public let value: Int32
-    public let fixed: Float32
-    public func clone(): TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += ", fixed: "
-        output += this.fixed.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32, fixed: Float32) {
-        this.value = value
-        this.fixed = fixed
-    }
-}
-
-@When[debug]
-let _ = {
-    =>
-        let size = sizeOf<TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0>()
-        if (size != 8) {
-            throw Exception(
-                "Size of TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0 is not 8 but ${size} bytes")
-        }
-        let align = alignOf<TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0>()
-        if (align != 4) {
-            throw Exception(
-                "Alignment of TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0 is not 4 but ${align} bytes")
-        }
-}
-
-@C
-public struct FloatAnalysisHolder_FloatAnalysisHolder {
-    public let integerOnly: IntegerOnly_IntegerOnly
-    public let direct: DirectFloat_DirectFloat
-    public let array: FloatArray_FloatArray
-    public let contained: ContainsFloat_ContainsFloat
-    public let inherited: InheritsFloat_InheritsFloat
-    public let aliased: AliasedFloat_AliasedFloat
-    public let pointerOnly: FloatPointerOnly_FloatPointerOnly
-    public let argumentFloat: TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0
-    public let argumentInteger: TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0
-    public let definitionFloat: TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0
-    public func clone(): FloatAnalysisHolder_FloatAnalysisHolder {
-        return this
-    }
-    public func toString(): String {
-        var output = "FloatAnalysisHolder_FloatAnalysisHolder {"
-        output += " integerOnly: "
-        output += this.integerOnly.toString()
-        output += ", direct: "
-        output += this.direct.toString()
-        output += ", array: "
-        output += this.array.toString()
-        output += ", contained: "
-        output += this.contained.toString()
-        output += ", inherited: "
-        output += this.inherited.toString()
-        output += ", aliased: "
-        output += this.aliased.toString()
-        output += ", pointerOnly: "
-        output += this.pointerOnly.toString()
-        output += ", argumentFloat: "
-        output += this.argumentFloat.toString()
-        output += ", argumentInteger: "
-        output += this.argumentInteger.toString()
-        output += ", definitionFloat: "
-        output += this.definitionFloat.toString()
-        output += " }"
-        return output
-    }
-    public init(integerOnly: IntegerOnly_IntegerOnly, direct: DirectFloat_DirectFloat, array: FloatArray_FloatArray,
-        contained: ContainsFloat_ContainsFloat, inherited: InheritsFloat_InheritsFloat,
-        aliased: AliasedFloat_AliasedFloat, pointerOnly: FloatPointerOnly_FloatPointerOnly,
-        argumentFloat: TemplateArgumentFloat_open0_float_close0_TemplateArgumentFloat_open0_float_close0,
-        argumentInteger: TemplateArgumentFloat_open0_int_close0_TemplateArgumentFloat_open0_int_close0,
-        definitionFloat: TemplateDefinitionFloat_open0_int_close0_TemplateDefinitionFloat_open0_int_close0) {
+public struct FloatAnalysisHolder {
+    public let integerOnly: IntegerOnly
+    public let direct: DirectFloat
+    public let array: FloatArray
+    public let contained: ContainsFloat
+    public let inherited: InheritsFloat
+    public let aliased: AliasedFloat
+    public let pointerOnly: FloatPointerOnly
+    public let argumentFloat: TemplateArgumentFloat_open0_float_close0
+    public let argumentInteger: TemplateArgumentFloat_open0_int_close0
+    public let definitionFloat: TemplateDefinitionFloat_open0_int_close0
+    public init(integerOnly: IntegerOnly, direct: DirectFloat, array: FloatArray, contained: ContainsFloat,
+        inherited: InheritsFloat, aliased: AliasedFloat, pointerOnly: FloatPointerOnly,
+        argumentFloat: TemplateArgumentFloat_open0_float_close0,
+        argumentInteger: TemplateArgumentFloat_open0_int_close0,
+        definitionFloat: TemplateDefinitionFloat_open0_int_close0) {
         this.integerOnly = integerOnly
         this.direct = direct
         this.array = array
@@ -782,12 +407,138 @@ public struct FloatAnalysisHolder_FloatAnalysisHolder {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<FloatAnalysisHolder_FloatAnalysisHolder>()
+        let size = sizeOf<FloatAnalysisHolder>()
         if (size != 72) {
-            throw Exception("Size of FloatAnalysisHolder_FloatAnalysisHolder is not 72 but ${size} bytes")
+            throw Exception("Size of FloatAnalysisHolder is not 72 but ${size} bytes")
         }
-        let align = alignOf<FloatAnalysisHolder_FloatAnalysisHolder>()
+        let align = alignOf<FloatAnalysisHolder>()
         if (align != 8) {
-            throw Exception("Alignment of FloatAnalysisHolder_FloatAnalysisHolder is not 8 but ${align} bytes")
+            throw Exception("Alignment of FloatAnalysisHolder is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateDefinitionFloat_open0_int_close0 {
+    let _cjbind_opaque_blob: VArray<UInt32, $2>
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt32, $2>>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateDefinitionFloat_open0_int_close0>()
+        if (size != 8) {
+            throw Exception("Size of TemplateDefinitionFloat_open0_int_close0 is not 8 but ${size} bytes")
+        }
+        let align = alignOf<TemplateDefinitionFloat_open0_int_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateDefinitionFloat_open0_int_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateArgumentFloat_open0_int_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateArgumentFloat_open0_int_close0>()
+        if (size != 4) {
+            throw Exception("Size of TemplateArgumentFloat_open0_int_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<TemplateArgumentFloat_open0_int_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateArgumentFloat_open0_int_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateArgumentFloat_open0_float_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateArgumentFloat_open0_float_close0>()
+        if (size != 4) {
+            throw Exception("Size of TemplateArgumentFloat_open0_float_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<TemplateArgumentFloat_open0_float_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateArgumentFloat_open0_float_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateField_open0_TrivialValue_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateField_open0_TrivialValue_close0>()
+        if (size != 4) {
+            throw Exception("Size of TemplateField_open0_TrivialValue_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<TemplateField_open0_TrivialValue_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateField_open0_TrivialValue_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateField_open0_OwnDestructor_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateField_open0_OwnDestructor_close0>()
+        if (size != 4) {
+            throw Exception("Size of TemplateField_open0_OwnDestructor_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<TemplateField_open0_OwnDestructor_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateField_open0_OwnDestructor_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct TemplateOwnDestructor_open0_int_close0 {
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<TemplateOwnDestructor_open0_int_close0>()
+        if (size != 4) {
+            throw Exception("Size of TemplateOwnDestructor_open0_int_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<TemplateOwnDestructor_open0_int_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of TemplateOwnDestructor_open0_int_close0 is not 4 but ${align} bytes")
         }
 }

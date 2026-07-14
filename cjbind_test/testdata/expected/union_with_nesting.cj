@@ -22,19 +22,19 @@ func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
     return s
 }
 
-func __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): foo__cjbind_ty_1__cjbind_ty_1 {
+func __cjbind_read_foo__cjbind_ty_1_from_UInt32(storage: UInt32): foo__cjbind_ty_1 {
     var s = storage
-    return unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
+    return unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
 }
 
-func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32, val: foo__cjbind_ty_1__cjbind_ty_1): UInt32 {
+func __cjbind_write_foo__cjbind_ty_1_from_UInt32(storage: UInt32, val: foo__cjbind_ty_1): UInt32 {
     var s = storage
-    unsafe { CPointer<foo__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
+    unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
     return s
 }
 
 @C
-public struct foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+public struct foo__cjbind_ty_1__cjbind_ty_1 {
     var _storage: UInt16 = unsafe { zeroValue<UInt16>() }
     public init() {}
     public func b1(): UInt16 {
@@ -49,26 +49,23 @@ public struct foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public mut func b2(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
     }
-    public func clone(): foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (size != 2) {
-            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 is not 2 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1 is not 2 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1>()
         if (align != 2) {
-            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
+public struct foo__cjbind_ty_1__cjbind_ty_2 {
     var _storage: UInt16 = unsafe { zeroValue<UInt16>() }
     public init() {}
     public func c1(): UInt16 {
@@ -83,33 +80,26 @@ public struct foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public mut func c2(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
     }
-    public func clone(): foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
-        return this
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>()
+        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_2>()
         if (size != 2) {
-            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 is not 2 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_2 is not 2 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2>()
+        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_2>()
         if (align != 2) {
-            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 is not 2 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_2 is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct foo__cjbind_ty_1__cjbind_ty_1 {
-    public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
-    public let __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2
-    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
-        return this
-    }
-    public init(__cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1,
-        __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2) {
+public struct foo__cjbind_ty_1 {
+    public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1
+    public let __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2
+    public init(__cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1, __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2) {
         this.__cjbind_anon_1 = __cjbind_anon_1
         this.__cjbind_anon_2 = __cjbind_anon_2
     }
@@ -118,18 +108,18 @@ public struct foo__cjbind_ty_1__cjbind_ty_1 {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo__cjbind_ty_1__cjbind_ty_1>()
+        let size = sizeOf<foo__cjbind_ty_1>()
         if (size != 4) {
-            throw Exception("Size of foo__cjbind_ty_1__cjbind_ty_1 is not 4 but ${size} bytes")
+            throw Exception("Size of foo__cjbind_ty_1 is not 4 but ${size} bytes")
         }
-        let align = alignOf<foo__cjbind_ty_1__cjbind_ty_1>()
+        let align = alignOf<foo__cjbind_ty_1>()
         if (align != 2) {
-            throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
+            throw Exception("Alignment of foo__cjbind_ty_1 is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct foo_foo {
+public struct foo {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
     public func a(): UInt32 {
@@ -138,26 +128,23 @@ public struct foo_foo {
     public mut func a(val!: UInt32): Unit {
         this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
+    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
+        return __cjbind_read_foo__cjbind_ty_1_from_UInt32(this._storage)
     }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
-    }
-    public func clone(): foo_foo {
-        return this
+    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
+        this._storage = __cjbind_write_foo__cjbind_ty_1_from_UInt32(this._storage, val)
     }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 4) {
-            throw Exception("Size of foo_foo is not 4 but ${size} bytes")
+            throw Exception("Size of foo is not 4 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 4) {
-            throw Exception("Alignment of foo_foo is not 4 but ${align} bytes")
+            throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
 }

@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --enable-cxx-namespaces --blocklist-function ^api::Outer_f1$ --no-debug ^api::Outer_Inner$
+// cjbind-options: --enable-cxx-namespaces --blocklist-function ^api::Outer_f1$ -- -x c++ -std=c++14
 
 namespace api {
 struct Outer {

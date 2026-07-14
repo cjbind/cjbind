@@ -12,6 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "scripts/testdata/allowlist-diagnostics.hpp"
+FASTCALL_FIXTURE = ROOT / "scripts/testdata/mangling-win32.hpp"
+MSVC_SYMBOL_FIXTURE = ROOT / "scripts/testdata/method-mangling.hpp"
+GENERIC_ALIAS_FIXTURE = ROOT / "scripts/testdata/unsupported-generic-alias.hpp"
 PATTERNS = {
     "--allowlist-type": "MissingType",
     "--allowlist-function": "MissingFunction",
@@ -105,6 +108,47 @@ def assert_suppressed_diagnostics(diagnostics: str) -> None:
         )
 
 
+def invoke_unsupported_abi(cli: Path, fixture: Path, target: str) -> str:
+    with tempfile.TemporaryDirectory(prefix="cjbind-unsupported-abi-") as temp:
+        output = Path(temp) / "bindings.cj"
+        result = subprocess.run(
+            [
+                str(cli),
+                str(fixture),
+                "-o",
+                str(output),
+                "--package",
+                "cjbind_unsupported_abi",
+                "--no-detect-include-path",
+                "--",
+                "-x",
+                "c++",
+                "-std=c++14",
+                f"--target={target}",
+            ],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        diagnostics = result.stdout + result.stderr
+        if result.returncode != 0:
+            raise AssertionError(
+                f"CLI exited with {result.returncode}:\n{diagnostics}"
+            )
+        return diagnostics
+
+
+def assert_diagnostic(diagnostics: str, expected: str) -> None:
+    if expected not in diagnostics:
+        raise AssertionError(
+            f"missing unsupported ABI diagnostic {expected!r}:\n{diagnostics}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -119,10 +163,25 @@ def main() -> None:
         raise RuntimeError(f"CLI executable does not exist: {cli}")
     if not FIXTURE.is_file():
         raise RuntimeError(f"diagnostic fixture does not exist: {FIXTURE}")
+    for fixture in [FASTCALL_FIXTURE, MSVC_SYMBOL_FIXTURE, GENERIC_ALIAS_FIXTURE]:
+        if not fixture.is_file():
+            raise RuntimeError(f"diagnostic fixture does not exist: {fixture}")
 
     assert_recorded_diagnostics(invoke(cli, no_record_matches=False))
     assert_suppressed_diagnostics(invoke(cli, no_record_matches=True))
-    print("allowlist diagnostic regression test passed")
+    assert_diagnostic(
+        invoke_unsupported_abi(cli, FASTCALL_FIXTURE, "i686-pc-win32"),
+        "calling convention 'fastcall' cannot be represented by the current Cangjie FFI",
+    )
+    assert_diagnostic(
+        invoke_unsupported_abi(cli, MSVC_SYMBOL_FIXTURE, "x86_64-pc-windows-msvc"),
+        "MSVC-decorated ABI symbols cannot be represented by the current Cangjie FFI",
+    )
+    assert_diagnostic(
+        invoke_unsupported_abi(cli, GENERIC_ALIAS_FIXTURE, "i686-pc-win32"),
+        "Error: skipping C++ template alias 'FastCallback' because calling convention 'fastcall' cannot be represented by the current Cangjie FFI",
+    )
+    print("CLI diagnostic regression test passed")
 
 
 if __name__ == "__main__":

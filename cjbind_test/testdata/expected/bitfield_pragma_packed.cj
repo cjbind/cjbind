@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct Struct_Struct {
+public struct Struct {
     var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
     public func a(): UInt8 {
         var s = this._bitfield_1
@@ -91,41 +91,23 @@ public struct Struct_Struct {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
     }
     public init() {}
-    public func clone(): Struct_Struct {
-        return this
-    }
-    public func toString(): String {
-        var output = "Struct_Struct {"
-        output += " a: "
-        output += this.a().toString()
-        output += ", b: "
-        output += this.b().toString()
-        output += ", c: "
-        output += this.c().toString()
-        output += ", d: "
-        output += this.d().toString()
-        output += ", e: "
-        output += this.e().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Struct_Struct>()
+        let size = sizeOf<Struct>()
         if (size != 4) {
-            throw Exception("Size of Struct_Struct is not 4 but ${size} bytes")
+            throw Exception("Size of Struct is not 4 but ${size} bytes")
         }
-        let align = alignOf<Struct_Struct>()
+        let align = alignOf<Struct>()
         if (align != 1) {
-            throw Exception("Alignment of Struct_Struct is not 1 but ${align} bytes")
+            throw Exception("Alignment of Struct is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct Inner_Inner {
+public struct Inner {
     var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
     public func a(): UInt16 {
         var s = this._bitfield_1
@@ -142,45 +124,24 @@ public struct Inner_Inner {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 16, UInt64(val)) }
     }
     public init() {}
-    public func clone(): Inner_Inner {
-        return this
-    }
-    public func toString(): String {
-        var output = "Inner_Inner {"
-        output += " a: "
-        output += this.a().toString()
-        output += ", b: "
-        output += this.b().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Inner_Inner>()
+        let size = sizeOf<Inner>()
         if (size != 4) {
-            throw Exception("Size of Inner_Inner is not 4 but ${size} bytes")
+            throw Exception("Size of Inner is not 4 but ${size} bytes")
         }
-        let align = alignOf<Inner_Inner>()
+        let align = alignOf<Inner>()
         if (align != 2) {
-            throw Exception("Alignment of Inner_Inner is not 2 but ${align} bytes")
+            throw Exception("Alignment of Inner is not 2 but ${align} bytes")
         }
 }
 
 @C
-public struct Outer_Outer {
+public struct Outer {
     let _cjbind_opaque_blob: VArray<UInt8, $4>
-    public func clone(): Outer_Outer {
-        return this
-    }
-    public func toString(): String {
-        var output = "Outer_Outer {"
-        output += " <opaque>"
-        output += " }"
-        return output
-    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }
     }
@@ -189,12 +150,12 @@ public struct Outer_Outer {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<Outer_Outer>()
+        let size = sizeOf<Outer>()
         if (size != 4) {
-            throw Exception("Size of Outer_Outer is not 4 but ${size} bytes")
+            throw Exception("Size of Outer is not 4 but ${size} bytes")
         }
-        let align = alignOf<Outer_Outer>()
+        let align = alignOf<Outer>()
         if (align != 1) {
-            throw Exception("Alignment of Outer_Outer is not 1 but ${align} bytes")
+            throw Exception("Alignment of Outer is not 1 but ${align} bytes")
         }
 }

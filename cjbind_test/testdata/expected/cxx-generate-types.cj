@@ -1,15 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct SelectedType_SelectedType {
+public struct SelectedType {
     public let value: Int32
-    public func toString(): String {
-        var output = "SelectedType_SelectedType {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
     public init(value: Int32) {
         this.value = value
     }
@@ -18,12 +11,12 @@ public struct SelectedType_SelectedType {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<SelectedType_SelectedType>()
+        let size = sizeOf<SelectedType>()
         if (size != 4) {
-            throw Exception("Size of SelectedType_SelectedType is not 4 but ${size} bytes")
+            throw Exception("Size of SelectedType is not 4 but ${size} bytes")
         }
-        let align = alignOf<SelectedType_SelectedType>()
+        let align = alignOf<SelectedType>()
         if (align != 4) {
-            throw Exception("Alignment of SelectedType_SelectedType is not 4 but ${align} bytes")
+            throw Exception("Alignment of SelectedType is not 4 but ${align} bytes")
         }
 }

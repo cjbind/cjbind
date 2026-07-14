@@ -1,11 +1,22 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14
+// cjbind-options: -- -x c++ -std=c++14
 
 /** <div cjbind hide></div> */
 struct SourceAnnotationHiddenRecord {
     int hiddenValue;
 };
 
-/** <div cjbind opaque></div> */
+/** <div cjbind hide/> */
+enum SourceAnnotationHiddenEnum {
+    SourceAnnotationHiddenEnumValue,
+};
+
+enum SourceAnnotationVariantHide {
+    SourceAnnotationVisibleVariant,
+    SourceAnnotationHiddenVariant, /**< <div cjbind hide></div> */
+    SourceAnnotationFollowingVariant,
+};
+
+/** <div cjbind opaque>Opaque record documentation.</div> */
 struct SourceAnnotationOpaqueRecord {
     int concealedValue;
 };

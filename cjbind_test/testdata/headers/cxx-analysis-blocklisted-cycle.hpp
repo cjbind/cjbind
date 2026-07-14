@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --blocklist-type ^ExternalPtr$ --allowlist-function ^entry$
+// cjbind-options: --blocklist-type ^ExternalPtr$ --allowlist-function ^entry$ -- -x c++ -std=c++14
 
 template <typename>
 class ExternalPtr;

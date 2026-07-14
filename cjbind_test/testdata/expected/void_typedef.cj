@@ -1,8 +1,8 @@
 package cjbind_ffi
 
-public type VOID_VOID = Unit
+public type VOID = Unit
 
-public type ALSO_VOID_ALSO_VOID = VOID_VOID
+public type ALSO_VOID = VOID
 
 foreign func this_api_returns_nothing(): Unit
 

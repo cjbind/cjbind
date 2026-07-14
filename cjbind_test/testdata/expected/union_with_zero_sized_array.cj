@@ -34,7 +34,7 @@ func __cjbind_write_VArray_UInt8__2__from_VArray_UInt8__2_(storage: VArray<UInt8
 }
 
 @C
-public struct U_U {
+public struct U {
     var _storage: VArray<UInt8, $2> = unsafe { zeroValue<VArray<UInt8, $2>>() }
     public init() {}
     public func d0(): CPointer<UInt8> {
@@ -60,12 +60,12 @@ public struct U_U {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<U_U>()
+        let size = sizeOf<U>()
         if (size != 2) {
-            throw Exception("Size of U_U is not 2 but ${size} bytes")
+            throw Exception("Size of U is not 2 but ${size} bytes")
         }
-        let align = alignOf<U_U>()
+        let align = alignOf<U>()
         if (align != 1) {
-            throw Exception("Alignment of U_U is not 1 but ${align} bytes")
+            throw Exception("Alignment of U is not 1 but ${align} bytes")
         }
 }

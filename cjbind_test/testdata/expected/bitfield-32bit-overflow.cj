@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct MuchBitfield_MuchBitfield {
+public struct MuchBitfield {
     var _bitfield_1: VArray<UInt8, $5> = VArray<UInt8, $5>(repeat: 0)
     public func m0(): UInt8 {
         var s = this._bitfield_1
@@ -287,97 +287,23 @@ public struct MuchBitfield_MuchBitfield {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 32, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): MuchBitfield_MuchBitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "MuchBitfield_MuchBitfield {"
-        output += " m0: "
-        output += this.m0().toString()
-        output += ", m1: "
-        output += this.m1().toString()
-        output += ", m2: "
-        output += this.m2().toString()
-        output += ", m3: "
-        output += this.m3().toString()
-        output += ", m4: "
-        output += this.m4().toString()
-        output += ", m5: "
-        output += this.m5().toString()
-        output += ", m6: "
-        output += this.m6().toString()
-        output += ", m7: "
-        output += this.m7().toString()
-        output += ", m8: "
-        output += this.m8().toString()
-        output += ", m9: "
-        output += this.m9().toString()
-        output += ", m10: "
-        output += this.m10().toString()
-        output += ", m11: "
-        output += this.m11().toString()
-        output += ", m12: "
-        output += this.m12().toString()
-        output += ", m13: "
-        output += this.m13().toString()
-        output += ", m14: "
-        output += this.m14().toString()
-        output += ", m15: "
-        output += this.m15().toString()
-        output += ", m16: "
-        output += this.m16().toString()
-        output += ", m17: "
-        output += this.m17().toString()
-        output += ", m18: "
-        output += this.m18().toString()
-        output += ", m19: "
-        output += this.m19().toString()
-        output += ", m20: "
-        output += this.m20().toString()
-        output += ", m21: "
-        output += this.m21().toString()
-        output += ", m22: "
-        output += this.m22().toString()
-        output += ", m23: "
-        output += this.m23().toString()
-        output += ", m24: "
-        output += this.m24().toString()
-        output += ", m25: "
-        output += this.m25().toString()
-        output += ", m26: "
-        output += this.m26().toString()
-        output += ", m27: "
-        output += this.m27().toString()
-        output += ", m28: "
-        output += this.m28().toString()
-        output += ", m29: "
-        output += this.m29().toString()
-        output += ", m30: "
-        output += this.m30().toString()
-        output += ", m31: "
-        output += this.m31().toString()
-        output += ", m32: "
-        output += this.m32().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<MuchBitfield_MuchBitfield>()
+        let size = sizeOf<MuchBitfield>()
         if (size != 5) {
-            throw Exception("Size of MuchBitfield_MuchBitfield is not 5 but ${size} bytes")
+            throw Exception("Size of MuchBitfield is not 5 but ${size} bytes")
         }
-        let align = alignOf<MuchBitfield_MuchBitfield>()
+        let align = alignOf<MuchBitfield>()
         if (align != 1) {
-            throw Exception("Alignment of MuchBitfield_MuchBitfield is not 1 but ${align} bytes")
+            throw Exception("Alignment of MuchBitfield is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct capabilities_capabilities {
+public struct capabilities {
     var _bitfield_1: VArray<UInt8, $16> = VArray<UInt8, $16>(repeat: 0)
     public func bit_1(): UInt32 {
         var s = this._bitfield_1
@@ -667,107 +593,17 @@ public struct capabilities_capabilities {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 40, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): capabilities_capabilities {
-        return this
-    }
-    public func toString(): String {
-        var output = "capabilities_capabilities {"
-        output += " bit_1: "
-        output += this.bit_1().toString()
-        output += ", bit_2: "
-        output += this.bit_2().toString()
-        output += ", bit_3: "
-        output += this.bit_3().toString()
-        output += ", bit_4: "
-        output += this.bit_4().toString()
-        output += ", bit_5: "
-        output += this.bit_5().toString()
-        output += ", bit_6: "
-        output += this.bit_6().toString()
-        output += ", bit_7: "
-        output += this.bit_7().toString()
-        output += ", bit_8: "
-        output += this.bit_8().toString()
-        output += ", bit_9: "
-        output += this.bit_9().toString()
-        output += ", bit_10: "
-        output += this.bit_10().toString()
-        output += ", bit_11: "
-        output += this.bit_11().toString()
-        output += ", bit_12: "
-        output += this.bit_12().toString()
-        output += ", bit_13: "
-        output += this.bit_13().toString()
-        output += ", bit_14: "
-        output += this.bit_14().toString()
-        output += ", bit_15: "
-        output += this.bit_15().toString()
-        output += ", bit_16: "
-        output += this.bit_16().toString()
-        output += ", bit_17: "
-        output += this.bit_17().toString()
-        output += ", bit_18: "
-        output += this.bit_18().toString()
-        output += ", bit_19: "
-        output += this.bit_19().toString()
-        output += ", bit_20: "
-        output += this.bit_20().toString()
-        output += ", bit_21: "
-        output += this.bit_21().toString()
-        output += ", bit_22: "
-        output += this.bit_22().toString()
-        output += ", bit_23: "
-        output += this.bit_23().toString()
-        output += ", bit_24: "
-        output += this.bit_24().toString()
-        output += ", bit_25: "
-        output += this.bit_25().toString()
-        output += ", bit_26: "
-        output += this.bit_26().toString()
-        output += ", bit_27: "
-        output += this.bit_27().toString()
-        output += ", bit_28: "
-        output += this.bit_28().toString()
-        output += ", bit_29: "
-        output += this.bit_29().toString()
-        output += ", bit_30: "
-        output += this.bit_30().toString()
-        output += ", bit_31: "
-        output += this.bit_31().toString()
-        output += ", bit_32: "
-        output += this.bit_32().toString()
-        output += ", bit_33: "
-        output += this.bit_33().toString()
-        output += ", bit_34: "
-        output += this.bit_34().toString()
-        output += ", bit_35: "
-        output += this.bit_35().toString()
-        output += ", bit_36: "
-        output += this.bit_36().toString()
-        output += ", bit_37: "
-        output += this.bit_37().toString()
-        output += ", bit_38: "
-        output += this.bit_38().toString()
-        output += ", bit_39: "
-        output += this.bit_39().toString()
-        output += ", bit_40: "
-        output += this.bit_40().toString()
-        output += ", bit_41: "
-        output += this.bit_41().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<capabilities_capabilities>()
+        let size = sizeOf<capabilities>()
         if (size != 16) {
-            throw Exception("Size of capabilities_capabilities is not 16 but ${size} bytes")
+            throw Exception("Size of capabilities is not 16 but ${size} bytes")
         }
-        let align = alignOf<capabilities_capabilities>()
+        let align = alignOf<capabilities>()
         if (align != 4) {
-            throw Exception("Alignment of capabilities_capabilities is not 4 but ${align} bytes")
+            throw Exception("Alignment of capabilities is not 4 but ${align} bytes")
         }
 }

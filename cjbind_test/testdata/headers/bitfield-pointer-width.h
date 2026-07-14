@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg --target=x86_64-unknown-linux-gnu
+// cjbind-options: -- --target=x86_64-unknown-linux-gnu
 #define POINTER_WIDTH (sizeof(void*) * 8)
 
 struct Foo {

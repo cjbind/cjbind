@@ -53,9 +53,10 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct RenameMe_RenameMe {
+public struct RenameMe {
     public var plain: Int32 = unsafe { zeroValue<Int32>() }
-    public var cj_friendly: Int32 = unsafe { zeroValue<Int32>() }
+    public var rust_friendly: Int32 = unsafe { zeroValue<Int32>() }
+    public var char_a: UInt8 = unsafe { zeroValue<UInt8>() }
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public func bitfield_less_ugly_name(): Int32 {
         var s = this._bitfield_1
@@ -72,33 +73,17 @@ public struct RenameMe_RenameMe {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): RenameMe_RenameMe {
-        return this
-    }
-    public func toString(): String {
-        var output = "RenameMe_RenameMe {"
-        output += " plain: "
-        output += this.plain.toString()
-        output += ", cj_friendly: "
-        output += this.cj_friendly.toString()
-        output += ", bitfield_less_ugly_name: "
-        output += this.bitfield_less_ugly_name().toString()
-        output += ", bitfield_better_name: "
-        output += this.bitfield_better_name().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<RenameMe_RenameMe>()
+        let size = sizeOf<RenameMe>()
         if (size != 12) {
-            throw Exception("Size of RenameMe_RenameMe is not 12 but ${size} bytes")
+            throw Exception("Size of RenameMe is not 12 but ${size} bytes")
         }
-        let align = alignOf<RenameMe_RenameMe>()
+        let align = alignOf<RenameMe>()
         if (align != 4) {
-            throw Exception("Alignment of RenameMe_RenameMe is not 4 but ${align} bytes")
+            throw Exception("Alignment of RenameMe is not 4 but ${align} bytes")
         }
 }

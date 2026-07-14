@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --allowlist-type ^SelectedOuter$ --no-recursive-allowlist
+// cjbind-options: --allowlist-type ^SelectedOuter$ --no-recursive-allowlist -- -x c++ -std=c++14
 
 struct SelectedInner {
     int value;

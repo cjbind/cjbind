@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct rte_kni_fifo_rte_kni_fifo {
+public struct rte_kni_fifo {
     //< Next position to be written*
     public let write: UInt32
     //< Next position to be read *
@@ -64,21 +64,6 @@ public struct rte_kni_fifo_rte_kni_fifo {
     public let elem_size: UInt32
     //< The buffer contains mbuf pointers *
     public let buffer: CPointer<CPointer<Unit>>
-    public func toString(): String {
-        var output = "rte_kni_fifo_rte_kni_fifo {"
-        output += " write: "
-        output += this.write.toString()
-        output += ", read: "
-        output += this.read.toString()
-        output += ", len: "
-        output += this.len.toString()
-        output += ", elem_size: "
-        output += this.elem_size.toString()
-        output += ", buffer: "
-        output += "<incomplete array>"
-        output += " }"
-        return output
-    }
     public init(write: UInt32, read: UInt32, len: UInt32, elem_size: UInt32, buffer: CPointer<CPointer<Unit>>) {
         this.write = write
         this.read = read
@@ -91,18 +76,18 @@ public struct rte_kni_fifo_rte_kni_fifo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_kni_fifo_rte_kni_fifo>()
+        let size = sizeOf<rte_kni_fifo>()
         if (size != 16) {
-            throw Exception("Size of rte_kni_fifo_rte_kni_fifo is not 16 but ${size} bytes")
+            throw Exception("Size of rte_kni_fifo is not 16 but ${size} bytes")
         }
-        let align = alignOf<rte_kni_fifo_rte_kni_fifo>()
+        let align = alignOf<rte_kni_fifo>()
         if (align != 8) {
-            throw Exception("Alignment of rte_kni_fifo_rte_kni_fifo is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_kni_fifo is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct rte_eth_link_rte_eth_link {
+public struct rte_eth_link {
     //< ETH_SPEED_NUM_ *
     public var link_speed: UInt32 = unsafe { zeroValue<UInt32>() }
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
@@ -128,33 +113,17 @@ public struct rte_eth_link_rte_eth_link {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
     }
     public init() {}
-    public func clone(): rte_eth_link_rte_eth_link {
-        return this
-    }
-    public func toString(): String {
-        var output = "rte_eth_link_rte_eth_link {"
-        output += " link_speed: "
-        output += this.link_speed.toString()
-        output += ", link_duplex: "
-        output += this.link_duplex().toString()
-        output += ", link_autoneg: "
-        output += this.link_autoneg().toString()
-        output += ", link_status: "
-        output += this.link_status().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<rte_eth_link_rte_eth_link>()
+        let size = sizeOf<rte_eth_link>()
         if (size != 8) {
-            throw Exception("Size of rte_eth_link_rte_eth_link is not 8 but ${size} bytes")
+            throw Exception("Size of rte_eth_link is not 8 but ${size} bytes")
         }
-        let align = alignOf<rte_eth_link_rte_eth_link>()
+        let align = alignOf<rte_eth_link>()
         if (align != 8) {
-            throw Exception("Alignment of rte_eth_link_rte_eth_link is not 8 but ${align} bytes")
+            throw Exception("Alignment of rte_eth_link is not 8 but ${align} bytes")
         }
 }

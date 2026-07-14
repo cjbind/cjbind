@@ -53,7 +53,7 @@ func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWi
 }
 
 @C
-public struct bitfield_bitfield {
+public struct bitfield {
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public func a(): UInt16 {
         var s = this._bitfield_1
@@ -100,45 +100,23 @@ public struct bitfield_bitfield {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 32, 32, UInt64(val)) }
     }
     public init() {}
-    public func clone(): bitfield_bitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "bitfield_bitfield {"
-        output += " a: "
-        output += this.a().toString()
-        output += ", b: "
-        output += this.b().toString()
-        output += ", c: "
-        output += this.c().toString()
-        output += ", d: "
-        output += this.d().toString()
-        output += ", e: "
-        output += this.e.toString()
-        output += ", f: "
-        output += this.f().toString()
-        output += ", g: "
-        output += this.g().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<bitfield_bitfield>()
+        let size = sizeOf<bitfield>()
         if (size != 16) {
-            throw Exception("Size of bitfield_bitfield is not 16 but ${size} bytes")
+            throw Exception("Size of bitfield is not 16 but ${size} bytes")
         }
-        let align = alignOf<bitfield_bitfield>()
+        let align = alignOf<bitfield>()
         if (align != 4) {
-            throw Exception("Alignment of bitfield_bitfield is not 4 but ${align} bytes")
+            throw Exception("Alignment of bitfield is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct MixedPtrBoolBitfield_MixedPtrBoolBitfield {
+public struct MixedPtrBoolBitfield {
     public var p: CPointer<Unit> = unsafe { zeroValue<CPointer<Unit>>() }
     public var b: Bool = unsafe { zeroValue<Bool>() }
     var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
@@ -150,217 +128,152 @@ public struct MixedPtrBoolBitfield_MixedPtrBoolBitfield {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 16, UInt64(val)) }
     }
     public init() {}
-    public func clone(): MixedPtrBoolBitfield_MixedPtrBoolBitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "MixedPtrBoolBitfield_MixedPtrBoolBitfield {"
-        output += " p: "
-        output += CPointer<Unit>(this.p).toUIntNative().toString()
-        output += ", b: "
-        output += this.b.toString()
-        output += ", u: "
-        output += this.u().toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<MixedPtrBoolBitfield_MixedPtrBoolBitfield>()
+        let size = sizeOf<MixedPtrBoolBitfield>()
         if (size != 16) {
-            throw Exception("Size of MixedPtrBoolBitfield_MixedPtrBoolBitfield is not 16 but ${size} bytes")
+            throw Exception("Size of MixedPtrBoolBitfield is not 16 but ${size} bytes")
         }
-        let align = alignOf<MixedPtrBoolBitfield_MixedPtrBoolBitfield>()
+        let align = alignOf<MixedPtrBoolBitfield>()
         if (align != 8) {
-            throw Exception("Alignment of MixedPtrBoolBitfield_MixedPtrBoolBitfield is not 8 but ${align} bytes")
+            throw Exception("Alignment of MixedPtrBoolBitfield is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct OnlyUnnamedBitfield_OnlyUnnamedBitfield {
+public struct OnlyUnnamedBitfield {
     var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
     public init() {}
-    public func clone(): OnlyUnnamedBitfield_OnlyUnnamedBitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "OnlyUnnamedBitfield_OnlyUnnamedBitfield {"
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<OnlyUnnamedBitfield_OnlyUnnamedBitfield>()
+        let size = sizeOf<OnlyUnnamedBitfield>()
         if (size != 2) {
-            throw Exception("Size of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 2 but ${size} bytes")
+            throw Exception("Size of OnlyUnnamedBitfield is not 2 but ${size} bytes")
         }
-        let align = alignOf<OnlyUnnamedBitfield_OnlyUnnamedBitfield>()
+        let align = alignOf<OnlyUnnamedBitfield>()
         if (align != 1) {
-            throw Exception("Alignment of OnlyUnnamedBitfield_OnlyUnnamedBitfield is not 1 but ${align} bytes")
+            throw Exception("Alignment of OnlyUnnamedBitfield is not 1 but ${align} bytes")
         }
 }
 
 @C
-public struct MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {
+public struct MixedSignedUnnamedBitfield {
     var _bitfield_1: VArray<UInt8, $3> = VArray<UInt8, $3>(repeat: 0)
     public init() {}
-    public func clone(): MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {
-        return this
-    }
-    public func toString(): String {
-        var output = "MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {"
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield>()
+        let size = sizeOf<MixedSignedUnnamedBitfield>()
         if (size != 3) {
-            throw Exception("Size of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 3 but ${size} bytes")
+            throw Exception("Size of MixedSignedUnnamedBitfield is not 3 but ${size} bytes")
         }
-        let align = alignOf<MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield>()
+        let align = alignOf<MixedSignedUnnamedBitfield>()
         if (align != 1) {
-            throw Exception(
-                "Alignment of MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield is not 1 but ${align} bytes")
+            throw Exception("Alignment of MixedSignedUnnamedBitfield is not 1 but ${align} bytes")
         }
 }
 
-public type U8_U8 = UInt8
+public type U8 = UInt8
 
-public type U16_U16 = UInt16
+public type U16 = UInt16
 
 @C
-public struct V56AMDY_V56AMDY {
+public struct V56AMDY {
     var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
-    public func MADZ(): U16_U16 {
+    public func MADZ(): U16 {
         var s = this._bitfield_1
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
     }
-    public mut func MADZ(val!: U16_U16): Unit {
+    public mut func MADZ(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 10, UInt64(val)) }
     }
-    public func MAI0(): U16_U16 {
+    public func MAI0(): U16 {
         var s = this._bitfield_1
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 10, 2) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 10, 2) })
     }
-    public mut func MAI0(val!: U16_U16): Unit {
+    public mut func MAI0(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 10, 2, UInt64(val)) }
     }
-    public func MAI1(): U16_U16 {
+    public func MAI1(): U16 {
         var s = this._bitfield_1
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 12, 2) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 12, 2) })
     }
-    public mut func MAI1(val!: U16_U16): Unit {
+    public mut func MAI1(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 12, 2, UInt64(val)) }
     }
-    public func MAI2(): U16_U16 {
+    public func MAI2(): U16 {
         var s = this._bitfield_1
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
     }
-    public mut func MAI2(val!: U16_U16): Unit {
+    public mut func MAI2(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 14, 2, UInt64(val)) }
     }
-    public var MADK: U8_U8 = unsafe { zeroValue<U8_U8>() }
-    public var MABR: U8_U8 = unsafe { zeroValue<U8_U8>() }
+    public var MADK: U8 = unsafe { zeroValue<U8>() }
+    public var MABR: U8 = unsafe { zeroValue<U8>() }
     var _bitfield_2: VArray<UInt8, $3> = VArray<UInt8, $3>(repeat: 0)
-    public func MATH(): U16_U16 {
+    public func MATH(): U16 {
         var s = this._bitfield_2
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
     }
-    public mut func MATH(val!: U16_U16): Unit {
+    public mut func MATH(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 0, 10, UInt64(val)) }
     }
-    public func MATE(): U16_U16 {
+    public func MATE(): U16 {
         var s = this._bitfield_2
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 10, 4) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 10, 4) })
     }
-    public mut func MATE(val!: U16_U16): Unit {
+    public mut func MATE(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 10, 4, UInt64(val)) }
     }
-    public func MATW(): U16_U16 {
+    public func MATW(): U16 {
         var s = this._bitfield_2
-        return U16_U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
+        return U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
     }
-    public mut func MATW(val!: U16_U16): Unit {
+    public mut func MATW(val!: U16): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 14, 2, UInt64(val)) }
     }
-    public func MASW(): U8_U8 {
+    public func MASW(): U8 {
         var s = this._bitfield_2
-        return U8_U8(unsafe { __cjbind_bitfield_read(inout s, 16, 4) })
+        return U8(unsafe { __cjbind_bitfield_read(inout s, 16, 4) })
     }
-    public mut func MASW(val!: U8_U8): Unit {
+    public mut func MASW(val!: U8): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 16, 4, UInt64(val)) }
     }
-    public func MABW(): U8_U8 {
+    public func MABW(): U8 {
         var s = this._bitfield_2
-        return U8_U8(unsafe { __cjbind_bitfield_read(inout s, 20, 3) })
+        return U8(unsafe { __cjbind_bitfield_read(inout s, 20, 3) })
     }
-    public mut func MABW(val!: U8_U8): Unit {
+    public mut func MABW(val!: U8): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 20, 3, UInt64(val)) }
     }
-    public func MAXN(): U8_U8 {
+    public func MAXN(): U8 {
         var s = this._bitfield_2
-        return U8_U8(unsafe { __cjbind_bitfield_read(inout s, 23, 1) })
+        return U8(unsafe { __cjbind_bitfield_read(inout s, 23, 1) })
     }
-    public mut func MAXN(val!: U8_U8): Unit {
+    public mut func MAXN(val!: U8): Unit {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 23, 1, UInt64(val)) }
     }
-    public var _rB_: U8_U8 = unsafe { zeroValue<U8_U8>() }
+    public var _rB_: U8 = unsafe { zeroValue<U8>() }
     public init() {}
-    public func clone(): V56AMDY_V56AMDY {
-        return this
-    }
-    public func toString(): String {
-        var output = "V56AMDY_V56AMDY {"
-        output += " MADZ: "
-        output += this.MADZ().toString()
-        output += ", MAI0: "
-        output += this.MAI0().toString()
-        output += ", MAI1: "
-        output += this.MAI1().toString()
-        output += ", MAI2: "
-        output += this.MAI2().toString()
-        output += ", MADK: "
-        output += this.MADK.toString()
-        output += ", MABR: "
-        output += this.MABR.toString()
-        output += ", MATH: "
-        output += this.MATH().toString()
-        output += ", MATE: "
-        output += this.MATE().toString()
-        output += ", MATW: "
-        output += this.MATW().toString()
-        output += ", MASW: "
-        output += this.MASW().toString()
-        output += ", MABW: "
-        output += this.MABW().toString()
-        output += ", MAXN: "
-        output += this.MAXN().toString()
-        output += ", _rB_: "
-        output += this._rB_.toString()
-        output += " }"
-        return output
-    }
 }
 
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<V56AMDY_V56AMDY>()
+        let size = sizeOf<V56AMDY>()
         if (size != 8) {
-            throw Exception("Size of V56AMDY_V56AMDY is not 8 but ${size} bytes")
+            throw Exception("Size of V56AMDY is not 8 but ${size} bytes")
         }
-        let align = alignOf<V56AMDY_V56AMDY>()
+        let align = alignOf<V56AMDY>()
         if (align != 2) {
-            throw Exception("Alignment of V56AMDY_V56AMDY is not 2 but ${align} bytes")
+            throw Exception("Alignment of V56AMDY is not 2 but ${align} bytes")
         }
 }

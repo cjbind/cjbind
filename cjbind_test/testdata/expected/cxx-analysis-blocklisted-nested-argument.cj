@@ -1,35 +1,9 @@
 package cjbind_ffi
 
 @C
-public struct ExternalHandle_ExternalHandle {
-    public let value: ExternalPtr_ExternalPtr
-    public init(value: ExternalPtr_ExternalPtr) {
-        this.value = value
-    }
-}
-
-@C
-public struct NestedHolder_open0_int_close0_NestedHolder_open0_int_close0 {
-    public let value: Int32
-    public func clone(): NestedHolder_open0_int_close0_NestedHolder_open0_int_close0 {
-        return this
-    }
-    public func toString(): String {
-        var output = "NestedHolder_open0_int_close0_NestedHolder_open0_int_close0 {"
-        output += " value: "
-        output += this.value.toString()
-        output += " }"
-        return output
-    }
-    public init(value: Int32) {
-        this.value = value
-    }
-}
-
-@C
-public struct BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder {
-    public let value: ExternalHandle_ExternalHandle
-    public init(value: ExternalHandle_ExternalHandle) {
+public struct BlocklistedNestedArgumentHolder {
+    public let value: UInt8
+    public init(value: UInt8) {
         this.value = value
     }
 }
@@ -37,14 +11,33 @@ public struct BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder>()
+        let size = sizeOf<BlocklistedNestedArgumentHolder>()
         if (size != 1) {
-            throw Exception(
-                "Size of BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder is not 1 but ${size} bytes")
+            throw Exception("Size of BlocklistedNestedArgumentHolder is not 1 but ${size} bytes")
         }
-        let align = alignOf<BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder>()
+        let align = alignOf<BlocklistedNestedArgumentHolder>()
         if (align != 1) {
-            throw Exception(
-                "Alignment of BlocklistedNestedArgumentHolder_BlocklistedNestedArgumentHolder is not 1 but ${align} bytes")
+            throw Exception("Alignment of BlocklistedNestedArgumentHolder is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct BlocklistedPointerHolder {
+    public let value: CPointer<UInt8>
+    public init(value: CPointer<UInt8>) {
+        this.value = value
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<BlocklistedPointerHolder>()
+        if (size != 8) {
+            throw Exception("Size of BlocklistedPointerHolder is not 8 but ${size} bytes")
+        }
+        let align = alignOf<BlocklistedPointerHolder>()
+        if (align != 8) {
+            throw Exception("Alignment of BlocklistedPointerHolder is not 8 but ${align} bytes")
         }
 }

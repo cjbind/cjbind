@@ -1,5 +1,5 @@
 package cjbind_ffi
 
-public type float4_float4 = VArray<UInt8, $16>
+public type float4 = VArray<Float32, $4>
 
-public type float2_float2 = UInt64
+public type float2 = VArray<Float32, $2>

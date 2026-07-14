@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --generate types
+// cjbind-options: --generate types -- -x c++ -std=c++14
 
 struct SelectedType {
     static const int Constant = 7;

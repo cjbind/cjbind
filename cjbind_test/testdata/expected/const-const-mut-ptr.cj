@@ -1,18 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct foo_foo {
+public struct foo {
     public let bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>
-    public func clone(): foo_foo {
-        return this
-    }
-    public func toString(): String {
-        var output = "foo_foo {"
-        output += " bar: "
-        output += CPointer<Unit>(this.bar).toUIntNative().toString()
-        output += " }"
-        return output
-    }
     public init(bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>) {
         this.bar = bar
     }
@@ -21,12 +11,12 @@ public struct foo_foo {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<foo_foo>()
+        let size = sizeOf<foo>()
         if (size != 8) {
-            throw Exception("Size of foo_foo is not 8 but ${size} bytes")
+            throw Exception("Size of foo is not 8 but ${size} bytes")
         }
-        let align = alignOf<foo_foo>()
+        let align = alignOf<foo>()
         if (align != 8) {
-            throw Exception("Alignment of foo_foo is not 8 but ${align} bytes")
+            throw Exception("Alignment of foo is not 8 but ${align} bytes")
         }
 }

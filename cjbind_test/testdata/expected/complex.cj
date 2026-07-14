@@ -1,18 +1,8 @@
 package cjbind_ffi
 
 @C
-public struct TestDouble_TestDouble {
+public struct TestDouble {
     public let mMember: VArray<UInt64, $2>
-    public func clone(): TestDouble_TestDouble {
-        return this
-    }
-    public func toString(): String {
-        var output = "TestDouble_TestDouble {"
-        output += " mMember: "
-        output += "<opaque>"
-        output += " }"
-        return output
-    }
     public init(mMember: VArray<UInt64, $2>) {
         this.mMember = mMember
     }
@@ -21,29 +11,19 @@ public struct TestDouble_TestDouble {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TestDouble_TestDouble>()
+        let size = sizeOf<TestDouble>()
         if (size != 16) {
-            throw Exception("Size of TestDouble_TestDouble is not 16 but ${size} bytes")
+            throw Exception("Size of TestDouble is not 16 but ${size} bytes")
         }
-        let align = alignOf<TestDouble_TestDouble>()
+        let align = alignOf<TestDouble>()
         if (align != 8) {
-            throw Exception("Alignment of TestDouble_TestDouble is not 8 but ${align} bytes")
+            throw Exception("Alignment of TestDouble is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct TestDoublePtr_TestDoublePtr {
+public struct TestDoublePtr {
     public let mMember: CPointer<VArray<UInt64, $2>>
-    public func clone(): TestDoublePtr_TestDoublePtr {
-        return this
-    }
-    public func toString(): String {
-        var output = "TestDoublePtr_TestDoublePtr {"
-        output += " mMember: "
-        output += CPointer<Unit>(this.mMember).toUIntNative().toString()
-        output += " }"
-        return output
-    }
     public init(mMember: CPointer<VArray<UInt64, $2>>) {
         this.mMember = mMember
     }
@@ -52,29 +32,19 @@ public struct TestDoublePtr_TestDoublePtr {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TestDoublePtr_TestDoublePtr>()
+        let size = sizeOf<TestDoublePtr>()
         if (size != 8) {
-            throw Exception("Size of TestDoublePtr_TestDoublePtr is not 8 but ${size} bytes")
+            throw Exception("Size of TestDoublePtr is not 8 but ${size} bytes")
         }
-        let align = alignOf<TestDoublePtr_TestDoublePtr>()
+        let align = alignOf<TestDoublePtr>()
         if (align != 8) {
-            throw Exception("Alignment of TestDoublePtr_TestDoublePtr is not 8 but ${align} bytes")
+            throw Exception("Alignment of TestDoublePtr is not 8 but ${align} bytes")
         }
 }
 
 @C
-public struct TestFloat_TestFloat {
+public struct TestFloat {
     public let mMember: VArray<UInt32, $2>
-    public func clone(): TestFloat_TestFloat {
-        return this
-    }
-    public func toString(): String {
-        var output = "TestFloat_TestFloat {"
-        output += " mMember: "
-        output += "<opaque>"
-        output += " }"
-        return output
-    }
     public init(mMember: VArray<UInt32, $2>) {
         this.mMember = mMember
     }
@@ -83,29 +53,19 @@ public struct TestFloat_TestFloat {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TestFloat_TestFloat>()
+        let size = sizeOf<TestFloat>()
         if (size != 8) {
-            throw Exception("Size of TestFloat_TestFloat is not 8 but ${size} bytes")
+            throw Exception("Size of TestFloat is not 8 but ${size} bytes")
         }
-        let align = alignOf<TestFloat_TestFloat>()
+        let align = alignOf<TestFloat>()
         if (align != 4) {
-            throw Exception("Alignment of TestFloat_TestFloat is not 4 but ${align} bytes")
+            throw Exception("Alignment of TestFloat is not 4 but ${align} bytes")
         }
 }
 
 @C
-public struct TestFloatPtr_TestFloatPtr {
+public struct TestFloatPtr {
     public let mMember: CPointer<VArray<UInt32, $2>>
-    public func clone(): TestFloatPtr_TestFloatPtr {
-        return this
-    }
-    public func toString(): String {
-        var output = "TestFloatPtr_TestFloatPtr {"
-        output += " mMember: "
-        output += CPointer<Unit>(this.mMember).toUIntNative().toString()
-        output += " }"
-        return output
-    }
     public init(mMember: CPointer<VArray<UInt32, $2>>) {
         this.mMember = mMember
     }
@@ -114,12 +74,12 @@ public struct TestFloatPtr_TestFloatPtr {
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<TestFloatPtr_TestFloatPtr>()
+        let size = sizeOf<TestFloatPtr>()
         if (size != 8) {
-            throw Exception("Size of TestFloatPtr_TestFloatPtr is not 8 but ${size} bytes")
+            throw Exception("Size of TestFloatPtr is not 8 but ${size} bytes")
         }
-        let align = alignOf<TestFloatPtr_TestFloatPtr>()
+        let align = alignOf<TestFloatPtr>()
         if (align != 8) {
-            throw Exception("Alignment of TestFloatPtr_TestFloatPtr is not 8 but ${align} bytes")
+            throw Exception("Alignment of TestFloatPtr is not 8 but ${align} bytes")
         }
 }

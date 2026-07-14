@@ -1,4 +1,4 @@
-// cjbind-options: --clang-arg -x --clang-arg c++ --clang-arg -std=c++14 --represent-cxx-operators
+// cjbind-options: --represent-cxx-operators -- -x c++ -std=c++14
 
 struct Number {
     Number();
