@@ -109,6 +109,41 @@ public struct A_A {
     }
     public var description1: CPointer<UInt8> = unsafe { zeroValue<CPointer<UInt8>>() }
     public init() {}
+    public func clone(): A_A {
+        return this
+    }
+    public func toString(): String {
+        var output = "A_A {"
+        output += " name: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..7) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.name[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", firmness: "
+        output += this.firmness().toString()
+        output += ", color: "
+        output += this.color().toString()
+        output += ", weedsBonus: "
+        output += this.weedsBonus().toString()
+        output += ", pestsBonus: "
+        output += this.pestsBonus().toString()
+        output += ", size: "
+        output += this.size().toString()
+        output += ", maxYield: "
+        output += this.maxYield.toString()
+        output += ", minYield: "
+        output += this.minYield().toString()
+        output += ", waterBonus: "
+        output += this.waterBonus().toString()
+        output += ", description1: "
+        output += CPointer<Unit>(this.description1).toUIntNative().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

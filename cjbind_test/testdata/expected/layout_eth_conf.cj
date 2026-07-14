@@ -223,6 +223,38 @@ public struct rte_eth_rxmode_rte_eth_rxmode {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 1, UInt64(val)) }
     }
     public init() {}
+    public func clone(): rte_eth_rxmode_rte_eth_rxmode {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_rxmode_rte_eth_rxmode {"
+        output += " mq_mode: "
+        output += this.mq_mode.toString()
+        output += ", max_rx_pkt_len: "
+        output += this.max_rx_pkt_len.toString()
+        output += ", split_hdr_size: "
+        output += this.split_hdr_size.toString()
+        output += ", header_split: "
+        output += this.header_split().toString()
+        output += ", hw_ip_checksum: "
+        output += this.hw_ip_checksum().toString()
+        output += ", hw_vlan_filter: "
+        output += this.hw_vlan_filter().toString()
+        output += ", hw_vlan_strip: "
+        output += this.hw_vlan_strip().toString()
+        output += ", hw_vlan_extend: "
+        output += this.hw_vlan_extend().toString()
+        output += ", jumbo_frame: "
+        output += this.jumbo_frame().toString()
+        output += ", hw_strip_crc: "
+        output += this.hw_strip_crc().toString()
+        output += ", enable_scatter: "
+        output += this.enable_scatter().toString()
+        output += ", enable_lro: "
+        output += this.enable_lro().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -283,6 +315,24 @@ public struct rte_eth_txmode_rte_eth_txmode {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
     }
     public init() {}
+    public func clone(): rte_eth_txmode_rte_eth_txmode {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_txmode_rte_eth_txmode {"
+        output += " mq_mode: "
+        output += this.mq_mode.toString()
+        output += ", pvid: "
+        output += this.pvid.toString()
+        output += ", hw_vlan_reject_tagged: "
+        output += this.hw_vlan_reject_tagged().toString()
+        output += ", hw_vlan_reject_untagged: "
+        output += this.hw_vlan_reject_untagged().toString()
+        output += ", hw_vlan_insert_pvid: "
+        output += this.hw_vlan_insert_pvid().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -321,6 +371,20 @@ public struct rte_eth_rss_conf_rte_eth_rss_conf {
     public let rss_key_len: UInt8
     //< Hash functions to apply - see below. *
     public let rss_hf: UInt64
+    public func clone(): rte_eth_rss_conf_rte_eth_rss_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_rss_conf_rte_eth_rss_conf {"
+        output += " rss_key: "
+        output += CPointer<Unit>(this.rss_key).toUIntNative().toString()
+        output += ", rss_key_len: "
+        output += this.rss_key_len.toString()
+        output += ", rss_hf: "
+        output += this.rss_hf.toString()
+        output += " }"
+        return output
+    }
     public init(rss_key: CPointer<UInt8>, rss_key_len: UInt8, rss_hf: UInt64) {
         this.rss_key = rss_key
         this.rss_key_len = rss_key_len
@@ -373,6 +437,18 @@ public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
     public let pools: UInt64
+    public func clone(): rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1 {"
+        output += " vlan_id: "
+        output += this.vlan_id.toString()
+        output += ", pools: "
+        output += this.pools.toString()
+        output += " }"
+        return output
+    }
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -414,6 +490,40 @@ public struct rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>
     public let dcb_tc: VArray<UInt8, $8>
+    public func clone(): rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf {"
+        output += " nb_queue_pools: "
+        output += this.nb_queue_pools.toString()
+        output += ", enable_default_pool: "
+        output += this.enable_default_pool.toString()
+        output += ", default_pool: "
+        output += this.default_pool.toString()
+        output += ", nb_pool_maps: "
+        output += this.nb_pool_maps.toString()
+        output += ", pool_map: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..64) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.pool_map[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", dcb_tc: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..8) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.dcb_tc[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         nb_pool_maps: UInt8, pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1__cjbind_ty_1, $64>,
         dcb_tc: VArray<UInt8, $8>) {
@@ -445,6 +555,25 @@ public struct rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
     public let nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
+    public func clone(): rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf {"
+        output += " nb_tcs: "
+        output += this.nb_tcs.toString()
+        output += ", dcb_tc: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..8) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.dcb_tc[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
         this.nb_tcs = nb_tcs
         this.dcb_tc = dcb_tc
@@ -470,6 +599,25 @@ public struct rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
     public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
+    public func clone(): rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_dcb_tx_conf_rte_eth_vmdq_dcb_tx_conf {"
+        output += " nb_queue_pools: "
+        output += this.nb_queue_pools.toString()
+        output += ", dcb_tc: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..8) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.dcb_tc[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, dcb_tc: VArray<UInt8, $8>) {
         this.nb_queue_pools = nb_queue_pools
         this.dcb_tc = dcb_tc
@@ -496,6 +644,25 @@ public struct rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
     public let nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
+    public func clone(): rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_dcb_tx_conf_rte_eth_dcb_tx_conf {"
+        output += " nb_tcs: "
+        output += this.nb_tcs.toString()
+        output += ", dcb_tc: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..8) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.dcb_tc[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_tcs: rte_eth_nb_tcs_rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
         this.nb_tcs = nb_tcs
         this.dcb_tc = dcb_tc
@@ -519,6 +686,16 @@ let _ = {
 public struct rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
     //< VMDq mode, 64 pools. *
     public let nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools
+    public func clone(): rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf {"
+        output += " nb_queue_pools: "
+        output += this.nb_queue_pools.toString()
+        output += " }"
+        return output
+    }
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools) {
         this.nb_queue_pools = nb_queue_pools
     }
@@ -543,6 +720,18 @@ public struct rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
     public let vlan_id: UInt16
     //< Bitmask of pools for packet rx *
     public let pools: UInt64
+    public func clone(): rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1 {"
+        output += " vlan_id: "
+        output += this.vlan_id.toString()
+        output += ", pools: "
+        output += this.pools.toString()
+        output += " }"
+        return output
+    }
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -578,6 +767,35 @@ public struct rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
     public let rx_mode: UInt32
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>
+    public func clone(): rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf {"
+        output += " nb_queue_pools: "
+        output += this.nb_queue_pools.toString()
+        output += ", enable_default_pool: "
+        output += this.enable_default_pool.toString()
+        output += ", default_pool: "
+        output += this.default_pool.toString()
+        output += ", enable_loop_back: "
+        output += this.enable_loop_back.toString()
+        output += ", nb_pool_maps: "
+        output += this.nb_pool_maps.toString()
+        output += ", rx_mode: "
+        output += this.rx_mode.toString()
+        output += ", pool_map: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..64) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.pool_map[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_queue_pools: rte_eth_nb_pools_rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
         enable_loop_back: UInt8, nb_pool_maps: UInt8, rx_mode: UInt32,
         pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1__cjbind_ty_1, $64>) {
@@ -660,6 +878,24 @@ public struct rte_eth_ipv4_flow_rte_eth_ipv4_flow {
     public let ttl: UInt8
     //< Protocol, next header in big endian. *
     public let proto: UInt8
+    public func clone(): rte_eth_ipv4_flow_rte_eth_ipv4_flow {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_ipv4_flow_rte_eth_ipv4_flow {"
+        output += " src_ip: "
+        output += this.src_ip.toString()
+        output += ", dst_ip: "
+        output += this.dst_ip.toString()
+        output += ", tos: "
+        output += this.tos.toString()
+        output += ", ttl: "
+        output += this.ttl.toString()
+        output += ", proto: "
+        output += this.proto.toString()
+        output += " }"
+        return output
+    }
     public init(src_ip: UInt32, dst_ip: UInt32, tos: UInt8, ttl: UInt8, proto: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -695,6 +931,38 @@ public struct rte_eth_ipv6_flow_rte_eth_ipv6_flow {
     public let proto: UInt8
     //< Hop limits to match. *
     public let hop_limits: UInt8
+    public func clone(): rte_eth_ipv6_flow_rte_eth_ipv6_flow {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_ipv6_flow_rte_eth_ipv6_flow {"
+        output += " src_ip: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..4) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.src_ip[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", dst_ip: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..4) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.dst_ip[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", tc: "
+        output += this.tc.toString()
+        output += ", proto: "
+        output += this.proto.toString()
+        output += ", hop_limits: "
+        output += this.hop_limits.toString()
+        output += " }"
+        return output
+    }
     public init(src_ip: VArray<UInt32, $4>, dst_ip: VArray<UInt32, $4>, tc: UInt8, proto: UInt8, hop_limits: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -739,6 +1007,30 @@ public struct rte_eth_fdir_masks_rte_eth_fdir_masks {
     //< 1 - Match tunnel type,
     //0 - Ignore tunnel type. *
     public let tunnel_type_mask: UInt8
+    public func clone(): rte_eth_fdir_masks_rte_eth_fdir_masks {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_fdir_masks_rte_eth_fdir_masks {"
+        output += " vlan_tci_mask: "
+        output += this.vlan_tci_mask.toString()
+        output += ", ipv4_mask: "
+        output += this.ipv4_mask.toString()
+        output += ", ipv6_mask: "
+        output += this.ipv6_mask.toString()
+        output += ", src_port_mask: "
+        output += this.src_port_mask.toString()
+        output += ", dst_port_mask: "
+        output += this.dst_port_mask.toString()
+        output += ", mac_addr_byte_mask: "
+        output += this.mac_addr_byte_mask.toString()
+        output += ", tunnel_id_mask: "
+        output += this.tunnel_id_mask.toString()
+        output += ", tunnel_type_mask: "
+        output += this.tunnel_type_mask.toString()
+        output += " }"
+        return output
+    }
     public init(vlan_tci_mask: UInt16, ipv4_mask: rte_eth_ipv4_flow_rte_eth_ipv4_flow,
         ipv6_mask: rte_eth_ipv6_flow_rte_eth_ipv6_flow, src_port_mask: UInt16, dst_port_mask: UInt16,
         mac_addr_byte_mask: UInt8, tunnel_id_mask: UInt32, tunnel_type_mask: UInt8) {
@@ -783,6 +1075,25 @@ public struct rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
     //< Payload type *
     public let type_: rte_eth_payload_type_rte_eth_payload_type
     public let src_offset: VArray<UInt16, $16>
+    public func clone(): rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg {"
+        output += " type: "
+        output += this.type_.toString()
+        output += ", src_offset: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..16) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.src_offset[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(type_: rte_eth_payload_type_rte_eth_payload_type, src_offset: VArray<UInt16, $16>) {
         this.type_ = type_
         this.src_offset = src_offset
@@ -809,6 +1120,25 @@ let _ = {
 public struct rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
     public let flow_type: UInt16
     public let mask: VArray<UInt8, $16>
+    public func clone(): rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask {"
+        output += " flow_type: "
+        output += this.flow_type.toString()
+        output += ", mask: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..16) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.mask[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(flow_type: UInt16, mask: VArray<UInt8, $16>) {
         this.flow_type = flow_type
         this.mask = mask
@@ -838,6 +1168,36 @@ public struct rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
     public let nb_flexmasks: UInt16
     public let flex_set: VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>
     public let flex_mask: VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>
+    public func clone(): rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf {"
+        output += " nb_payloads: "
+        output += this.nb_payloads.toString()
+        output += ", nb_flexmasks: "
+        output += this.nb_flexmasks.toString()
+        output += ", flex_set: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..8) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.flex_set[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", flex_mask: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..22) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.flex_mask[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += " }"
+        return output
+    }
     public init(nb_payloads: UInt16, nb_flexmasks: UInt16,
         flex_set: VArray<rte_eth_flex_payload_cfg_rte_eth_flex_payload_cfg, $8>,
         flex_mask: VArray<rte_eth_fdir_flex_mask_rte_eth_fdir_flex_mask, $22>) {
@@ -877,6 +1237,26 @@ public struct rte_fdir_conf_rte_fdir_conf {
     public let drop_queue: UInt8
     public let mask: rte_eth_fdir_masks_rte_eth_fdir_masks
     public let flex_conf: rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf
+    public func clone(): rte_fdir_conf_rte_fdir_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_fdir_conf_rte_fdir_conf {"
+        output += " mode: "
+        output += this.mode.toString()
+        output += ", pballoc: "
+        output += this.pballoc.toString()
+        output += ", status: "
+        output += this.status.toString()
+        output += ", drop_queue: "
+        output += this.drop_queue.toString()
+        output += ", mask: "
+        output += this.mask.toString()
+        output += ", flex_conf: "
+        output += this.flex_conf.toString()
+        output += " }"
+        return output
+    }
     public init(mode: rte_fdir_mode_rte_fdir_mode, pballoc: rte_fdir_pballoc_type_rte_fdir_pballoc_type,
         status: rte_fdir_status_mode_rte_fdir_status_mode, drop_queue: UInt8,
         mask: rte_eth_fdir_masks_rte_eth_fdir_masks, flex_conf: rte_eth_fdir_flex_conf_rte_eth_fdir_flex_conf) {
@@ -909,6 +1289,18 @@ public struct rte_intr_conf_rte_intr_conf {
     public let lsc: UInt16
     // enable/disable rxq interrupt. 0 (default) - disable, 1 enable *
     public let rxq: UInt16
+    public func clone(): rte_intr_conf_rte_intr_conf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_intr_conf_rte_intr_conf {"
+        output += " lsc: "
+        output += this.lsc.toString()
+        output += ", rxq: "
+        output += this.rxq.toString()
+        output += " }"
+        return output
+    }
     public init(lsc: UInt16, rxq: UInt16) {
         this.lsc = lsc
         this.rxq = rxq
@@ -935,6 +1327,22 @@ public struct rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
     public let vmdq_dcb_conf: rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf
     public let dcb_rx_conf: rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf
     public let vmdq_rx_conf: rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf
+    public func clone(): rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_eth_conf__cjbind_ty_1__cjbind_ty_1 {"
+        output += " rss_conf: "
+        output += this.rss_conf.toString()
+        output += ", vmdq_dcb_conf: "
+        output += this.vmdq_dcb_conf.toString()
+        output += ", dcb_rx_conf: "
+        output += this.dcb_rx_conf.toString()
+        output += ", vmdq_rx_conf: "
+        output += this.vmdq_rx_conf.toString()
+        output += " }"
+        return output
+    }
     public init(rss_conf: rte_eth_rss_conf_rte_eth_rss_conf, vmdq_dcb_conf: rte_eth_vmdq_dcb_conf_rte_eth_vmdq_dcb_conf,
         dcb_rx_conf: rte_eth_dcb_rx_conf_rte_eth_dcb_rx_conf, vmdq_rx_conf: rte_eth_vmdq_rx_conf_rte_eth_vmdq_rx_conf) {
         this.rss_conf = rss_conf
@@ -980,6 +1388,9 @@ public struct rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
     public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf): Unit {
         this._storage = __cjbind_write_rte_eth_vmdq_tx_conf_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage,
             val)
+    }
+    public func clone(): rte_eth_conf__cjbind_ty_2__cjbind_ty_2 {
+        return this
     }
 }
 
@@ -1030,6 +1441,9 @@ public struct rte_eth_conf_rte_eth_conf {
     public let fdir_conf: rte_fdir_conf_rte_fdir_conf
     //< Interrupt mode configuration. *
     public let intr_conf: rte_intr_conf_rte_intr_conf
+    public func clone(): rte_eth_conf_rte_eth_conf {
+        return this
+    }
     public init(link_speeds: UInt32, rxmode: rte_eth_rxmode_rte_eth_rxmode, txmode: rte_eth_txmode_rte_eth_txmode,
         lpbk_mode: UInt32, rx_adv_conf: rte_eth_conf__cjbind_ty_1__cjbind_ty_1,
         tx_adv_conf: rte_eth_conf__cjbind_ty_2__cjbind_ty_2, dcb_capability_en: UInt32,

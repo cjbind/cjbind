@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct strct_strct {
     public let field: Int32
+    public func clone(): strct_strct {
+        return this
+    }
+    public func toString(): String {
+        var output = "strct_strct {"
+        output += " field: "
+        output += this.field.toString()
+        output += " }"
+        return output
+    }
     public init(field: Int32) {
         this.field = field
     }

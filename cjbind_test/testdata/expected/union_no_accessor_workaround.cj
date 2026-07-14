@@ -34,6 +34,9 @@ public struct simple_union_simple_union {
     public mut func u16(val!: UInt16): Unit {
         unsafe { __cjbind_write_UInt16_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
     }
+    public func clone(): simple_union_simple_union {
+        return this
+    }
 }
 
 @When[debug]

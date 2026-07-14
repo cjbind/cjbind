@@ -39,6 +39,18 @@ func __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1_from_U
 public struct rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let dport: UInt16
     public let sport: UInt16
+    public func clone(): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " dport: "
+        output += this.dport.toString()
+        output += ", sport: "
+        output += this.sport.toString()
+        output += " }"
+        return output
+    }
     public init(dport: UInt16, sport: UInt16) {
         this.dport = dport
         this.sport = sport
@@ -76,6 +88,9 @@ public struct rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
     public mut func sctp_tag(val!: UInt32): Unit {
         this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
+    public func clone(): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -96,6 +111,9 @@ public struct rte_ipv4_tuple_rte_ipv4_tuple {
     public let src_addr: UInt32
     public let dst_addr: UInt32
     public let __cjbind_anon_1: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1
+    public func clone(): rte_ipv4_tuple_rte_ipv4_tuple {
+        return this
+    }
     public init(src_addr: UInt32, dst_addr: UInt32, __cjbind_anon_1: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1) {
         this.src_addr = src_addr
         this.dst_addr = dst_addr
@@ -120,6 +138,18 @@ let _ = {
 public struct rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let dport: UInt16
     public let sport: UInt16
+    public func clone(): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " dport: "
+        output += this.dport.toString()
+        output += ", sport: "
+        output += this.sport.toString()
+        output += " }"
+        return output
+    }
     public init(dport: UInt16, sport: UInt16) {
         this.dport = dport
         this.sport = sport
@@ -157,6 +187,9 @@ public struct rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
     public mut func sctp_tag(val!: UInt32): Unit {
         this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
+    public func clone(): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -177,6 +210,9 @@ public struct rte_ipv6_tuple_rte_ipv6_tuple {
     public let src_addr: VArray<UInt8, $16>
     public let dst_addr: VArray<UInt8, $16>
     public let __cjbind_anon_1: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1
+    public func clone(): rte_ipv6_tuple_rte_ipv6_tuple {
+        return this
+    }
     public init(src_addr: VArray<UInt8, $16>, dst_addr: VArray<UInt8, $16>,
         __cjbind_anon_1: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1) {
         this.src_addr = src_addr
@@ -201,6 +237,9 @@ let _ = {
 @C
 public struct rte_thash_tuple_rte_thash_tuple {
     let _cjbind_opaque_blob: VArray<UInt8, $48>
+    public func clone(): rte_thash_tuple_rte_thash_tuple {
+        return this
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $48>>() }
     }

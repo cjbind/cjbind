@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct api_v1_Item_Item {
     public let value: Int32
+    public func clone(): api_v1_Item_Item {
+        return this
+    }
+    public func toString(): String {
+        var output = "api_v1_Item_Item {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }

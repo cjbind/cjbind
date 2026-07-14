@@ -39,6 +39,14 @@ public unsafe func Number_value1(this_: CPointer<Number_Number>): CPointer<Int32
 @C
 public struct Number_Number {
     let _cjbind_empty: UInt8
+    public func clone(): Number_Number {
+        return this
+    }
+    public func toString(): String {
+        var output = "Number_Number {"
+        output += " }"
+        return output
+    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }

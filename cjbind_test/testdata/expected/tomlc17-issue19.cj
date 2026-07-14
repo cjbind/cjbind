@@ -54,6 +54,18 @@ func __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VAr
 public struct toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let ptr: CPointer<UInt8>
     public let len: Int32
+    public func clone(): toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "toml_datum_t__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " ptr: "
+        output += CPointer<Unit>(this.ptr).toUIntNative().toString()
+        output += ", len: "
+        output += this.len.toString()
+        output += " }"
+        return output
+    }
     public init(ptr: CPointer<UInt8>, len: Int32) {
         this.ptr = ptr
         this.len = len
@@ -78,6 +90,18 @@ let _ = {
 public struct toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public let size: Int32
     public let elem: CPointer<toml_datum_t_toml_datum_t>
+    public func clone(): toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
+    public func toString(): String {
+        var output = "toml_datum_t__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {"
+        output += " size: "
+        output += this.size.toString()
+        output += ", elem: "
+        output += CPointer<Unit>(this.elem).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(size: Int32, elem: CPointer<toml_datum_t_toml_datum_t>) {
         this.size = size
         this.elem = elem
@@ -104,6 +128,22 @@ public struct toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
     public let key: CPointer<CPointer<UInt8>>
     public let len: CPointer<Int32>
     public let value: CPointer<toml_datum_t_toml_datum_t>
+    public func clone(): toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {
+        return this
+    }
+    public func toString(): String {
+        var output = "toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3 {"
+        output += " size: "
+        output += this.size.toString()
+        output += ", key: "
+        output += CPointer<Unit>(this.key).toUIntNative().toString()
+        output += ", len: "
+        output += CPointer<Unit>(this.len).toUIntNative().toString()
+        output += ", value: "
+        output += CPointer<Unit>(this.value).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(size: Int32, key: CPointer<CPointer<UInt8>>, len: CPointer<Int32>,
         value: CPointer<toml_datum_t_toml_datum_t>) {
         this.size = size
@@ -158,6 +198,9 @@ public struct toml_datum_t__cjbind_ty_1__cjbind_ty_1 {
         this._storage = __cjbind_write_toml_datum_t__cjbind_ty_1__cjbind_ty_3__cjbind_ty_3_from_VArray_UInt64__4_(
             this._storage, val)
     }
+    public func clone(): toml_datum_t__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -177,6 +220,9 @@ let _ = {
 public struct toml_datum_t_toml_datum_t {
     public let type_: Int32
     public let u: toml_datum_t__cjbind_ty_1__cjbind_ty_1
+    public func clone(): toml_datum_t_toml_datum_t {
+        return this
+    }
     public init(type_: Int32, u: toml_datum_t__cjbind_ty_1__cjbind_ty_1) {
         this.type_ = type_
         this.u = u

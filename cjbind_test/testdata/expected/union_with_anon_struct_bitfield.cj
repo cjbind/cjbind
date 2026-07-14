@@ -92,6 +92,18 @@ public struct foo__cjbind_ty_1__cjbind_ty_1 {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 25, UInt64(val)) }
     }
     public init() {}
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo__cjbind_ty_1__cjbind_ty_1 {"
+        output += " b: "
+        output += this.b().toString()
+        output += ", c: "
+        output += this.c().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -122,6 +134,9 @@ public struct foo_foo {
     }
     public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
+    }
+    public func clone(): foo_foo {
+        return this
     }
 }
 

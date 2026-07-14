@@ -16,6 +16,18 @@ func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(storage
 public struct foo__cjbind_ty_1__cjbind_ty_1 {
     public let a: UInt32
     public let b: UInt32
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo__cjbind_ty_1__cjbind_ty_1 {"
+        output += " a: "
+        output += this.a.toString()
+        output += ", b: "
+        output += this.b.toString()
+        output += " }"
+        return output
+    }
     public init(a: UInt32, b: UInt32) {
         this.a = a
         this.b = b
@@ -44,6 +56,9 @@ public struct foo_foo {
     }
     public mut func bar(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
+    }
+    public func clone(): foo_foo {
+        return this
     }
 }
 

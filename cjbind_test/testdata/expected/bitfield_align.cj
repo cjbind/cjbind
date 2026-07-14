@@ -128,6 +128,38 @@ public struct A_A {
     }
     public var y: UInt8 = unsafe { zeroValue<UInt8>() }
     public init() {}
+    public func clone(): A_A {
+        return this
+    }
+    public func toString(): String {
+        var output = "A_A {"
+        output += " x: "
+        output += this.x.toString()
+        output += ", b1: "
+        output += this.b1().toString()
+        output += ", b2: "
+        output += this.b2().toString()
+        output += ", b3: "
+        output += this.b3().toString()
+        output += ", b4: "
+        output += this.b4().toString()
+        output += ", b5: "
+        output += this.b5().toString()
+        output += ", b6: "
+        output += this.b6().toString()
+        output += ", b7: "
+        output += this.b7().toString()
+        output += ", b8: "
+        output += this.b8().toString()
+        output += ", b9: "
+        output += this.b9().toString()
+        output += ", b10: "
+        output += this.b10().toString()
+        output += ", y: "
+        output += this.y.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -161,6 +193,18 @@ public struct B_B {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 31, 1, UInt64(val)) }
     }
     public init() {}
+    public func clone(): B_B {
+        return this
+    }
+    public func toString(): String {
+        var output = "B_B {"
+        output += " foo: "
+        output += this.foo().toString()
+        output += ", bar: "
+        output += this.bar().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -196,6 +240,22 @@ public struct C_C {
     }
     public var baz: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
+    public func clone(): C_C {
+        return this
+    }
+    public func toString(): String {
+        var output = "C_C {"
+        output += " x: "
+        output += this.x.toString()
+        output += ", b1: "
+        output += this.b1().toString()
+        output += ", b2: "
+        output += this.b2().toString()
+        output += ", baz: "
+        output += this.baz.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -243,6 +303,22 @@ public struct Date1_Date1 {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 8, UInt64(val)) }
     }
     public init() {}
+    public func clone(): Date1_Date1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "Date1_Date1 {"
+        output += " nWeekDay: "
+        output += this.nWeekDay().toString()
+        output += ", nMonthDay: "
+        output += this.nMonthDay().toString()
+        output += ", nMonth: "
+        output += this.nMonth().toString()
+        output += ", nYear: "
+        output += this.nYear().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -297,6 +373,24 @@ public struct Date2_Date2 {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
     }
     public init() {}
+    public func clone(): Date2_Date2 {
+        return this
+    }
+    public func toString(): String {
+        var output = "Date2_Date2 {"
+        output += " nWeekDay: "
+        output += this.nWeekDay().toString()
+        output += ", nMonthDay: "
+        output += this.nMonthDay().toString()
+        output += ", nMonth: "
+        output += this.nMonth().toString()
+        output += ", nYear: "
+        output += this.nYear().toString()
+        output += ", byte: "
+        output += this.byte().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -345,6 +439,24 @@ public struct Date3_Date3 {
     }
     public var byte: UInt8 = unsafe { zeroValue<UInt8>() }
     public init() {}
+    public func clone(): Date3_Date3 {
+        return this
+    }
+    public func toString(): String {
+        var output = "Date3_Date3 {"
+        output += " nWeekDay: "
+        output += this.nWeekDay().toString()
+        output += ", nMonthDay: "
+        output += this.nMonthDay().toString()
+        output += ", nMonth: "
+        output += this.nMonth().toString()
+        output += ", nYear: "
+        output += this.nYear().toString()
+        output += ", byte: "
+        output += this.byte.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

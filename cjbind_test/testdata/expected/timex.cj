@@ -57,6 +57,16 @@ public struct timex_timex {
     public var tai: Int32 = unsafe { zeroValue<Int32>() }
     var _bitfield_1: VArray<UInt8, $44> = VArray<UInt8, $44>(repeat: 0)
     public init() {}
+    public func clone(): timex_timex {
+        return this
+    }
+    public func toString(): String {
+        var output = "timex_timex {"
+        output += " tai: "
+        output += this.tai.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -154,6 +164,38 @@ public struct timex_named_timex_named {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 320, 32, UInt64(val)) }
     }
     public init() {}
+    public func clone(): timex_named_timex_named {
+        return this
+    }
+    public func toString(): String {
+        var output = "timex_named_timex_named {"
+        output += " tai: "
+        output += this.tai.toString()
+        output += ", a: "
+        output += this.a().toString()
+        output += ", b: "
+        output += this.b().toString()
+        output += ", c: "
+        output += this.c().toString()
+        output += ", d: "
+        output += this.d().toString()
+        output += ", e: "
+        output += this.e().toString()
+        output += ", f: "
+        output += this.f().toString()
+        output += ", g: "
+        output += this.g().toString()
+        output += ", h: "
+        output += this.h().toString()
+        output += ", i: "
+        output += this.i().toString()
+        output += ", j: "
+        output += this.j().toString()
+        output += ", k: "
+        output += this.k().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

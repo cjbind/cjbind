@@ -34,6 +34,13 @@ public unsafe func LifecycleProbe_add(left: Int32, right: Int32): Int32 {
 @C
 public struct LifecycleProbe_LifecycleProbe {
     private let stored_: Int32
+    public func toString(): String {
+        var output = "LifecycleProbe_LifecycleProbe {"
+        output += " stored_: "
+        output += this.stored_.toString()
+        output += " }"
+        return output
+    }
     private init(stored_: Int32) {
         this.stored_ = stored_
     }
@@ -70,6 +77,18 @@ public unsafe func RuntimeLeft_left(this_: CPointer<RuntimeLeft_RuntimeLeft>): I
 public struct RuntimeLeft_RuntimeLeft {
     public let vtable_: CPointer<Unit>
     private let padding_: Int32
+    public func clone(): RuntimeLeft_RuntimeLeft {
+        return this
+    }
+    public func toString(): String {
+        var output = "RuntimeLeft_RuntimeLeft {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += ", padding_: "
+        output += this.padding_.toString()
+        output += " }"
+        return output
+    }
     private init(vtable_: CPointer<Unit>, padding_: Int32) {
         this.vtable_ = vtable_
         this.padding_ = padding_
@@ -104,6 +123,16 @@ public unsafe func RuntimeRight_right(this_: CPointer<RuntimeRight_RuntimeRight>
 @C
 public struct RuntimeRight_RuntimeRight {
     public let vtable_: CPointer<Unit>
+    public func clone(): RuntimeRight_RuntimeRight {
+        return this
+    }
+    public func toString(): String {
+        var output = "RuntimeRight_RuntimeRight {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Unit>) {
         this.vtable_ = vtable_
     }
@@ -151,6 +180,17 @@ public struct MultipleProbe_MultipleProbe {
     public let _base: RuntimeLeft_RuntimeLeft
     public let _base_1: RuntimeRight_RuntimeRight
     private let stored_: Int32
+    public func toString(): String {
+        var output = "MultipleProbe_MultipleProbe {"
+        output += " _base: "
+        output += this._base.toString()
+        output += ", _base_1: "
+        output += this._base_1.toString()
+        output += ", stored_: "
+        output += this.stored_.toString()
+        output += " }"
+        return output
+    }
     private init(_base: RuntimeLeft_RuntimeLeft, _base_1: RuntimeRight_RuntimeRight, stored_: Int32) {
         this._base = _base
         this._base_1 = _base_1

@@ -14,6 +14,16 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
 @C
 public struct foo_foo {
     public let inner: UInt8
+    public func clone(): foo_foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " inner: "
+        output += this.inner.toString()
+        output += " }"
+        return output
+    }
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -37,6 +47,16 @@ public type foo_ptr_foo_ptr = CPointer<foo_foo>
 @C
 public struct bar_bar {
     public let inner: UInt8
+    public func clone(): bar_bar {
+        return this
+    }
+    public func toString(): String {
+        var output = "bar_bar {"
+        output += " inner: "
+        output += this.inner.toString()
+        output += " }"
+        return output
+    }
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -59,6 +79,11 @@ public type bar_ptr_bar_ptr = CPointer<bar_bar>
 
 @C
 public struct baz_baz {
+    public func toString(): String {
+        var output = "baz_baz {"
+        output += " }"
+        return output
+    }
     init() {
         throw Exception("type should not be inited")
     }
@@ -75,6 +100,9 @@ public struct cat_cat {
     }
     public mut func standard_issue(val!: Int32): Unit {
         this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
+    }
+    public func clone(): cat_cat {
+        return this
     }
 }
 

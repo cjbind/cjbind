@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct foo_foo {
     public let bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>
+    public func clone(): foo_foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " bar: "
+        output += CPointer<Unit>(this.bar).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>) {
         this.bar = bar
     }

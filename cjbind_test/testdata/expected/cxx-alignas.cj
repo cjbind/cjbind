@@ -3,6 +3,15 @@ package cjbind_ffi
 @C
 public struct Wide_Wide {
     let _cjbind_opaque_blob: VArray<UInt8, $16>
+    public func clone(): Wide_Wide {
+        return this
+    }
+    public func toString(): String {
+        var output = "Wide_Wide {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $16>>() }
     }
@@ -17,6 +26,14 @@ public unsafe func passthroughWide(value: CPointer<Wide_Wide>): CPointer<Wide_Wi
 @C
 public struct Empty_Empty {
     let _cjbind_empty: UInt8
+    public func clone(): Empty_Empty {
+        return this
+    }
+    public func toString(): String {
+        var output = "Empty_Empty {"
+        output += " }"
+        return output
+    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -38,6 +55,15 @@ let _ = {
 @C
 public struct NoUniqueAddress_NoUniqueAddress {
     let _cjbind_opaque_blob: UInt64
+    public func clone(): NoUniqueAddress_NoUniqueAddress {
+        return this
+    }
+    public func toString(): String {
+        var output = "NoUniqueAddress_NoUniqueAddress {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
     }
@@ -74,6 +100,15 @@ public unsafe func installNoUniqueAddressCallback(callback: NoUniqueAddressCallb
 @C
 public struct PackedValue_PackedValue {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
+    public func clone(): PackedValue_PackedValue {
+        return this
+    }
+    public func toString(): String {
+        var output = "PackedValue_PackedValue {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
@@ -101,6 +136,16 @@ public unsafe func passthroughPackedValue(value: CPointer<PackedValue_PackedValu
 @C
 public struct PackedContainer_PackedContainer {
     public let packed: PackedValue_PackedValue
+    public func clone(): PackedContainer_PackedContainer {
+        return this
+    }
+    public func toString(): String {
+        var output = "PackedContainer_PackedContainer {"
+        output += " packed: "
+        output += this.packed.toString()
+        output += " }"
+        return output
+    }
     public init(packed: PackedValue_PackedValue) {
         this.packed = packed
     }
@@ -128,6 +173,16 @@ public unsafe func passthroughPackedContainer(value: CPointer<PackedContainer_Pa
 @C
 public struct DeletedMoves_DeletedMoves {
     public let value: Int32
+    public func clone(): DeletedMoves_DeletedMoves {
+        return this
+    }
+    public func toString(): String {
+        var output = "DeletedMoves_DeletedMoves {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -155,6 +210,16 @@ public unsafe func passthroughDeletedMoves(value: CPointer<DeletedMoves_DeletedM
 @C
 public struct DeletedMoveContainer_DeletedMoveContainer {
     public let value: DeletedMoves_DeletedMoves
+    public func clone(): DeletedMoveContainer_DeletedMoveContainer {
+        return this
+    }
+    public func toString(): String {
+        var output = "DeletedMoveContainer_DeletedMoveContainer {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: DeletedMoves_DeletedMoves) {
         this.value = value
     }
@@ -183,6 +248,16 @@ public unsafe func passthroughDeletedMoveContainer(value: CPointer<DeletedMoveCo
 @C
 public struct PrivateCopy_PrivateCopy {
     public let value: Int32
+    public func clone(): PrivateCopy_PrivateCopy {
+        return this
+    }
+    public func toString(): String {
+        var output = "PrivateCopy_PrivateCopy {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -204,6 +279,16 @@ let _ = {
 @C
 public struct PrivateCopyContainer_PrivateCopyContainer {
     public let value: PrivateCopy_PrivateCopy
+    public func clone(): PrivateCopyContainer_PrivateCopyContainer {
+        return this
+    }
+    public func toString(): String {
+        var output = "PrivateCopyContainer_PrivateCopyContainer {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: PrivateCopy_PrivateCopy) {
         this.value = value
     }

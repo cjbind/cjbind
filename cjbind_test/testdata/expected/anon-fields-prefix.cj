@@ -40,6 +40,20 @@ public struct color__cjbind_ty_1__cjbind_ty_1 {
     public let r: UInt8
     public let g: UInt8
     public let b: UInt8
+    public func clone(): color__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "color__cjbind_ty_1__cjbind_ty_1 {"
+        output += " r: "
+        output += this.r.toString()
+        output += ", g: "
+        output += this.g.toString()
+        output += ", b: "
+        output += this.b.toString()
+        output += " }"
+        return output
+    }
     public init(r: UInt8, g: UInt8, b: UInt8) {
         this.r = r
         this.g = g
@@ -65,6 +79,20 @@ public struct color__cjbind_ty_2__cjbind_ty_2 {
     public let y: UInt8
     public let u: UInt8
     public let v: UInt8
+    public func clone(): color__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
+    public func toString(): String {
+        var output = "color__cjbind_ty_2__cjbind_ty_2 {"
+        output += " y: "
+        output += this.y.toString()
+        output += ", u: "
+        output += this.u.toString()
+        output += ", v: "
+        output += this.v.toString()
+        output += " }"
+        return output
+    }
     public init(y: UInt8, u: UInt8, v: UInt8) {
         this.y = y
         this.u = u
@@ -106,6 +134,9 @@ public struct color_color {
     }
     public mut func v3(val!: VArray<UInt8, $3>): Unit {
         this._storage = __cjbind_write_VArray_UInt8__3__from_VArray_UInt8__3_(this._storage, val)
+    }
+    public func clone(): color_color {
+        return this
     }
 }
 

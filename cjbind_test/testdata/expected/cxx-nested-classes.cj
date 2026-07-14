@@ -9,6 +9,16 @@ public unsafe func Outer_Inner_get(this_: CPointer<Outer_Inner_Inner>): Int32 {
 @C
 public struct Outer_Inner_Inner {
     public let value: Int32
+    public func clone(): Outer_Inner_Inner {
+        return this
+    }
+    public func toString(): String {
+        var output = "Outer_Inner_Inner {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -30,6 +40,16 @@ let _ = {
 @C
 public struct Outer_Outer {
     public let value: Int32
+    public func clone(): Outer_Outer {
+        return this
+    }
+    public func toString(): String {
+        var output = "Outer_Outer {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -51,6 +71,16 @@ let _ = {
 @C
 public struct Outer_Deferred_Deferred {
     public let payload: Int64
+    public func clone(): Outer_Deferred_Deferred {
+        return this
+    }
+    public func toString(): String {
+        var output = "Outer_Deferred_Deferred {"
+        output += " payload: "
+        output += this.payload.toString()
+        output += " }"
+        return output
+    }
     public init(payload: Int64) {
         this.payload = payload
     }
@@ -70,8 +100,18 @@ let _ = {
 }
 
 @C
-public struct NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 {
+public struct Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 {
     public let value: Int32
+    public func clone(): Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 {
+        return this
+    }
+    public func toString(): String {
+        var output = "Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -80,15 +120,15 @@ public struct NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0
 @When[debug]
 let _ = {
     =>
-        let size = sizeOf<NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0>()
+        let size = sizeOf<Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0>()
         if (size != 4) {
             throw Exception(
-                "Size of NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 is not 4 but ${size} bytes")
+                "Size of Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 is not 4 but ${size} bytes")
         }
-        let align = alignOf<NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0>()
+        let align = alignOf<Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0>()
         if (align != 4) {
             throw Exception(
-                "Alignment of NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 is not 4 but ${align} bytes")
+                "Alignment of Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0 is not 4 but ${align} bytes")
         }
 }
 
@@ -96,9 +136,23 @@ let _ = {
 public struct NestedHolder_NestedHolder {
     public let inner: Outer_Inner_Inner
     public let deferred: CPointer<Outer_Deferred_Deferred>
-    public let boxed: NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0
+    public let boxed: Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0
+    public func clone(): NestedHolder_NestedHolder {
+        return this
+    }
+    public func toString(): String {
+        var output = "NestedHolder_NestedHolder {"
+        output += " inner: "
+        output += this.inner.toString()
+        output += ", deferred: "
+        output += CPointer<Unit>(this.deferred).toUIntNative().toString()
+        output += ", boxed: "
+        output += this.boxed.toString()
+        output += " }"
+        return output
+    }
     public init(inner: Outer_Inner_Inner, deferred: CPointer<Outer_Deferred_Deferred>,
-        boxed: NestedHolder_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0) {
+        boxed: Outer_Outer_Box_open0_int_close0_Outer_Box_open0_int_close0) {
         this.inner = inner
         this.deferred = deferred
         this.boxed = boxed

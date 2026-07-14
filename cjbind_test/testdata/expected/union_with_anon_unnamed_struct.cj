@@ -28,6 +28,22 @@ public struct pixel__cjbind_ty_1__cjbind_ty_1 {
     public let g: UInt8
     public let b: UInt8
     public let a: UInt8
+    public func clone(): pixel__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "pixel__cjbind_ty_1__cjbind_ty_1 {"
+        output += " r: "
+        output += this.r.toString()
+        output += ", g: "
+        output += this.g.toString()
+        output += ", b: "
+        output += this.b.toString()
+        output += ", a: "
+        output += this.a.toString()
+        output += " }"
+        return output
+    }
     public init(r: UInt8, g: UInt8, b: UInt8, a: UInt8) {
         this.r = r
         this.g = g
@@ -64,6 +80,9 @@ public struct pixel_pixel {
     }
     public mut func __cjbind_anon_1(val!: pixel__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_pixel__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
+    }
+    public func clone(): pixel_pixel {
+        return this
     }
 }
 

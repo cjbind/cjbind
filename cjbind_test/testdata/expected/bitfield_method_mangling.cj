@@ -70,6 +70,18 @@ public struct mach_msg_type_descriptor_t_mach_msg_type_descriptor_t {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
     }
     public init() {}
+    public func clone(): mach_msg_type_descriptor_t_mach_msg_type_descriptor_t {
+        return this
+    }
+    public func toString(): String {
+        var output = "mach_msg_type_descriptor_t_mach_msg_type_descriptor_t {"
+        output += " pad3: "
+        output += this.pad3().toString()
+        output += ", type: "
+        output += this.type_().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

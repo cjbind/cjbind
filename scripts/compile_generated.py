@@ -38,7 +38,136 @@ HEADERS = [
     ROOT / "cjbind_test/testdata/headers/cxx-virtual-signatures.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-inheritance-virtual.hpp",
     ROOT / "cjbind_test/testdata/headers/cxx-template.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-derive-codegen.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-compile-smoke.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-function-pointer.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-blob-float.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-blocklisted-manual.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-blocklisted-yes.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-derive-template-instance.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-2.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-3.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-7.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-9.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-10.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-param-usage-15.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-array.hpp",
+    ROOT / "cjbind_test/testdata/headers/cxx-analysis-template-opacity.hpp",
 ]
+
+HEADER_OPTIONS = {
+    "cxx-derive-compile-smoke.hpp": [
+        "--with-derive-default",
+        "--with-derive-hash",
+        "--with-derive-eq",
+        "--with-derive-ord",
+    ],
+    "cxx-analysis-derive-codegen.hpp": [
+        "--with-derive-default",
+        "--with-derive-hash",
+        "--with-derive-eq",
+        "--with-derive-ord",
+        "--impl-debug",
+        "--impl-partialeq",
+        "--disable-untagged-union",
+        "--opaque-type",
+        "^OpaqueWord$",
+        "--no-hash",
+        "^NoHash$",
+        "--no-partialeq",
+        "^NoPartialEq$",
+    ],
+    "cxx-derive-function-pointer.hpp": [
+        "--with-derive-default",
+        "--with-derive-hash",
+        "--with-derive-eq",
+        "--with-derive-ord",
+    ],
+    "cxx-derive-blob-float.hpp": [
+        "--with-derive-default",
+        "--with-derive-hash",
+        "--with-derive-eq",
+        "--with-derive-ord",
+    ],
+    "cxx-derive-template-instance.hpp": [
+        "--with-derive-default",
+        "--with-derive-hash",
+        "--with-derive-eq",
+        "--with-derive-ord",
+        "--opaque-type",
+        "^ConflictTemplate<int>$",
+    ],
+}
+
+HEADER_CLANG_ARGS = {
+    "cxx-derive-blob-float.hpp": ["--target=i686-unknown-linux-gnu"],
+}
+
+EXPECTED_GENERATED = {
+    "cxx-derive-blocklisted-manual.hpp":
+        ROOT / "cjbind_test/testdata/expected/cxx-derive-blocklisted-manual.cj",
+    "cxx-derive-blocklisted-yes.hpp":
+        ROOT / "cjbind_test/testdata/expected/cxx-derive-blocklisted-yes.cj",
+}
+
+SUPPORT_SOURCES = {
+    "cxx-derive-blocklisted-manual.hpp": """package cjbind_ffi
+
+@C
+public struct ManualExternal_ManualExternal {
+    public let value: Int32
+    public init(value: Int32) {
+        this.value = value
+    }
+    public operator func ==(right: ManualExternal_ManualExternal): Bool {
+        return this.value == right.value
+    }
+    public operator func !=(right: ManualExternal_ManualExternal): Bool {
+        return !(this == right)
+    }
+}
+""",
+    "cxx-derive-blocklisted-yes.hpp": """package cjbind_ffi
+
+@C
+public struct ExternalCapabilities_ExternalCapabilities {
+    public let first: Int32
+    public let second: Int32
+    public let third: Int32
+    public init(first: Int32, second: Int32, third: Int32) {
+        this.first = first
+        this.second = second
+        this.third = third
+    }
+    public func toString(): String {
+        return "ExternalCapabilities_ExternalCapabilities(${first}, ${second}, ${third})"
+    }
+    public func hashCode(): Int64 {
+        var hash = this.first.hashCode()
+        hash = ((hash << 5) | (hash >> 59)) ^ this.second.hashCode()
+        return ((hash << 5) | (hash >> 59)) ^ this.third.hashCode()
+    }
+    public operator func ==(right: ExternalCapabilities_ExternalCapabilities): Bool {
+        return this.first == right.first && this.second == right.second && this.third == right.third
+    }
+    public operator func !=(right: ExternalCapabilities_ExternalCapabilities): Bool {
+        return !(this == right)
+    }
+    public operator func <(right: ExternalCapabilities_ExternalCapabilities): Bool {
+        if (this.first != right.first) {
+            return this.first < right.first
+        }
+        if (this.second != right.second) {
+            return this.second < right.second
+        }
+        return this.third < right.third
+    }
+    public operator func >(right: ExternalCapabilities_ExternalCapabilities): Bool {
+        return right < this
+    }
+}
+""",
+}
 
 
 def run(cmd: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:
@@ -63,7 +192,7 @@ def build_cli() -> Path:
     raise RuntimeError(f"failed to locate built {exe}")
 
 
-def write_smoke_project(project: Path, generated: str) -> None:
+def write_smoke_project(project: Path, generated: str, support: str | None = None) -> None:
     (project / "src").mkdir(parents=True)
     (project / "cangjie-sdk.toml").write_text(
         '[toolchain]\nchannel = "nightly"\n',
@@ -80,6 +209,8 @@ def write_smoke_project(project: Path, generated: str) -> None:
         encoding="utf-8",
     )
     (project / "src/wrap.cj").write_text(generated, encoding="utf-8")
+    if support is not None:
+        (project / "src/support.cj").write_text(support, encoding="utf-8")
 
 
 def compile_header(cli: Path, header: Path, keep_temps: bool) -> None:
@@ -87,8 +218,9 @@ def compile_header(cli: Path, header: Path, keep_temps: bool) -> None:
     failed = False
     try:
         out = temp_root / "generated.cj"
-        run(
-            [
+        expected = EXPECTED_GENERATED.get(header.name)
+        if expected is None:
+            command = [
                 str(cli),
                 str(header),
                 "-o",
@@ -96,14 +228,24 @@ def compile_header(cli: Path, header: Path, keep_temps: bool) -> None:
                 "--package",
                 "cjbind_ffi",
                 "--no-detect-include-path",
-                "--",
-                "--target=x86_64-unknown-linux-gnu",
-            ],
-            cwd=ROOT,
-        )
+            ]
+            command.extend(HEADER_OPTIONS.get(header.name, []))
+            command.append("--")
+            command.extend(HEADER_CLANG_ARGS.get(
+                header.name,
+                ["--target=x86_64-unknown-linux-gnu"],
+            ))
+            run(command, cwd=ROOT)
+            generated = out.read_text(encoding="utf-8")
+        else:
+            generated = expected.read_text(encoding="utf-8")
 
         project = temp_root / "project"
-        write_smoke_project(project, out.read_text(encoding="utf-8"))
+        write_smoke_project(
+            project,
+            generated,
+            SUPPORT_SOURCES.get(header.name),
+        )
         run(["cjpm", "build", "--target-dir", str(temp_root / "target"), "-V"], cwd=project)
     except subprocess.CalledProcessError as exc:
         failed = True

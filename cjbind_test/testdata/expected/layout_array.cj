@@ -7,39 +7,41 @@ public const RTE_HEAP_NUM_FREELISTS_RTE_HEAP_NUM_FREELISTS: Int64 = 13
 
 @C
 public struct rte_mempool_rte_mempool {
+    public func toString(): String {
+        var output = "rte_mempool_rte_mempool {"
+        output += " }"
+        return output
+    }
     init() {
         throw Exception("type should not be inited")
     }
 }
 
-// Prototype for implementation specific data provisioning function.
-//
-// The function should provide the implementation specific memory for
-// for use by the other mempool ops functions in a given mempool ops struct.
-// E.g. the default ops provides an instance of the rte_ring for this purpose.
-// it will most likely point to a different type of data structure, and
-// will be transparent to the application programmer.
-// This function should set mp->pool_data.
 public type rte_mempool_alloc_t_rte_mempool_alloc_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> Int32>
 
-// Free the opaque private data pointed to by mp->pool_data pointer.
 public type rte_mempool_free_t_rte_mempool_free_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> Unit>
 
-// Enqueue an object into the external pool.
 public type rte_mempool_enqueue_t_rte_mempool_enqueue_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>, obj_table: CPointer<CPointer<Unit>>,
     n: UInt32) -> Int32>
 
-// Dequeue an object from the external pool.
 public type rte_mempool_dequeue_t_rte_mempool_dequeue_t = CFunc<(mp: CPointer<rte_mempool_rte_mempool>, obj_table: CPointer<CPointer<Unit>>,
     n: UInt32) -> Int32>
 
-// Return the number of available objects in the external pool.
 public type rte_mempool_get_count_rte_mempool_get_count = CFunc<(mp: CPointer<rte_mempool_rte_mempool>) -> UInt32>
 
 // Structure defining mempool operations structure *
 @C
 public struct rte_mempool_ops_rte_mempool_ops {
     let _cjbind_opaque_blob: VArray<UInt8, $128>
+    public func clone(): rte_mempool_ops_rte_mempool_ops {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mempool_ops_rte_mempool_ops {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $128>>() }
     }
@@ -50,6 +52,16 @@ public struct rte_mempool_ops_rte_mempool_ops {
 public struct rte_spinlock_t_rte_spinlock_t {
     //< lock status 0 = unlocked, 1 = locked *
     public let locked: Int32
+    public func clone(): rte_spinlock_t_rte_spinlock_t {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_spinlock_t_rte_spinlock_t {"
+        output += " locked: "
+        output += this.locked.toString()
+        output += " }"
+        return output
+    }
     public init(locked: Int32) {
         this.locked = locked
     }
@@ -78,6 +90,15 @@ let _ = {
 @C
 public struct rte_mempool_ops_table_rte_mempool_ops_table {
     let _cjbind_opaque_blob: VArray<UInt8, $2112>
+    public func clone(): rte_mempool_ops_table_rte_mempool_ops_table {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mempool_ops_table_rte_mempool_ops_table {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $2112>>() }
     }
@@ -86,6 +107,16 @@ public struct rte_mempool_ops_table_rte_mempool_ops_table {
 @C
 public struct malloc_heap__cjbind_ty_1__cjbind_ty_1 {
     public let lh_first: CPointer<malloc_elem_malloc_elem>
+    public func clone(): malloc_heap__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "malloc_heap__cjbind_ty_1__cjbind_ty_1 {"
+        output += " lh_first: "
+        output += CPointer<Unit>(this.lh_first).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(lh_first: CPointer<malloc_elem_malloc_elem>) {
         this.lh_first = lh_first
     }
@@ -108,10 +139,32 @@ let _ = {
 @C
 public struct malloc_heap_malloc_heap {
     let _cjbind_opaque_blob: VArray<UInt8, $128>
+    public func clone(): malloc_heap_malloc_heap {
+        return this
+    }
+    public func toString(): String {
+        var output = "malloc_heap_malloc_heap {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $128>>() }
     }
 }
 
 @C
-public struct malloc_elem_malloc_elem {}
+public struct malloc_elem_malloc_elem {
+    let _cjbind_empty: UInt8
+    public func clone(): malloc_elem_malloc_elem {
+        return this
+    }
+    public func toString(): String {
+        var output = "malloc_elem_malloc_elem {"
+        output += " }"
+        return output
+    }
+    public init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}

@@ -5,6 +5,16 @@ package cjbind_ffi
 public struct Struct_Struct {
     // This is field
     public let field: Int32
+    public func clone(): Struct_Struct {
+        return this
+    }
+    public func toString(): String {
+        var output = "Struct_Struct {"
+        output += " field: "
+        output += this.field.toString()
+        output += " }"
+        return output
+    }
     public init(field: Int32) {
         this.field = field
     }
@@ -23,11 +33,8 @@ let _ = {
         }
 }
 
-// This is AliasToStruct
 public type AliasToStruct_AliasToStruct = Struct_Struct
 
-// This is AliasToInt
 public type AliasToInt_AliasToInt = Int32
 
-// This is AliasToAliasToInt
 public type AliasToAliasToInt_AliasToAliasToInt = AliasToInt_AliasToInt

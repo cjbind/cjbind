@@ -3,6 +3,15 @@ package cjbind_ffi
 @C
 public struct redundant_packed_redundant_packed {
     let _cjbind_opaque_blob: UInt64
+    public func clone(): redundant_packed_redundant_packed {
+        return this
+    }
+    public func toString(): String {
+        var output = "redundant_packed_redundant_packed {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
     }
@@ -24,6 +33,15 @@ let _ = {
 @C
 public struct redundant_packed_bitfield_redundant_packed_bitfield {
     let _cjbind_opaque_blob: UInt64
+    public func clone(): redundant_packed_bitfield_redundant_packed_bitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "redundant_packed_bitfield_redundant_packed_bitfield {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
     }
@@ -46,6 +64,9 @@ let _ = {
 @C
 public struct redundant_packed_union_redundant_packed_union {
     let _cjbind_opaque_blob: VArray<UInt8, $16>
+    public func clone(): redundant_packed_union_redundant_packed_union {
+        return this
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $16>>() }
     }
@@ -54,6 +75,15 @@ public struct redundant_packed_union_redundant_packed_union {
 @C
 public struct inner_inner {
     let _cjbind_opaque_blob: UInt16
+    public func clone(): inner_inner {
+        return this
+    }
+    public func toString(): String {
+        var output = "inner_inner {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt16>() }
     }
@@ -75,6 +105,15 @@ let _ = {
 @C
 public struct outer_redundant_packed_outer_redundant_packed {
     let _cjbind_opaque_blob: UInt64
+    public func clone(): outer_redundant_packed_outer_redundant_packed {
+        return this
+    }
+    public func toString(): String {
+        var output = "outer_redundant_packed_outer_redundant_packed {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
     }
@@ -97,6 +136,18 @@ let _ = {
 public struct redundant_pragma_packed_redundant_pragma_packed {
     public let a: UInt8
     public let b: UInt16
+    public func clone(): redundant_pragma_packed_redundant_pragma_packed {
+        return this
+    }
+    public func toString(): String {
+        var output = "redundant_pragma_packed_redundant_pragma_packed {"
+        output += " a: "
+        output += this.a.toString()
+        output += ", b: "
+        output += this.b.toString()
+        output += " }"
+        return output
+    }
     public init(a: UInt8, b: UInt16) {
         this.a = a
         this.b = b

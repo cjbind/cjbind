@@ -8,6 +8,16 @@ public type foo__cjbind_ty_1__cjbind_ty_1 = UInt32
 @C
 public struct foo_foo {
     public let member: foo__cjbind_ty_1__cjbind_ty_1
+    public func clone(): foo_foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " member: "
+        output += this.member.toString()
+        output += " }"
+        return output
+    }
     public init(member: foo__cjbind_ty_1__cjbind_ty_1) {
         this.member = member
     }

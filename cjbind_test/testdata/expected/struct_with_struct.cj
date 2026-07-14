@@ -4,6 +4,18 @@ package cjbind_ffi
 public struct foo__cjbind_ty_1__cjbind_ty_1 {
     public let x: UInt32
     public let y: UInt32
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo__cjbind_ty_1__cjbind_ty_1 {"
+        output += " x: "
+        output += this.x.toString()
+        output += ", y: "
+        output += this.y.toString()
+        output += " }"
+        return output
+    }
     public init(x: UInt32, y: UInt32) {
         this.x = x
         this.y = y
@@ -26,6 +38,16 @@ let _ = {
 @C
 public struct foo_foo {
     public let bar: foo__cjbind_ty_1__cjbind_ty_1
+    public func clone(): foo_foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " bar: "
+        output += this.bar.toString()
+        output += " }"
+        return output
+    }
     public init(bar: foo__cjbind_ty_1__cjbind_ty_1) {
         this.bar = bar
     }

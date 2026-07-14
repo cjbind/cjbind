@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct a_a {
     public let val_a: CPointer<b_b>
+    public func clone(): a_a {
+        return this
+    }
+    public func toString(): String {
+        var output = "a_a {"
+        output += " val_a: "
+        output += CPointer<Unit>(this.val_a).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(val_a: CPointer<b_b>) {
         this.val_a = val_a
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct b_b {
     public let val_b: Int32
+    public func clone(): b_b {
+        return this
+    }
+    public func toString(): String {
+        var output = "b_b {"
+        output += " val_b: "
+        output += this.val_b.toString()
+        output += " }"
+        return output
+    }
     public init(val_b: Int32) {
         this.val_b = val_b
     }

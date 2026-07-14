@@ -39,6 +39,13 @@ public unsafe func Widget_twice(input: Int32): Int32 {
 @C
 public struct Widget_Widget {
     private let value: Int32
+    public func toString(): String {
+        var output = "Widget_Widget {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     private init(value: Int32) {
         this.value = value
     }
@@ -78,6 +85,14 @@ public unsafe func C_E_E_constructor(this_: CPointer<C_E_E>): Unit {
 @C
 public struct C_E_E {
     let _cjbind_empty: UInt8
+    public func clone(): C_E_E {
+        return this
+    }
+    public func toString(): String {
+        var output = "C_E_E {"
+        output += " }"
+        return output
+    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -105,6 +120,11 @@ public unsafe func D_E_E_destructor(this_: CPointer<D_E_E>): Unit {
 @C
 public struct D_E_E {
     let _cjbind_empty: UInt8
+    public func toString(): String {
+        var output = "D_E_E {"
+        output += " }"
+        return output
+    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
@@ -126,6 +146,14 @@ let _ = {
 @C
 public struct ManglingArgument_ManglingArgument {
     let _cjbind_empty: UInt8
+    public func clone(): ManglingArgument_ManglingArgument {
+        return this
+    }
+    public func toString(): String {
+        var output = "ManglingArgument_ManglingArgument {"
+        output += " }"
+        return output
+    }
     public init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }

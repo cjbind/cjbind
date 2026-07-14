@@ -91,6 +91,24 @@ public struct Struct_Struct {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 8, UInt64(val)) }
     }
     public init() {}
+    public func clone(): Struct_Struct {
+        return this
+    }
+    public func toString(): String {
+        var output = "Struct_Struct {"
+        output += " a: "
+        output += this.a().toString()
+        output += ", b: "
+        output += this.b().toString()
+        output += ", c: "
+        output += this.c().toString()
+        output += ", d: "
+        output += this.d().toString()
+        output += ", e: "
+        output += this.e().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -124,6 +142,18 @@ public struct Inner_Inner {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 16, 16, UInt64(val)) }
     }
     public init() {}
+    public func clone(): Inner_Inner {
+        return this
+    }
+    public func toString(): String {
+        var output = "Inner_Inner {"
+        output += " a: "
+        output += this.a().toString()
+        output += ", b: "
+        output += this.b().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -142,6 +172,15 @@ let _ = {
 @C
 public struct Outer_Outer {
     let _cjbind_opaque_blob: VArray<UInt8, $4>
+    public func clone(): Outer_Outer {
+        return this
+    }
+    public func toString(): String {
+        var output = "Outer_Outer {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }
     }

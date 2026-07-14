@@ -11,6 +11,16 @@ public const FOO_FOO: Int32 = 1
 @C
 public struct Bar_Bar {
     public let baz: Int32
+    public func clone(): Bar_Bar {
+        return this
+    }
+    public func toString(): String {
+        var output = "Bar_Bar {"
+        output += " baz: "
+        output += this.baz.toString()
+        output += " }"
+        return output
+    }
     public init(baz: Int32) {
         this.baz = baz
     }

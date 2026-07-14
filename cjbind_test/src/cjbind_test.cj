@@ -6,7 +6,13 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.{CjbindOptions, DefaultEnumStyle, FieldInfo}
+import cjbind.options.{
+    CjbindOptions,
+    ConfiguredCanDerive,
+    ConfiguredDeriveTrait,
+    DefaultEnumStyle,
+    FieldInfo
+}
 import cjbind.utils.formatString
 import std.env.{getCommandLine, getVariable}
 
@@ -116,6 +122,111 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
                 } else if (part == "--vtable-generation") {
                     opt.vtableGeneration = true
                     i += 1
+                } else if (part == "--blocklist-type" && i + 1 < parts.size) {
+                    opt.blocklistedTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--blocklist-function" && i + 1 < parts.size) {
+                    opt.blocklistedFunctions.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--blocklist-item" && i + 1 < parts.size) {
+                    opt.blocklistedItems.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--blocklist-var" && i + 1 < parts.size) {
+                    opt.blocklistedVars.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--blocklist-file" && i + 1 < parts.size) {
+                    opt.blocklistedFiles.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--opaque-type" && i + 1 < parts.size) {
+                    opt.opaqueTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--allowlist-type" && i + 1 < parts.size) {
+                    opt.allowlistedTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--allowlist-function" && i + 1 < parts.size) {
+                    opt.allowlistedFunctions.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--allowlist-item" && i + 1 < parts.size) {
+                    opt.allowlistedItems.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--allowlist-var" && i + 1 < parts.size) {
+                    opt.allowlistedVars.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--allowlist-file" && i + 1 < parts.size) {
+                    opt.allowlistedFiles.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--no-recursive-allowlist") {
+                    opt.allowlistRecursively = false
+                    i += 1
+                } else if (part == "--no-record-matches") {
+                    opt.recordMatches = false
+                    i += 1
+                } else if (part == "--disable-untagged-union") {
+                    opt.untaggedUnion = false
+                    i += 1
+                } else if (part == "--no-size_t-is-usize") {
+                    opt.sizeTIsUsize = false
+                    i += 1
+                } else if (part == "--no-derive-copy") {
+                    opt.deriveCopy = false
+                    i += 1
+                } else if (part == "--no-derive-debug") {
+                    opt.deriveDebug = false
+                    i += 1
+                } else if (part == "--with-derive-default") {
+                    opt.deriveDefault = true
+                    i += 1
+                } else if (part == "--no-derive-default") {
+                    opt.deriveDefault = false
+                    i += 1
+                } else if (part == "--with-derive-hash") {
+                    opt.deriveHash = true
+                    i += 1
+                } else if (part == "--with-derive-partialeq") {
+                    opt.derivePartialEq = true
+                    i += 1
+                } else if (part == "--with-derive-eq") {
+                    opt.deriveEq = true
+                    i += 1
+                } else if (part == "--with-derive-partialord") {
+                    opt.derivePartialOrd = true
+                    i += 1
+                } else if (part == "--with-derive-ord") {
+                    opt.deriveOrd = true
+                    i += 1
+                } else if (part == "--impl-debug") {
+                    opt.implDebug = true
+                    i += 1
+                } else if (part == "--impl-partialeq") {
+                    opt.implPartialEq = true
+                    i += 1
+                } else if (part == "--blocklisted-traits-manually") {
+                    opt.blocklistedTypeImplementsTraitCallback = Some({
+                        _: String, _: ConfiguredDeriveTrait =>
+                            Some(ConfiguredCanDerive.Manually)
+                    })
+                    i += 1
+                } else if (part == "--blocklisted-traits-yes") {
+                    opt.blocklistedTypeImplementsTraitCallback = Some({
+                        _: String, _: ConfiguredDeriveTrait =>
+                            Some(ConfiguredCanDerive.Yes)
+                    })
+                    i += 1
+                } else if (part == "--no-copy" && i + 1 < parts.size) {
+                    opt.noCopyTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--no-debug" && i + 1 < parts.size) {
+                    opt.noDebugTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--no-default" && i + 1 < parts.size) {
+                    opt.noDefaultTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--no-hash" && i + 1 < parts.size) {
+                    opt.noHashTypes.add(parts[i + 1].trimAscii())
+                    i += 2
+                } else if (part == "--no-partialeq" && i + 1 < parts.size) {
+                    opt.noPartialEqTypes.add(parts[i + 1].trimAscii())
+                    i += 2
                 } else if (part == "--field-rename-callback") {
                     opt.fieldNameCallback = {
                         info: FieldInfo =>

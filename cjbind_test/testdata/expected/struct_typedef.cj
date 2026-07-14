@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct typedef_named_struct_typedef_named_struct {
     public let has_name: Bool
+    public func clone(): typedef_named_struct_typedef_named_struct {
+        return this
+    }
+    public func toString(): String {
+        var output = "typedef_named_struct_typedef_named_struct {"
+        output += " has_name: "
+        output += this.has_name.toString()
+        output += " }"
+        return output
+    }
     public init(has_name: Bool) {
         this.has_name = has_name
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct _cjbind_ty_1__cjbind_ty_1 {
     public let no_name: CPointer<Unit>
+    public func clone(): _cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "_cjbind_ty_1__cjbind_ty_1 {"
+        output += " no_name: "
+        output += CPointer<Unit>(this.no_name).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(no_name: CPointer<Unit>) {
         this.no_name = no_name
     }

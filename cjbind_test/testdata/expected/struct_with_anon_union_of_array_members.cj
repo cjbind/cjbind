@@ -25,7 +25,16 @@ func __cjbind_write_bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_VArray
 }
 
 @C
-public struct bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {}
+public struct bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+    public func clone(): bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " }"
+        return output
+    }
+}
 
 @When[debug]
 let _ = {
@@ -46,6 +55,15 @@ let _ = {
 public struct bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let __empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
     public let value1: CPointer<UInt8>
+    public func toString(): String {
+        var output = "bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " __empty_value1: "
+        output += this.__empty_value1.toString()
+        output += ", value1: "
+        output += "<incomplete array>"
+        output += " }"
+        return output
+    }
     public init(__empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1, value1: CPointer<UInt8>) {
         this.__empty_value1 = __empty_value1
         this.value1 = value1
@@ -66,7 +84,16 @@ let _ = {
 }
 
 @C
-public struct bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {}
+public struct bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
+    public func clone(): bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {"
+        output += " }"
+        return output
+    }
+}
 
 @When[debug]
 let _ = {
@@ -87,6 +114,15 @@ let _ = {
 public struct bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public let __empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1
     public let value2: CPointer<UInt8>
+    public func toString(): String {
+        var output = "bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {"
+        output += " __empty_value2: "
+        output += this.__empty_value2.toString()
+        output += ", value2: "
+        output += "<incomplete array>"
+        output += " }"
+        return output
+    }
     public init(__empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1, value2: CPointer<UInt8>) {
         this.__empty_value2 = __empty_value2
         this.value2 = value2

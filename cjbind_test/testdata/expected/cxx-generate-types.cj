@@ -3,6 +3,13 @@ package cjbind_ffi
 @C
 public struct SelectedType_SelectedType {
     public let value: Int32
+    public func toString(): String {
+        var output = "SelectedType_SelectedType {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }

@@ -3,6 +3,15 @@ package cjbind_ffi
 @C
 public struct Packed_Packed {
     let _cjbind_opaque_blob: VArray<UInt16, $5>
+    public func clone(): Packed_Packed {
+        return this
+    }
+    public func toString(): String {
+        var output = "Packed_Packed {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $5>>() }
     }
@@ -24,6 +33,15 @@ let _ = {
 @C
 public struct PackedLongWithChars_PackedLongWithChars {
     let _cjbind_opaque_blob: VArray<UInt16, $6>
+    public func clone(): PackedLongWithChars_PackedLongWithChars {
+        return this
+    }
+    public func toString(): String {
+        var output = "PackedLongWithChars_PackedLongWithChars {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $6>>() }
     }

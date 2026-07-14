@@ -1,10 +1,19 @@
 package cjbind_ffi
 
-// This should not be opaque; we can see the attributes and can pack the
-// struct.
+// Packed records use opaque storage because the current Cangjie FFI cannot
+// declare packed field layout directly.
 @C
 public struct AlignedToOne_AlignedToOne {
     let _cjbind_opaque_blob: VArray<UInt8, $4>
+    public func clone(): AlignedToOne_AlignedToOne {
+        return this
+    }
+    public func toString(): String {
+        var output = "AlignedToOne_AlignedToOne {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $4>>() }
     }
@@ -23,11 +32,19 @@ let _ = {
         }
 }
 
-// This should be opaque because although we can see the attributes, Rust before
-// 1.33 doesn't have `#[repr(packed(N))]`.
+// The opaque storage must preserve the explicit two-byte alignment.
 @C
 public struct AlignedToTwo_AlignedToTwo {
     let _cjbind_opaque_blob: VArray<UInt16, $2>
+    public func clone(): AlignedToTwo_AlignedToTwo {
+        return this
+    }
+    public func toString(): String {
+        var output = "AlignedToTwo_AlignedToTwo {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $2>>() }
     }
@@ -46,12 +63,20 @@ let _ = {
         }
 }
 
-// This should not be opaque because although `libclang` doesn't give us the
-// `#pragma pack(1)`, we can detect that alignment is 1 and add
-// `#[repr(packed)]` to the struct ourselves.
+// The translation unit reports the effective one-byte alignment even though
+// the packing directive is not attached to the record cursor.
 @C
 public struct PackedToOne_PackedToOne {
     let _cjbind_opaque_blob: VArray<UInt8, $8>
+    public func clone(): PackedToOne_PackedToOne {
+        return this
+    }
+    public func toString(): String {
+        var output = "PackedToOne_PackedToOne {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $8>>() }
     }
@@ -70,12 +95,20 @@ let _ = {
         }
 }
 
-// In this case, even if we can detect the weird alignment triggered by
-// `#pragma pack(2)`, we can't do anything about it because Rust before 1.33
-// doesn't have `#[repr(packed(N))]`. Therefore, we must make it opaque.
+// The opaque storage must preserve the two-byte alignment introduced by the
+// packing directive.
 @C
 public struct PackedToTwo_PackedToTwo {
     let _cjbind_opaque_blob: VArray<UInt16, $4>
+    public func clone(): PackedToTwo_PackedToTwo {
+        return this
+    }
+    public func toString(): String {
+        var output = "PackedToTwo_PackedToTwo {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt16, $4>>() }
     }

@@ -57,6 +57,16 @@ public struct WithBitfield_WithBitfield {
     var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
     public var a: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
+    public func clone(): WithBitfield_WithBitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "WithBitfield_WithBitfield {"
+        output += " a: "
+        output += this.a.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -75,6 +85,15 @@ let _ = {
 @C
 public struct WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
+    public func clone(): WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {
+        return this
+    }
+    public func toString(): String {
+        var output = "WithBitfieldAndAttrPacked_WithBitfieldAndAttrPacked {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
@@ -97,6 +116,15 @@ let _ = {
 @C
 public struct WithBitfieldAndPacked_WithBitfieldAndPacked {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
+    public func clone(): WithBitfieldAndPacked_WithBitfieldAndPacked {
+        return this
+    }
+    public func toString(): String {
+        var output = "WithBitfieldAndPacked_WithBitfieldAndPacked {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }

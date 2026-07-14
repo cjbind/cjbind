@@ -86,6 +86,22 @@ public struct Foo_Foo {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 192, 64, UInt64(val)) }
     }
     public init() {}
+    public func clone(): Foo_Foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "Foo_Foo {"
+        output += " m_bitfield: "
+        output += this.m_bitfield().toString()
+        output += ", m_bar: "
+        output += this.m_bar().toString()
+        output += ", foo: "
+        output += this.foo().toString()
+        output += ", bar: "
+        output += this.bar().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

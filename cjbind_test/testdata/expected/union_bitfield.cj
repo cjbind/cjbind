@@ -4,6 +4,9 @@ package cjbind_ffi
 public struct U4_U4 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
+    public func clone(): U4_U4 {
+        return this
+    }
 }
 
 @When[debug]
@@ -23,6 +26,9 @@ let _ = {
 public struct B_B {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
+    public func clone(): B_B {
+        return this
+    }
 }
 
 @When[debug]

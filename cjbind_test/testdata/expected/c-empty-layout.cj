@@ -1,7 +1,16 @@
 package cjbind_ffi
 
 @C
-public struct Foo_Foo {}
+public struct Foo_Foo {
+    public func clone(): Foo_Foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "Foo_Foo {"
+        output += " }"
+        return output
+    }
+}
 
 @When[debug]
 let _ = {

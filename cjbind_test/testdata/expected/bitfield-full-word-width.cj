@@ -63,6 +63,16 @@ public struct FullWordWidth_FullWordWidth {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 64, UInt64(val)) }
     }
     public init() {}
+    public func clone(): FullWordWidth_FullWordWidth {
+        return this
+    }
+    public func toString(): String {
+        var output = "FullWordWidth_FullWordWidth {"
+        output += " full: "
+        output += this.full().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -96,6 +106,18 @@ public struct ShiftedWordWidth_ShiftedWordWidth {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 63, UInt64(val)) }
     }
     public init() {}
+    public func clone(): ShiftedWordWidth_ShiftedWordWidth {
+        return this
+    }
+    public func toString(): String {
+        var output = "ShiftedWordWidth_ShiftedWordWidth {"
+        output += " first: "
+        output += this.first().toString()
+        output += ", rest: "
+        output += this.rest().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

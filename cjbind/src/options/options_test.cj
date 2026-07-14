@@ -62,6 +62,37 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.generatePureVirtualFunctions, false)
         @Expect(opts.generatePrivateFunctions, false)
         @Expect(opts.vtableGeneration, false)
+        @Expect(opts.allowlistRecursively, true)
+        @Expect(opts.recordMatches, true)
+        @Expect(opts.untaggedUnion, true)
+        @Expect(opts.sizeTIsUsize, true)
+        @Expect(opts.deriveCopy, true)
+        @Expect(opts.deriveDebug, true)
+        @Expect(opts.deriveDefault, false)
+        @Expect(opts.deriveHash, false)
+        @Expect(opts.implDebug, false)
+        @Expect(opts.implPartialEq, false)
+        @Expect(opts.derivePartialEq, false)
+        @Expect(opts.derivePartialOrd, false)
+        @Expect(opts.deriveEq, false)
+        @Expect(opts.deriveOrd, false)
+        @Expect(opts.blocklistedTypes.size, 0)
+        @Expect(opts.blocklistedFunctions.size, 0)
+        @Expect(opts.blocklistedItems.size, 0)
+        @Expect(opts.blocklistedVars.size, 0)
+        @Expect(opts.blocklistedFiles.size, 0)
+        @Expect(opts.opaqueTypes.size, 0)
+        @Expect(opts.allowlistedTypes.size, 0)
+        @Expect(opts.allowlistedFunctions.size, 0)
+        @Expect(opts.allowlistedItems.size, 0)
+        @Expect(opts.allowlistedVars.size, 0)
+        @Expect(opts.allowlistedFiles.size, 0)
+        @Expect(opts.noCopyTypes.size, 0)
+        @Expect(opts.noDebugTypes.size, 0)
+        @Expect(opts.noDefaultTypes.size, 0)
+        @Expect(opts.noHashTypes.size, 0)
+        @Expect(opts.noPartialEqTypes.size, 0)
+        @Expect(opts.blocklistedTypeImplementsTraitCallback.isNone(), true)
         @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
@@ -136,5 +167,88 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.generatePrivateFunctions, true)
         @Expect(opts.vtableGeneration, true)
         @Expect(opts.fieldNameCallback.isSome(), true)
+    }
+
+    @TestCase
+    func namePatternSetsUseRegularExpressions(): Unit {
+        let opts = CjbindOptions()
+        opts.blocklistedTypes.add(#"^ns::Hidden.*$"#)
+        opts.blocklistedTypes.add(#"^ns::Unused.*$"#)
+        @Expect(opts.blocklistedTypes.isEmpty, false)
+        @Expect(opts.blocklistedTypes.matches("ns::HiddenType"), true)
+        @Expect(opts.blocklistedTypes.matches("ns::VisibleType"), false)
+        @Expect(opts.blocklistedTypes.toArray()[0], #"^ns::Hidden.*$"#)
+        @Expect(opts.blocklistedTypes.unmatchedPatterns(), [#"^ns::Unused.*$"#])
+    }
+
+    @TestCase
+    func namePatternSetsMatchTheWholeItemName(): Unit {
+        let patterns = NamePatternSet()
+        patterns.add("Hidden")
+        @Expect(patterns.matches("Hidden"), true)
+        @Expect(patterns.matches("ns::Hidden"), false)
+
+        let wildcard = NamePatternSet()
+        wildcard.add(".*Hidden")
+        @Expect(wildcard.matches("ns::Hidden"), true)
+    }
+
+    @TestCase
+    func alternationIsAnchoredAsOneWholePattern(): Unit {
+        let patterns = NamePatternSet()
+        patterns.add("Visible|Hidden")
+        @Expect(patterns.matches("Visible"), true)
+        @Expect(patterns.matches("Hidden"), true)
+        @Expect(patterns.matches("ns::Visible"), false)
+        @Expect(patterns.matches("HiddenSuffix"), false)
+    }
+
+    @TestCase
+    func oneNameRecordsEveryOverlappingPattern(): Unit {
+        let patterns = NamePatternSet()
+        patterns.add("Visible.*")
+        patterns.add(".*Type")
+        @Expect(patterns.matches("VisibleType"), true)
+        @Expect(patterns.unmatchedPatterns().isEmpty(), true)
+    }
+
+    @TestCase
+    func invalidRegexDisablesTheWholePatternSet(): Unit {
+        let patterns = NamePatternSet()
+        patterns.add("Visible")
+        patterns.add("[")
+        @Expect(patterns.matches("Visible"), false)
+        @Expect(patterns.unmatchedPatterns(), ["Visible", "["])
+    }
+
+    @TestCase
+    func equalityAndOrderingDerivesKeepTheirPrerequisites(): Unit {
+        let opts = CjbindOptions()
+
+        opts.deriveEq = true
+        @Expect(opts.deriveEq, true)
+        @Expect(opts.derivePartialEq, true)
+
+        opts.derivePartialEq = false
+        @Expect(opts.derivePartialEq, false)
+        @Expect(opts.deriveEq, false)
+
+        opts.deriveOrd = true
+        @Expect(opts.deriveOrd, true)
+        @Expect(opts.derivePartialOrd, true)
+
+        opts.derivePartialOrd = false
+        @Expect(opts.derivePartialOrd, false)
+        @Expect(opts.deriveOrd, false)
+
+        opts.derivePartialEq = true
+        opts.deriveEq = false
+        @Expect(opts.derivePartialEq, true)
+        @Expect(opts.deriveEq, false)
+
+        opts.derivePartialOrd = true
+        opts.deriveOrd = false
+        @Expect(opts.derivePartialOrd, false)
+        @Expect(opts.deriveOrd, false)
     }
 }

@@ -6,6 +6,18 @@ package cjbind_ffi
 public struct cmdline_token_hdr_cmdline_token_hdr {
     public let ops: CPointer<cmdline_token_ops_cmdline_token_ops>
     public let offset: UInt32
+    public func clone(): cmdline_token_hdr_cmdline_token_hdr {
+        return this
+    }
+    public func toString(): String {
+        var output = "cmdline_token_hdr_cmdline_token_hdr {"
+        output += " ops: "
+        output += CPointer<Unit>(this.ops).toUIntNative().toString()
+        output += ", offset: "
+        output += this.offset.toString()
+        output += " }"
+        return output
+    }
     public init(ops: CPointer<cmdline_token_ops_cmdline_token_ops>, offset: UInt32) {
         this.ops = ops
         this.offset = offset
@@ -25,8 +37,6 @@ let _ = {
         }
 }
 
-// Stores a pointer to the ops struct, and the offset: the place to
-// write the parsed result in the destination structure.
 public type cmdline_parse_token_hdr_t_cmdline_parse_token_hdr_t = cmdline_token_hdr_cmdline_token_hdr
 
 // A token is defined by this structure.
@@ -59,6 +69,22 @@ public struct cmdline_token_ops_cmdline_token_ops {
     // get help for this token (token, dstbuf, size) *
     public let get_help: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t_cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>,
         arg3: UInt32) -> Int32>
+    public func clone(): cmdline_token_ops_cmdline_token_ops {
+        return this
+    }
+    public func toString(): String {
+        var output = "cmdline_token_ops_cmdline_token_ops {"
+        output += " parse: "
+        output += CPointer<Unit>(this.parse).toUIntNative().toString()
+        output += ", complete_get_nb: "
+        output += CPointer<Unit>(this.complete_get_nb).toUIntNative().toString()
+        output += ", complete_get_elt: "
+        output += CPointer<Unit>(this.complete_get_elt).toUIntNative().toString()
+        output += ", get_help: "
+        output += CPointer<Unit>(this.get_help).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(
         parse: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t_cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: CPointer<Unit>,
             arg4: UInt32) -> Int32>,
@@ -101,6 +127,16 @@ public type cmdline_numtype_cmdline_numtype = UInt32
 @C
 public struct cmdline_token_num_data_cmdline_token_num_data {
     public let type_: cmdline_numtype_cmdline_numtype
+    public func clone(): cmdline_token_num_data_cmdline_token_num_data {
+        return this
+    }
+    public func toString(): String {
+        var output = "cmdline_token_num_data_cmdline_token_num_data {"
+        output += " type: "
+        output += this.type_.toString()
+        output += " }"
+        return output
+    }
     public init(type_: cmdline_numtype_cmdline_numtype) {
         this.type_ = type_
     }
@@ -123,6 +159,18 @@ let _ = {
 public struct cmdline_token_num_cmdline_token_num {
     public let hdr: cmdline_token_hdr_cmdline_token_hdr
     public let num_data: cmdline_token_num_data_cmdline_token_num_data
+    public func clone(): cmdline_token_num_cmdline_token_num {
+        return this
+    }
+    public func toString(): String {
+        var output = "cmdline_token_num_cmdline_token_num {"
+        output += " hdr: "
+        output += this.hdr.toString()
+        output += ", num_data: "
+        output += this.num_data.toString()
+        output += " }"
+        return output
+    }
     public init(hdr: cmdline_token_hdr_cmdline_token_hdr, num_data: cmdline_token_num_data_cmdline_token_num_data) {
         this.hdr = hdr
         this.num_data = num_data

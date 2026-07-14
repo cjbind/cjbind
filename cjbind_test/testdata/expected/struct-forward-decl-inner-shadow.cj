@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct foo_foo {
     public let foo: Int32
+    public func clone(): foo_foo {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " foo: "
+        output += this.foo.toString()
+        output += " }"
+        return output
+    }
     public init(foo: Int32) {
         this.foo = foo
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct bar_bar {
     public let u: foo_foo
+    public func clone(): bar_bar {
+        return this
+    }
+    public func toString(): String {
+        var output = "bar_bar {"
+        output += " u: "
+        output += this.u.toString()
+        output += " }"
+        return output
+    }
     public init(u: foo_foo) {
         this.u = u
     }
@@ -47,6 +67,16 @@ public type bar_t_bar_t = bar_bar
 @C
 public struct baz_baz {
     public let f: foo_foo
+    public func clone(): baz_baz {
+        return this
+    }
+    public func toString(): String {
+        var output = "baz_baz {"
+        output += " f: "
+        output += this.f.toString()
+        output += " }"
+        return output
+    }
     public init(f: foo_foo) {
         this.f = f
     }

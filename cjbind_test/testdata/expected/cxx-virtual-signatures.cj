@@ -27,6 +27,13 @@ public unsafe func RecursiveBase_RecursiveBase_destructor(this_: CPointer<Recurs
 @C
 public struct RecursiveBase_RecursiveBase {
     public let vtable_: CPointer<Unit>
+    public func toString(): String {
+        var output = "RecursiveBase_RecursiveBase {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Unit>) {
         this.vtable_ = vtable_
     }
@@ -66,6 +73,13 @@ public unsafe func RecursiveDerived_update1(this_: CPointer<RecursiveDerived_Rec
 @C
 public struct RecursiveDerived_RecursiveDerived {
     public let _base: RecursiveBase_RecursiveBase
+    public func toString(): String {
+        var output = "RecursiveDerived_RecursiveDerived {"
+        output += " _base: "
+        output += this._base.toString()
+        output += " }"
+        return output
+    }
     public init(_base: RecursiveBase_RecursiveBase) {
         this._base = _base
     }
@@ -101,6 +115,16 @@ public struct Secondary_Secondary__cjbind_vtable {
 @C
 public struct Secondary_Secondary {
     public let vtable_: CPointer<Secondary_Secondary__cjbind_vtable>
+    public func clone(): Secondary_Secondary {
+        return this
+    }
+    public func toString(): String {
+        var output = "Secondary_Secondary {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Secondary_Secondary__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
@@ -129,6 +153,15 @@ public unsafe func MultipleInterface_secondary(this_: CPointer<MultipleInterface
 public struct MultipleInterface_MultipleInterface {
     public let _base: RecursiveDerived_RecursiveDerived
     public let _base_1: Secondary_Secondary
+    public func toString(): String {
+        var output = "MultipleInterface_MultipleInterface {"
+        output += " _base: "
+        output += this._base.toString()
+        output += ", _base_1: "
+        output += this._base_1.toString()
+        output += " }"
+        return output
+    }
     public init(_base: RecursiveDerived_RecursiveDerived, _base_1: Secondary_Secondary) {
         this._base = _base
         this._base_1 = _base_1

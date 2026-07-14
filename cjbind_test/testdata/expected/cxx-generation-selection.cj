@@ -15,6 +15,13 @@ public unsafe func Selection_scale(value: Int32): Int32 {
 @C
 public struct Selection_Selection {
     public let stored: Int32
+    public func toString(): String {
+        var output = "Selection_Selection {"
+        output += " stored: "
+        output += this.stored.toString()
+        output += " }"
+        return output
+    }
     public init(stored: Int32) {
         this.stored = stored
     }

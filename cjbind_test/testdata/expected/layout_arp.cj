@@ -21,6 +21,15 @@ public const ARP_OP_INVREPLY_ARP_OP_INVREPLY: Int64 = 9
 @C
 public struct ether_addr_ether_addr {
     let _cjbind_opaque_blob: VArray<UInt8, $6>
+    public func clone(): ether_addr_ether_addr {
+        return this
+    }
+    public func toString(): String {
+        var output = "ether_addr_ether_addr {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $6>>() }
     }
@@ -43,6 +52,15 @@ let _ = {
 @C
 public struct arp_ipv4_arp_ipv4 {
     let _cjbind_opaque_blob: VArray<UInt8, $20>
+    public func clone(): arp_ipv4_arp_ipv4 {
+        return this
+    }
+    public func toString(): String {
+        var output = "arp_ipv4_arp_ipv4 {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $20>>() }
     }
@@ -65,6 +83,15 @@ let _ = {
 @C
 public struct arp_hdr_arp_hdr {
     let _cjbind_opaque_blob: VArray<UInt8, $28>
+    public func clone(): arp_hdr_arp_hdr {
+        return this
+    }
+    public func toString(): String {
+        var output = "arp_hdr_arp_hdr {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $28>>() }
     }

@@ -38,6 +38,9 @@ public struct foo__cjbind_ty_1__cjbind_ty_1 {
     public mut func b(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt32(this._storage, val)
     }
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -56,6 +59,9 @@ let _ = {
 @C
 public struct foo_foo {
     public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1
+    public func clone(): foo_foo {
+        return this
+    }
     public init(__cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1) {
         this.__cjbind_anon_1 = __cjbind_anon_1
     }

@@ -16,6 +16,15 @@ public unsafe func Base_Base_destructor(this_: CPointer<Base_Base>): Unit {
 public struct Base_Base {
     public let vtable_: CPointer<Unit>
     public let base: Int32
+    public func toString(): String {
+        var output = "Base_Base {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += ", base: "
+        output += this.base.toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Unit>, base: Int32) {
         this.vtable_ = vtable_
         this.base = base
@@ -38,6 +47,16 @@ let _ = {
 @C
 public struct Extra_Extra {
     public let extra: Int64
+    public func clone(): Extra_Extra {
+        return this
+    }
+    public func toString(): String {
+        var output = "Extra_Extra {"
+        output += " extra: "
+        output += this.extra.toString()
+        output += " }"
+        return output
+    }
     public init(extra: Int64) {
         this.extra = extra
     }
@@ -67,6 +86,17 @@ public struct Derived_Derived {
     public let _base: Base_Base
     public let _base_1: Extra_Extra
     public let value: Int32
+    public func toString(): String {
+        var output = "Derived_Derived {"
+        output += " _base: "
+        output += this._base.toString()
+        output += ", _base_1: "
+        output += this._base_1.toString()
+        output += ", value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(_base: Base_Base, _base_1: Extra_Extra, value: Int32) {
         this._base = _base
         this._base_1 = _base_1
@@ -104,6 +134,16 @@ public struct Interface_Interface__cjbind_vtable {
 @C
 public struct Interface_Interface {
     public let vtable_: CPointer<Interface_Interface__cjbind_vtable>
+    public func clone(): Interface_Interface {
+        return this
+    }
+    public func toString(): String {
+        var output = "Interface_Interface {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Interface_Interface__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
@@ -141,6 +181,20 @@ public struct TailBase_TailBase {
     public let vtable_: CPointer<TailBase_TailBase__cjbind_vtable>
     public let payload: Int32
     public let marker: UInt8
+    public func clone(): TailBase_TailBase {
+        return this
+    }
+    public func toString(): String {
+        var output = "TailBase_TailBase {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += ", payload: "
+        output += this.payload.toString()
+        output += ", marker: "
+        output += this.marker.toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<TailBase_TailBase__cjbind_vtable>, payload: Int32, marker: UInt8) {
         this.vtable_ = vtable_
         this.payload = payload
@@ -170,6 +224,15 @@ public unsafe func TailDerived_tag(this_: CPointer<TailDerived_TailDerived>): In
 @C
 public struct TailDerived_TailDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
+    public func clone(): TailDerived_TailDerived {
+        return this
+    }
+    public func toString(): String {
+        var output = "TailDerived_TailDerived {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
@@ -191,6 +254,16 @@ let _ = {
 @C
 public struct Plain_Plain {
     public let plain: Int32
+    public func clone(): Plain_Plain {
+        return this
+    }
+    public func toString(): String {
+        var output = "Plain_Plain {"
+        output += " plain: "
+        output += this.plain.toString()
+        output += " }"
+        return output
+    }
     public init(plain: Int32) {
         this.plain = plain
     }
@@ -227,6 +300,18 @@ public struct Poly_Poly__cjbind_vtable {
 public struct Poly_Poly {
     public let vtable_: CPointer<Poly_Poly__cjbind_vtable>
     public let poly: Int32
+    public func clone(): Poly_Poly {
+        return this
+    }
+    public func toString(): String {
+        var output = "Poly_Poly {"
+        output += " vtable_: "
+        output += CPointer<Unit>(this.vtable_).toUIntNative().toString()
+        output += ", poly: "
+        output += this.poly.toString()
+        output += " }"
+        return output
+    }
     public init(vtable_: CPointer<Poly_Poly__cjbind_vtable>, poly: Int32) {
         this.vtable_ = vtable_
         this.poly = poly
@@ -249,6 +334,15 @@ let _ = {
 @C
 public struct Reordered_Reordered {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
+    public func clone(): Reordered_Reordered {
+        return this
+    }
+    public func toString(): String {
+        var output = "Reordered_Reordered {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
@@ -270,6 +364,16 @@ let _ = {
 @C
 public struct VirtualBase_VirtualBase {
     public let value: Int32
+    public func clone(): VirtualBase_VirtualBase {
+        return this
+    }
+    public func toString(): String {
+        var output = "VirtualBase_VirtualBase {"
+        output += " value: "
+        output += this.value.toString()
+        output += " }"
+        return output
+    }
     public init(value: Int32) {
         this.value = value
     }
@@ -291,6 +395,15 @@ let _ = {
 @C
 public struct VirtualDerived_VirtualDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
+    public func clone(): VirtualDerived_VirtualDerived {
+        return this
+    }
+    public func toString(): String {
+        var output = "VirtualDerived_VirtualDerived {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }

@@ -3,6 +3,15 @@ package cjbind_ffi
 @C
 public struct Date_Date {
     let _cjbind_opaque_blob: VArray<UInt8, $3>
+    public func clone(): Date_Date {
+        return this
+    }
+    public func toString(): String {
+        var output = "Date_Date {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     public init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $3>>() }
     }

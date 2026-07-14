@@ -39,6 +39,18 @@ func __cjbind_write_foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_UInt32(stora
 public struct foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let c1: UInt16
     public let c2: UInt16
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " c1: "
+        output += this.c1.toString()
+        output += ", c2: "
+        output += this.c2.toString()
+        output += " }"
+        return output
+    }
     public init(c1: UInt16, c2: UInt16) {
         this.c1 = c1
         this.c2 = c2
@@ -64,6 +76,22 @@ public struct foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public let d2: UInt8
     public let d3: UInt8
     public let d4: UInt8
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
+    public func toString(): String {
+        var output = "foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {"
+        output += " d1: "
+        output += this.d1.toString()
+        output += ", d2: "
+        output += this.d2.toString()
+        output += ", d3: "
+        output += this.d3.toString()
+        output += ", d4: "
+        output += this.d4.toString()
+        output += " }"
+        return output
+    }
     public init(d1: UInt8, d2: UInt8, d3: UInt8, d4: UInt8) {
         this.d1 = d1
         this.d2 = d2
@@ -107,6 +135,9 @@ public struct foo__cjbind_ty_1__cjbind_ty_1 {
     public mut func __cjbind_anon_2(val!: foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2): Unit {
         this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2_from_UInt32(this._storage, val)
     }
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -126,6 +157,9 @@ let _ = {
 public struct foo_foo {
     public let a: UInt32
     public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1
+    public func clone(): foo_foo {
+        return this
+    }
     public init(a: UInt32, __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1) {
         this.a = a
         this.__cjbind_anon_1 = __cjbind_anon_1

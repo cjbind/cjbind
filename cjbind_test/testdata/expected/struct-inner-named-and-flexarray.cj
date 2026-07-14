@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct rte_ring_prod_prod {
     public let watermark: UInt32
+    public func clone(): rte_ring_prod_prod {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_ring_prod_prod {"
+        output += " watermark: "
+        output += this.watermark.toString()
+        output += " }"
+        return output
+    }
     public init(watermark: UInt32) {
         this.watermark = watermark
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct rte_ring_cons_cons {
     public let sc_dequeue: UInt32
+    public func clone(): rte_ring_cons_cons {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_ring_cons_cons {"
+        output += " sc_dequeue: "
+        output += this.sc_dequeue.toString()
+        output += " }"
+        return output
+    }
     public init(sc_dequeue: UInt32) {
         this.sc_dequeue = sc_dequeue
     }
@@ -48,6 +68,19 @@ public struct rte_ring_rte_ring {
     public let prod: rte_ring_prod_prod
     public let cons: rte_ring_cons_cons
     public let ring: CPointer<CPointer<Unit>>
+    public func toString(): String {
+        var output = "rte_ring_rte_ring {"
+        output += " memzone: "
+        output += CPointer<Unit>(this.memzone).toUIntNative().toString()
+        output += ", prod: "
+        output += this.prod.toString()
+        output += ", cons: "
+        output += this.cons.toString()
+        output += ", ring: "
+        output += "<incomplete array>"
+        output += " }"
+        return output
+    }
     public init(memzone: CPointer<rte_memzone_rte_memzone>, prod: rte_ring_prod_prod, cons: rte_ring_cons_cons,
         ring: CPointer<CPointer<Unit>>) {
         this.memzone = memzone
@@ -71,4 +104,17 @@ let _ = {
 }
 
 @C
-public struct rte_memzone_rte_memzone {}
+public struct rte_memzone_rte_memzone {
+    let _cjbind_empty: UInt8
+    public func clone(): rte_memzone_rte_memzone {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_memzone_rte_memzone {"
+        output += " }"
+        return output
+    }
+    public init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}

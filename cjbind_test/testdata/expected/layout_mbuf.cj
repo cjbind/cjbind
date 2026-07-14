@@ -197,6 +197,16 @@ public type MARKER64_MARKER64 = CPointer<UInt64>
 public struct rte_atomic16_t_rte_atomic16_t {
     //< An internal counter value. *
     public let cnt: Int16
+    public func clone(): rte_atomic16_t_rte_atomic16_t {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_atomic16_t_rte_atomic16_t {"
+        output += " cnt: "
+        output += this.cnt.toString()
+        output += " }"
+        return output
+    }
     public init(cnt: Int16) {
         this.cnt = cnt
     }
@@ -236,6 +246,9 @@ public struct rte_mbuf__cjbind_ty_1__cjbind_ty_1 {
     }
     public mut func refcnt(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
+    }
+    public func clone(): rte_mbuf__cjbind_ty_1__cjbind_ty_1 {
+        return this
     }
 }
 
@@ -305,6 +318,28 @@ public struct rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 24, 4, UInt64(val)) }
     }
     public init() {}
+    public func clone(): rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1 {"
+        output += " l2_type: "
+        output += this.l2_type().toString()
+        output += ", l3_type: "
+        output += this.l3_type().toString()
+        output += ", l4_type: "
+        output += this.l4_type().toString()
+        output += ", tun_type: "
+        output += this.tun_type().toString()
+        output += ", inner_l2_type: "
+        output += this.inner_l2_type().toString()
+        output += ", inner_l3_type: "
+        output += this.inner_l3_type().toString()
+        output += ", inner_l4_type: "
+        output += this.inner_l4_type().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -336,6 +371,9 @@ public struct rte_mbuf__cjbind_ty_2__cjbind_ty_2 {
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_rte_mbuf__cjbind_ty_2__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
     }
+    public func clone(): rte_mbuf__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
 }
 
 @When[debug]
@@ -355,6 +393,18 @@ let _ = {
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public let hash: UInt16
     public let id: UInt16
+    public func clone(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {"
+        output += " hash: "
+        output += this.hash.toString()
+        output += ", id: "
+        output += this.id.toString()
+        output += " }"
+        return output
+    }
     public init(hash: UInt16, id: UInt16) {
         this.hash = hash
         this.id = id
@@ -394,6 +444,9 @@ public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public mut func lo(val!: UInt32): Unit {
         this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
     }
+    public func clone(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -415,6 +468,9 @@ let _ = {
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
     public let __cjbind_anon_1: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
     public let hi: UInt32
+    public func clone(): rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
     public init(__cjbind_anon_1: rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1, hi: UInt32) {
         this.__cjbind_anon_1 = __cjbind_anon_1
         this.hi = hi
@@ -438,6 +494,18 @@ let _ = {
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
     public let lo: UInt32
     public let hi: UInt32
+    public func clone(): rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mbuf__cjbind_ty_3__cjbind_ty_2__cjbind_ty_2 {"
+        output += " lo: "
+        output += this.lo.toString()
+        output += ", hi: "
+        output += this.hi.toString()
+        output += " }"
+        return output
+    }
     public init(lo: UInt32, hi: UInt32) {
         this.lo = lo
         this.hi = hi
@@ -487,6 +555,9 @@ public struct rte_mbuf__cjbind_ty_3__cjbind_ty_3 {
     public mut func usr(val!: UInt32): Unit {
         this._storage = __cjbind_write_UInt32_from_VArray_UInt32__2_(this._storage, val)
     }
+    public func clone(): rte_mbuf__cjbind_ty_3__cjbind_ty_3 {
+        return this
+    }
 }
 
 @When[debug]
@@ -517,6 +588,9 @@ public struct rte_mbuf__cjbind_ty_4__cjbind_ty_4 {
     }
     public mut func udata64(val!: UInt64): Unit {
         this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
+    }
+    public func clone(): rte_mbuf__cjbind_ty_4__cjbind_ty_4 {
+        return this
     }
 }
 
@@ -579,6 +653,26 @@ public struct rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 49, 7, UInt64(val)) }
     }
     public init() {}
+    public func clone(): rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1 {"
+        output += " l2_len: "
+        output += this.l2_len().toString()
+        output += ", l3_len: "
+        output += this.l3_len().toString()
+        output += ", l4_len: "
+        output += this.l4_len().toString()
+        output += ", tso_segsz: "
+        output += this.tso_segsz().toString()
+        output += ", outer_l3_len: "
+        output += this.outer_l3_len().toString()
+        output += ", outer_l2_len: "
+        output += this.outer_l2_len().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -610,6 +704,9 @@ public struct rte_mbuf__cjbind_ty_5__cjbind_ty_5 {
     public mut func __cjbind_anon_1(val!: rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_rte_mbuf__cjbind_ty_5__cjbind_ty_1__cjbind_ty_1_from_UInt64(this._storage, val)
     }
+    public func clone(): rte_mbuf__cjbind_ty_5__cjbind_ty_5 {
+        return this
+    }
 }
 
 @When[debug]
@@ -634,6 +731,18 @@ public struct rte_mbuf_rte_mbuf {
     }
 }
 
-//< Pool from which mbuf was allocated. *
 @C
-public struct rte_mempool_rte_mempool {}
+public struct rte_mempool_rte_mempool {
+    let _cjbind_empty: UInt8
+    public func clone(): rte_mempool_rte_mempool {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mempool_rte_mempool {"
+        output += " }"
+        return output
+    }
+    public init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}

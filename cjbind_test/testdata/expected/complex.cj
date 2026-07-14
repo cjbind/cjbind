@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct TestDouble_TestDouble {
     public let mMember: VArray<UInt64, $2>
+    public func clone(): TestDouble_TestDouble {
+        return this
+    }
+    public func toString(): String {
+        var output = "TestDouble_TestDouble {"
+        output += " mMember: "
+        output += "<opaque>"
+        output += " }"
+        return output
+    }
     public init(mMember: VArray<UInt64, $2>) {
         this.mMember = mMember
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct TestDoublePtr_TestDoublePtr {
     public let mMember: CPointer<VArray<UInt64, $2>>
+    public func clone(): TestDoublePtr_TestDoublePtr {
+        return this
+    }
+    public func toString(): String {
+        var output = "TestDoublePtr_TestDoublePtr {"
+        output += " mMember: "
+        output += CPointer<Unit>(this.mMember).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(mMember: CPointer<VArray<UInt64, $2>>) {
         this.mMember = mMember
     }
@@ -45,6 +65,16 @@ let _ = {
 @C
 public struct TestFloat_TestFloat {
     public let mMember: VArray<UInt32, $2>
+    public func clone(): TestFloat_TestFloat {
+        return this
+    }
+    public func toString(): String {
+        var output = "TestFloat_TestFloat {"
+        output += " mMember: "
+        output += "<opaque>"
+        output += " }"
+        return output
+    }
     public init(mMember: VArray<UInt32, $2>) {
         this.mMember = mMember
     }
@@ -66,6 +96,16 @@ let _ = {
 @C
 public struct TestFloatPtr_TestFloatPtr {
     public let mMember: CPointer<VArray<UInt32, $2>>
+    public func clone(): TestFloatPtr_TestFloatPtr {
+        return this
+    }
+    public func toString(): String {
+        var output = "TestFloatPtr_TestFloatPtr {"
+        output += " mMember: "
+        output += CPointer<Unit>(this.mMember).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(mMember: CPointer<VArray<UInt32, $2>>) {
         this.mMember = mMember
     }

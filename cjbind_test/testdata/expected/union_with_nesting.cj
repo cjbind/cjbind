@@ -49,6 +49,9 @@ public struct foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
     public mut func b2(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
     }
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -80,6 +83,9 @@ public struct foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
     public mut func c2(val!: UInt16): Unit {
         this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
     }
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2 {
+        return this
+    }
 }
 
 @When[debug]
@@ -99,6 +105,9 @@ let _ = {
 public struct foo__cjbind_ty_1__cjbind_ty_1 {
     public let __cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
     public let __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2
+    public func clone(): foo__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
     public init(__cjbind_anon_1: foo__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1,
         __cjbind_anon_2: foo__cjbind_ty_1__cjbind_ty_2__cjbind_ty_2) {
         this.__cjbind_anon_1 = __cjbind_anon_1
@@ -134,6 +143,9 @@ public struct foo_foo {
     }
     public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1__cjbind_ty_1): Unit {
         this._storage = __cjbind_write_foo__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
+    }
+    public func clone(): foo_foo {
+        return this
     }
 }
 

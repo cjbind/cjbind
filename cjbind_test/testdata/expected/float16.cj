@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct Test__Float16_Test__Float16 {
     public let f: Float16
+    public func clone(): Test__Float16_Test__Float16 {
+        return this
+    }
+    public func toString(): String {
+        var output = "Test__Float16_Test__Float16 {"
+        output += " f: "
+        output += this.f.toString()
+        output += " }"
+        return output
+    }
     public init(f: Float16) {
         this.f = f
     }
@@ -24,6 +34,16 @@ let _ = {
 @C
 public struct Test__Float16Ref_Test__Float16Ref {
     public let f: CPointer<Float16>
+    public func clone(): Test__Float16Ref_Test__Float16Ref {
+        return this
+    }
+    public func toString(): String {
+        var output = "Test__Float16Ref_Test__Float16Ref {"
+        output += " f: "
+        output += CPointer<Unit>(this.f).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(f: CPointer<Float16>) {
         this.f = f
     }

@@ -77,6 +77,18 @@ public struct TaggedPtr_TaggedPtr {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 62, UInt64(val)) }
     }
     public init() {}
+    public func clone(): TaggedPtr_TaggedPtr {
+        return this
+    }
+    public func toString(): String {
+        var output = "TaggedPtr_TaggedPtr {"
+        output += " tag: "
+        output += this.tag().toString()
+        output += ", ptr: "
+        output += this.ptr().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

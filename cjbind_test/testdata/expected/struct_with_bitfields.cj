@@ -100,6 +100,28 @@ public struct bitfield_bitfield {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 32, 32, UInt64(val)) }
     }
     public init() {}
+    public func clone(): bitfield_bitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "bitfield_bitfield {"
+        output += " a: "
+        output += this.a().toString()
+        output += ", b: "
+        output += this.b().toString()
+        output += ", c: "
+        output += this.c().toString()
+        output += ", d: "
+        output += this.d().toString()
+        output += ", e: "
+        output += this.e.toString()
+        output += ", f: "
+        output += this.f().toString()
+        output += ", g: "
+        output += this.g().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -128,6 +150,20 @@ public struct MixedPtrBoolBitfield_MixedPtrBoolBitfield {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 16, UInt64(val)) }
     }
     public init() {}
+    public func clone(): MixedPtrBoolBitfield_MixedPtrBoolBitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "MixedPtrBoolBitfield_MixedPtrBoolBitfield {"
+        output += " p: "
+        output += CPointer<Unit>(this.p).toUIntNative().toString()
+        output += ", b: "
+        output += this.b.toString()
+        output += ", u: "
+        output += this.u().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -147,6 +183,14 @@ let _ = {
 public struct OnlyUnnamedBitfield_OnlyUnnamedBitfield {
     var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
     public init() {}
+    public func clone(): OnlyUnnamedBitfield_OnlyUnnamedBitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "OnlyUnnamedBitfield_OnlyUnnamedBitfield {"
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -166,6 +210,14 @@ let _ = {
 public struct MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {
     var _bitfield_1: VArray<UInt8, $3> = VArray<UInt8, $3>(repeat: 0)
     public init() {}
+    public func clone(): MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {
+        return this
+    }
+    public func toString(): String {
+        var output = "MixedSignedUnnamedBitfield_MixedSignedUnnamedBitfield {"
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]
@@ -264,6 +316,40 @@ public struct V56AMDY_V56AMDY {
     }
     public var _rB_: U8_U8 = unsafe { zeroValue<U8_U8>() }
     public init() {}
+    public func clone(): V56AMDY_V56AMDY {
+        return this
+    }
+    public func toString(): String {
+        var output = "V56AMDY_V56AMDY {"
+        output += " MADZ: "
+        output += this.MADZ().toString()
+        output += ", MAI0: "
+        output += this.MAI0().toString()
+        output += ", MAI1: "
+        output += this.MAI1().toString()
+        output += ", MAI2: "
+        output += this.MAI2().toString()
+        output += ", MADK: "
+        output += this.MADK.toString()
+        output += ", MABR: "
+        output += this.MABR.toString()
+        output += ", MATH: "
+        output += this.MATH().toString()
+        output += ", MATE: "
+        output += this.MATE().toString()
+        output += ", MATW: "
+        output += this.MATW().toString()
+        output += ", MASW: "
+        output += this.MASW().toString()
+        output += ", MABW: "
+        output += this.MABW().toString()
+        output += ", MAXN: "
+        output += this.MAXN().toString()
+        output += ", _rB_: "
+        output += this._rB_.toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

@@ -14,6 +14,16 @@ func __cjbind_write_s__cjbind_ty_1_inner_inner_from_UInt32(storage: UInt32, val:
 @C
 public struct s__cjbind_ty_1_inner_inner {
     public let b: Int32
+    public func clone(): s__cjbind_ty_1_inner_inner {
+        return this
+    }
+    public func toString(): String {
+        var output = "s__cjbind_ty_1_inner_inner {"
+        output += " b: "
+        output += this.b.toString()
+        output += " }"
+        return output
+    }
     public init(b: Int32) {
         this.b = b
     }
@@ -42,6 +52,9 @@ public struct s__cjbind_ty_1__cjbind_ty_1 {
     public mut func field(val!: s__cjbind_ty_1_inner_inner): Unit {
         this._storage = __cjbind_write_s__cjbind_ty_1_inner_inner_from_UInt32(this._storage, val)
     }
+    public func clone(): s__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
 }
 
 @When[debug]
@@ -60,6 +73,9 @@ let _ = {
 @C
 public struct s_s {
     public let u: s__cjbind_ty_1__cjbind_ty_1
+    public func clone(): s_s {
+        return this
+    }
     public init(u: s__cjbind_ty_1__cjbind_ty_1) {
         this.u = u
     }

@@ -64,6 +64,15 @@ public struct foo_foo {
     }
     public var b: CPointer<CPointer<Unit>> = unsafe { zeroValue<CPointer<CPointer<Unit>>>() }
     public init() {}
+    public func toString(): String {
+        var output = "foo_foo {"
+        output += " a: "
+        output += this.a().toString()
+        output += ", b: "
+        output += "<incomplete array>"
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

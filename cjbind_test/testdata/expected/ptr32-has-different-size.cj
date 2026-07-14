@@ -3,6 +3,16 @@ package cjbind_ffi
 @C
 public struct TEST_STRUCT_TEST_STRUCT {
     public let ptr_32bit: UInt32
+    public func clone(): TEST_STRUCT_TEST_STRUCT {
+        return this
+    }
+    public func toString(): String {
+        var output = "TEST_STRUCT_TEST_STRUCT {"
+        output += " ptr_32bit: "
+        output += CPointer<Unit>(this.ptr_32bit).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(ptr_32bit: UInt32) {
         this.ptr_32bit = ptr_32bit
     }

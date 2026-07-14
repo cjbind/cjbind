@@ -20,6 +20,38 @@ public struct Test_Test {
     public let Ccch: Char_Char
     public let Ccu: UChar_UChar
     public let Ccd: SChar_SChar
+    public func clone(): Test_Test {
+        return this
+    }
+    public func toString(): String {
+        var output = "Test_Test {"
+        output += " ch: "
+        output += this.ch.toString()
+        output += ", u: "
+        output += this.u.toString()
+        output += ", d: "
+        output += this.d.toString()
+        output += ", cch: "
+        output += this.cch.toString()
+        output += ", cu: "
+        output += this.cu.toString()
+        output += ", cd: "
+        output += this.cd.toString()
+        output += ", Cch: "
+        output += this.Cch.toString()
+        output += ", Cu: "
+        output += this.Cu.toString()
+        output += ", Cd: "
+        output += this.Cd.toString()
+        output += ", Ccch: "
+        output += this.Ccch.toString()
+        output += ", Ccu: "
+        output += this.Ccu.toString()
+        output += ", Ccd: "
+        output += this.Ccd.toString()
+        output += " }"
+        return output
+    }
     public init(ch: UInt8, u: UInt8, d: Int8, cch: UInt8, cu: UInt8, cd: Int8, Cch: Char_Char, Cu: UChar_UChar,
         Cd: SChar_SChar, Ccch: Char_Char, Ccu: UChar_UChar, Ccd: SChar_SChar) {
         this.ch = ch

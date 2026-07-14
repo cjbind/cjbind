@@ -72,6 +72,22 @@ public struct RenameMe_RenameMe {
         unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
     }
     public init() {}
+    public func clone(): RenameMe_RenameMe {
+        return this
+    }
+    public func toString(): String {
+        var output = "RenameMe_RenameMe {"
+        output += " plain: "
+        output += this.plain.toString()
+        output += ", cj_friendly: "
+        output += this.cj_friendly.toString()
+        output += ", bitfield_less_ugly_name: "
+        output += this.bitfield_less_ugly_name().toString()
+        output += ", bitfield_better_name: "
+        output += this.bitfield_better_name().toString()
+        output += " }"
+        return output
+    }
 }
 
 @When[debug]

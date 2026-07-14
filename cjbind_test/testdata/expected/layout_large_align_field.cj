@@ -24,6 +24,20 @@ public struct ip_frag_ip_frag {
     public let len: UInt16
     //< fragment mbuf *
     public let mb: CPointer<rte_mbuf_rte_mbuf>
+    public func clone(): ip_frag_ip_frag {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_frag_ip_frag {"
+        output += " ofs: "
+        output += this.ofs.toString()
+        output += ", len: "
+        output += this.len.toString()
+        output += ", mb: "
+        output += CPointer<Unit>(this.mb).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(ofs: UInt16, len: UInt16, mb: CPointer<rte_mbuf_rte_mbuf>) {
         this.ofs = ofs
         this.len = len
@@ -53,6 +67,27 @@ public struct ip_frag_key_ip_frag_key {
     public let id: UInt32
     //< src/dst key length *
     public let key_len: UInt32
+    public func clone(): ip_frag_key_ip_frag_key {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_frag_key_ip_frag_key {"
+        output += " src_dst: "
+        output += "["
+        for (__cjbindDebugIndex0 in 0..4) {
+            if (__cjbindDebugIndex0 != 0) {
+                output += ", "
+            }
+            output += this.src_dst[__cjbindDebugIndex0].toString()
+        }
+        output += "]"
+        output += ", id: "
+        output += this.id.toString()
+        output += ", key_len: "
+        output += this.key_len.toString()
+        output += " }"
+        return output
+    }
     public init(src_dst: VArray<UInt64, $4>, id: UInt32, key_len: UInt32) {
         this.src_dst = src_dst
         this.id = id
@@ -77,6 +112,18 @@ let _ = {
 public struct ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 {
     public let tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>
     public let tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>
+    public func clone(): ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_frag_pkt__cjbind_ty_1__cjbind_ty_1 {"
+        output += " tqe_next: "
+        output += CPointer<Unit>(this.tqe_next).toUIntNative().toString()
+        output += ", tqe_prev: "
+        output += CPointer<Unit>(this.tqe_prev).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(tqe_next: CPointer<ip_frag_pkt_ip_frag_pkt>, tqe_prev: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>) {
         this.tqe_next = tqe_next
         this.tqe_prev = tqe_prev
@@ -101,6 +148,15 @@ let _ = {
 @C
 public struct ip_frag_pkt_ip_frag_pkt {
     let _cjbind_opaque_blob: VArray<UInt8, $192>
+    public func clone(): ip_frag_pkt_ip_frag_pkt {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_frag_pkt_ip_frag_pkt {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $192>>() }
     }
@@ -110,6 +166,18 @@ public struct ip_frag_pkt_ip_frag_pkt {
 public struct ip_pkt_list_ip_pkt_list {
     public let tqh_first: CPointer<ip_frag_pkt_ip_frag_pkt>
     public let tqh_last: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>
+    public func clone(): ip_pkt_list_ip_pkt_list {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_pkt_list_ip_pkt_list {"
+        output += " tqh_first: "
+        output += CPointer<Unit>(this.tqh_first).toUIntNative().toString()
+        output += ", tqh_last: "
+        output += CPointer<Unit>(this.tqh_last).toUIntNative().toString()
+        output += " }"
+        return output
+    }
     public init(tqh_first: CPointer<ip_frag_pkt_ip_frag_pkt>, tqh_last: CPointer<CPointer<ip_frag_pkt_ip_frag_pkt>>) {
         this.tqh_first = tqh_first
         this.tqh_last = tqh_last
@@ -133,6 +201,15 @@ let _ = {
 @C
 public struct ip_frag_tbl_stat_ip_frag_tbl_stat {
     let _cjbind_opaque_blob: VArray<UInt8, $64>
+    public func clone(): ip_frag_tbl_stat_ip_frag_tbl_stat {
+        return this
+    }
+    public func toString(): String {
+        var output = "ip_frag_tbl_stat_ip_frag_tbl_stat {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $64>>() }
     }
@@ -142,11 +219,29 @@ public struct ip_frag_tbl_stat_ip_frag_tbl_stat {
 @C
 public struct rte_ip_frag_tbl_rte_ip_frag_tbl {
     let _cjbind_opaque_blob: VArray<UInt8, $128>
+    public func toString(): String {
+        var output = "rte_ip_frag_tbl_rte_ip_frag_tbl {"
+        output += " <opaque>"
+        output += " }"
+        return output
+    }
     private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $128>>() }
     }
 }
 
-//< fragment mbuf *
 @C
-public struct rte_mbuf_rte_mbuf {}
+public struct rte_mbuf_rte_mbuf {
+    let _cjbind_empty: UInt8
+    public func clone(): rte_mbuf_rte_mbuf {
+        return this
+    }
+    public func toString(): String {
+        var output = "rte_mbuf_rte_mbuf {"
+        output += " }"
+        return output
+    }
+    public init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}
