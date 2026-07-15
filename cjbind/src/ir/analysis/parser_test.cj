@@ -1,5 +1,6 @@
-package cjbind.ir
+package cjbind.ir.analysis
 
+import cjbind.ir.*
 import cjbind.clang
 import cjbind.options.CjbindOptions
 import std.unittest.*
@@ -36,7 +37,7 @@ func parsedAnalysisTestContext(header: String): CjbindContext {
     for ((id, _) in ctx.getItems()) {
         items.add(id)
     }
-    ctx.usedTemplateParameters = Some(analyzeUsedTemplateParameters(ctx, items))
+    ctx.installAnalysisResults(AnalysisResults(analyzeUsedTemplateParameters(ctx, items)))
     return ctx
 }
 

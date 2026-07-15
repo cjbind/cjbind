@@ -138,6 +138,17 @@ class CodegenAliasUse {
     }
 }
 
+public interface AnalysisQueries {
+    func hasTemplateParameterResults(): Bool
+    func hasVtableResults(): Bool
+    func hasSizednessResults(): Bool
+    func usesTemplateParameter(ctx: CjbindContext, id: ItemId, parameter: TypeId): Bool
+    func usedTemplateParams(ctx: CjbindContext, id: ItemId): Array<TypeId>
+    func usesAnyTemplateParameters(ctx: CjbindContext, id: ItemId): Bool
+    func hasVtablePointer(ctx: CjbindContext, id: ItemId): Bool
+    func isZeroSized(ctx: CjbindContext, id: TypeId): Bool
+}
+
 public class CjbindContext <: Resource {
     var _released: Bool = false
     public let options: CjbindOptions
@@ -176,9 +187,7 @@ public class CjbindContext <: Resource {
     let codegenAnalysisOrigins: HashMap<ItemId, ItemId> = HashMap()
     let codegenAliasUses: HashMap<ItemId, CodegenAliasUse> = HashMap()
 
-    public var usedTemplateParameters: ?HashMap<ItemId, ItemSet> = None
-    var haveVtable: ?HashMap<ItemId, HasVtableResult> = None
-    var sizednessResults: ?HashMap<ItemId, SizednessResult> = None
+    var analysisQueries: ?AnalysisQueries = None
 
     public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
@@ -1652,89 +1661,60 @@ public class CjbindContext <: Resource {
         if (this.isBlocklistedItem(id)) {
             return true
         }
-        let canonicalParameter = canonicalItemId(this, parameter)
-        return match (this.usedTemplateParameters) {
-            case Some(results) => results.get(id)
-                .map({parameters => parameters.contains(canonicalParameter)})
-                .getOrDefault({=> false})
-            case None => throw Exception("template parameter usage analysis has not been computed")
-        }
+        return this.analysisQueries
+            .getOrThrow({=> Exception("template parameter usage analysis has not been computed")})
+            .usesTemplateParameter(this, id, parameter)
     }
 
     public func usedTemplateParams(id: ItemId): Array<TypeId> {
         if (this.isBlocklistedItem(id)) {
             return allTemplateParams(id, this)
         }
-        let result = ArrayList<TypeId>()
-        let used = match (this.usedTemplateParameters) {
-            case Some(results) => results.get(id).getOrDefault({=> ItemSet()})
-            case None => throw Exception("template parameter usage analysis has not been computed")
-        }
-        for (parameter in allTemplateParams(id, this)) {
-            let canonical = canonicalItemId(this, parameter)
-            if (used.contains(canonical)) {
-                result.add(parameter)
-            }
-        }
-        return result.toArray()
+        return this.analysisQueries
+            .getOrThrow({=> Exception("template parameter usage analysis has not been computed")})
+            .usedTemplateParams(this, id)
     }
 
     public func usesAnyTemplateParameters(id: ItemId): Bool {
-        return match (this.usedTemplateParameters) {
-            case Some(results) => results.get(id).map({parameters => !parameters.isEmpty()}).getOrDefault({=> false})
-            case None => throw Exception("template parameter usage analysis has not been computed")
-        }
-    }
-
-    func vtableResult(id: ItemId): HasVtableResult {
-        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
-        return match (this.haveVtable) {
-            case Some(results) => results.get(analysisId).getOrDefault({=> HasVtableResult.No})
-            case None => throw Exception("vtable analysis has not been computed")
-        }
-    }
-
-    func hasVtable(id: ItemId): Bool {
-        return this.vtableResult(id) != HasVtableResult.No
+        return this.analysisQueries
+            .getOrThrow({=> Exception("template parameter usage analysis has not been computed")})
+            .usesAnyTemplateParameters(this, id)
     }
 
     public func hasVtablePointer(id: ItemId): Bool {
-        return this.vtableResult(id) == HasVtableResult.SelfHasVtable
-    }
-
-    func sizedness(id: TypeId): SizednessResult {
         let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
-        return match (this.sizednessResults) {
-            case Some(results) => results.get(analysisId).getOrDefault({=> SizednessResult.ZeroSized})
-            case None => throw Exception("sizedness analysis has not been computed")
-        }
+        return this.analysisQueries
+            .getOrThrow({=> Exception("vtable analysis has not been computed")})
+            .hasVtablePointer(this, analysisId)
     }
 
     public func isZeroSized(id: TypeId): Bool {
-        return this.sizedness(id) == SizednessResult.ZeroSized
+        let analysisId = this.codegenAnalysisOrigins.get(id).getOrDefault({=> id})
+        return this.analysisQueries
+            .getOrThrow({=> Exception("sizedness analysis has not been computed")})
+            .isZeroSized(this, analysisId)
     }
 
-    func computeCoreAnalyses(): Unit {
-        let items = this.allowlistedItems.getOrThrow()
-        this.haveVtable = Some(computeHasVtable(this, items))
-        this.sizednessResults = Some(computeSizedness(this, items, this.haveVtable.getOrThrow()))
-        this.usedTemplateParameters = Some(this.computeUsedTemplateParameterUsage(items))
+    func hasTemplateParameterResults(): Bool {
+        return this.analysisQueries
+            .map({queries => queries.hasTemplateParameterResults()})
+            .getOrDefault({=> false})
     }
 
-    func computeUsedTemplateParameterUsage(items: ItemSet): HashMap<ItemId, ItemSet> {
-        if (this.options.allowlistRecursively) {
-            return analyzeUsedTemplateParameters(this, items)
-        } else {
-            let usage = HashMap<ItemId, ItemSet>()
-            for (id in items) {
-                let parameters = ItemSet()
-                for (parameter in selfTemplateParams(id, this)) {
-                    parameters.add(parameter)
-                }
-                usage.add(id, parameters)
-            }
-            return usage
-        }
+    func hasVtableResults(): Bool {
+        return this.analysisQueries
+            .map({queries => queries.hasVtableResults()})
+            .getOrDefault({=> false})
+    }
+
+    func hasSizednessResults(): Bool {
+        return this.analysisQueries
+            .map({queries => queries.hasSizednessResults()})
+            .getOrDefault({=> false})
+    }
+
+    public func installAnalysisResults(queries: AnalysisQueries): Unit {
+        this.analysisQueries = Some(queries)
     }
 
     func isEnabledForCodegen(item: Item): Bool {
@@ -1969,7 +1949,7 @@ public class CjbindContext <: Resource {
     }
     // cjlint-ignore -end
 
-    public func gen<E>(cb: (CjbindContext) -> Result<TokenStream, E>): Result<TokenStream, E> {
+    public func prepareForAnalysis(): Unit {
         this.inCodegen = true
 
         this.resolveTypeRefs()
@@ -1977,12 +1957,13 @@ public class CjbindContext <: Resource {
         this.assignFieldNames()
 
         this.computeCodegenItems()
-        this.computeCoreAnalyses()
+    }
+
+    public func prepareForCodegen(queries: AnalysisQueries): Unit {
+        this.installAnalysisResults(queries)
         this.computeEnumTypedefCombos()
 
         this.lowerTemplateInstantiationsForCodegen()
-
-        return cb(this)
     }
 }
 

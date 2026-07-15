@@ -302,7 +302,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     }
 
     public func canonicalName(ctx: CjbindContext): String {
-        if (ctx.usedTemplateParameters.isSome()) {
+        if (ctx.hasTemplateParameterResults()) {
             return this.realCanonicalName(ctx)
         }
         if (let Some(cached) <- this.canonicalNameCache) {

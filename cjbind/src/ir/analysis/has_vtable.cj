@@ -1,5 +1,6 @@
-package cjbind.ir
+package cjbind.ir.analysis
 
+import cjbind.ir.*
 import std.collection.{ArrayList, HashMap}
 
 /// The location of a record's virtual-table pointer.

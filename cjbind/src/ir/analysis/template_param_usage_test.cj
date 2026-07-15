@@ -1,5 +1,6 @@
-package cjbind.ir
+package cjbind.ir.analysis
 
+import cjbind.ir.*
 import std.collection.HashMap
 import cjbind.clang
 import std.unittest.*
@@ -284,7 +285,7 @@ public class UsedTemplateParameterBranchTest {
             let results = usageResults(ctx, [integer, outer, parameter, alias])
             expectParameterUsage(results, outer, parameter, false)
             expectParameterUsage(results, alias, parameter, true)
-            ctx.usedTemplateParameters = Some(results)
+            ctx.installAnalysisResults(AnalysisResults(results))
             let aliasParameters = ctx.usedTemplateParams(alias)
             @Expect(aliasParameters.size, 1)
             @Expect(aliasParameters[0], parameter)
@@ -309,7 +310,7 @@ public class UsedTemplateParameterBranchTest {
             expectParameterUsage(results, definition, first, true)
             expectParameterUsage(results, definition, middle, false)
             expectParameterUsage(results, definition, last, true)
-            ctx.usedTemplateParameters = Some(results)
+            ctx.installAnalysisResults(AnalysisResults(results))
             let orderedParameters = ctx.usedTemplateParams(definition)
             @Expect(orderedParameters.size, 2)
             @Expect(orderedParameters[0], first)
@@ -334,7 +335,7 @@ public class UsedTemplateParameterBranchTest {
             used.add(foreignParameter)
             let results = HashMap<ItemId, ItemSet>()
             results.add(definition, used)
-            ctx.usedTemplateParameters = Some(results)
+            ctx.installAnalysisResults(AnalysisResults(results))
 
             let parameters = ctx.usedTemplateParams(definition)
             @Expect(parameters.size, 1)

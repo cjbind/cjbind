@@ -6,6 +6,7 @@ import std.env
 import std.collection.{ArrayList, HashMap, HashSet}
 import cjbind.build.VERSION
 import cjbind.ir.*
+import cjbind.ir.analysis.{computeCoreAnalyses}
 import cjbind.clang
 import cjbind.options.{CjbindOptions, DefaultEnumStyle}
 import cjbind.result.Result
@@ -135,23 +136,19 @@ public interface CodeGenerator<Extra, Return> {
 }
 
 public func codegen(tctx: CjbindContext): Result<TokenStream, CodegenError> {
-    return tctx.gen<CodegenError> {
-        context =>
-        let result = CodegenResult()
+    tctx.prepareForAnalysis()
+    let analyses = computeCoreAnalyses(tctx)
+    tctx.prepareForCodegen(analyses)
 
-        context.resolveItem(context.rootModule).codegen(
-            context,
-            result,
-            ()
-        )
+    let result = CodegenResult()
+    tctx.resolveItem(tctx.rootModule).codegen(tctx, result, ())
 
-        let allItems = ArrayList<TokenStream>()
-        allItems.add(all: result.headers)
-        allItems.add(all: result.helpers)
-        allItems.add(all: result.items)
-        let ret = joinStreams(allItems, "\n\n")
-        return Ok<TokenStream, CodegenError>(ret)
-    }
+    let allItems = ArrayList<TokenStream>()
+    allItems.add(all: result.headers)
+    allItems.add(all: result.helpers)
+    allItems.add(all: result.items)
+    let ret = joinStreams(allItems, "\n\n")
+    return Ok<TokenStream, CodegenError>(ret)
 }
 
 extend Item <: CodeGenerator<Unit, Unit> {

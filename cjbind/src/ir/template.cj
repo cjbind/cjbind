@@ -114,3 +114,24 @@ public class TemplateInstantiation <: Trace<Tracer, Unit> {
         }
     }
 }
+
+public func canonicalItemId(ctx: CjbindContext, start: ItemId): ItemId {
+    let visited = ItemSet()
+    var current = start
+    while (visited.add(current)) {
+        let item = match (ctx.resolveItemFallible(current)) {
+            case Some(value) => value
+            case None => return current
+        }
+        let ty = match (item.asType()) {
+            case Some(value) => value
+            case None => return current
+        }
+        match (ty.kind) {
+            case TypeKind.TypeKindAlias(inner) => current = inner
+            case TypeKind.ResolvedTypeRef(inner) => current = inner
+            case _ => return current
+        }
+    }
+    return current
+}

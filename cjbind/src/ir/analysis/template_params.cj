@@ -1,5 +1,6 @@
-package cjbind.ir
+package cjbind.ir.analysis
 
+import cjbind.ir.*
 import std.collection.*
 
 class UsedTemplateParametersAnalysis <: MonotoneFramework<ItemId, HashMap<ItemId, ItemSet>> {
@@ -146,4 +147,20 @@ func analyzeUsedTemplateParameters(
     return analyze<ItemId, HashMap<ItemId, ItemSet>>(
         UsedTemplateParametersAnalysis(ctx, allowlistedItems)
     )
+}
+
+func extendSet(target: ItemSet, source: ItemSet): Unit {
+    for (id in source) {
+        target.add(id)
+    }
+}
+
+func usedSet(used: HashMap<ItemId, ItemSet>, id: ItemId): ItemSet {
+    match (used.get(id)) {
+        case Some(value) => value
+        case None =>
+            let value = ItemSet()
+            used.add(id, value)
+            value
+    }
 }

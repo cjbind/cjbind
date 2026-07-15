@@ -1,5 +1,6 @@
-package cjbind.ir
+package cjbind.ir.analysis
 
+import cjbind.ir.*
 import std.unittest.*
 import std.unittest.testmacro.*
 

@@ -91,7 +91,7 @@ public class Base {
         }
 
         let baseItem = this.ty.intoResolver().throughTypeRefs().throughTypeAliases().resolve(ctx)
-        if (ctx.sizednessResults.isSome()) {
+        if (ctx.hasSizednessResults()) {
             return !ctx.isZeroSized(baseItem.id)
         }
         if (let Some(baseType) <- baseItem.kind.asType()) {
@@ -611,7 +611,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                 }
             }
             let hasVtablePointer = itemId
-                .map({id => if (ctx.haveVtable.isSome()) { ctx.hasVtablePointer(id) } else { this.hasVtablePointer(ctx) }})
+                .map({id => if (ctx.hasVtableResults()) { ctx.hasVtablePointer(id) } else { this.hasVtablePointer(ctx) }})
                 .getOrDefault({=> this.hasVtablePointer(ctx)})
             let complexLayout = !this.baseMembers.isEmpty() || hasVtablePointer
             if (hasBitfields && complexLayout) {
@@ -680,7 +680,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         }
 
         let hasVtablePointer = itemId
-            .map({id => if (ctx.haveVtable.isSome()) { ctx.hasVtablePointer(id) } else { this.hasVtablePointer(ctx) }})
+            .map({id => if (ctx.hasVtableResults()) { ctx.hasVtablePointer(id) } else { this.hasVtablePointer(ctx) }})
             .getOrDefault({=> this.hasVtablePointer(ctx)})
         if (hasVtablePointer) {
             let pointerSize = ctx.pointerWidth()

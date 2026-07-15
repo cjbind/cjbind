@@ -1,6 +1,7 @@
 package cjbind.codegen
 
 import cjbind.ir.*
+import cjbind.ir.analysis.AnalysisResults
 import cjbind.options.CjbindOptions
 import std.collection.HashMap
 import std.unittest.*
@@ -82,7 +83,7 @@ public class GenericAliasRenderingTest {
             markGenericAliasUsage(usage, array, [returnParameter])
             markGenericAliasUsage(usage, owner, [returnParameter])
             markGenericAliasUsage(usage, alias, [returnParameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
 
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(returnParameter, "T")
@@ -124,7 +125,7 @@ public class GenericAliasRenderingTest {
             markGenericAliasUsage(usage, argumentParameter, [argumentParameter])
             markGenericAliasUsage(usage, function, [returnParameter, argumentParameter])
             markGenericAliasUsage(usage, functionPointer, [returnParameter, argumentParameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(returnParameter, "T")
             substitutions.add(argumentParameter, "V")
@@ -153,7 +154,7 @@ public class GenericAliasRenderingTest {
             let usage = HashMap<ItemId, ItemSet>()
             markGenericAliasUsage(usage, parameter, [parameter])
             markGenericAliasUsage(usage, pointer, [parameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(parameter, "T")
 
@@ -177,7 +178,7 @@ public class GenericAliasRenderingTest {
             let usage = HashMap<ItemId, ItemSet>()
             markGenericAliasUsage(usage, parameter, [parameter])
             markGenericAliasUsage(usage, record, [parameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(parameter, "T")
 
@@ -216,7 +217,7 @@ public class GenericAliasRenderingTest {
             markGenericAliasUsage(usage, record, [parameter])
             markGenericAliasUsage(usage, pointer, [parameter])
             markGenericAliasUsage(usage, alias, [parameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
 
             let result = CodegenResult()
             let aliasItem = ctx.resolveItem(alias)
@@ -285,7 +286,7 @@ public class GenericAliasRenderingTest {
             markGenericAliasUsage(usage, definition, [innerParameter])
             markGenericAliasUsage(usage, instance, [outerParameter])
             markGenericAliasUsage(usage, outerAlias, [outerParameter])
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
 
             let substitutions = HashMap<ItemId, String>()
             substitutions.add(outerParameter, "U")
@@ -344,7 +345,7 @@ public class GenericAliasRenderingTest {
             markGenericAliasUsage(usage, pointer, [parameter])
             markGenericAliasUsage(usage, definition, [parameter])
             markGenericAliasUsage(usage, instance, Array<TypeId>())
-            ctx.usedTemplateParameters = Some(usage)
+            ctx.installAnalysisResults(AnalysisResults(usage))
 
             match (instance.tryToCjTy(ctx, ())) {
                 case Ok(tokens) => @Expect(tokens.toString(), "CFunc<(arg1: Int32) -> Int32>")
