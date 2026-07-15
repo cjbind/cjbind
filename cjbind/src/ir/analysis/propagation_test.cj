@@ -9,7 +9,7 @@ import cjbind.options.CjbindOptions
 func analysisTestContext(): CjbindContext {
     let options = CjbindOptions()
     options.clangArgs.add(all: [
-        "-x", "c++", "-std=c++14", "cjbind/src/ir/analysis_test_input.hpp"
+        "-x", "c++", "-std=c++14", "cjbind_test/testdata/headers/support/ir/analysis_test_input.hpp"
     ])
     return CjbindContext(options)
 }

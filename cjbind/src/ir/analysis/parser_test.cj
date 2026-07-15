@@ -160,11 +160,7 @@ func expectUsedParameters(
     }
 }
 
-func exactHeader(name: String): String {
-    return "cjbind/testdata/ir/${name}.hpp"
-}
-
-func integrationHeader(name: String): String {
+func testHeader(name: String): String {
     return "cjbind_test/testdata/headers/${name}.hpp"
 }
 
@@ -172,7 +168,7 @@ func integrationHeader(name: String): String {
 public class ParsedReferenceIrTest {
     @TestCase
     func preservesReferenceAndPointerNesting(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("references"))
+        let ctx = parsedAnalysisTestContext(testHeader("support/ir/references"))
         try {
             let container = namedType(ctx, "Container")
             let normalPointer = pointerTarget(ctx, fieldType(ctx, container, "normalPointer"))
@@ -198,7 +194,7 @@ public class ParsedReferenceIrTest {
 
     @TestCase
     func preservesReferencesInFunctionSignatures(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("references"))
+        let ctx = parsedAnalysisTestContext(testHeader("support/ir/references"))
         try {
             let returning = functionSignature(ctx, "refReturningFunction")
             referenceTarget(ctx, returning.returnType)
@@ -220,7 +216,7 @@ public class ParsedReferenceIrTest {
 public class ParsedTemplateAliasIrTest {
     @TestCase
     func functionPointerTypedefKeepsItsTemplateArgumentChain(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("struct_with_typedef_template_arg"))
+        let ctx = parsedAnalysisTestContext(testHeader("support/ir/struct_with_typedef_template_arg"))
         try {
             let proxy = namedType(ctx, "Proxy")
             let parameters = selfTemplateParams(proxy, ctx)
@@ -245,7 +241,7 @@ public class ParsedTemplateAliasIrTest {
 
     @TestCase
     func transitiveNestedTypedefUsesTheOuterParameter(): Unit {
-        let ctx = parsedAnalysisTestContext(integrationHeader("template_typedef_transitive_param"))
+        let ctx = parsedAnalysisTestContext(testHeader("template_typedef_transitive_param"))
         try {
             let wrapper = namedType(ctx, "Wrapper")
             let parameter = selfTemplateParams(wrapper, ctx)[0]
@@ -272,7 +268,7 @@ public class ParsedTemplateAliasIrTest {
 public class ParsedTemplateParameterAnalysisTest {
     @TestCase
     func anonymousTemplateParametersAreTrackedByPosition(): Unit {
-        let ctx = parsedAnalysisTestContext(integrationHeader("anonymous-template-types"))
+        let ctx = parsedAnalysisTestContext(testHeader("anonymous-template-types"))
         try {
             let foo = namedType(ctx, "Foo")
             let fooParameters = selfTemplateParams(foo, ctx)
@@ -302,7 +298,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func nestedReferenceThroughTemplateAliasUsesBothOuterParameters(): Unit {
-        let ctx = parsedAnalysisTestContext(integrationHeader("issue-1113-template-references"))
+        let ctx = parsedAnalysisTestContext(testHeader("issue-1113-template-references"))
         try {
             let table = namedType(ctx, "nsBaseHashtable")
             let parameters = selfTemplateParams(table, ctx)
@@ -334,7 +330,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func usage2NestedRecordUsesTheOuterParameter(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-2"))
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-analysis-template-param-usage-2"))
         try {
             let outer = namedType(ctx, "UsesTemplateParameter")
             let parameter = selfTemplateParams(outer, ctx)[0]
@@ -348,7 +344,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func usage3NestedTemplateUsesOuterAndInnerParameters(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-3"))
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-analysis-template-param-usage-3"))
         try {
             let outer = namedType(ctx, "UsesTemplateParameter")
             let outerParameter = selfTemplateParams(outer, ctx)[0]
@@ -363,7 +359,7 @@ public class ParsedTemplateParameterAnalysisTest {
     @TestCase
     func usage7FiltersOnlyTheUnusedMiddleArgument(): Unit {
         let ctx = parsedAnalysisTestContext(
-            integrationHeader("cxx-analysis-template-param-usage-7")
+            testHeader("cxx-analysis-template-param-usage-7")
         )
         try {
             let definition = namedType(ctx, "DoesNotUseU")
@@ -397,7 +393,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func usage10TransitiveNestedFieldUsesTwoParameters(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-10"))
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-analysis-template-param-usage-10"))
         try {
             let outer = namedType(ctx, "DoublyIndirectUsage")
             let parameters = selfTemplateParams(outer, ctx)
@@ -422,7 +418,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func usage12CrtpBaseAndFieldUseTheDerivedParameter(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-12"))
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-analysis-template-param-usage-12"))
         try {
             let derived = namedType(ctx, "CrtpUsesU")
             let parameter = selfTemplateParams(derived, ctx)[0]
@@ -468,7 +464,7 @@ public class ParsedTemplateParameterAnalysisTest {
 
     @TestCase
     func usage15RecursiveCrtpReferenceDoesNotCreateUsage(): Unit {
-        let ctx = parsedAnalysisTestContext(exactHeader("template-param-usage-15"))
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-analysis-template-param-usage-15"))
         try {
             let derived = namedType(ctx, "CrtpIgnoresU")
             let parameter = selfTemplateParams(derived, ctx)[0]
