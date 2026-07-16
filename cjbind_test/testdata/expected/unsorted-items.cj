@@ -8,8 +8,8 @@ foreign func bar(x: number): Int32
 
 @C
 public struct Point {
-    public let x: number
-    public let y: number
+    public var x: number
+    public var y: number
     public init(x: number, y: number) {
         this.x = x
         this.y = y
@@ -31,8 +31,8 @@ let _ = {
 
 @C
 public struct Angle {
-    public let a: number
-    public let b: number
+    public var a: number
+    public var b: number
     public init(a: number, b: number) {
         this.a = a
         this.b = b

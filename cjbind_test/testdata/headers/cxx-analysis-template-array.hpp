@@ -56,9 +56,17 @@ struct ScalarParameter {
     T value;
 };
 
+extern const int cjbind_pointer_target;
+
+template <const int* Pointer>
+struct PointerSelectedArray {
+    unsigned char bytes[Pointer == nullptr ? 3 : 5];
+};
+
 struct TemplateArrayAnalysisHolder {
     ArrayOfParameter<int, 4> direct;
     AliasArrayOfParameter<double, 2> alias;
+    AliasArrayOfParameter<float, 2> aliasFloat;
     ContainsParameterArray<short> contained;
     InheritsParameterArray<unsigned char> inherited;
     DeepParameterArray<long long> deep;
@@ -68,4 +76,6 @@ struct TemplateArrayAnalysisHolder {
     FixedIntegerArray<float, 5> fixedInteger;
     PointerToParameter<double> pointerOnly;
     ScalarParameter<float> scalarOnly;
+    PointerSelectedArray<&cjbind_pointer_target> pointerArgument;
+    PointerSelectedArray<nullptr> nullPointerArgument;
 };

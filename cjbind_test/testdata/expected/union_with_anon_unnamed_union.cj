@@ -33,32 +33,25 @@ func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
     return s
 }
 
-func __cjbind_read_foo__cjbind_ty_1_from_UInt32(storage: UInt32): foo__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_foo__cjbind_ty_1_from_UInt32(storage: UInt32, val: foo__cjbind_ty_1): UInt32 {
-    var s = storage
-    unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct foo__cjbind_ty_1 {
     var _storage: UInt16 = unsafe { zeroValue<UInt16>() }
     public init() {}
-    public func b(): UInt16 {
-        return __cjbind_read_UInt16_from_UInt16(this._storage)
+    public mut prop b: UInt16 {
+        get() {
+            return __cjbind_read_UInt16_from_UInt16(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, value)
+        }
     }
-    public mut func b(val!: UInt16): Unit {
-        this._storage = __cjbind_write_UInt16_from_UInt16(this._storage, val)
-    }
-    public func c(): UInt8 {
-        return __cjbind_read_UInt8_from_UInt16(this._storage)
-    }
-    public mut func c(val!: UInt8): Unit {
-        this._storage = __cjbind_write_UInt8_from_UInt16(this._storage, val)
+    public mut prop c: UInt8 {
+        get() {
+            return __cjbind_read_UInt8_from_UInt16(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt8_from_UInt16(this._storage, value)
+        }
     }
 }
 
@@ -79,17 +72,13 @@ let _ = {
 public struct foo {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func a(): UInt32 {
-        return __cjbind_read_UInt32_from_UInt32(this._storage)
-    }
-    public mut func a(val!: UInt32): Unit {
-        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
-    }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
-        return __cjbind_read_foo__cjbind_ty_1_from_UInt32(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_foo__cjbind_ty_1_from_UInt32(this._storage, val)
+    public mut prop a: UInt32 {
+        get() {
+            return __cjbind_read_UInt32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, value)
+        }
     }
 }
 

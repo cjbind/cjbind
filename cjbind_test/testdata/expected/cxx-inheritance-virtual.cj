@@ -15,8 +15,8 @@ public unsafe func Base_Base_destructor(this_: CPointer<Base>): Unit {
 @C
 public struct Base {
     public let vtable_: CPointer<Unit>
-    public let base: Int32
-    public init(vtable_: CPointer<Unit>, base: Int32) {
+    public var base: Int32
+    private init(vtable_: CPointer<Unit>, base: Int32) {
         this.vtable_ = vtable_
         this.base = base
     }
@@ -37,8 +37,8 @@ let _ = {
 
 @C
 public struct Extra {
-    public let extra: Int64
-    public init(extra: Int64) {
+    public var extra: Int64
+    private init(extra: Int64) {
         this.extra = extra
     }
 }
@@ -66,8 +66,8 @@ public unsafe func Derived_run(this_: CPointer<Derived>, input: Int32): Int32 {
 public struct Derived {
     public let _base: Base
     public let _base_1: Extra
-    public let value: Int32
-    public init(_base: Base, _base_1: Extra, value: Int32) {
+    public var value: Int32
+    private init(_base: Base, _base_1: Extra, value: Int32) {
         this._base = _base
         this._base_1 = _base_1
         this.value = value
@@ -104,7 +104,7 @@ public struct Interface__cjbind_vtable {
 @C
 public struct Interface {
     public let vtable_: CPointer<Interface__cjbind_vtable>
-    public init(vtable_: CPointer<Interface__cjbind_vtable>) {
+    private init(vtable_: CPointer<Interface__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -139,9 +139,9 @@ public struct TailBase__cjbind_vtable {
 @C
 public struct TailBase {
     public let vtable_: CPointer<TailBase__cjbind_vtable>
-    public let payload: Int32
-    public let marker: UInt8
-    public init(vtable_: CPointer<TailBase__cjbind_vtable>, payload: Int32, marker: UInt8) {
+    public var payload: Int32
+    public var marker: UInt8
+    private init(vtable_: CPointer<TailBase__cjbind_vtable>, payload: Int32, marker: UInt8) {
         this.vtable_ = vtable_
         this.payload = payload
         this.marker = marker
@@ -170,7 +170,7 @@ public unsafe func TailDerived_tag(this_: CPointer<TailDerived>): Int32 {
 @C
 public struct TailDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
 }
@@ -190,8 +190,8 @@ let _ = {
 
 @C
 public struct Plain {
-    public let plain: Int32
-    public init(plain: Int32) {
+    public var plain: Int32
+    private init(plain: Int32) {
         this.plain = plain
     }
 }
@@ -226,8 +226,8 @@ public struct Poly__cjbind_vtable {
 @C
 public struct Poly {
     public let vtable_: CPointer<Poly__cjbind_vtable>
-    public let poly: Int32
-    public init(vtable_: CPointer<Poly__cjbind_vtable>, poly: Int32) {
+    public var poly: Int32
+    private init(vtable_: CPointer<Poly__cjbind_vtable>, poly: Int32) {
         this.vtable_ = vtable_
         this.poly = poly
     }
@@ -249,7 +249,7 @@ let _ = {
 @C
 public struct Reordered {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
 }
@@ -269,8 +269,8 @@ let _ = {
 
 @C
 public struct VirtualBase {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -291,7 +291,7 @@ let _ = {
 @C
 public struct VirtualDerived {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
 }

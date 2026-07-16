@@ -10,7 +10,7 @@ public const FOO: Int32 = 1
 // And expected to be found in generated bindings code too.
 @C
 public struct Bar {
-    public let baz: Int32
+    public var baz: Int32
     public init(baz: Int32) {
         this.baz = baz
     }

@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct BlocklistedNestedArgumentHolder {
     public let value: UInt8
-    public init(value: UInt8) {
+    private init(value: UInt8) {
         this.value = value
     }
 }
@@ -23,8 +23,8 @@ let _ = {
 
 @C
 public struct BlocklistedPointerHolder {
-    public let value: CPointer<UInt8>
-    public init(value: CPointer<UInt8>) {
+    public var value: CPointer<UInt8>
+    private init(value: CPointer<UInt8>) {
         this.value = value
     }
 }

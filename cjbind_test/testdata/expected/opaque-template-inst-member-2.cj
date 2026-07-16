@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct OpaqueTemplate {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -11,8 +11,8 @@ public struct OpaqueTemplate {
 @C
 public struct ContainsOpaqueTemplate {
     public let mBlah: UInt32
-    public let mBaz: Int32
-    public init(mBlah: UInt32, mBaz: Int32) {
+    public var mBaz: Int32
+    private init(mBlah: UInt32, mBaz: Int32) {
         this.mBlah = mBlah
         this.mBaz = mBaz
     }
@@ -34,8 +34,8 @@ let _ = {
 @C
 public struct InheritsOpaqueTemplate {
     public let _base: UInt8
-    public let wow: CPointer<UInt8>
-    public init(_base: UInt8, wow: CPointer<UInt8>) {
+    public var wow: CPointer<UInt8>
+    private init(_base: UInt8, wow: CPointer<UInt8>) {
         this._base = _base
         this.wow = wow
     }

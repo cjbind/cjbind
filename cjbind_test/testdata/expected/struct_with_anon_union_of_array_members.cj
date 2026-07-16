@@ -1,27 +1,81 @@
 package cjbind_ffi
 
-func __cjbind_read_bpf_array__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__0_(storage: VArray<UInt8, $0>): bpf_array__cjbind_ty_1__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<bpf_array__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
+// A bounded view over a C flexible or zero-length array. Construction from an owning pointer and indexing stay unsafe because pointer validity and lifetime are caller contracts.
+public struct __CjbindArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
+
+    public init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
+
+    public prop pointer: CPointer<T> {
+        get() {
+            return this._pointer
+        }
+    }
+
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
+
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
+
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
+
+    public unsafe operator func [](index: Int64, value!: T): Unit {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        this._pointer.write(index, value)
+    }
 }
 
-func __cjbind_write_bpf_array__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__0_(storage: VArray<UInt8, $0>,
-    val: bpf_array__cjbind_ty_1__cjbind_ty_1): VArray<UInt8, $0> {
-    var s = storage
-    unsafe { CPointer<bpf_array__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
+public struct __CjbindConstArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
 
-func __cjbind_read_bpf_array__cjbind_ty_1__cjbind_ty_2_from_VArray_UInt8__0_(storage: VArray<UInt8, $0>): bpf_array__cjbind_ty_1__cjbind_ty_2 {
-    var s = storage
-    return unsafe { CPointer<bpf_array__cjbind_ty_1__cjbind_ty_2>(CPointer<UInt8>(inout s)).read() }
-}
+    init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
 
-func __cjbind_write_bpf_array__cjbind_ty_1__cjbind_ty_2_from_VArray_UInt8__0_(storage: VArray<UInt8, $0>,
-    val: bpf_array__cjbind_ty_1__cjbind_ty_2): VArray<UInt8, $0> {
-    var s = storage
-    unsafe { CPointer<bpf_array__cjbind_ty_1__cjbind_ty_2>(CPointer<UInt8>(inout s)).write(val) }
-    return s
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
+
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
+
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
 }
 
 @C
@@ -43,11 +97,19 @@ let _ = {
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_1 {
     public let __empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1
-    public let value1: CPointer<UInt8>
-    public init(__empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1, value1: CPointer<UInt8>) {
+    public let value1: VArray<UInt8, $0> = unsafe { zeroValue<VArray<UInt8, $0>>() }
+    public init(__empty_value1: bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1) {
         this.__empty_value1 = __empty_value1
-        this.value1 = value1
     }
+}
+
+public unsafe func bpf_array__cjbind_ty_1__cjbind_ty_1_value1_ptr(value: CPointer<bpf_array__cjbind_ty_1__cjbind_ty_1>): CPointer<UInt8> {
+    return CPointer<UInt8>(CPointer<UInt8>(value) + 0)
+}
+
+public unsafe func bpf_array__cjbind_ty_1__cjbind_ty_1_value1_view(
+    value: CPointer<bpf_array__cjbind_ty_1__cjbind_ty_1>, count!: Int64): __CjbindArrayView<UInt8> {
+    return __CjbindArrayView<UInt8>(pointer: bpf_array__cjbind_ty_1__cjbind_ty_1_value1_ptr(value), size: count)
 }
 
 @When[debug]
@@ -82,11 +144,19 @@ let _ = {
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_2 {
     public let __empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1
-    public let value2: CPointer<UInt8>
-    public init(__empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1, value2: CPointer<UInt8>) {
+    public let value2: VArray<UInt8, $0> = unsafe { zeroValue<VArray<UInt8, $0>>() }
+    public init(__empty_value2: bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1) {
         this.__empty_value2 = __empty_value2
-        this.value2 = value2
     }
+}
+
+public unsafe func bpf_array__cjbind_ty_1__cjbind_ty_2_value2_ptr(value: CPointer<bpf_array__cjbind_ty_1__cjbind_ty_2>): CPointer<UInt8> {
+    return CPointer<UInt8>(CPointer<UInt8>(value) + 0)
+}
+
+public unsafe func bpf_array__cjbind_ty_1__cjbind_ty_2_value2_view(
+    value: CPointer<bpf_array__cjbind_ty_1__cjbind_ty_2>, count!: Int64): __CjbindArrayView<UInt8> {
+    return __CjbindArrayView<UInt8>(pointer: bpf_array__cjbind_ty_1__cjbind_ty_2_value2_ptr(value), size: count)
 }
 
 @When[debug]
@@ -106,18 +176,6 @@ let _ = {
 public struct bpf_array__cjbind_ty_1 {
     var _storage: VArray<UInt8, $0> = unsafe { zeroValue<VArray<UInt8, $0>>() }
     public init() {}
-    public func __cjbind_anon_1(): bpf_array__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_bpf_array__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__0_(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: bpf_array__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_bpf_array__cjbind_ty_1__cjbind_ty_1_from_VArray_UInt8__0_(this._storage, val)
-    }
-    public func __cjbind_anon_2(): bpf_array__cjbind_ty_1__cjbind_ty_2 {
-        return __cjbind_read_bpf_array__cjbind_ty_1__cjbind_ty_2_from_VArray_UInt8__0_(this._storage)
-    }
-    public mut func __cjbind_anon_2(val!: bpf_array__cjbind_ty_1__cjbind_ty_2): Unit {
-        this._storage = __cjbind_write_bpf_array__cjbind_ty_1__cjbind_ty_2_from_VArray_UInt8__0_(this._storage, val)
-    }
 }
 
 @When[debug]

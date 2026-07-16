@@ -2,7 +2,7 @@ package cjbind_ffi
 
 @C
 public struct foo {
-    public let foo: Int32
+    public var foo: Int32
     public init(foo: Int32) {
         this.foo = foo
     }

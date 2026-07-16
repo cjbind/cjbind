@@ -9,8 +9,8 @@ public const Access_Answer: Int32 = 42
 
 @C
 public struct Access_Visible {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -30,9 +30,9 @@ let _ = {
 
 @C
 public struct Access {
-    public let open_: Int32
-    private let guarded: Int16
-    private let code: UInt16
+    public var open_: Int32
+    private var guarded: Int16
+    private var code: UInt16
     private init(open_: Int32, guarded: Int16, code: UInt16) {
         this.open_ = open_
         this.guarded = guarded
@@ -56,7 +56,7 @@ let _ = {
 @C
 public struct Packed {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
 }

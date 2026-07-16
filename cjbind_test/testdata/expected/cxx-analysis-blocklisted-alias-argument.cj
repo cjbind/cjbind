@@ -7,7 +7,7 @@ public type ConcreteExternalAlias = UInt8
 @C
 public struct BlocklistedAliasArgumentHolder {
     public let value: ConcreteExternalAlias
-    public init(value: ConcreteExternalAlias) {
+    private init(value: ConcreteExternalAlias) {
         this.value = value
     }
 }

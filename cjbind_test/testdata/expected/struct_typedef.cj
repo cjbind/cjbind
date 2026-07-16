@@ -2,7 +2,7 @@ package cjbind_ffi
 
 @C
 public struct typedef_named_struct {
-    public let has_name: Bool
+    public var has_name: Bool
     public init(has_name: Bool) {
         this.has_name = has_name
     }
@@ -23,7 +23,7 @@ let _ = {
 
 @C
 public struct _cjbind_ty_1 {
-    public let no_name: CPointer<Unit>
+    public var no_name: CPointer<Unit>
     public init(no_name: CPointer<Unit>) {
         this.no_name = no_name
     }

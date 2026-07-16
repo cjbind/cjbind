@@ -47,7 +47,7 @@ public struct rte_mempool_ops {
 @C
 public struct rte_spinlock_t {
     //< lock status 0 = unlocked, 1 = locked *
-    public let locked: Int32
+    public var locked: Int32
     public init(locked: Int32) {
         this.locked = locked
     }
@@ -83,7 +83,7 @@ public struct rte_mempool_ops_table {
 
 @C
 public struct malloc_heap__cjbind_ty_1 {
-    public let lh_first: CPointer<malloc_elem>
+    public var lh_first: CPointer<malloc_elem>
     public init(lh_first: CPointer<malloc_elem>) {
         this.lh_first = lh_first
     }

@@ -5,7 +5,7 @@ public type Api_Alias = Cycle
 @C
 public struct Api {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -26,15 +26,15 @@ let _ = {
 @C
 public struct Ignores {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
 
 @C
 public struct Base {
-    public let value: Ignores
-    public init(value: Ignores) {
+    public let value: UInt8
+    private init(value: UInt8) {
         this.value = value
     }
 }
@@ -55,7 +55,7 @@ let _ = {
 @C
 public struct Cycle {
     public let _base: Base
-    public init(_base: Base) {
+    private init(_base: Base) {
         this._base = _base
     }
 }

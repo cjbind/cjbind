@@ -26,17 +26,21 @@ func __cjbind_write_UInt64_from_UInt64(storage: UInt64, val: UInt64): UInt64 {
 public struct rte_memseg__cjbind_ty_1 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
     public init() {}
-    public func addr(): CPointer<Unit> {
-        return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+    public mut prop addr: CPointer<Unit> {
+        get() {
+            return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, value)
+        }
     }
-    public mut func addr(val!: CPointer<Unit>): Unit {
-        this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, val)
-    }
-    public func addr_64(): UInt64 {
-        return __cjbind_read_UInt64_from_UInt64(this._storage)
-    }
-    public mut func addr_64(val!: UInt64): Unit {
-        this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
+    public mut prop addr_64: UInt64 {
+        get() {
+            return __cjbind_read_UInt64_from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, value)
+        }
     }
 }
 

@@ -8,8 +8,8 @@ public unsafe func Outer_Inner_get(this_: CPointer<Outer_Inner>): Int32 {
 
 @C
 public struct Outer_Inner {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -29,8 +29,8 @@ let _ = {
 
 @C
 public struct Outer {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -50,8 +50,8 @@ let _ = {
 
 @C
 public struct Outer_Deferred {
-    public let payload: Int64
-    public init(payload: Int64) {
+    public var payload: Int64
+    private init(payload: Int64) {
         this.payload = payload
     }
 }
@@ -72,9 +72,9 @@ let _ = {
 @C
 public struct NestedHolder {
     public let inner: Outer_Inner
-    public let deferred: CPointer<Outer_Deferred>
+    public var deferred: CPointer<Outer_Deferred>
     public let boxed: Outer_Box_open0_int_close0
-    public init(inner: Outer_Inner, deferred: CPointer<Outer_Deferred>, boxed: Outer_Box_open0_int_close0) {
+    private init(inner: Outer_Inner, deferred: CPointer<Outer_Deferred>, boxed: Outer_Box_open0_int_close0) {
         this.inner = inner
         this.deferred = deferred
         this.boxed = boxed
@@ -102,8 +102,8 @@ public unsafe func pass_inner(value: Outer_Inner): Outer_Inner {
 
 @C
 public struct Outer_Box_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }

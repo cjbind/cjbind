@@ -47,9 +47,22 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
     let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+        let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+        return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
     }
-    return Int64(raw)
+    return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
+}
+
+@C
+func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+    var copy = value
+    return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
+}
+
+@C
+func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+    var copy = value
+    return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
 }
 
 func __cjbind_read_Int32_from_UInt32(storage: UInt32): Int32 {
@@ -63,34 +76,30 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
     return s
 }
 
-func __cjbind_read_foo__cjbind_ty_1_from_UInt32(storage: UInt32): foo__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_foo__cjbind_ty_1_from_UInt32(storage: UInt32, val: foo__cjbind_ty_1): UInt32 {
-    var s = storage
-    unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct foo__cjbind_ty_1 {
-    var _bitfield_1: VArray<UInt8, $4> = VArray<UInt8, $4>(repeat: 0)
-    public func b(): Int32 {
-        var s = this._bitfield_1
-        return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 7) })
+    var _bitfield_1: UInt32 = unsafe { zeroValue<UInt32>() }
+    public mut prop b: Int32 {
+        get() {
+            var s = this._bitfield_1
+            return Int32(unsafe { __cjbind_bitfield_read_signed(CPointer<UInt8>(inout s), 0, 7) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 7,
+                __cjbind_bitfield_int64_to_uint64(Int64(value))) }
+        }
     }
-    public mut func b(val!: Int32): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 7, UInt64(val)) }
+    public mut prop c: Int32 {
+        get() {
+            var s = this._bitfield_1
+            return Int32(unsafe { __cjbind_bitfield_read_signed(CPointer<UInt8>(inout s), 7, 25) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 7, 25,
+                __cjbind_bitfield_int64_to_uint64(Int64(value))) }
+        }
     }
-    public func c(): Int32 {
-        var s = this._bitfield_1
-        return Int32(unsafe { __cjbind_bitfield_read_signed(inout s, 7, 25) })
-    }
-    public mut func c(val!: Int32): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 25, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt32, $0> = unsafe { zeroValue<VArray<UInt32, $0>>() }
     public init() {}
 }
 
@@ -111,17 +120,13 @@ let _ = {
 public struct foo {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func a(): Int32 {
-        return __cjbind_read_Int32_from_UInt32(this._storage)
-    }
-    public mut func a(val!: Int32): Unit {
-        this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
-    }
-    public func __cjbind_anon_1(): foo__cjbind_ty_1 {
-        return __cjbind_read_foo__cjbind_ty_1_from_UInt32(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: foo__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_foo__cjbind_ty_1_from_UInt32(this._storage, val)
+    public mut prop a: Int32 {
+        get() {
+            return __cjbind_read_Int32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_Int32_from_UInt32(this._storage, value)
+        }
     }
 }
 

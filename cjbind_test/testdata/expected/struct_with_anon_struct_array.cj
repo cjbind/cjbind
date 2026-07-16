@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct foo__cjbind_ty_1 {
-    public let a: Int32
-    public let b: Int32
+    public var a: Int32
+    public var b: Int32
     public init(a: Int32, b: Int32) {
         this.a = a
         this.b = b
@@ -25,8 +25,8 @@ let _ = {
 
 @C
 public struct foo__cjbind_ty_2 {
-    public let a: Int32
-    public let b: Int32
+    public var a: Int32
+    public var b: Int32
     public init(a: Int32, b: Int32) {
         this.a = a
         this.b = b

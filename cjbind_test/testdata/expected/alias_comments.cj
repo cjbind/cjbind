@@ -4,7 +4,7 @@ package cjbind_ffi
 @C
 public struct Struct {
     // This is field
-    public let field: Int32
+    public var field: Int32
     public init(field: Int32) {
         this.field = field
     }

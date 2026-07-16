@@ -9,7 +9,7 @@ public type SourceAnnotationVariantHide = UInt32
 @C
 public struct SourceAnnotationOpaqueRecord {
     let _cjbind_opaque_blob: UInt32
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
     }
 }
@@ -29,8 +29,8 @@ let _ = {
 
 @C
 public struct SourceAnnotationOpaqueReference {
-    public let value: CPointer<SourceAnnotationOpaqueRecord>
-    public init(value: CPointer<SourceAnnotationOpaqueRecord>) {
+    public var value: CPointer<SourceAnnotationOpaqueRecord>
+    private init(value: CPointer<SourceAnnotationOpaqueRecord>) {
         this.value = value
     }
 }

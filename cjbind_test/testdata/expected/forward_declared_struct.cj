@@ -2,7 +2,7 @@ package cjbind_ffi
 
 @C
 public struct a {
-    public let b: Int32
+    public var b: Int32
     public init(b: Int32) {
         this.b = b
     }
@@ -23,7 +23,7 @@ let _ = {
 
 @C
 public struct c {
-    public let d: Int32
+    public var d: Int32
     public init(d: Int32) {
         this.d = d
     }

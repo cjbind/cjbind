@@ -13,8 +13,8 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
 
 @C
 public struct TrivialValue {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -40,8 +40,8 @@ public unsafe func OwnDestructor_OwnDestructor_destructor(this_: CPointer<OwnDes
 
 @C
 public struct OwnDestructor {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -61,8 +61,8 @@ let _ = {
 
 @C
 public struct DeletedDestructor {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -83,7 +83,7 @@ let _ = {
 @C
 public struct ContainsDestructor {
     public let value: OwnDestructor
-    public init(value: OwnDestructor) {
+    private init(value: OwnDestructor) {
         this.value = value
     }
 }
@@ -104,8 +104,8 @@ let _ = {
 @C
 public struct InheritsDestructor {
     public let _base: OwnDestructor
-    public let marker: Int32
-    public init(_base: OwnDestructor, marker: Int32) {
+    public var marker: Int32
+    private init(_base: OwnDestructor, marker: Int32) {
         this._base = _base
         this.marker = marker
     }
@@ -127,7 +127,7 @@ let _ = {
 @C
 public struct DeepDestructor {
     public let value: ContainsDestructor
-    public init(value: ContainsDestructor) {
+    private init(value: ContainsDestructor) {
         this.value = value
     }
 }
@@ -147,8 +147,8 @@ let _ = {
 
 @C
 public struct PointerOnlyDestructor {
-    public let value: CPointer<OwnDestructor>
-    public init(value: CPointer<OwnDestructor>) {
+    public var value: CPointer<OwnDestructor>
+    private init(value: CPointer<OwnDestructor>) {
         this.value = value
     }
 }
@@ -175,12 +175,14 @@ public unsafe func UnionOwnDestructor_UnionOwnDestructor_destructor(this_: CPoin
 @C
 public struct UnionOwnDestructor {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
-    public init() {}
-    public func value(): Int32 {
-        return __cjbind_read_Int32_from_UInt32(this._storage)
-    }
-    public mut func value(val!: Int32): Unit {
-        this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
+    private init() {}
+    public mut prop value: Int32 {
+        get() {
+            return __cjbind_read_Int32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_Int32_from_UInt32(this._storage, value)
+        }
     }
 }
 
@@ -202,7 +204,7 @@ public struct DestructorTemplateHolder {
     public let own: TemplateOwnDestructor_open0_int_close0
     public let propagated: TemplateField_open0_OwnDestructor_close0
     public let trivial: TemplateField_open0_TrivialValue_close0
-    public init(own: TemplateOwnDestructor_open0_int_close0, propagated: TemplateField_open0_OwnDestructor_close0,
+    private init(own: TemplateOwnDestructor_open0_int_close0, propagated: TemplateField_open0_OwnDestructor_close0,
         trivial: TemplateField_open0_TrivialValue_close0) {
         this.own = own
         this.propagated = propagated
@@ -225,8 +227,8 @@ let _ = {
 
 @C
 public struct IntegerOnly {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -246,8 +248,8 @@ let _ = {
 
 @C
 public struct DirectFloat {
-    public let value: Float32
-    public init(value: Float32) {
+    public var value: Float32
+    private init(value: Float32) {
         this.value = value
     }
 }
@@ -268,7 +270,7 @@ let _ = {
 @C
 public struct FloatArray {
     public let values: VArray<Float64, $3>
-    public init(values: VArray<Float64, $3>) {
+    private init(values: VArray<Float64, $3>) {
         this.values = values
     }
 }
@@ -289,7 +291,7 @@ let _ = {
 @C
 public struct ContainsFloat {
     public let value: DirectFloat
-    public init(value: DirectFloat) {
+    private init(value: DirectFloat) {
         this.value = value
     }
 }
@@ -310,8 +312,8 @@ let _ = {
 @C
 public struct InheritsFloat {
     public let _base: DirectFloat
-    public let marker: Int32
-    public init(_base: DirectFloat, marker: Int32) {
+    public var marker: Int32
+    private init(_base: DirectFloat, marker: Int32) {
         this._base = _base
         this.marker = marker
     }
@@ -334,8 +336,8 @@ public type FloatAlias = Float32
 
 @C
 public struct AliasedFloat {
-    public let value: FloatAlias
-    public init(value: FloatAlias) {
+    public var value: FloatAlias
+    private init(value: FloatAlias) {
         this.value = value
     }
 }
@@ -355,8 +357,8 @@ let _ = {
 
 @C
 public struct FloatPointerOnly {
-    public let value: CPointer<Float32>
-    public init(value: CPointer<Float32>) {
+    public var value: CPointer<Float32>
+    private init(value: CPointer<Float32>) {
         this.value = value
     }
 }
@@ -386,7 +388,7 @@ public struct FloatAnalysisHolder {
     public let argumentFloat: TemplateArgumentFloat_open0_float_close0
     public let argumentInteger: TemplateArgumentFloat_open0_int_close0
     public let definitionFloat: TemplateDefinitionFloat_open0_int_close0
-    public init(integerOnly: IntegerOnly, direct: DirectFloat, array: FloatArray, contained: ContainsFloat,
+    private init(integerOnly: IntegerOnly, direct: DirectFloat, array: FloatArray, contained: ContainsFloat,
         inherited: InheritsFloat, aliased: AliasedFloat, pointerOnly: FloatPointerOnly,
         argumentFloat: TemplateArgumentFloat_open0_float_close0,
         argumentInteger: TemplateArgumentFloat_open0_int_close0,
@@ -419,9 +421,9 @@ let _ = {
 
 @C
 public struct TemplateDefinitionFloat_open0_int_close0 {
-    public let value: Int32
-    public let fixed: Float32
-    public init(value: Int32, fixed: Float32) {
+    public var value: Int32
+    public var fixed: Float32
+    private init(value: Int32, fixed: Float32) {
         this.value = value
         this.fixed = fixed
     }
@@ -442,8 +444,8 @@ let _ = {
 
 @C
 public struct TemplateArgumentFloat_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -463,8 +465,8 @@ let _ = {
 
 @C
 public struct TemplateArgumentFloat_open0_float_close0 {
-    public let value: Float32
-    public init(value: Float32) {
+    public var value: Float32
+    private init(value: Float32) {
         this.value = value
     }
 }
@@ -485,7 +487,7 @@ let _ = {
 @C
 public struct TemplateField_open0_TrivialValue_close0 {
     public let value: TrivialValue
-    public init(value: TrivialValue) {
+    private init(value: TrivialValue) {
         this.value = value
     }
 }
@@ -506,7 +508,7 @@ let _ = {
 @C
 public struct TemplateField_open0_OwnDestructor_close0 {
     public let value: OwnDestructor
-    public init(value: OwnDestructor) {
+    private init(value: OwnDestructor) {
         this.value = value
     }
 }
@@ -526,8 +528,8 @@ let _ = {
 
 @C
 public struct TemplateOwnDestructor_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }

@@ -4,7 +4,7 @@ package cjbind_ffi
 public struct PartialHolder {
     public let scalar: Storage_open0_int_close0
     public let pointers: VArray<UInt64, $2>
-    public init(scalar: Storage_open0_int_close0, pointers: VArray<UInt64, $2>) {
+    private init(scalar: Storage_open0_int_close0, pointers: VArray<UInt64, $2>) {
         this.scalar = scalar
         this.pointers = pointers
     }
@@ -25,8 +25,8 @@ let _ = {
 
 @C
 public struct Storage_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }

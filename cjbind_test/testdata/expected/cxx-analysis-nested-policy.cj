@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct api_Outer_Inner {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -30,7 +30,7 @@ public unsafe func api_Outer_f(this_: CPointer<api_Outer>): Int32 {
 @C
 public struct api_Outer {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }

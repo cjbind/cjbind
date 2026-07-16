@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct Empty {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -24,7 +24,7 @@ let _ = {
 @C
 public struct EmptyDerived {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -44,8 +44,8 @@ let _ = {
 
 @C
 public struct InheritsEmpty {
-    public let value: Bool
-    public init(value: Bool) {
+    public var value: Bool
+    private init(value: Bool) {
         this.value = value
     }
 }
@@ -66,8 +66,8 @@ let _ = {
 @C
 public struct ContainsEmpty {
     public let empty: Empty
-    public let value: Bool
-    public init(empty: Empty, value: Bool) {
+    public var value: Bool
+    private init(empty: Empty, value: Bool) {
         this.empty = empty
         this.value = value
     }
@@ -89,7 +89,7 @@ let _ = {
 @C
 public struct ContainsEmptyArray {
     public let values: VArray<Empty, $4>
-    public init(values: VArray<Empty, $4>) {
+    private init(values: VArray<Empty, $4>) {
         this.values = values
     }
 }
@@ -110,15 +110,15 @@ let _ = {
 @C
 public struct EmptyTemplate {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
 
 @C
 public struct TemplateEmptyBase {
-    public let value: UInt8
-    public init(value: UInt8) {
+    public var value: UInt8
+    private init(value: UInt8) {
         this.value = value
     }
 }
@@ -138,9 +138,9 @@ let _ = {
 
 @C
 public struct TemplateEmptyMember {
-    public let empty: EmptyTemplate
-    public let value: UInt8
-    public init(empty: EmptyTemplate, value: UInt8) {
+    public let empty: EmptyTemplate_open0_double_close0
+    public var value: UInt8
+    private init(empty: EmptyTemplate_open0_double_close0, value: UInt8) {
         this.empty = empty
         this.value = value
     }
@@ -161,8 +161,8 @@ let _ = {
 
 @C
 public struct DeepEmptyBase {
-    public let value: UInt8
-    public init(value: UInt8) {
+    public var value: UInt8
+    private init(value: UInt8) {
         this.value = value
     }
 }
@@ -183,7 +183,7 @@ let _ = {
 @C
 public struct DerivedFromVtable {
     public let _base: BaseWithVtable_open0_ptr_char_close0
-    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
+    private init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -210,7 +210,7 @@ public unsafe func DerivedAddsVirtual_extra(this_: CPointer<Unit>): Int32 {
 @C
 public struct DerivedAddsVirtual {
     public let _base: BaseWithVtable_open0_ptr_char_close0
-    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
+    private init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -238,7 +238,7 @@ public unsafe func DerivedIntroducesVtable_run(this_: CPointer<Unit>): Unit {
 public struct DerivedIntroducesVtable {
     public let vtable_: CPointer<Unit>
     public let _base: BaseWithoutVtable_open0_int_close0
-    public init(vtable_: CPointer<Unit>, _base: BaseWithoutVtable_open0_int_close0) {
+    private init(vtable_: CPointer<Unit>, _base: BaseWithoutVtable_open0_int_close0) {
         this.vtable_ = vtable_
         this._base = _base
     }
@@ -260,7 +260,7 @@ let _ = {
 @C
 public struct DerivedWithoutVtable {
     public let _base: BaseWithoutVtable_open0_int_close0
-    public init(_base: BaseWithoutVtable_open0_int_close0) {
+    private init(_base: BaseWithoutVtable_open0_int_close0) {
         this._base = _base
     }
 }
@@ -295,7 +295,7 @@ public struct VirtualRoot__cjbind_vtable {
 @C
 public struct VirtualRoot {
     public let vtable_: CPointer<VirtualRoot__cjbind_vtable>
-    public init(vtable_: CPointer<VirtualRoot__cjbind_vtable>) {
+    private init(vtable_: CPointer<VirtualRoot__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -316,7 +316,7 @@ let _ = {
 @C
 public struct VirtualMiddle {
     public let _base: VirtualRoot
-    public init(_base: VirtualRoot) {
+    private init(_base: VirtualRoot) {
         this._base = _base
     }
 }
@@ -337,7 +337,7 @@ let _ = {
 @C
 public struct VirtualLeaf {
     public let _base: VirtualMiddle
-    public init(_base: VirtualMiddle) {
+    private init(_base: VirtualMiddle) {
         this._base = _base
     }
 }
@@ -372,7 +372,7 @@ public struct RecursiveBase__cjbind_vtable {
 @C
 public struct RecursiveBase {
     public let vtable_: CPointer<RecursiveBase__cjbind_vtable>
-    public init(vtable_: CPointer<RecursiveBase__cjbind_vtable>) {
+    private init(vtable_: CPointer<RecursiveBase__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -399,7 +399,7 @@ public unsafe func RecursiveDerived_derived(this_: CPointer<Unit>): CPointer<Rec
 @C
 public struct RecursiveDerived {
     public let _base: RecursiveBase
-    public init(_base: RecursiveBase) {
+    private init(_base: RecursiveBase) {
         this._base = _base
     }
 }
@@ -428,12 +428,12 @@ public struct LayoutAnalysisHolder {
     public let templateMember: TemplateEmptyMember
     public let deepBase: DeepEmptyBase
     public let dependentNonZero: DependentSize_open0_int_close0
-    public let inheritedVtable: CPointer<DerivedFromVtable>
-    public let introducedVtable: CPointer<DerivedIntroducesVtable>
-    public let noVtable: CPointer<DerivedWithoutVtable>
-    public let deepVtable: CPointer<VirtualLeaf>
-    public let recursiveVtable: CPointer<RecursiveDerived>
-    public init(empty: Empty, emptyDerived: EmptyDerived, inherits: InheritsEmpty, contains: ContainsEmpty,
+    public var inheritedVtable: CPointer<DerivedFromVtable>
+    public var introducedVtable: CPointer<DerivedIntroducesVtable>
+    public var noVtable: CPointer<DerivedWithoutVtable>
+    public var deepVtable: CPointer<VirtualLeaf>
+    public var recursiveVtable: CPointer<RecursiveDerived>
+    private init(empty: Empty, emptyDerived: EmptyDerived, inherits: InheritsEmpty, contains: ContainsEmpty,
         array: ContainsEmptyArray, templateBase: TemplateEmptyBase, templateMember: TemplateEmptyMember,
         deepBase: DeepEmptyBase, dependentNonZero: DependentSize_open0_int_close0,
         inheritedVtable: CPointer<DerivedFromVtable>, introducedVtable: CPointer<DerivedIntroducesVtable>,
@@ -471,8 +471,8 @@ let _ = {
 
 @C
 public struct DependentSize_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -492,8 +492,8 @@ let _ = {
 
 @C
 public struct BaseWithoutVtable_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -514,7 +514,7 @@ let _ = {
 @C
 public struct BaseWithVtable_open0_ptr_char_close0 {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
 }
@@ -529,5 +529,47 @@ let _ = {
         let align = alignOf<BaseWithVtable_open0_ptr_char_close0>()
         if (align != 8) {
             throw Exception("Alignment of BaseWithVtable_open0_ptr_char_close0 is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct EmptyTemplate_open0_double_close0 {
+    let _cjbind_empty: UInt8
+    private init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<EmptyTemplate_open0_double_close0>()
+        if (size != 1) {
+            throw Exception("Size of EmptyTemplate_open0_double_close0 is not 1 but ${size} bytes")
+        }
+        let align = alignOf<EmptyTemplate_open0_double_close0>()
+        if (align != 1) {
+            throw Exception("Alignment of EmptyTemplate_open0_double_close0 is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct EmptyTemplate_open0_int_close0 {
+    let _cjbind_empty: UInt8
+    private init(_cjbind_empty: UInt8) {
+        this._cjbind_empty = _cjbind_empty
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<EmptyTemplate_open0_int_close0>()
+        if (size != 1) {
+            throw Exception("Size of EmptyTemplate_open0_int_close0 is not 1 but ${size} bytes")
+        }
+        let align = alignOf<EmptyTemplate_open0_int_close0>()
+        if (align != 1) {
+            throw Exception("Alignment of EmptyTemplate_open0_int_close0 is not 1 but ${align} bytes")
         }
 }

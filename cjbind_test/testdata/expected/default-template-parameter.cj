@@ -2,9 +2,9 @@ package cjbind_ffi
 
 @C
 public struct Foo_open0_bool_int_close0 {
-    public let t: Bool
-    public let u: Int32
-    public init(t: Bool, u: Int32) {
+    public var t: Bool
+    public var u: Int32
+    private init(t: Bool, u: Int32) {
         this.t = t
         this.u = u
     }

@@ -47,9 +47,22 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
     let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+        let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+        return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
     }
-    return Int64(raw)
+    return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
+}
+
+@C
+func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+    var copy = value
+    return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
+}
+
+@C
+func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+    var copy = value
+    return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
 }
 
 public const MyEnum_ONE: MyEnum = 0
@@ -61,21 +74,27 @@ public type MyEnum = UInt32
 
 @C
 public struct TaggedPtr {
-    var _bitfield_1: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
-    public func tag(): MyEnum {
-        var s = this._bitfield_1
-        return MyEnum(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
+    var _bitfield_1: UInt64 = unsafe { zeroValue<UInt64>() }
+    public mut prop tag: MyEnum {
+        get() {
+            var s = this._bitfield_1
+            return UInt32(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 2, UInt64(value)) }
+        }
     }
-    public mut func tag(val!: MyEnum): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 2, UInt64(val)) }
+    public mut prop ptr: Int64 {
+        get() {
+            var s = this._bitfield_1
+            return Int64(unsafe { __cjbind_bitfield_read_signed(CPointer<UInt8>(inout s), 2, 62) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 2, 62,
+                __cjbind_bitfield_int64_to_uint64(Int64(value))) }
+        }
     }
-    public func ptr(): Int64 {
-        var s = this._bitfield_1
-        return Int64(unsafe { __cjbind_bitfield_read_signed(inout s, 2, 62) })
-    }
-    public mut func ptr(val!: Int64): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 62, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt64, $0> = unsafe { zeroValue<VArray<UInt64, $0>>() }
     public init() {}
 }
 

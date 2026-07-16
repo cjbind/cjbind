@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct DerivedWithoutNewVirtual {
     public let _base: BaseWithVtable_open0_ptr_char_close0
-    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
+    private init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -30,7 +30,7 @@ public unsafe func DerivedWithVirtual_extra(this_: CPointer<Unit>): Int32 {
 @C
 public struct DerivedWithVirtual {
     public let _base: BaseWithVtable_open0_ptr_char_close0
-    public init(_base: BaseWithVtable_open0_ptr_char_close0) {
+    private init(_base: BaseWithVtable_open0_ptr_char_close0) {
         this._base = _base
     }
 }
@@ -51,8 +51,8 @@ let _ = {
 @C
 public struct PlainDerived {
     public let _base: PlainBase_open0_int_close0
-    public let tag: Int16
-    public init(_base: PlainBase_open0_int_close0, tag: Int16) {
+    public var tag: Int16
+    private init(_base: PlainBase_open0_int_close0, tag: Int16) {
         this._base = _base
         this.tag = tag
     }
@@ -73,8 +73,8 @@ let _ = {
 
 @C
 public struct PlainBase_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -95,7 +95,7 @@ let _ = {
 @C
 public struct BaseWithVtable_open0_ptr_char_close0 {
     let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
     }
 }

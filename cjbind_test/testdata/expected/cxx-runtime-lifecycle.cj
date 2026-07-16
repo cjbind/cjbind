@@ -32,7 +32,7 @@ public unsafe func LifecycleProbe_add(left: Int32, right: Int32): Int32 {
 
 @C
 public struct LifecycleProbe {
-    private let stored_: Int32
+    private var stored_: Int32
     private init(stored_: Int32) {
         this.stored_ = stored_
     }
@@ -68,7 +68,7 @@ public unsafe func RuntimeLeft_left(this_: CPointer<RuntimeLeft>): Int32 {
 @C
 public struct RuntimeLeft {
     public let vtable_: CPointer<Unit>
-    private let padding_: Int32
+    private var padding_: Int32
     private init(vtable_: CPointer<Unit>, padding_: Int32) {
         this.vtable_ = vtable_
         this.padding_ = padding_
@@ -103,7 +103,7 @@ public unsafe func RuntimeRight_right(this_: CPointer<RuntimeRight>): Int32 {
 @C
 public struct RuntimeRight {
     public let vtable_: CPointer<Unit>
-    public init(vtable_: CPointer<Unit>) {
+    private init(vtable_: CPointer<Unit>) {
         this.vtable_ = vtable_
     }
 }
@@ -149,7 +149,7 @@ public unsafe func MultipleProbe_right(this_: CPointer<MultipleProbe>): Int32 {
 public struct MultipleProbe {
     public let _base: RuntimeLeft
     public let _base_1: RuntimeRight
-    private let stored_: Int32
+    private var stored_: Int32
     private init(_base: RuntimeLeft, _base_1: RuntimeRight, stored_: Int32) {
         this._base = _base
         this._base_1 = _base_1

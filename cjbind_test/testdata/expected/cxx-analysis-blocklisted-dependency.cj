@@ -4,9 +4,9 @@ public type InternalAlias = InternalRecord
 
 @C
 public struct PublicRecord {
-    public let internal_: CPointer<InternalRecord>
-    public let aliased: CPointer<InternalAlias>
-    public init(internal_: CPointer<InternalRecord>, aliased: CPointer<InternalAlias>) {
+    public var internal_: CPointer<InternalRecord>
+    public var aliased: CPointer<InternalAlias>
+    private init(internal_: CPointer<InternalRecord>, aliased: CPointer<InternalAlias>) {
         this.internal_ = internal_
         this.aliased = aliased
     }

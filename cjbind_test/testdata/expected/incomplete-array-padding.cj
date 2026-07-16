@@ -1,5 +1,83 @@
 package cjbind_ffi
 
+// A bounded view over a C flexible or zero-length array. Construction from an owning pointer and indexing stay unsafe because pointer validity and lifetime are caller contracts.
+public struct __CjbindArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
+
+    public init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
+
+    public prop pointer: CPointer<T> {
+        get() {
+            return this._pointer
+        }
+    }
+
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
+
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
+
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
+
+    public unsafe operator func [](index: Int64, value!: T): Unit {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        this._pointer.write(index, value)
+    }
+}
+
+public struct __CjbindConstArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
+
+    init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
+
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
+
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
+
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
+}
+
 @C
 func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): UInt64 {
     let startByte = bitOffset / 8
@@ -47,23 +125,48 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
     let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+        let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+        return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
     }
-    return Int64(raw)
+    return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
+}
+
+@C
+func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+    var copy = value
+    return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
+}
+
+@C
+func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+    var copy = value
+    return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
 }
 
 @C
 public struct foo {
-    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-    public func a(): UInt8 {
-        var s = this._bitfield_1
-        return UInt8(unsafe { __cjbind_bitfield_read_signed(inout s, 0, 1) })
+    var _bitfield_1: VArray<UInt8, $8> = unsafe { zeroValue<VArray<UInt8, $8>>() }
+    public mut prop a: UInt8 {
+        get() {
+            var s = this._bitfield_1
+            return UInt8(unsafe { __cjbind_bitfield_read_signed(CPointer<UInt8>(inout s), 0, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 1,
+                __cjbind_bitfield_int64_to_uint64(Int64(value))) }
+        }
     }
-    public mut func a(val!: UInt8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
-    }
-    public var b: CPointer<CPointer<Unit>> = unsafe { zeroValue<CPointer<CPointer<Unit>>>() }
+    public let b: VArray<CPointer<Unit>, $0> = unsafe { zeroValue<VArray<CPointer<Unit>, $0>>() }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt64, $0> = unsafe { zeroValue<VArray<UInt64, $0>>() }
     public init() {}
+}
+
+public unsafe func foo_b_ptr(value: CPointer<foo>): CPointer<CPointer<Unit>> {
+    return CPointer<CPointer<Unit>>(CPointer<UInt8>(value) + 8)
+}
+
+public unsafe func foo_b_view(value: CPointer<foo>, count!: Int64): __CjbindArrayView<CPointer<Unit>> {
+    return __CjbindArrayView<CPointer<Unit>>(pointer: foo_b_ptr(value), size: count)
 }
 
 @When[debug]

@@ -47,58 +47,84 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
     let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+        let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+        return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
     }
-    return Int64(raw)
+    return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
+}
+
+@C
+func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+    var copy = value
+    return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
+}
+
+@C
+func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+    var copy = value
+    return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
 }
 
 @C
 public struct bitfield {
-    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-    public func a(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+    var _bitfield_1: VArray<UInt16, $2> = unsafe { zeroValue<VArray<UInt16, $2>>() }
+    public mut prop a: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 1, UInt64(value)) }
+        }
     }
-    public mut func a(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    public mut prop b: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 1, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 1, 1, UInt64(value)) }
+        }
     }
-    public func b(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+    public mut prop c: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 2, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 2, 1, UInt64(value)) }
+        }
     }
-    public mut func b(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
-    }
-    public func c(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
-    }
-    public mut func c(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
-    }
-    public func d(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 6, 2) })
-    }
-    public mut func d(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 6, 2, UInt64(val)) }
+    public mut prop d: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 6, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 6, 2, UInt64(value)) }
+        }
     }
     public var e: Int32 = unsafe { zeroValue<Int32>() }
-    var _bitfield_2: VArray<UInt8, $8> = VArray<UInt8, $8>(repeat: 0)
-    public func f(): UInt32 {
-        var s = this._bitfield_2
-        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 2) })
+    var _bitfield_2: VArray<UInt32, $2> = unsafe { zeroValue<VArray<UInt32, $2>>() }
+    public mut prop f: UInt32 {
+        get() {
+            var s = this._bitfield_2
+            return UInt32(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 0, 2, UInt64(value)) }
+        }
     }
-    public mut func f(val!: UInt32): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 0, 2, UInt64(val)) }
+    public mut prop g: UInt32 {
+        get() {
+            var s = this._bitfield_2
+            return UInt32(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 32, 32) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 32, 32, UInt64(value)) }
+        }
     }
-    public func g(): UInt32 {
-        var s = this._bitfield_2
-        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 32, 32) })
-    }
-    public mut func g(val!: UInt32): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 32, 32, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt32, $0> = unsafe { zeroValue<VArray<UInt32, $0>>() }
     public init() {}
 }
 
@@ -119,14 +145,17 @@ let _ = {
 public struct MixedPtrBoolBitfield {
     public var p: CPointer<Unit> = unsafe { zeroValue<CPointer<Unit>>() }
     public var b: Bool = unsafe { zeroValue<Bool>() }
-    var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
-    public func u(): UInt32 {
-        var s = this._bitfield_1
-        return UInt32(unsafe { __cjbind_bitfield_read(inout s, 0, 16) })
+    var _bitfield_1: VArray<UInt8, $7> = unsafe { zeroValue<VArray<UInt8, $7>>() }
+    public mut prop u: UInt32 {
+        get() {
+            var s = this._bitfield_1
+            return UInt32(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 16) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 16, UInt64(value)) }
+        }
     }
-    public mut func u(val!: UInt32): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 16, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt64, $0> = unsafe { zeroValue<VArray<UInt64, $0>>() }
     public init() {}
 }
 
@@ -145,7 +174,7 @@ let _ = {
 
 @C
 public struct OnlyUnnamedBitfield {
-    var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
+    var _bitfield_1: VArray<UInt8, $2> = unsafe { zeroValue<VArray<UInt8, $2>>() }
     public init() {}
 }
 
@@ -164,7 +193,7 @@ let _ = {
 
 @C
 public struct MixedSignedUnnamedBitfield {
-    var _bitfield_1: VArray<UInt8, $3> = VArray<UInt8, $3>(repeat: 0)
+    var _bitfield_1: VArray<UInt8, $3> = unsafe { zeroValue<VArray<UInt8, $3>>() }
     public init() {}
 }
 
@@ -187,81 +216,102 @@ public type U16 = UInt16
 
 @C
 public struct V56AMDY {
-    var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
-    public func MADZ(): U16 {
-        var s = this._bitfield_1
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
+    var _bitfield_1: UInt16 = unsafe { zeroValue<UInt16>() }
+    public mut prop MADZ: U16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 10) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 10, UInt64(value)) }
+        }
     }
-    public mut func MADZ(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 10, UInt64(val)) }
+    public mut prop MAI0: U16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 10, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 10, 2, UInt64(value)) }
+        }
     }
-    public func MAI0(): U16 {
-        var s = this._bitfield_1
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 10, 2) })
+    public mut prop MAI1: U16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 12, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 12, 2, UInt64(value)) }
+        }
     }
-    public mut func MAI0(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 10, 2, UInt64(val)) }
-    }
-    public func MAI1(): U16 {
-        var s = this._bitfield_1
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 12, 2) })
-    }
-    public mut func MAI1(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 12, 2, UInt64(val)) }
-    }
-    public func MAI2(): U16 {
-        var s = this._bitfield_1
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
-    }
-    public mut func MAI2(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 14, 2, UInt64(val)) }
+    public mut prop MAI2: U16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 14, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 14, 2, UInt64(value)) }
+        }
     }
     public var MADK: U8 = unsafe { zeroValue<U8>() }
     public var MABR: U8 = unsafe { zeroValue<U8>() }
-    var _bitfield_2: VArray<UInt8, $3> = VArray<UInt8, $3>(repeat: 0)
-    public func MATH(): U16 {
-        var s = this._bitfield_2
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 0, 10) })
+    var _bitfield_2: VArray<UInt8, $3> = unsafe { zeroValue<VArray<UInt8, $3>>() }
+    public mut prop MATH: U16 {
+        get() {
+            var s = this._bitfield_2
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 10) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 0, 10, UInt64(value)) }
+        }
     }
-    public mut func MATH(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 0, 10, UInt64(val)) }
+    public mut prop MATE: U16 {
+        get() {
+            var s = this._bitfield_2
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 10, 4) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 10, 4, UInt64(value)) }
+        }
     }
-    public func MATE(): U16 {
-        var s = this._bitfield_2
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 10, 4) })
+    public mut prop MATW: U16 {
+        get() {
+            var s = this._bitfield_2
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 14, 2) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 14, 2, UInt64(value)) }
+        }
     }
-    public mut func MATE(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 10, 4, UInt64(val)) }
+    public mut prop MASW: U8 {
+        get() {
+            var s = this._bitfield_2
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 16, 4) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 16, 4, UInt64(value)) }
+        }
     }
-    public func MATW(): U16 {
-        var s = this._bitfield_2
-        return U16(unsafe { __cjbind_bitfield_read(inout s, 14, 2) })
+    public mut prop MABW: U8 {
+        get() {
+            var s = this._bitfield_2
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 20, 3) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 20, 3, UInt64(value)) }
+        }
     }
-    public mut func MATW(val!: U16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 14, 2, UInt64(val)) }
-    }
-    public func MASW(): U8 {
-        var s = this._bitfield_2
-        return U8(unsafe { __cjbind_bitfield_read(inout s, 16, 4) })
-    }
-    public mut func MASW(val!: U8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 16, 4, UInt64(val)) }
-    }
-    public func MABW(): U8 {
-        var s = this._bitfield_2
-        return U8(unsafe { __cjbind_bitfield_read(inout s, 20, 3) })
-    }
-    public mut func MABW(val!: U8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 20, 3, UInt64(val)) }
-    }
-    public func MAXN(): U8 {
-        var s = this._bitfield_2
-        return U8(unsafe { __cjbind_bitfield_read(inout s, 23, 1) })
-    }
-    public mut func MAXN(val!: U8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_2, 23, 1, UInt64(val)) }
+    public mut prop MAXN: U8 {
+        get() {
+            var s = this._bitfield_2
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 23, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_2), 23, 1, UInt64(value)) }
+        }
     }
     public var _rB_: U8 = unsafe { zeroValue<U8>() }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt16, $0> = unsafe { zeroValue<VArray<UInt16, $0>>() }
     public init() {}
 }
 

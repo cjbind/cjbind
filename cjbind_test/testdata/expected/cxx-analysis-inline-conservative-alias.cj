@@ -6,8 +6,8 @@ public type api_Word = Int64
 
 @C
 public struct UsesInlineAlias {
-    public let value: api_v1_Word
-    public init(value: api_v1_Word) {
+    public var value: api_v1_Word
+    private init(value: api_v1_Word) {
         this.value = value
     }
 }

@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct EmptyUnion {
     var _storage: UInt8 = unsafe { zeroValue<UInt8>() }
-    public init() {}
+    private init() {}
 }
 
 @When[debug]

@@ -1,17 +1,5 @@
 package cjbind_ffi
 
-func __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32,
-    val: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1): UInt32 {
-    var s = storage
-    unsafe { CPointer<rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 func __cjbind_read_UInt32_from_UInt32(storage: UInt32): UInt32 {
     var s = storage
     return unsafe { CPointer<UInt32>(CPointer<UInt8>(inout s)).read() }
@@ -23,22 +11,10 @@ func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
     return s
 }
 
-func __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(storage: UInt32,
-    val: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1): UInt32 {
-    var s = storage
-    unsafe { CPointer<rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
-    public let dport: UInt16
-    public let sport: UInt16
+    public var dport: UInt16
+    public var sport: UInt16
     public init(dport: UInt16, sport: UInt16) {
         this.dport = dport
         this.sport = sport
@@ -62,17 +38,13 @@ let _ = {
 public struct rte_ipv4_tuple__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func __cjbind_anon_1(): rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
-    }
-    public func sctp_tag(): UInt32 {
-        return __cjbind_read_UInt32_from_UInt32(this._storage)
-    }
-    public mut func sctp_tag(val!: UInt32): Unit {
-        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
+    public mut prop sctp_tag: UInt32 {
+        get() {
+            return __cjbind_read_UInt32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, value)
+        }
     }
 }
 
@@ -91,8 +63,8 @@ let _ = {
 
 @C
 public struct rte_ipv4_tuple {
-    public let src_addr: UInt32
-    public let dst_addr: UInt32
+    public var src_addr: UInt32
+    public var dst_addr: UInt32
     public let __cjbind_anon_1: rte_ipv4_tuple__cjbind_ty_1
     public init(src_addr: UInt32, dst_addr: UInt32, __cjbind_anon_1: rte_ipv4_tuple__cjbind_ty_1) {
         this.src_addr = src_addr
@@ -116,8 +88,8 @@ let _ = {
 
 @C
 public struct rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
-    public let dport: UInt16
-    public let sport: UInt16
+    public var dport: UInt16
+    public var sport: UInt16
     public init(dport: UInt16, sport: UInt16) {
         this.dport = dport
         this.sport = sport
@@ -141,17 +113,13 @@ let _ = {
 public struct rte_ipv6_tuple__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func __cjbind_anon_1(): rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
-        return __cjbind_read_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1_from_UInt32(this._storage, val)
-    }
-    public func sctp_tag(): UInt32 {
-        return __cjbind_read_UInt32_from_UInt32(this._storage)
-    }
-    public mut func sctp_tag(val!: UInt32): Unit {
-        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
+    public mut prop sctp_tag: UInt32 {
+        get() {
+            return __cjbind_read_UInt32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, value)
+        }
     }
 }
 

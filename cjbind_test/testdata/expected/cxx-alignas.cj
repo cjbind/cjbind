@@ -17,7 +17,7 @@ public unsafe func passthroughWide(value: CPointer<Wide>): CPointer<Wide> {
 @C
 public struct Empty {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -38,7 +38,7 @@ let _ = {
 @C
 public struct NoUniqueAddress {
     let _cjbind_opaque_blob: UInt64
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
     }
 }
@@ -73,7 +73,7 @@ public unsafe func installNoUniqueAddressCallback(callback: NoUniqueAddressCallb
 @C
 public struct PackedValue {
     let _cjbind_opaque_blob: VArray<UInt8, $5>
-    public init() {
+    private init() {
         this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt8, $5>>() }
     }
 }
@@ -100,7 +100,7 @@ public unsafe func passthroughPackedValue(value: CPointer<PackedValue>): CPointe
 @C
 public struct PackedContainer {
     public let packed: PackedValue
-    public init(packed: PackedValue) {
+    private init(packed: PackedValue) {
         this.packed = packed
     }
 }
@@ -126,8 +126,8 @@ public unsafe func passthroughPackedContainer(value: CPointer<PackedContainer>):
 
 @C
 public struct DeletedMoves {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -154,7 +154,7 @@ public unsafe func passthroughDeletedMoves(value: CPointer<DeletedMoves>): CPoin
 @C
 public struct DeletedMoveContainer {
     public let value: DeletedMoves
-    public init(value: DeletedMoves) {
+    private init(value: DeletedMoves) {
         this.value = value
     }
 }
@@ -180,8 +180,8 @@ public unsafe func passthroughDeletedMoveContainer(value: CPointer<DeletedMoveCo
 
 @C
 public struct PrivateCopy {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -202,7 +202,7 @@ let _ = {
 @C
 public struct PrivateCopyContainer {
     public let value: PrivateCopy
-    public init(value: PrivateCopy) {
+    private init(value: PrivateCopy) {
         this.value = value
     }
 }

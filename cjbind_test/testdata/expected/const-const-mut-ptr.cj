@@ -2,7 +2,7 @@ package cjbind_ffi
 
 @C
 public struct foo {
-    public let bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>
+    public var bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>
     public init(bar: CPointer<CPointer<CPointer<CPointer<Int32>>>>) {
         this.bar = bar
     }

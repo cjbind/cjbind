@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct zoidberg_Foo {
-    public let c: UInt8
-    public init(c: UInt8) {
+    public var c: UInt8
+    private init(c: UInt8) {
         this.c = c
     }
 }
@@ -23,8 +23,8 @@ let _ = {
 
 @C
 public struct zoidberg_Bar {
-    public let i: Int32
-    public init(i: Int32) {
+    public var i: Int32
+    private init(i: Int32) {
         this.i = i
     }
 }
@@ -45,7 +45,7 @@ let _ = {
 @C
 public struct zoidberg_ContainsInstantiation {
     public let not_opaque: zoidberg_Template_open0_zoidberg_Foo_close0
-    public init(not_opaque: zoidberg_Template_open0_zoidberg_Foo_close0) {
+    private init(not_opaque: zoidberg_Template_open0_zoidberg_Foo_close0) {
         this.not_opaque = not_opaque
     }
 }
@@ -66,7 +66,7 @@ let _ = {
 @C
 public struct zoidberg_ContainsOpaqueInstantiation {
     public let opaque: UInt32
-    public init(opaque: UInt32) {
+    private init(opaque: UInt32) {
         this.opaque = opaque
     }
 }
@@ -87,7 +87,7 @@ let _ = {
 @C
 public struct zoidberg_Template_open0_zoidberg_Foo_close0 {
     public let member: zoidberg_Foo
-    public init(member: zoidberg_Foo) {
+    private init(member: zoidberg_Foo) {
         this.member = member
     }
 }

@@ -94,8 +94,8 @@ let _ = {
 
 @C
 public struct redundant_pragma_packed {
-    public let a: UInt8
-    public let b: UInt16
+    public var a: UInt8
+    public var b: UInt16
     public init(a: UInt8, b: UInt16) {
         this.a = a
         this.b = b

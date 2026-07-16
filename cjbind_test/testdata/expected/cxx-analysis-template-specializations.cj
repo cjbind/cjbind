@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct PartialDerived {
-    public let primary: Bool
-    public init(primary: Bool) {
+    public var primary: Bool
+    private init(primary: Bool) {
         this.primary = primary
     }
 }
@@ -14,7 +14,7 @@ public struct TemplateSpecializationHolder {
     public let explicitSpecialization: ExplicitBox_open0_char_close0
     public let partialSpecialization: VArray<UInt64, $2>
     public let inheritedPartialSpecialization: VArray<UInt64, $2>
-    public init(primary: ExplicitBox_open0_int_close0, explicitSpecialization: ExplicitBox_open0_char_close0,
+    private init(primary: ExplicitBox_open0_int_close0, explicitSpecialization: ExplicitBox_open0_char_close0,
         partialSpecialization: VArray<UInt64, $2>, inheritedPartialSpecialization: VArray<UInt64, $2>) {
         this.primary = primary
         this.explicitSpecialization = explicitSpecialization
@@ -38,9 +38,11 @@ let _ = {
 
 @C
 public struct ExplicitBox_open0_char_close0 {
-    let _cjbind_opaque_blob: VArray<UInt64, $2>
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<VArray<UInt64, $2>>() }
+    public var value: Int64
+    public var discriminator: UInt8
+    private init(value: Int64, discriminator: UInt8) {
+        this.value = value
+        this.discriminator = discriminator
     }
 }
 
@@ -59,8 +61,8 @@ let _ = {
 
 @C
 public struct ExplicitBox_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }

@@ -26,17 +26,21 @@ func __cjbind_write_UInt16_from_UInt32(storage: UInt32, val: UInt16): UInt32 {
 public struct foo__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func a(): UInt32 {
-        return __cjbind_read_UInt32_from_UInt32(this._storage)
+    public mut prop a: UInt32 {
+        get() {
+            return __cjbind_read_UInt32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, value)
+        }
     }
-    public mut func a(val!: UInt32): Unit {
-        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
-    }
-    public func b(): UInt16 {
-        return __cjbind_read_UInt16_from_UInt32(this._storage)
-    }
-    public mut func b(val!: UInt16): Unit {
-        this._storage = __cjbind_write_UInt16_from_UInt32(this._storage, val)
+    public mut prop b: UInt16 {
+        get() {
+            return __cjbind_read_UInt16_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt16_from_UInt32(this._storage, value)
+        }
     }
 }
 

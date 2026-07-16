@@ -58,18 +58,22 @@ func __cjbind_write_Int32_from_UInt64(storage: UInt64, val: Int32): UInt64 {
 @C
 public struct NastyStruct__cjbind_ty_1 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
-    public init() {}
-    public func mFoo(): CPointer<Unit> {
-        return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+    private init() {}
+    public mut prop mFoo: CPointer<Unit> {
+        get() {
+            return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, value)
+        }
     }
-    public mut func mFoo(val!: CPointer<Unit>): Unit {
-        this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, val)
-    }
-    public func mDummy(): UInt64 {
-        return __cjbind_read_UInt64_from_UInt64(this._storage)
-    }
-    public mut func mDummy(val!: UInt64): Unit {
-        this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, val)
+    public mut prop mDummy: UInt64 {
+        get() {
+            return __cjbind_read_UInt64_from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt64_from_UInt64(this._storage, value)
+        }
     }
 }
 
@@ -89,18 +93,22 @@ let _ = {
 @C
 public struct NastyStruct__cjbind_ty_2 {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
-    public init() {}
-    public func wat(): Int16 {
-        return __cjbind_read_Int16_from_UInt64(this._storage)
+    private init() {}
+    public mut prop wat: Int16 {
+        get() {
+            return __cjbind_read_Int16_from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_Int16_from_UInt64(this._storage, value)
+        }
     }
-    public mut func wat(val!: Int16): Unit {
-        this._storage = __cjbind_write_Int16_from_UInt64(this._storage, val)
-    }
-    public func wut(): CPointer<Int32> {
-        return __cjbind_read_CPointer_Int32__from_UInt64(this._storage)
-    }
-    public mut func wut(val!: CPointer<Int32>): Unit {
-        this._storage = __cjbind_write_CPointer_Int32__from_UInt64(this._storage, val)
+    public mut prop wut: CPointer<Int32> {
+        get() {
+            return __cjbind_read_CPointer_Int32__from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_CPointer_Int32__from_UInt64(this._storage, value)
+        }
     }
 }
 
@@ -119,10 +127,10 @@ let _ = {
 
 @C
 public struct NastyStruct {
-    public let mIsSome: Bool
+    public var mIsSome: Bool
     public let mStorage: NastyStruct__cjbind_ty_1
     public let __cjbind_anon_1: NastyStruct__cjbind_ty_2
-    public init(mIsSome: Bool, mStorage: NastyStruct__cjbind_ty_1, __cjbind_anon_1: NastyStruct__cjbind_ty_2) {
+    private init(mIsSome: Bool, mStorage: NastyStruct__cjbind_ty_1, __cjbind_anon_1: NastyStruct__cjbind_ty_2) {
         this.mIsSome = mIsSome
         this.mStorage = mStorage
         this.__cjbind_anon_1 = __cjbind_anon_1
@@ -132,18 +140,22 @@ public struct NastyStruct {
 @C
 public struct Whatever {
     var _storage: UInt64 = unsafe { zeroValue<UInt64>() }
-    public init() {}
-    public func mTPtr(): CPointer<Unit> {
-        return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+    private init() {}
+    public mut prop mTPtr: CPointer<Unit> {
+        get() {
+            return __cjbind_read_CPointer_Unit__from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, value)
+        }
     }
-    public mut func mTPtr(val!: CPointer<Unit>): Unit {
-        this._storage = __cjbind_write_CPointer_Unit__from_UInt64(this._storage, val)
-    }
-    public func mInt(): Int32 {
-        return __cjbind_read_Int32_from_UInt64(this._storage)
-    }
-    public mut func mInt(val!: Int32): Unit {
-        this._storage = __cjbind_write_Int32_from_UInt64(this._storage, val)
+    public mut prop mInt: Int32 {
+        get() {
+            return __cjbind_read_Int32_from_UInt64(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_Int32_from_UInt64(this._storage, value)
+        }
     }
 }
 

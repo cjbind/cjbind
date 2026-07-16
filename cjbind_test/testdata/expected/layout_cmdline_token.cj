@@ -4,8 +4,8 @@ package cjbind_ffi
 // write the parsed result in the destination structure.
 @C
 public struct cmdline_token_hdr {
-    public let ops: CPointer<cmdline_token_ops>
-    public let offset: UInt32
+    public var ops: CPointer<cmdline_token_ops>
+    public var offset: UInt32
     public init(ops: CPointer<cmdline_token_ops>, offset: UInt32) {
         this.ops = ops
         this.offset = offset
@@ -49,15 +49,15 @@ public type cmdline_parse_token_hdr_t = cmdline_token_hdr
 @C
 public struct cmdline_token_ops {
     // parse(token ptr, buf, res pts, buf len) *
-    public let parse: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: CPointer<Unit>,
+    public var parse: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: CPointer<Unit>,
         arg4: UInt32) -> Int32>
     // return the num of possible choices for this token *
-    public let complete_get_nb: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>) -> Int32>
+    public var complete_get_nb: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>) -> Int32>
     // return the elt x for this token (token, idx, dstbuf, size) *
-    public let complete_get_elt: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: Int32, arg3: CPointer<UInt8>,
+    public var complete_get_elt: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: Int32, arg3: CPointer<UInt8>,
         arg4: UInt32) -> Int32>
     // get help for this token (token, dstbuf, size) *
-    public let get_help: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: UInt32) -> Int32>
+    public var get_help: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: UInt32) -> Int32>
     public init(
         parse: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>, arg2: CPointer<UInt8>, arg3: CPointer<Unit>,
             arg4: UInt32) -> Int32>, complete_get_nb: CFunc<(arg1: CPointer<cmdline_parse_token_hdr_t>) -> Int32>,
@@ -97,7 +97,7 @@ public type cmdline_numtype = UInt32
 
 @C
 public struct cmdline_token_num_data {
-    public let type_: cmdline_numtype
+    public var type_: cmdline_numtype
     public init(type_: cmdline_numtype) {
         this.type_ = type_
     }

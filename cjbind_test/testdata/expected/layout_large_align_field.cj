@@ -19,11 +19,11 @@ public type _cjbind_ty_1 = UInt32
 @C
 public struct ip_frag {
     //< offset into the packet *
-    public let ofs: UInt16
+    public var ofs: UInt16
     //< length of fragment *
-    public let len: UInt16
+    public var len: UInt16
     //< fragment mbuf *
-    public let mb: CPointer<rte_mbuf>
+    public var mb: CPointer<rte_mbuf>
     public init(ofs: UInt16, len: UInt16, mb: CPointer<rte_mbuf>) {
         this.ofs = ofs
         this.len = len
@@ -50,9 +50,9 @@ public struct ip_frag_key {
     //< src address, first 8 bytes used for IPv4 *
     public let src_dst: VArray<UInt64, $4>
     //< dst address *
-    public let id: UInt32
+    public var id: UInt32
     //< src/dst key length *
-    public let key_len: UInt32
+    public var key_len: UInt32
     public init(src_dst: VArray<UInt64, $4>, id: UInt32, key_len: UInt32) {
         this.src_dst = src_dst
         this.id = id
@@ -75,8 +75,8 @@ let _ = {
 
 @C
 public struct ip_frag_pkt__cjbind_ty_1 {
-    public let tqe_next: CPointer<ip_frag_pkt>
-    public let tqe_prev: CPointer<CPointer<ip_frag_pkt>>
+    public var tqe_next: CPointer<ip_frag_pkt>
+    public var tqe_prev: CPointer<CPointer<ip_frag_pkt>>
     public init(tqe_next: CPointer<ip_frag_pkt>, tqe_prev: CPointer<CPointer<ip_frag_pkt>>) {
         this.tqe_next = tqe_next
         this.tqe_prev = tqe_prev
@@ -108,8 +108,8 @@ public struct ip_frag_pkt {
 
 @C
 public struct ip_pkt_list {
-    public let tqh_first: CPointer<ip_frag_pkt>
-    public let tqh_last: CPointer<CPointer<ip_frag_pkt>>
+    public var tqh_first: CPointer<ip_frag_pkt>
+    public var tqh_last: CPointer<CPointer<ip_frag_pkt>>
     public init(tqh_first: CPointer<ip_frag_pkt>, tqh_last: CPointer<CPointer<ip_frag_pkt>>) {
         this.tqh_first = tqh_first
         this.tqh_last = tqh_last

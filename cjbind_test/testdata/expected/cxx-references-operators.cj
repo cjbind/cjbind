@@ -39,7 +39,7 @@ public unsafe func Number_value1(this_: CPointer<Number>): CPointer<Int32> {
 @C
 public struct Number {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }

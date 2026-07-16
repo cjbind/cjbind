@@ -8,15 +8,15 @@ public type UChar = UInt8
 
 @C
 public struct Test {
-    public let ch: UInt8
-    public let u: UInt8
-    public let d: Int8
+    public var ch: UInt8
+    public var u: UInt8
+    public var d: Int8
     public let cch: UInt8
     public let cu: UInt8
     public let cd: Int8
-    public let Cch: Char
-    public let Cu: UChar
-    public let Cd: SChar
+    public var Cch: Char
+    public var Cu: UChar
+    public var Cd: SChar
     public let Ccch: Char
     public let Ccu: UChar
     public let Ccd: SChar

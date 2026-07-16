@@ -20,19 +20,23 @@ func __cjbind_write_UInt16_from_UInt32(ptr: CPointer<UInt8>, val: UInt16): Unit 
 public struct simple_union {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func u32(): UInt32 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt32_from_UInt32(CPointer<UInt8>(inout s)) }
+    public mut prop u32: UInt32 {
+        get() {
+            var s = this._storage
+            return unsafe { __cjbind_read_UInt32_from_UInt32(CPointer<UInt8>(inout s)) }
+        }
+        set(value) {
+            unsafe { __cjbind_write_UInt32_from_UInt32(CPointer<UInt8>(inout this._storage), value) }
+        }
     }
-    public mut func u32(val!: UInt32): Unit {
-        unsafe { __cjbind_write_UInt32_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
-    }
-    public func u16(): UInt16 {
-        var s = this._storage
-        return unsafe { __cjbind_read_UInt16_from_UInt32(CPointer<UInt8>(inout s)) }
-    }
-    public mut func u16(val!: UInt16): Unit {
-        unsafe { __cjbind_write_UInt16_from_UInt32(CPointer<UInt8>(inout this._storage), val) }
+    public mut prop u16: UInt16 {
+        get() {
+            var s = this._storage
+            return unsafe { __cjbind_read_UInt16_from_UInt32(CPointer<UInt8>(inout s)) }
+        }
+        set(value) {
+            unsafe { __cjbind_write_UInt16_from_UInt32(CPointer<UInt8>(inout this._storage), value) }
+        }
     }
 }
 

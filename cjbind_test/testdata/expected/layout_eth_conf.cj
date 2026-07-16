@@ -47,43 +47,22 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
 func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
     let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
     if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-        return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+        let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+        return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
     }
-    return Int64(raw)
+    return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
 }
 
-func __cjbind_read_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_dcb_tx_conf {
-    var s = storage
-    return unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
+@C
+func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+    var copy = value
+    return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
 }
 
-func __cjbind_write_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>,
-    val: rte_eth_vmdq_dcb_tx_conf): VArray<UInt32, $3> {
-    var s = storage
-    unsafe { CPointer<rte_eth_vmdq_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
-func __cjbind_read_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_dcb_tx_conf {
-    var s = storage
-    return unsafe { CPointer<rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>, val: rte_eth_dcb_tx_conf): VArray<UInt32, $3> {
-    var s = storage
-    unsafe { CPointer<rte_eth_dcb_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
-func __cjbind_read_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>): rte_eth_vmdq_tx_conf {
-    var s = storage
-    return unsafe { CPointer<rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(storage: VArray<UInt32, $3>, val: rte_eth_vmdq_tx_conf): VArray<UInt32, $3> {
-    var s = storage
-    unsafe { CPointer<rte_eth_vmdq_tx_conf>(CPointer<UInt8>(inout s)).write(val) }
-    return s
+@C
+func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+    var copy = value
+    return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
 }
 
 public const ETH_MQ_RX_RSS_FLAG: Int64 = 1
@@ -156,70 +135,89 @@ public struct rte_eth_rxmode {
     public var max_rx_pkt_len: UInt32 = unsafe { zeroValue<UInt32>() }
     //< hdr buf size (header_split enabled).*
     public var split_hdr_size: UInt16 = unsafe { zeroValue<UInt16>() }
-    var _bitfield_1: VArray<UInt8, $2> = VArray<UInt8, $2>(repeat: 0)
-    public func header_split(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+    var _bitfield_1: UInt16 = unsafe { zeroValue<UInt16>() }
+    public mut prop header_split: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 1, UInt64(value)) }
+        }
     }
-    public mut func header_split(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    public mut prop hw_ip_checksum: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 1, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 1, 1, UInt64(value)) }
+        }
     }
-    public func hw_ip_checksum(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+    public mut prop hw_vlan_filter: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 2, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 2, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_ip_checksum(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
+    public mut prop hw_vlan_strip: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 3, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 3, 1, UInt64(value)) }
+        }
     }
-    public func hw_vlan_filter(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
+    public mut prop hw_vlan_extend: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 4, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 4, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_vlan_filter(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
+    public mut prop jumbo_frame: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 5, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 5, 1, UInt64(value)) }
+        }
     }
-    public func hw_vlan_strip(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 3, 1) })
+    public mut prop hw_strip_crc: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 6, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 6, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_vlan_strip(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 3, 1, UInt64(val)) }
+    public mut prop enable_scatter: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 7, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 7, 1, UInt64(value)) }
+        }
     }
-    public func hw_vlan_extend(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 4, 1) })
+    public mut prop enable_lro: UInt16 {
+        get() {
+            var s = this._bitfield_1
+            return UInt16(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 8, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 8, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_vlan_extend(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 4, 1, UInt64(val)) }
-    }
-    public func jumbo_frame(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 5, 1) })
-    }
-    public mut func jumbo_frame(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 5, 1, UInt64(val)) }
-    }
-    public func hw_strip_crc(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 6, 1) })
-    }
-    public mut func hw_strip_crc(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 6, 1, UInt64(val)) }
-    }
-    public func enable_scatter(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 7, 1) })
-    }
-    public mut func enable_scatter(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 7, 1, UInt64(val)) }
-    }
-    public func enable_lro(): UInt16 {
-        var s = this._bitfield_1
-        return UInt16(unsafe { __cjbind_bitfield_read(inout s, 8, 1) })
-    }
-    public mut func enable_lro(val!: UInt16): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 8, 1, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt32, $0> = unsafe { zeroValue<VArray<UInt32, $0>>() }
     public init() {}
 }
 
@@ -258,28 +256,35 @@ public struct rte_eth_txmode {
     //< TX multi-queues mode. *
     public var mq_mode: rte_eth_tx_mq_mode = unsafe { zeroValue<rte_eth_tx_mq_mode>() }
     public var pvid: UInt16 = unsafe { zeroValue<UInt16>() }
-    var _bitfield_1: VArray<UInt8, $1> = VArray<UInt8, $1>(repeat: 0)
-    public func hw_vlan_reject_tagged(): UInt8 {
-        var s = this._bitfield_1
-        return UInt8(unsafe { __cjbind_bitfield_read(inout s, 0, 1) })
+    var _bitfield_1: VArray<UInt8, $2> = unsafe { zeroValue<VArray<UInt8, $2>>() }
+    public mut prop hw_vlan_reject_tagged: UInt8 {
+        get() {
+            var s = this._bitfield_1
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 0, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 0, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_vlan_reject_tagged(val!: UInt8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 0, 1, UInt64(val)) }
+    public mut prop hw_vlan_reject_untagged: UInt8 {
+        get() {
+            var s = this._bitfield_1
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 1, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 1, 1, UInt64(value)) }
+        }
     }
-    public func hw_vlan_reject_untagged(): UInt8 {
-        var s = this._bitfield_1
-        return UInt8(unsafe { __cjbind_bitfield_read(inout s, 1, 1) })
+    public mut prop hw_vlan_insert_pvid: UInt8 {
+        get() {
+            var s = this._bitfield_1
+            return UInt8(unsafe { __cjbind_bitfield_read(CPointer<UInt8>(inout s), 2, 1) })
+        }
+        set(value) {
+            unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this._bitfield_1), 2, 1, UInt64(value)) }
+        }
     }
-    public mut func hw_vlan_reject_untagged(val!: UInt8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 1, 1, UInt64(val)) }
-    }
-    public func hw_vlan_insert_pvid(): UInt8 {
-        var s = this._bitfield_1
-        return UInt8(unsafe { __cjbind_bitfield_read(inout s, 2, 1) })
-    }
-    public mut func hw_vlan_insert_pvid(val!: UInt8): Unit {
-        unsafe { __cjbind_bitfield_write(inout this._bitfield_1, 2, 1, UInt64(val)) }
-    }
+    let _cjbind_bitfield_alignment_marker: VArray<UInt32, $0> = unsafe { zeroValue<VArray<UInt32, $0>>() }
     public init() {}
 }
 
@@ -314,11 +319,11 @@ let _ = {
 @C
 public struct rte_eth_rss_conf {
     //< If not NULL, 40-byte hash key. *
-    public let rss_key: CPointer<UInt8>
+    public var rss_key: CPointer<UInt8>
     //< hash key length in bytes. *
-    public let rss_key_len: UInt8
+    public var rss_key_len: UInt8
     //< Hash functions to apply - see below. *
-    public let rss_hf: UInt64
+    public var rss_hf: UInt64
     public init(rss_key: CPointer<UInt8>, rss_key_len: UInt8, rss_hf: UInt64) {
         this.rss_key = rss_key
         this.rss_key_len = rss_key_len
@@ -368,9 +373,9 @@ public type rte_eth_nb_pools = UInt32
 @C
 public struct rte_eth_vmdq_dcb_conf__cjbind_ty_1 {
     //< The vlan ID of the received frame *
-    public let vlan_id: UInt16
+    public var vlan_id: UInt16
     //< Bitmask of pools for packet rx *
-    public let pools: UInt64
+    public var pools: UInt64
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -402,13 +407,13 @@ let _ = {
 @C
 public struct rte_eth_vmdq_dcb_conf {
     //< With DCB, 16 or 32 pools *
-    public let nb_queue_pools: rte_eth_nb_pools
+    public var nb_queue_pools: rte_eth_nb_pools
     //< If non-zero, use a default pool *
-    public let enable_default_pool: UInt8
+    public var enable_default_pool: UInt8
     //< The default pool, if applicable *
-    public let default_pool: UInt8
+    public var default_pool: UInt8
     //< We can have up to 64 filters/mappings *
-    public let nb_pool_maps: UInt8
+    public var nb_pool_maps: UInt8
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_dcb_conf__cjbind_ty_1, $64>
     public let dcb_tc: VArray<UInt8, $8>
@@ -439,7 +444,7 @@ let _ = {
 @C
 public struct rte_eth_dcb_rx_conf {
     //< Possible DCB TCs, 4 or 8 TCs *
-    public let nb_tcs: rte_eth_nb_tcs
+    public var nb_tcs: rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
     public init(nb_tcs: rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
@@ -464,7 +469,7 @@ let _ = {
 @C
 public struct rte_eth_vmdq_dcb_tx_conf {
     //< With DCB, 16 or 32 pools. *
-    public let nb_queue_pools: rte_eth_nb_pools
+    public var nb_queue_pools: rte_eth_nb_pools
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
     public init(nb_queue_pools: rte_eth_nb_pools, dcb_tc: VArray<UInt8, $8>) {
@@ -489,7 +494,7 @@ let _ = {
 @C
 public struct rte_eth_dcb_tx_conf {
     //< Possible DCB TCs, 4 or 8 TCs. *
-    public let nb_tcs: rte_eth_nb_tcs
+    public var nb_tcs: rte_eth_nb_tcs
     // Traffic class each UP mapped to. *
     public let dcb_tc: VArray<UInt8, $8>
     public init(nb_tcs: rte_eth_nb_tcs, dcb_tc: VArray<UInt8, $8>) {
@@ -514,7 +519,7 @@ let _ = {
 @C
 public struct rte_eth_vmdq_tx_conf {
     //< VMDq mode, 64 pools. *
-    public let nb_queue_pools: rte_eth_nb_pools
+    public var nb_queue_pools: rte_eth_nb_pools
     public init(nb_queue_pools: rte_eth_nb_pools) {
         this.nb_queue_pools = nb_queue_pools
     }
@@ -536,9 +541,9 @@ let _ = {
 @C
 public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
     //< The vlan ID of the received frame *
-    public let vlan_id: UInt16
+    public var vlan_id: UInt16
     //< Bitmask of pools for packet rx *
-    public let pools: UInt64
+    public var pools: UInt64
     public init(vlan_id: UInt16, pools: UInt64) {
         this.vlan_id = vlan_id
         this.pools = pools
@@ -561,17 +566,17 @@ let _ = {
 @C
 public struct rte_eth_vmdq_rx_conf {
     //< VMDq only mode, 8 or 64 pools *
-    public let nb_queue_pools: rte_eth_nb_pools
+    public var nb_queue_pools: rte_eth_nb_pools
     //< If non-zero, use a default pool *
-    public let enable_default_pool: UInt8
+    public var enable_default_pool: UInt8
     //< The default pool, if applicable *
-    public let default_pool: UInt8
+    public var default_pool: UInt8
     //< Enable VT loop back *
-    public let enable_loop_back: UInt8
+    public var enable_loop_back: UInt8
     //< We can have up to 64 filters/mappings *
-    public let nb_pool_maps: UInt8
+    public var nb_pool_maps: UInt8
     //< Flags from ETH_VMDQ_ACCEPT_* *
-    public let rx_mode: UInt32
+    public var rx_mode: UInt32
     //< VMDq vlan pool maps. *
     public let pool_map: VArray<rte_eth_vmdq_rx_conf__cjbind_ty_1, $64>
     public init(nb_queue_pools: rte_eth_nb_pools, enable_default_pool: UInt8, default_pool: UInt8,
@@ -647,15 +652,15 @@ public type rte_fdir_status_mode = UInt32
 @C
 public struct rte_eth_ipv4_flow {
     //< IPv4 source address in big endian. *
-    public let src_ip: UInt32
+    public var src_ip: UInt32
     //< IPv4 destination address in big endian. *
-    public let dst_ip: UInt32
+    public var dst_ip: UInt32
     //< Type of service to match. *
-    public let tos: UInt8
+    public var tos: UInt8
     //< Time to live to match. *
-    public let ttl: UInt8
+    public var ttl: UInt8
     //< Protocol, next header in big endian. *
-    public let proto: UInt8
+    public var proto: UInt8
     public init(src_ip: UInt32, dst_ip: UInt32, tos: UInt8, ttl: UInt8, proto: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -686,11 +691,11 @@ public struct rte_eth_ipv6_flow {
     //< IPv6 destination address in big endian. *
     public let dst_ip: VArray<UInt32, $4>
     //< Traffic class to match. *
-    public let tc: UInt8
+    public var tc: UInt8
     //< Protocol, next header to match. *
-    public let proto: UInt8
+    public var proto: UInt8
     //< Hop limits to match. *
-    public let hop_limits: UInt8
+    public var hop_limits: UInt8
     public init(src_ip: VArray<UInt32, $4>, dst_ip: VArray<UInt32, $4>, tc: UInt8, proto: UInt8, hop_limits: UInt8) {
         this.src_ip = src_ip
         this.dst_ip = dst_ip
@@ -718,23 +723,23 @@ let _ = {
 @C
 public struct rte_eth_fdir_masks {
     //< Bit mask for vlan_tci in big endian *
-    public let vlan_tci_mask: UInt16
+    public var vlan_tci_mask: UInt16
     // Bit mask for ipv4 flow in big endian. *
     public let ipv4_mask: rte_eth_ipv4_flow
     // Bit maks for ipv6 flow in big endian. *
     public let ipv6_mask: rte_eth_ipv6_flow
     // Bit mask for L4 source port in big endian. *
-    public let src_port_mask: UInt16
+    public var src_port_mask: UInt16
     // Bit mask for L4 destination port in big endian. *
-    public let dst_port_mask: UInt16
+    public var dst_port_mask: UInt16
     // 6 bit mask for proper 6 bytes of Mac address, bit 0 matches the
     //first byte on the wire *
-    public let mac_addr_byte_mask: UInt8
+    public var mac_addr_byte_mask: UInt8
     // Bit mask for tunnel ID in big endian. *
-    public let tunnel_id_mask: UInt32
+    public var tunnel_id_mask: UInt32
     //< 1 - Match tunnel type,
     //0 - Ignore tunnel type. *
-    public let tunnel_type_mask: UInt8
+    public var tunnel_type_mask: UInt8
     public init(vlan_tci_mask: UInt16, ipv4_mask: rte_eth_ipv4_flow, ipv6_mask: rte_eth_ipv6_flow,
         src_port_mask: UInt16, dst_port_mask: UInt16, mac_addr_byte_mask: UInt8, tunnel_id_mask: UInt32,
         tunnel_type_mask: UInt8) {
@@ -777,7 +782,7 @@ public type rte_eth_payload_type = UInt32
 @C
 public struct rte_eth_flex_payload_cfg {
     //< Payload type *
-    public let type_: rte_eth_payload_type
+    public var type_: rte_eth_payload_type
     public let src_offset: VArray<UInt16, $16>
     public init(type_: rte_eth_payload_type, src_offset: VArray<UInt16, $16>) {
         this.type_ = type_
@@ -802,7 +807,7 @@ let _ = {
 // for each flow type
 @C
 public struct rte_eth_fdir_flex_mask {
-    public let flow_type: UInt16
+    public var flow_type: UInt16
     public let mask: VArray<UInt8, $16>
     public init(flow_type: UInt16, mask: VArray<UInt8, $16>) {
         this.flow_type = flow_type
@@ -828,9 +833,9 @@ let _ = {
 @C
 public struct rte_eth_fdir_flex_conf {
     //< The number of following payload cfg *
-    public let nb_payloads: UInt16
+    public var nb_payloads: UInt16
     //< The number of following mask *
-    public let nb_flexmasks: UInt16
+    public var nb_flexmasks: UInt16
     public let flex_set: VArray<rte_eth_flex_payload_cfg, $8>
     public let flex_mask: VArray<rte_eth_fdir_flex_mask, $22>
     public init(nb_payloads: UInt16, nb_flexmasks: UInt16, flex_set: VArray<rte_eth_flex_payload_cfg, $8>,
@@ -862,13 +867,13 @@ let _ = {
 @C
 public struct rte_fdir_conf {
     //< Flow Director mode. *
-    public let mode: rte_fdir_mode
+    public var mode: rte_fdir_mode
     //< Space for FDIR filters. *
-    public let pballoc: rte_fdir_pballoc_type
+    public var pballoc: rte_fdir_pballoc_type
     //< How to report FDIR hash. *
-    public let status: rte_fdir_status_mode
+    public var status: rte_fdir_status_mode
     // RX queue of packets matching a "drop" filter in perfect mode. *
-    public let drop_queue: UInt8
+    public var drop_queue: UInt8
     public let mask: rte_eth_fdir_masks
     public let flex_conf: rte_eth_fdir_flex_conf
     public init(mode: rte_fdir_mode, pballoc: rte_fdir_pballoc_type, status: rte_fdir_status_mode, drop_queue: UInt8,
@@ -899,9 +904,9 @@ let _ = {
 @C
 public struct rte_intr_conf {
     // enable/disable lsc interrupt. 0 (default) - disable, 1 enable *
-    public let lsc: UInt16
+    public var lsc: UInt16
     // enable/disable rxq interrupt. 0 (default) - disable, 1 enable *
-    public let rxq: UInt16
+    public var rxq: UInt16
     public init(lsc: UInt16, rxq: UInt16) {
         this.lsc = lsc
         this.rxq = rxq
@@ -954,24 +959,6 @@ let _ = {
 public struct rte_eth_conf__cjbind_ty_2 {
     var _storage: VArray<UInt32, $3> = unsafe { zeroValue<VArray<UInt32, $3>>() }
     public init() {}
-    public func vmdq_dcb_tx_conf(): rte_eth_vmdq_dcb_tx_conf {
-        return __cjbind_read_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
-    }
-    public mut func vmdq_dcb_tx_conf(val!: rte_eth_vmdq_dcb_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_vmdq_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
-    }
-    public func dcb_tx_conf(): rte_eth_dcb_tx_conf {
-        return __cjbind_read_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage)
-    }
-    public mut func dcb_tx_conf(val!: rte_eth_dcb_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_dcb_tx_conf_from_VArray_UInt32__3_(this._storage, val)
-    }
-    public func vmdq_tx_conf(): rte_eth_vmdq_tx_conf {
-        return __cjbind_read_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage)
-    }
-    public mut func vmdq_tx_conf(val!: rte_eth_vmdq_tx_conf): Unit {
-        this._storage = __cjbind_write_rte_eth_vmdq_tx_conf_from_VArray_UInt32__3_(this._storage, val)
-    }
 }
 
 @When[debug]
@@ -999,7 +986,7 @@ public struct rte_eth_conf {
     //speeds to be advertised. If the special value
     //ETH_LINK_SPEED_AUTONEG (0) is used, all speeds
     //supported are advertised. *
-    public let link_speeds: UInt32
+    public var link_speeds: UInt32
     //< Port RX configuration. *
     public let rxmode: rte_eth_rxmode
     //< Port TX configuration. *
@@ -1009,14 +996,14 @@ public struct rte_eth_conf {
     //Read the datasheet of given ethernet controller
     //for details. The possible values of this field
     //are defined in implementation of each driver. *
-    public let lpbk_mode: UInt32
+    public var lpbk_mode: UInt32
     //< Port RX filtering configuration (union). *
     public let rx_adv_conf: rte_eth_conf__cjbind_ty_1
     //< Port TX DCB configuration (union). *
     public let tx_adv_conf: rte_eth_conf__cjbind_ty_2
     // Currently,Priority Flow Control(PFC) are supported,if DCB with PFC
     //is needed,and the variable must be set ETH_DCB_PFC_SUPPORT. *
-    public let dcb_capability_en: UInt32
+    public var dcb_capability_en: UInt32
     //< FDIR configuration. *
     public let fdir_conf: rte_fdir_conf
     //< Interrupt mode configuration. *

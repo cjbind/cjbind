@@ -1,9 +1,32 @@
 package cjbind_ffi
 
+// ABI storage for C _Float16 / __fp16 values. The value property is a local bit view; Cangjie Float16 is still not a CType.
+@C
+public struct __CjbindFloat16 {
+    public var bits: UInt16
+
+    public init(bits: UInt16) {
+        this.bits = bits
+    }
+
+    public init(value: Float16) {
+        this.bits = value.toBits()
+    }
+
+    public mut prop value: Float16 {
+        get() {
+            return Float16.fromBits(this.bits)
+        }
+        set(value) {
+            this.bits = value.toBits()
+        }
+    }
+}
+
 @C
 public struct Test__Float16 {
-    public let f: Float16
-    public init(f: Float16) {
+    public var f: __CjbindFloat16
+    public init(f: __CjbindFloat16) {
         this.f = f
     }
 }
@@ -23,8 +46,8 @@ let _ = {
 
 @C
 public struct Test__Float16Ref {
-    public let f: CPointer<Float16>
-    public init(f: CPointer<Float16>) {
+    public var f: CPointer<__CjbindFloat16>
+    public init(f: CPointer<__CjbindFloat16>) {
         this.f = f
     }
 }

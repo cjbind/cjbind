@@ -1,60 +1,95 @@
 package cjbind_ffi
 
-func __cjbind_read_CPointer_UInt8__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>): CPointer<UInt8> {
-    var s = storage
-    return unsafe { CPointer<CPointer<UInt8>>(CPointer<UInt8>(inout s)).read() }
+// A bounded view over a C flexible or zero-length array. Construction from an owning pointer and indexing stay unsafe because pointer validity and lifetime are caller contracts.
+public struct __CjbindArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
+
+    public init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
+
+    public prop pointer: CPointer<T> {
+        get() {
+            return this._pointer
+        }
+    }
+
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
+
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
+
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
+
+    public unsafe operator func [](index: Int64, value!: T): Unit {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        this._pointer.write(index, value)
+    }
 }
 
-func __cjbind_write_CPointer_UInt8__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>, val: CPointer<UInt8>): VArray<UInt8, $2> {
-    var s = storage
-    unsafe { CPointer<CPointer<UInt8>>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
+public struct __CjbindConstArrayView<T> where T <: CType {
+    let _pointer: CPointer<T>
+    let _size: Int64
 
-func __cjbind_read_VArray_UInt8__1__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>): VArray<UInt8, $1> {
-    var s = storage
-    return unsafe { CPointer<VArray<UInt8, $1>>(CPointer<UInt8>(inout s)).read() }
-}
+    init(pointer!: CPointer<T>, size!: Int64) {
+        this._pointer = pointer
+        this._size = size
+        if (size < 0) {
+            throw Exception("array view size cannot be negative")
+        }
+    }
 
-func __cjbind_write_VArray_UInt8__1__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>, val: VArray<UInt8, $1>): VArray<UInt8, $2> {
-    var s = storage
-    unsafe { CPointer<VArray<UInt8, $1>>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
+    public prop size: Int64 {
+        get() {
+            return this._size
+        }
+    }
 
-func __cjbind_read_VArray_UInt8__2__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>): VArray<UInt8, $2> {
-    var s = storage
-    return unsafe { CPointer<VArray<UInt8, $2>>(CPointer<UInt8>(inout s)).read() }
-}
+    public prop isEmpty: Bool {
+        get() {
+            return this._size == 0
+        }
+    }
 
-func __cjbind_write_VArray_UInt8__2__from_VArray_UInt8__2_(storage: VArray<UInt8, $2>, val: VArray<UInt8, $2>): VArray<UInt8, $2> {
-    var s = storage
-    unsafe { CPointer<VArray<UInt8, $2>>(CPointer<UInt8>(inout s)).write(val) }
-    return s
+    public unsafe operator func [](index: Int64): T {
+        if (index < 0 || index >= this._size) {
+            throw Exception("array view index out of bounds")
+        }
+        return this._pointer.read(index)
+    }
 }
 
 @C
 public struct U {
     var _storage: VArray<UInt8, $2> = unsafe { zeroValue<VArray<UInt8, $2>>() }
     public init() {}
-    public func d0(): CPointer<UInt8> {
-        return __cjbind_read_CPointer_UInt8__from_VArray_UInt8__2_(this._storage)
-    }
-    public mut func d0(val!: CPointer<UInt8>): Unit {
-        this._storage = __cjbind_write_CPointer_UInt8__from_VArray_UInt8__2_(this._storage, val)
-    }
-    public func d1(): VArray<UInt8, $1> {
-        return __cjbind_read_VArray_UInt8__1__from_VArray_UInt8__2_(this._storage)
-    }
-    public mut func d1(val!: VArray<UInt8, $1>): Unit {
-        this._storage = __cjbind_write_VArray_UInt8__1__from_VArray_UInt8__2_(this._storage, val)
-    }
-    public func d2(): VArray<UInt8, $2> {
-        return __cjbind_read_VArray_UInt8__2__from_VArray_UInt8__2_(this._storage)
-    }
-    public mut func d2(val!: VArray<UInt8, $2>): Unit {
-        this._storage = __cjbind_write_VArray_UInt8__2__from_VArray_UInt8__2_(this._storage, val)
-    }
+}
+
+public unsafe func U_d0_ptr(value: CPointer<U>): CPointer<UInt8> {
+    return CPointer<UInt8>(CPointer<UInt8>(value) + 0)
+}
+
+public unsafe func U_d0_view(value: CPointer<U>, count!: Int64): __CjbindArrayView<UInt8> {
+    return __CjbindArrayView<UInt8>(pointer: U_d0_ptr(value), size: count)
 }
 
 @When[debug]

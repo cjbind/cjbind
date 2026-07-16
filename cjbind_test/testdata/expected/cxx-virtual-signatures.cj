@@ -27,7 +27,7 @@ public unsafe func RecursiveBase_RecursiveBase_destructor(this_: CPointer<Recurs
 @C
 public struct RecursiveBase {
     public let vtable_: CPointer<Unit>
-    public init(vtable_: CPointer<Unit>) {
+    private init(vtable_: CPointer<Unit>) {
         this.vtable_ = vtable_
     }
 }
@@ -66,7 +66,7 @@ public unsafe func RecursiveDerived_update1(this_: CPointer<RecursiveDerived>, v
 @C
 public struct RecursiveDerived {
     public let _base: RecursiveBase
-    public init(_base: RecursiveBase) {
+    private init(_base: RecursiveBase) {
         this._base = _base
     }
 }
@@ -101,7 +101,7 @@ public struct Secondary__cjbind_vtable {
 @C
 public struct Secondary {
     public let vtable_: CPointer<Secondary__cjbind_vtable>
-    public init(vtable_: CPointer<Secondary__cjbind_vtable>) {
+    private init(vtable_: CPointer<Secondary__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -129,7 +129,7 @@ public unsafe func MultipleInterface_secondary(this_: CPointer<MultipleInterface
 public struct MultipleInterface {
     public let _base: RecursiveDerived
     public let _base_1: Secondary
-    public init(_base: RecursiveDerived, _base_1: Secondary) {
+    private init(_base: RecursiveDerived, _base_1: Secondary) {
         this._base = _base
         this._base_1 = _base_1
     }

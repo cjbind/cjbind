@@ -6,7 +6,7 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.{CjbindOptions, DefaultEnumStyle, FieldInfo}
+import cjbind.options.{CjbindOptions, DefaultEnumStyle, DefaultAliasStyle, FieldInfo}
 import cjbind.utils.formatString
 import std.env.{getCommandLine, getVariable}
 
@@ -93,6 +93,24 @@ func applyTestOptionLine(opt: CjbindOptions, optsStr: String, testcase: String):
                 case "consts" => DefaultEnumStyle.Consts
                 case _ => throw Exception("${testcase}: invalid value '${value}' for test option '${part}'")
             }
+            i += 2
+        } else if (part == "--default-alias-style") {
+            let value = testOptionValue(parts, i, part, testcase)
+            opt.defaultAliasStyle = match (value) {
+                case "type_alias" => DefaultAliasStyle.TypeAlias
+                case "new_type" => DefaultAliasStyle.NewType
+                case "new_type_deref" => DefaultAliasStyle.NewTypeDeref
+                case _ => throw Exception("${testcase}: invalid value '${value}' for test option '${part}'")
+            }
+            i += 2
+        } else if (part == "--type-alias") {
+            opt.typeAliases.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--new-type-alias") {
+            opt.newTypeAliases.add(testOptionValue(parts, i, part, testcase))
+            i += 2
+        } else if (part == "--new-type-alias-deref") {
+            opt.newTypeDerefAliases.add(testOptionValue(parts, i, part, testcase))
             i += 2
         } else if (part == "--objc") {
             opt.objc = true

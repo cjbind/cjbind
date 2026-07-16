@@ -38,7 +38,7 @@ public unsafe func Widget_twice(input: Int32): Int32 {
 
 @C
 public struct Widget {
-    private let value: Int32
+    private var value: Int32
     private init(value: Int32) {
         this.value = value
     }
@@ -78,7 +78,7 @@ public unsafe func C_E_constructor(this_: CPointer<C_E>): Unit {
 @C
 public struct C_E {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -105,7 +105,7 @@ public unsafe func D_E_E_destructor(this_: CPointer<D_E>): Unit {
 @C
 public struct D_E {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }
@@ -126,7 +126,7 @@ let _ = {
 @C
 public struct ManglingArgument {
     let _cjbind_empty: UInt8
-    public init(_cjbind_empty: UInt8) {
+    private init(_cjbind_empty: UInt8) {
         this._cjbind_empty = _cjbind_empty
     }
 }

@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct foo__cjbind_ty_1 {
-    public let x: UInt32
-    public let y: UInt32
+    public var x: UInt32
+    public var y: UInt32
     public init(x: UInt32, y: UInt32) {
         this.x = x
         this.y = y

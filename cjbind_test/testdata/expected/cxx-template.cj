@@ -9,18 +9,18 @@ public struct Holder {
     public let integers: Box_open0_int_close0
     public let doubles: Box_open0_double_close0
     public let specialized: Box_open0_char_close0
-    public let nested: VArray<UInt64, $2>
-    public let fixed: VArray<UInt8, $4>
-    public let largerFixed: VArray<UInt8, $8>
-    public let negative: UInt32
-    public let escaped: UInt8
+    public let nested: Wrap_open0_int_close0
+    public let fixed: Fixed_open0_4_close0
+    public let largerFixed: Fixed_open0_8_close0
+    public let negative: Tag_open0_minus_1_close0
+    public let escaped: CharTag_open0_10_close0
     public let defaulted: DefaultBox_open0_int_close0
     public let explicitDefault: DefaultBox_open0_int_close0
-    public let callbackWrap: VArray<UInt64, $2>
-    public init(integers: Box_open0_int_close0, doubles: Box_open0_double_close0, specialized: Box_open0_char_close0,
-        nested: VArray<UInt64, $2>, fixed: VArray<UInt8, $4>, largerFixed: VArray<UInt8, $8>, negative: UInt32,
-        escaped: UInt8, defaulted: DefaultBox_open0_int_close0, explicitDefault: DefaultBox_open0_int_close0,
-        callbackWrap: VArray<UInt64, $2>) {
+    public let callbackWrap: CallbackWrap_open0_int_close0
+    private init(integers: Box_open0_int_close0, doubles: Box_open0_double_close0, specialized: Box_open0_char_close0,
+        nested: Wrap_open0_int_close0, fixed: Fixed_open0_4_close0, largerFixed: Fixed_open0_8_close0,
+        negative: Tag_open0_minus_1_close0, escaped: CharTag_open0_10_close0, defaulted: DefaultBox_open0_int_close0,
+        explicitDefault: DefaultBox_open0_int_close0, callbackWrap: CallbackWrap_open0_int_close0) {
         this.integers = integers
         this.doubles = doubles
         this.specialized = specialized
@@ -50,10 +50,10 @@ let _ = {
 
 @C
 public struct AliasHolder {
-    public let value: CPointer<Unit>
-    public let integer: Ptr<Int32>
-    public let floating: Ptr<Float64>
-    public init(value: CPointer<Unit>, integer: Ptr<Int32>, floating: Ptr<Float64>) {
+    public var value: CPointer<Unit>
+    public var integer: Ptr<Int32>
+    public var floating: Ptr<Float64>
+    private init(value: CPointer<Unit>, integer: Ptr<Int32>, floating: Ptr<Float64>) {
         this.value = value
         this.integer = integer
         this.floating = floating
@@ -81,9 +81,9 @@ public unsafe func consume(value: Box_open0_int_close0): Unit {
 
 @C
 public struct Box_open0_int_close0 {
-    public let value: Int32
-    public let pointer: CPointer<Int32>
-    public init(value: Int32, pointer: CPointer<Int32>) {
+    public var value: Int32
+    public var pointer: CPointer<Int32>
+    private init(value: Int32, pointer: CPointer<Int32>) {
         this.value = value
         this.pointer = pointer
     }
@@ -103,9 +103,32 @@ let _ = {
 }
 
 @C
+public struct CallbackWrap_open0_int_close0 {
+    public var nested: CPointer<Box_open0_int_close0>
+    public var callback: CFunc<(arg1: Int32) -> Int32>
+    private init(nested: CPointer<Box_open0_int_close0>, callback: CFunc<(arg1: Int32) -> Int32>) {
+        this.nested = nested
+        this.callback = callback
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<CallbackWrap_open0_int_close0>()
+        if (size != 16) {
+            throw Exception("Size of CallbackWrap_open0_int_close0 is not 16 but ${size} bytes")
+        }
+        let align = alignOf<CallbackWrap_open0_int_close0>()
+        if (align != 8) {
+            throw Exception("Alignment of CallbackWrap_open0_int_close0 is not 8 but ${align} bytes")
+        }
+}
+
+@C
 public struct DefaultBox_open0_int_close0 {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -124,10 +147,115 @@ let _ = {
 }
 
 @C
+public struct CharTag_open0_10_close0 {
+    public var value: UInt8
+    private init(value: UInt8) {
+        this.value = value
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<CharTag_open0_10_close0>()
+        if (size != 1) {
+            throw Exception("Size of CharTag_open0_10_close0 is not 1 but ${size} bytes")
+        }
+        let align = alignOf<CharTag_open0_10_close0>()
+        if (align != 1) {
+            throw Exception("Alignment of CharTag_open0_10_close0 is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct Tag_open0_minus_1_close0 {
+    public var value: Int32
+    private init(value: Int32) {
+        this.value = value
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Tag_open0_minus_1_close0>()
+        if (size != 4) {
+            throw Exception("Size of Tag_open0_minus_1_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<Tag_open0_minus_1_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of Tag_open0_minus_1_close0 is not 4 but ${align} bytes")
+        }
+}
+
+@C
+public struct Fixed_open0_8_close0 {
+    public let values: VArray<UInt8, $8>
+    private init(values: VArray<UInt8, $8>) {
+        this.values = values
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Fixed_open0_8_close0>()
+        if (size != 8) {
+            throw Exception("Size of Fixed_open0_8_close0 is not 8 but ${size} bytes")
+        }
+        let align = alignOf<Fixed_open0_8_close0>()
+        if (align != 1) {
+            throw Exception("Alignment of Fixed_open0_8_close0 is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct Fixed_open0_4_close0 {
+    public let values: VArray<UInt8, $4>
+    private init(values: VArray<UInt8, $4>) {
+        this.values = values
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Fixed_open0_4_close0>()
+        if (size != 4) {
+            throw Exception("Size of Fixed_open0_4_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<Fixed_open0_4_close0>()
+        if (align != 1) {
+            throw Exception("Alignment of Fixed_open0_4_close0 is not 1 but ${align} bytes")
+        }
+}
+
+@C
+public struct Wrap_open0_int_close0 {
+    public let nested: Box_open0_int_close0
+    private init(nested: Box_open0_int_close0) {
+        this.nested = nested
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<Wrap_open0_int_close0>()
+        if (size != 16) {
+            throw Exception("Size of Wrap_open0_int_close0 is not 16 but ${size} bytes")
+        }
+        let align = alignOf<Wrap_open0_int_close0>()
+        if (align != 8) {
+            throw Exception("Alignment of Wrap_open0_int_close0 is not 8 but ${align} bytes")
+        }
+}
+
+@C
 public struct Box_open0_char_close0 {
-    let _cjbind_opaque_blob: UInt64
-    public init() {
-        this._cjbind_opaque_blob = unsafe { zeroValue<UInt64>() }
+    public var specialized: Float64
+    private init(specialized: Float64) {
+        this.specialized = specialized
     }
 }
 
@@ -146,9 +274,9 @@ let _ = {
 
 @C
 public struct Box_open0_double_close0 {
-    public let value: Float64
-    public let pointer: CPointer<Float64>
-    public init(value: Float64, pointer: CPointer<Float64>) {
+    public var value: Float64
+    public var pointer: CPointer<Float64>
+    private init(value: Float64, pointer: CPointer<Float64>) {
         this.value = value
         this.pointer = pointer
     }

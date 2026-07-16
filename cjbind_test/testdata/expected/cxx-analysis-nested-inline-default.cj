@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct ranges_detail_Value {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }

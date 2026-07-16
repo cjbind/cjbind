@@ -13,7 +13,7 @@ func __cjbind_write_Int32_from_UInt32(storage: UInt32, val: Int32): UInt32 {
 
 @C
 public struct foo {
-    public let inner: UInt8
+    public var inner: UInt8
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -36,7 +36,7 @@ public type foo_ptr = CPointer<foo>
 
 @C
 public struct bar {
-    public let inner: UInt8
+    public var inner: UInt8
     public init(inner: UInt8) {
         this.inner = inner
     }
@@ -70,11 +70,13 @@ public type baz_ptr = CPointer<baz>
 public struct cat {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func standard_issue(): Int32 {
-        return __cjbind_read_Int32_from_UInt32(this._storage)
-    }
-    public mut func standard_issue(val!: Int32): Unit {
-        this._storage = __cjbind_write_Int32_from_UInt32(this._storage, val)
+    public mut prop standard_issue: Int32 {
+        get() {
+            return __cjbind_read_Int32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_Int32_from_UInt32(this._storage, value)
+        }
     }
 }
 
@@ -112,8 +114,6 @@ foreign func takes_baz_ptr(arg1: baz_ptr): Unit
 foreign func takes_baz_struct(arg1: baz): Unit
 
 foreign func takes_cat_ptr(arg1: cat_ptr): Unit
-
-foreign func takes_cat_union(arg1: cat): Unit
 
 foreign func takes_mad_ptr(arg1: mad_ptr): Unit
 

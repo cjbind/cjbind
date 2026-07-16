@@ -3,7 +3,7 @@ package cjbind_ffi
 @C
 public struct SelectedOuter {
     public let inner: SelectedInner
-    public init(inner: SelectedInner) {
+    private init(inner: SelectedInner) {
         this.inner = inner
     }
 }

@@ -26,7 +26,7 @@ public unsafe func OverloadedCtor_value(this_: CPointer<OverloadedCtor>): Int32 
 
 @C
 public struct OverloadedCtor {
-    private let stored: Int32
+    private var stored: Int32
     private init(stored: Int32) {
         this.stored = stored
     }
@@ -59,8 +59,8 @@ public unsafe func lifetime_OutOfLine_OutOfLine_destructor(this_: CPointer<lifet
 
 @C
 public struct lifetime_OutOfLine {
-    public let marker: Int32
-    public init(marker: Int32) {
+    public var marker: Int32
+    private init(marker: Int32) {
         this.marker = marker
     }
 }

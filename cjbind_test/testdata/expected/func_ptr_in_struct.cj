@@ -4,7 +4,7 @@ public type baz = Int32
 
 @C
 public struct Foo {
-    public let bar: CFunc<(x: Int32, y: Int32) -> baz>
+    public var bar: CFunc<(x: Int32, y: Int32) -> baz>
     public init(bar: CFunc<(x: Int32, y: Int32) -> baz>) {
         this.bar = bar
     }

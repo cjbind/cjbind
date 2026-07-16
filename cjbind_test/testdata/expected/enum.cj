@@ -7,7 +7,7 @@ public type foo__cjbind_ty_1 = UInt32
 
 @C
 public struct foo {
-    public let member: foo__cjbind_ty_1
+    public var member: foo__cjbind_ty_1
     public init(member: foo__cjbind_ty_1) {
         this.member = member
     }

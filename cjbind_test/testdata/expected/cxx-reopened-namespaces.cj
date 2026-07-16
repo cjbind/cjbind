@@ -2,8 +2,8 @@ package cjbind_ffi
 
 @C
 public struct alpha_Forward {
-    public let value: Int32
-    public init(value: Int32) {
+    public var value: Int32
+    private init(value: Int32) {
         this.value = value
     }
 }
@@ -35,8 +35,8 @@ public unsafe func alpha_nested_evaluate1(value: Float64): Float64 {
 
 @C
 public struct beta_Holder {
-    public let pointer: CPointer<alpha_Forward>
-    public init(pointer: CPointer<alpha_Forward>) {
+    public var pointer: CPointer<alpha_Forward>
+    private init(pointer: CPointer<alpha_Forward>) {
         this.pointer = pointer
     }
 }

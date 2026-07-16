@@ -2,7 +2,7 @@ package cjbind_ffi
 
 @C
 public struct TEST_STRUCT {
-    public let ptr_32bit: UInt32
+    public var ptr_32bit: UInt32
     public init(ptr_32bit: UInt32) {
         this.ptr_32bit = ptr_32bit
     }

@@ -14,8 +14,8 @@ public unsafe func Selection_scale(value: Int32): Int32 {
 
 @C
 public struct Selection {
-    public let stored: Int32
-    public init(stored: Int32) {
+    public var stored: Int32
+    private init(stored: Int32) {
         this.stored = stored
     }
 }

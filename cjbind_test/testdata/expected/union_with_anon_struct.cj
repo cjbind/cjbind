@@ -1,20 +1,9 @@
 package cjbind_ffi
 
-func __cjbind_read_foo__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>): foo__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_foo__cjbind_ty_1_from_VArray_UInt32__2_(storage: VArray<UInt32, $2>, val: foo__cjbind_ty_1): VArray<UInt32, $2> {
-    var s = storage
-    unsafe { CPointer<foo__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct foo__cjbind_ty_1 {
-    public let a: UInt32
-    public let b: UInt32
+    public var a: UInt32
+    public var b: UInt32
     public init(a: UInt32, b: UInt32) {
         this.a = a
         this.b = b
@@ -38,12 +27,6 @@ let _ = {
 public struct foo {
     var _storage: VArray<UInt32, $2> = unsafe { zeroValue<VArray<UInt32, $2>>() }
     public init() {}
-    public func bar(): foo__cjbind_ty_1 {
-        return __cjbind_read_foo__cjbind_ty_1_from_VArray_UInt32__2_(this._storage)
-    }
-    public mut func bar(val!: foo__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_foo__cjbind_ty_1_from_VArray_UInt32__2_(this._storage, val)
-    }
 }
 
 @When[debug]

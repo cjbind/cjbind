@@ -11,23 +11,12 @@ func __cjbind_write_UInt32_from_UInt32(storage: UInt32, val: UInt32): UInt32 {
     return s
 }
 
-func __cjbind_read_pixel__cjbind_ty_1_from_UInt32(storage: UInt32): pixel__cjbind_ty_1 {
-    var s = storage
-    return unsafe { CPointer<pixel__cjbind_ty_1>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_pixel__cjbind_ty_1_from_UInt32(storage: UInt32, val: pixel__cjbind_ty_1): UInt32 {
-    var s = storage
-    unsafe { CPointer<pixel__cjbind_ty_1>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct pixel__cjbind_ty_1 {
-    public let r: UInt8
-    public let g: UInt8
-    public let b: UInt8
-    public let a: UInt8
+    public var r: UInt8
+    public var g: UInt8
+    public var b: UInt8
+    public var a: UInt8
     public init(r: UInt8, g: UInt8, b: UInt8, a: UInt8) {
         this.r = r
         this.g = g
@@ -53,17 +42,13 @@ let _ = {
 public struct pixel {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func rgba(): UInt32 {
-        return __cjbind_read_UInt32_from_UInt32(this._storage)
-    }
-    public mut func rgba(val!: UInt32): Unit {
-        this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, val)
-    }
-    public func __cjbind_anon_1(): pixel__cjbind_ty_1 {
-        return __cjbind_read_pixel__cjbind_ty_1_from_UInt32(this._storage)
-    }
-    public mut func __cjbind_anon_1(val!: pixel__cjbind_ty_1): Unit {
-        this._storage = __cjbind_write_pixel__cjbind_ty_1_from_UInt32(this._storage, val)
+    public mut prop rgba: UInt32 {
+        get() {
+            return __cjbind_read_UInt32_from_UInt32(this._storage)
+        }
+        set(value) {
+            this._storage = __cjbind_write_UInt32_from_UInt32(this._storage, value)
+        }
     }
 }
 

@@ -17,7 +17,7 @@ public struct VirtualArgument__cjbind_vtable {
 @C
 public struct VirtualArgument {
     public let vtable_: CPointer<VirtualArgument__cjbind_vtable>
-    public init(vtable_: CPointer<VirtualArgument__cjbind_vtable>) {
+    private init(vtable_: CPointer<VirtualArgument__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -37,17 +37,17 @@ let _ = {
 
 @C
 public struct PlainTemplate {
-    public let marker: Int32
-    public init(marker: Int32) {
+    public var marker: Int32
+    private init(marker: Int32) {
         this.marker = marker
     }
 }
 
 @C
 public struct TemplateArgumentMustNotAddVtable {
-    public let _base: PlainTemplate
-    public let payload: Int32
-    public init(_base: PlainTemplate, payload: Int32) {
+    public let _base: PlainTemplate_open0_VirtualArgument_close0
+    public var payload: Int32
+    private init(_base: PlainTemplate_open0_VirtualArgument_close0, payload: Int32) {
         this._base = _base
         this.payload = payload
     }
@@ -69,8 +69,8 @@ let _ = {
 @C
 public struct FieldMustNotAddVtable {
     public let member: VirtualArgument
-    public let payload: Int32
-    public init(member: VirtualArgument, payload: Int32) {
+    public var payload: Int32
+    private init(member: VirtualArgument, payload: Int32) {
         this.member = member
         this.payload = payload
     }
@@ -106,7 +106,7 @@ public struct OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable {
 @C
 public struct OuterMustNotUseNestedVtable_NestedVirtual {
     public let vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable>
-    public init(vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable>) {
+    private init(vtable_: CPointer<OuterMustNotUseNestedVtable_NestedVirtual__cjbind_vtable>) {
         this.vtable_ = vtable_
     }
 }
@@ -126,8 +126,8 @@ let _ = {
 
 @C
 public struct OuterMustNotUseNestedVtable {
-    public let payload: Int32
-    public init(payload: Int32) {
+    public var payload: Int32
+    private init(payload: Int32) {
         this.payload = payload
     }
 }
@@ -150,7 +150,7 @@ public struct AnalysisVtableIsolationHolder {
     public let templateArgument: TemplateArgumentMustNotAddVtable
     public let field: FieldMustNotAddVtable
     public let nested: OuterMustNotUseNestedVtable
-    public init(templateArgument: TemplateArgumentMustNotAddVtable, field: FieldMustNotAddVtable,
+    private init(templateArgument: TemplateArgumentMustNotAddVtable, field: FieldMustNotAddVtable,
         nested: OuterMustNotUseNestedVtable) {
         this.templateArgument = templateArgument
         this.field = field
@@ -168,5 +168,26 @@ let _ = {
         let align = alignOf<AnalysisVtableIsolationHolder>()
         if (align != 8) {
             throw Exception("Alignment of AnalysisVtableIsolationHolder is not 8 but ${align} bytes")
+        }
+}
+
+@C
+public struct PlainTemplate_open0_VirtualArgument_close0 {
+    public var marker: Int32
+    private init(marker: Int32) {
+        this.marker = marker
+    }
+}
+
+@When[debug]
+let _ = {
+    =>
+        let size = sizeOf<PlainTemplate_open0_VirtualArgument_close0>()
+        if (size != 4) {
+            throw Exception("Size of PlainTemplate_open0_VirtualArgument_close0 is not 4 but ${size} bytes")
+        }
+        let align = alignOf<PlainTemplate_open0_VirtualArgument_close0>()
+        if (align != 4) {
+            throw Exception("Alignment of PlainTemplate_open0_VirtualArgument_close0 is not 4 but ${align} bytes")
         }
 }

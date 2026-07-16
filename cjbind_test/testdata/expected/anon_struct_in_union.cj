@@ -1,19 +1,8 @@
 package cjbind_ffi
 
-func __cjbind_read_s__cjbind_ty_1_inner_from_UInt32(storage: UInt32): s__cjbind_ty_1_inner {
-    var s = storage
-    return unsafe { CPointer<s__cjbind_ty_1_inner>(CPointer<UInt8>(inout s)).read() }
-}
-
-func __cjbind_write_s__cjbind_ty_1_inner_from_UInt32(storage: UInt32, val: s__cjbind_ty_1_inner): UInt32 {
-    var s = storage
-    unsafe { CPointer<s__cjbind_ty_1_inner>(CPointer<UInt8>(inout s)).write(val) }
-    return s
-}
-
 @C
 public struct s__cjbind_ty_1_inner {
-    public let b: Int32
+    public var b: Int32
     public init(b: Int32) {
         this.b = b
     }
@@ -36,12 +25,6 @@ let _ = {
 public struct s__cjbind_ty_1 {
     var _storage: UInt32 = unsafe { zeroValue<UInt32>() }
     public init() {}
-    public func field(): s__cjbind_ty_1_inner {
-        return __cjbind_read_s__cjbind_ty_1_inner_from_UInt32(this._storage)
-    }
-    public mut func field(val!: s__cjbind_ty_1_inner): Unit {
-        this._storage = __cjbind_write_s__cjbind_ty_1_inner_from_UInt32(this._storage, val)
-    }
 }
 
 @When[debug]
