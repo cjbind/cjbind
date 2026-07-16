@@ -31,6 +31,254 @@ public class Attributes {
 }
 
 public class Helpers {
+    public static func float16Type(): TokenStream {
+        let output = TokenStream()
+        output.appendLiteral(
+            "// ABI storage for C _Float16 / __fp16 values. The value property is " +
+            "a local bit view; Cangjie Float16 is still not a CType.\n"
+        )
+        output.`extend`(@tmpl(
+            @C
+            public struct __CjbindFloat16 {
+                public var bits: UInt16
+
+                public init(bits: UInt16) {
+                    this.bits = bits
+                }
+
+                public init(value: Float16) {
+                    this.bits = value.toBits()
+                }
+
+                public mut prop value: Float16 {
+                    get() {
+                        return Float16.fromBits(this.bits)
+                    }
+                    set(value) {
+                        this.bits = value.toBits()
+                    }
+                }
+            }
+        ))
+        return output
+    }
+
+    public static func complexTypes(): TokenStream {
+        let output = TokenStream()
+        output.appendLiteral(
+            "// ABI-only memory carriers for C complex objects. Direct complex " +
+            "parameters and return values are intentionally not generated.\n"
+        )
+        output.`extend`(@tmpl(
+            @C
+            public struct __CjbindComplexFloat16 {
+                public var reBits: UInt16
+                public var imBits: UInt16
+
+                public init(reBits: UInt16, imBits: UInt16) {
+                    this.reBits = reBits
+                    this.imBits = imBits
+                }
+
+                public init(real: Float16, imaginary: Float16) {
+                    this.reBits = real.toBits()
+                    this.imBits = imaginary.toBits()
+                }
+
+                public mut prop real: Float16 {
+                    get() {
+                        return Float16.fromBits(this.reBits)
+                    }
+                    set(value) {
+                        this.reBits = value.toBits()
+                    }
+                }
+
+                public mut prop imaginary: Float16 {
+                    get() {
+                        return Float16.fromBits(this.imBits)
+                    }
+                    set(value) {
+                        this.imBits = value.toBits()
+                    }
+                }
+            }
+
+            @C
+            public struct __CjbindComplexFloat32 {
+                public var re: Float32
+                public var im: Float32
+
+                public init(re: Float32, im: Float32) {
+                    this.re = re
+                    this.im = im
+                }
+
+                public mut prop real: Float32 {
+                    get() {
+                        return this.re
+                    }
+                    set(value) {
+                        this.re = value
+                    }
+                }
+
+                public mut prop imaginary: Float32 {
+                    get() {
+                        return this.im
+                    }
+                    set(value) {
+                        this.im = value
+                    }
+                }
+            }
+
+            @C
+            public struct __CjbindComplexFloat64 {
+                public var re: Float64
+                public var im: Float64
+
+                public init(re: Float64, im: Float64) {
+                    this.re = re
+                    this.im = im
+                }
+
+                public mut prop real: Float64 {
+                    get() {
+                        return this.re
+                    }
+                    set(value) {
+                        this.re = value
+                    }
+                }
+
+                public mut prop imaginary: Float64 {
+                    get() {
+                        return this.im
+                    }
+                    set(value) {
+                        this.im = value
+                    }
+                }
+            }
+        ))
+        return output
+    }
+
+    public static func incompleteArrayViewType(): TokenStream {
+        let output = TokenStream()
+        let negativeSizeError = tokenStreamFromTemplate("\"array view size cannot be negative\"")
+        let outOfBoundsError = tokenStreamFromTemplate("\"array view index out of bounds\"")
+        output.appendLiteral(
+            "// A bounded view over a C flexible or zero-length array. Construction " +
+            "from an owning pointer and indexing stay unsafe because pointer validity and lifetime are caller contracts.\n"
+        )
+        output.`extend`(@tmpl(
+            public struct __CjbindArrayView<T> where T <: CType {
+                let _pointer: CPointer<T>
+                let _size: Int64
+
+                public init(pointer!: CPointer<T>, size!: Int64) {
+                    this._pointer = pointer
+                    this._size = size
+                    if (size < 0) {
+                        throw Exception(${negativeSizeError})
+                    }
+                }
+
+                public prop pointer: CPointer<T> {
+                    get() {
+                        return this._pointer
+                    }
+                }
+
+                public prop size: Int64 {
+                    get() {
+                        return this._size
+                    }
+                }
+
+                public prop isEmpty: Bool {
+                    get() {
+                        return this._size == 0
+                    }
+                }
+
+                public unsafe operator func [](index: Int64): T {
+                    if (index < 0 || index >= this._size) {
+                        throw Exception(${outOfBoundsError})
+                    }
+                    return this._pointer.read(index)
+                }
+
+                public unsafe operator func [](index: Int64, value!: T): Unit {
+                    if (index < 0 || index >= this._size) {
+                        throw Exception(${outOfBoundsError})
+                    }
+                    this._pointer.write(index, value)
+                }
+            }
+
+            // CPointer cannot encode a pointer-to-const. Do not publicly expose
+            // the pointer, and omit a setter so a const array does not acquire write access.
+            public struct __CjbindConstArrayView<T> where T <: CType {
+                let _pointer: CPointer<T>
+                let _size: Int64
+
+                init(pointer!: CPointer<T>, size!: Int64) {
+                    this._pointer = pointer
+                    this._size = size
+                    if (size < 0) {
+                        throw Exception(${negativeSizeError})
+                    }
+                }
+
+                public prop size: Int64 {
+                    get() {
+                        return this._size
+                    }
+                }
+
+                public prop isEmpty: Bool {
+                    get() {
+                        return this._size == 0
+                    }
+                }
+
+                public unsafe operator func [](index: Int64): T {
+                    if (index < 0 || index >= this._size) {
+                        throw Exception(${outOfBoundsError})
+                    }
+                    return this._pointer.read(index)
+                }
+            }
+        ))
+        return output
+    }
+
+    public static func variadicFunctionTypeName(fixedArgumentCount: Int64): String {
+        return "__CjbindVariadicFunction${fixedArgumentCount}"
+    }
+
+    public static func variadicFunctionAlias(fixedArgumentCount: Int64): TokenStream {
+        let parameters = TokenStream()
+        parameters.appendLiteral("R")
+        for (index in 0..fixedArgumentCount) {
+            parameters.appendLiteral(", A${index}")
+        }
+        let name = variadicFunctionTypeName(fixedArgumentCount)
+        let output = TokenStream()
+        output.appendLiteral(
+            "// ABI-only opaque pointer for a C variadic callback. The generic " +
+            "arguments document the source signature; this alias is not callable " +
+            "from Cangjie.\n"
+        )
+        output.`extend`(tokenStreamFromTemplate(
+            "public type ${name}<${parameters}> = CPointer<Unit>"
+        ))
+        return output
+    }
+
     public static func blob(
         _: CjbindContext,
         layout: Layout
@@ -165,15 +413,59 @@ public class Helpers {
             func __cjbind_bitfield_read_signed(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: Int64): Int64 {
                 let raw = unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }
                 if (bitWidth > 0 && bitWidth < 64 && (raw & (UInt64(1) << UInt64(bitWidth - 1))) != 0) {
-                    return Int64(raw | !((UInt64(1) << UInt64(bitWidth)) - 1))
+                    let extended = raw | !((UInt64(1) << UInt64(bitWidth)) - 1)
+                    return unsafe { __cjbind_bitfield_uint64_to_int64(extended) }
                 }
-                return Int64(raw)
+                return unsafe { __cjbind_bitfield_uint64_to_int64(raw) }
+            }
+        )
+    }
+
+    public static func bitfieldSignedConversionHelpers(): TokenStream {
+        return @tmpl(
+            @C
+            func __cjbind_bitfield_int64_to_uint64(value: Int64): UInt64 {
+                var copy = value
+                return unsafe { CPointer<UInt64>(CPointer<Int64>(inout copy)).read() }
+            }
+
+            @C
+            func __cjbind_bitfield_uint64_to_int64(value: UInt64): Int64 {
+                var copy = value
+                return unsafe { CPointer<Int64>(CPointer<UInt64>(inout copy)).read() }
             }
         )
     }
 }
 
 public class AstTy {
+    public static func complexKindCjType(
+        _: CjbindContext,
+        fk: TypeKindFloatKind,
+        layout: ?Layout
+    ): ?TokenStream {
+        return match (fk) {
+            case TypeKindFloatKind.FloatKindFloat16 =>
+                Some(tokenStreamFromTemplate("__CjbindComplexFloat16"))
+            case TypeKindFloatKind.FloatKindFloat =>
+                Some(tokenStreamFromTemplate("__CjbindComplexFloat32"))
+            case TypeKindFloatKind.FloatKindDouble =>
+                Some(tokenStreamFromTemplate("__CjbindComplexFloat64"))
+            case TypeKindFloatKind.FloatKindLongDouble =>
+                match (layout) {
+                    case Some(value) =>
+                        let componentSize = value.size / 2
+                        match (componentSize) {
+                            case 4 => Some(tokenStreamFromTemplate("__CjbindComplexFloat32"))
+                            case 8 => Some(tokenStreamFromTemplate("__CjbindComplexFloat64"))
+                            case _ => None
+                        }
+                    case None => None
+                }
+            case TypeKindFloatKind.FloatKindFloat128 => None
+        }
+    }
+
     public static func cVoid(_: CjbindContext): TokenStream {
         return tokenStreamFromTemplate("Unit")
     }
@@ -254,7 +546,8 @@ public class AstTy {
         layout: ?Layout
     ): TokenStream {
         return match (fk) {
-            case TypeKindFloatKind.FloatKindFloat16 => tokenStreamFromTemplate("Float16")
+            case TypeKindFloatKind.FloatKindFloat16 =>
+                tokenStreamFromTemplate("__CjbindFloat16")
             case TypeKindFloatKind.FloatKindFloat => tokenStreamFromTemplate("Float32")
             case TypeKindFloatKind.FloatKindDouble => tokenStreamFromTemplate("Float64")
             case TypeKindFloatKind.FloatKindLongDouble =>

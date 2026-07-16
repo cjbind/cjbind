@@ -148,6 +148,12 @@ public func generate(opts: CjbindOptions): String {
     if (opts.headers.isEmpty()) {
         throw Exception("没有指定头文件")
     }
+    if (opts.wrapStaticFns && opts.wrapStaticFnsSuffix.isEmpty()) {
+        throw Exception("wrapStaticFnsSuffix 不能为空")
+    }
+    if (opts.wrapStaticFns && opts.wrapStaticFnsPath.map({value => value.isEmpty()}).getOrDefault({=> false})) {
+        throw Exception("wrapStaticFnsPath 不能为空")
+    }
 
     clang.ensureSupportedClangVersion()
 
@@ -184,6 +190,9 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.noComment = opts.noComment
     ctxOpts.makeFuncWrapper = opts.makeFuncWrapper
     ctxOpts.funcWrapperSuffix = opts.funcWrapperSuffix
+    ctxOpts.wrapStaticFns = opts.wrapStaticFns
+    ctxOpts.wrapStaticFnsSuffix = opts.wrapStaticFnsSuffix
+    ctxOpts.wrapStaticFnsPath = opts.wrapStaticFnsPath
     ctxOpts.autoCString = opts.autoCString
     ctxOpts.arrayPointersInArgs = opts.arrayPointersInArgs
     ctxOpts.makeCjString = opts.makeCjString
@@ -191,6 +200,7 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.objcCodegenMode = opts.objcCodegenMode
     ctxOpts.objcGenerateDefinitions = opts.objcGenerateDefinitions
     ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
+    ctxOpts.defaultAliasStyle = opts.defaultAliasStyle
     ctxOpts.fitMacroConstants = opts.fitMacroConstants
     ctxOpts.useUnionAccessorWorkaround = opts.useUnionAccessorWorkaround
     ctxOpts.enableCxxNamespaces = opts.enableCxxNamespaces
@@ -224,6 +234,9 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.allowlistedItems.add(opts.allowlistedItems.toArray())
     ctxOpts.allowlistedVars.add(opts.allowlistedVars.toArray())
     ctxOpts.allowlistedFiles.add(opts.allowlistedFiles.toArray())
+    ctxOpts.typeAliases.add(opts.typeAliases.toArray())
+    ctxOpts.newTypeAliases.add(opts.newTypeAliases.toArray())
+    ctxOpts.newTypeDerefAliases.add(opts.newTypeDerefAliases.toArray())
     ctxOpts.fieldNameCallback = opts.fieldNameCallback
 
     let ctx = CjbindContext(ctxOpts)
@@ -240,7 +253,6 @@ public func generate(opts: CjbindOptions): String {
                 }
                 throw Exception("Failed to generate code: ${detail}")
         }
-
         return module.toString()
     } finally {
         ctx.close()

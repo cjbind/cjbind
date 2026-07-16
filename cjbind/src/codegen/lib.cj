@@ -8,7 +8,7 @@ import cjbind.build.VERSION
 import cjbind.ir.*
 import cjbind.ir.analysis.{computeCoreAnalyses}
 import cjbind.clang
-import cjbind.options.{CjbindOptions, DefaultEnumStyle}
+import cjbind.options.{CjbindOptions, DefaultEnumStyle, DefaultAliasStyle}
 import cjbind.result.Result
 
 public struct CodegenSerializeError {
@@ -33,6 +33,7 @@ public class CodegenResult {
     public let headers: ArrayList<TokenStream> = ArrayList<TokenStream>()
     public let items: ArrayList<TokenStream> = ArrayList<TokenStream>()
     public let helpers: ArrayList<TokenStream> = ArrayList<TokenStream>()
+    public let staticWrappers: ArrayList<StaticWrapper> = ArrayList<StaticWrapper>()
 
     public var sawCjbindUnion: Bool = false
     public var sawIncompleteArray: Bool = false
@@ -126,6 +127,7 @@ public class CodegenResult {
         this.sawBitfieldUnit ||= next.sawBitfieldUnit
         this.headers.add(all: next.headers)
         this.helpers.add(all: next.helpers)
+        this.staticWrappers.add(all: next.staticWrappers)
 
         return next.items
     }
@@ -143,8 +145,33 @@ public func codegen(tctx: CjbindContext): Result<TokenStream, CodegenError> {
     let result = CodegenResult()
     tctx.resolveItem(tctx.rootModule).codegen(tctx, result, ())
 
+    match (serializeStaticWrappers(tctx, result.staticWrappers)) {
+        case Ok(_) => ()
+        case Err(error) => return Err<TokenStream, CodegenError>(error)
+    }
+
     let allItems = ArrayList<TokenStream>()
     allItems.add(all: result.headers)
+    if (tctx.codegenSawFloat16) {
+        allItems.add(Helpers.float16Type())
+    }
+    if (tctx.codegenSawComplex) {
+        allItems.add(Helpers.complexTypes())
+    }
+    if (result.sawIncompleteArray) {
+        allItems.add(Helpers.incompleteArrayViewType())
+    }
+    var maximumVariadicArity: Int64 = -1
+    for (arity in tctx.codegenVariadicFunctionArities) {
+        maximumVariadicArity = max(maximumVariadicArity, arity)
+    }
+    if (maximumVariadicArity >= 0) {
+        for (arity in 0..=maximumVariadicArity) {
+            if (tctx.codegenVariadicFunctionArities.contains(arity)) {
+                allItems.add(Helpers.variadicFunctionAlias(arity))
+            }
+        }
+    }
     allItems.add(all: result.helpers)
     allItems.add(all: result.items)
     let ret = joinStreams(allItems, "\n\n")
@@ -234,7 +261,7 @@ extend Function <: CodeGenerator<Item, Unit> {
             case FunctionLinkage.LinkageExternal => false
         }
 
-        if (isInternal) {
+        if (isInternal && !ctx.options.wrapStaticFns) {
             return
         }
 
@@ -257,7 +284,59 @@ extend Function <: CodeGenerator<Item, Unit> {
         let declarationName = item.canonicalName(ctx)
         let symbolName = this.symbolName()
 
-        if (!signature.abi.isForeignCompatibleForTarget(ctx.targetInfo)) {
+        let isCxx = usesCxxLanguage(ctx.options)
+        let isStaticWrapperVariadic = if (isCxx) {
+            signature.rawIsVariadic()
+        } else {
+            signature.getIsVariadic()
+        }
+        if (isInternal && isStaticWrapperVariadic) {
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                "variadic functions are not supported by --wrap-static-fns"
+            )
+            return
+        }
+
+        if (isInternal) {
+            let isFreeFunction = match (this.kind) {
+                case FunctionKind.KindFunction => true
+                case FunctionKind.KindMethod(_) => false
+            }
+            if (!isFreeFunction) {
+                result.reportSkippedFunction(
+                    item.id,
+                    declarationName,
+                    symbolName,
+                    "C++ member functions are not supported by --wrap-static-fns"
+                )
+                return
+            }
+            if (isCxx && staticWrapperSignatureHasIncompleteTemplateIdentity(ctx, signature)) {
+                result.reportSkippedFunction(
+                    item.id,
+                    declarationName,
+                    symbolName,
+                    "the C++ template argument identity in this signature cannot be reconstructed losslessly"
+                )
+                return
+            }
+        }
+
+        if (!isInternal && isCxx && signature.rawIsVariadic() &&
+            signature.argumentTypes.isEmpty()) {
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                "ellipsis-only variadic functions cannot be represented by the current Cangjie FFI"
+            )
+            return
+        }
+
+        if (!isInternal && !signature.abi.isForeignCompatibleForTarget(ctx.targetInfo)) {
             result.reportSkippedFunction(
                 item.id,
                 declarationName,
@@ -266,8 +345,22 @@ extend Function <: CodeGenerator<Item, Unit> {
             )
             return
         }
-        if (usesCxxLanguage(ctx.options) && hasOpaqueValueAbi(signature, ctx)) {
-            eprintln("Warning: skipping function '${item.canonicalName(ctx)}' because an opaque value ABI cannot be represented safely")
+        if (signature.valueAbiUnsupported) {
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                "the value ABI contains a type that cannot be represented safely by the current Cangjie FFI"
+            )
+            return
+        }
+        if (hasOpaqueValueAbi(signature, ctx)) {
+            result.reportSkippedFunction(
+                item.id,
+                declarationName,
+                symbolName,
+                "an opaque, union, or bitfield-backed value ABI cannot be represented safely by the current Cangjie FFI"
+            )
             return
         }
 
@@ -279,12 +372,22 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         result.sawFunction(symbolName)
 
-        if (!clang.isValidIdentifier(symbolName)) {
+        let internalWrapperBase: ?String = if (isInternal) {
+            Some(result.uniqueFunctionName(declarationName))
+        } else {
+            None
+        }
+        let foreignSymbolName = match (internalWrapperBase) {
+            case Some(base) => "${base}${ctx.options.wrapStaticFnsSuffix}"
+            case None => symbolName
+        }
+
+        if (!clang.isValidIdentifier(foreignSymbolName)) {
             result.reportSkippedFunction(
                 item.id,
                 declarationName,
-                symbolName,
-                unsupportedFunctionSymbolReason(symbolName)
+                foreignSymbolName,
+                unsupportedFunctionSymbolReason(foreignSymbolName)
             )
             return
         }
@@ -296,28 +399,39 @@ extend Function <: CodeGenerator<Item, Unit> {
             None
         }
 
-        let args = Utils.fnsigArguments(ctx, signature)
-        let ret = Utils.fnsigReturnTy(ctx, signature)
-
-        let ident = if (this.mangledName.isSome()) {
-            ctx.cjIdentRaw(symbolName)
+        let typedArgs = Utils.fnsigArguments(ctx, signature)
+        let typedRet = Utils.fnsigReturnTy(ctx, signature)
+        let hasNewTypeValueAbi = newTypeFunctionNeedsWrapper(ctx, signature)
+        let abiArgs = if (hasNewTypeValueAbi) {
+            newTypeAbiArguments(ctx, signature)
         } else {
-            ctx.cjIdent(symbolName)
+            ArrayList<TokenStream>(typedArgs)
+        }
+        let abiRet = if (hasNewTypeValueAbi) {
+            newTypeAbiReturnType(ctx, signature)
+        } else {
+            typedRet
+        }
+
+        let ident = if (!isInternal && this.mangledName.isSome()) {
+            ctx.cjIdentRaw(foreignSymbolName)
+        } else {
+            ctx.cjIdent(foreignSymbolName)
         }
 
         if (signature.getIsVariadic()) {
-            args.add(tokenStreamFromTemplate("..."))
+            abiArgs.add(tokenStreamFromTemplate("..."))
         }
 
-        let argsToken = joinStreams(args, ", ")
+        let abiArgsToken = joinStreams(abiArgs, ", ")
 
-        let declaration = if (signature.abi.isStdcall()) {
+        let declaration = if (!isInternal && signature.abi.isStdcall()) {
             @tmpl(
                 @CallingConv[STDCALL]
-                foreign func ${ident} ( ${argsToken} ) : ${ret}
+                foreign func ${ident} ( ${abiArgsToken} ) : ${abiRet}
             )
         } else {
-            tokenStreamFromTemplate("foreign func ${ident} ( ${argsToken} ) : ${ret}")
+            tokenStreamFromTemplate("foreign func ${ident} ( ${abiArgsToken} ) : ${abiRet}")
         }
 
         let tokens = optionalComment(
@@ -328,9 +442,16 @@ extend Function <: CodeGenerator<Item, Unit> {
 
         result.items.add(tokens)
 
-        let needsWrapper = this.mangledName.isSome() || ctx.options.makeFuncWrapper
+        if (isInternal) {
+            result.staticWrappers.add(StaticWrapper(item.id, foreignSymbolName))
+        }
+
+        let needsWrapper = isInternal || this.mangledName.isSome() ||
+            ctx.options.makeFuncWrapper || hasNewTypeValueAbi
         if (needsWrapper && !signature.getIsVariadic()) {
-            let wrapperBase = if (this.mangledName.isSome()) {
+            let wrapperBase = if (let Some(base) <- internalWrapperBase) {
+                base
+            } else if (this.mangledName.isSome()) {
                 match (this.kind) {
                     case FunctionKind.KindMethod(MethodKind.Constructor) =>
                         "${constructorCanonicalName(ctx, item, name)}_constructor"
@@ -339,15 +460,30 @@ extend Function <: CodeGenerator<Item, Unit> {
             } else {
                 "${name}${ctx.options.funcWrapperSuffix}"
             }
-            let wrapperName = ctx.cjIdent(result.uniqueFunctionName(wrapperBase))
-            let argsName = Utils.fnsigArgumentNames(ctx, signature)
-            let argsNameToken = joinStreams(argsName, ", ")
+            let wrapperName = if (isInternal) {
+                ctx.cjIdent(wrapperBase)
+            } else {
+                ctx.cjIdent(result.uniqueFunctionName(wrapperBase))
+            }
+            let wrapperArgsName = if (hasNewTypeValueAbi) {
+                newTypeAbiCallArguments(ctx, signature)
+            } else {
+                Utils.fnsigArgumentNames(ctx, signature)
+            }
+            let wrapperArgsNameToken = joinStreams(wrapperArgsName, ", ")
+            let typedArgsToken = joinStreams(typedArgs, ", ")
+            let foreignCall = tokenStreamFromTemplate("${ident}( ${wrapperArgsNameToken} )")
+            let wrapperResult = if (valueBoundaryNeedsConversion(ctx, signature.returnType)) {
+                wrapValueBoundary(ctx, signature.returnType, foreignCall)
+            } else {
+                foreignCall
+            }
             let tokens = optionalComment(
                 ctx,
                 commentToken,
                 @tmpl(
-                    public unsafe func ${wrapperName} ( ${argsToken} ) : ${ret} {
-                    return ${ident}( ${argsNameToken} )
+                    public unsafe func ${wrapperName} ( ${typedArgsToken} ) : ${typedRet} {
+                    return ${wrapperResult}
                     }
                 )
             )
@@ -362,9 +498,9 @@ extend Function <: CodeGenerator<Item, Unit> {
                         let classType = receiverInner.toCjTyOrOpaque(ctx, ())
                         let className = ctx.resolveItem(receiverInner).canonicalName(ctx)
                         let constructorName = ctx.cjIdent(result.uniqueFunctionName("${className}_new"))
-                        let constructorArgs = ArrayList<TokenStream>(args)
+                        let constructorArgs = ArrayList<TokenStream>(typedArgs)
                         constructorArgs.remove(at: 0)
-                        let constructorArgNames = ArrayList<TokenStream>(argsName)
+                        let constructorArgNames = ArrayList<TokenStream>(wrapperArgsName)
                         constructorArgNames.remove(at: 0)
                         let constructorArgsToken = joinStreams(constructorArgs, ", ")
                         let constructorCallArgs = ArrayList<TokenStream>()
@@ -414,6 +550,48 @@ func constructorCanonicalName(ctx: CjbindContext, item: Item, name: String): Str
     return canonical
 }
 
+func scalarConstantDeclaration(
+    ctx: CjbindContext,
+    ident: String,
+    typeId: TypeId,
+    expression: TokenStream,
+    expectFloat!: Bool = false,
+    expectBool!: Bool = false
+): ?TokenStream {
+    let canonical = ctx.resolveType(typeId).canonicalType(ctx)
+    let representation = match (canonical.kind) {
+        case TypeKind.TypeKindInt(kind) =>
+            let isBool = match (kind) {
+                case TypeKindIntKind.IntKindBool => true
+                case _ => false
+            }
+            if (expectFloat || isBool != expectBool) {
+                return None
+            }
+            AstTy.intKindCjType(ctx, kind, canonical.getLayout(ctx)).toString()
+        case TypeKind.TypeKindFloat(kind) =>
+            if (!expectFloat || expectBool) {
+                return None
+            }
+            AstTy.floatKindCjType(ctx, kind, canonical.getLayout(ctx)).toString()
+        case _ => return None
+    }
+    let isPrimitive = representation == "Bool" ||
+        representation == "Int8" || representation == "UInt8" ||
+        representation == "Int16" || representation == "UInt16" ||
+        representation == "Int32" || representation == "UInt32" ||
+        representation == "Int64" || representation == "UInt64" ||
+        representation == "Float32" || representation == "Float64"
+    if (!isPrimitive) {
+        return None
+    }
+
+    let value = wrapAliasValue(ctx, typeId, expression)
+    let declaration = if (aliasChainNeedsValueConversion(ctx, typeId)) { "let" } else { "const" }
+    let ty = typeId.toCjTyOrOpaque(ctx, ())
+    return Some(tokenStreamFromTemplate("public ${declaration} ${ident} : ${ty} = ${value}"))
+}
+
 extend Var <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -start !G.FUN.01
     public func codegen(
@@ -438,28 +616,32 @@ extend Var <: CodeGenerator<Item, Unit> {
         }
 
         let varTy = this.ty
-        let ty = varTy.toCjTyOrOpaque(ctx, ())
 
         if (let Some(v) <- this.val) {
             match (v) {
-                case VarType.VarBool(vv) => result
-                    .items
-                    .add(
-                        optionalComment(
-                            ctx,
-                            commentToken,
-                            tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${vv}")
-                        )
-                    )
-                case VarType.VarInt(vv) => result
-                    .items
-                    .add(
-                        optionalComment(
-                            ctx,
-                            commentToken,
-                            tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${vv}")
-                        )
-                    )
+                case VarType.VarBool(vv) =>
+                    if (let Some(tokens) <- scalarConstantDeclaration(
+                        ctx,
+                        canonicalIdent,
+                        varTy,
+                        tokenStreamFromTemplate("${vv}"),
+                        expectBool: true
+                    )) {
+                        result.items.add(optionalComment(ctx, commentToken, tokens))
+                    } else {
+                        eprintln("Warning: skipping constant '${canonicalName}' because its typed value cannot be represented as a Cangjie constant")
+                    }
+                case VarType.VarInt(vv) =>
+                    if (let Some(tokens) <- scalarConstantDeclaration(
+                        ctx,
+                        canonicalIdent,
+                        varTy,
+                        tokenStreamFromTemplate("${vv}")
+                    )) {
+                        result.items.add(optionalComment(ctx, commentToken, tokens))
+                    } else {
+                        eprintln("Warning: skipping constant '${canonicalName}' because its typed value cannot be represented as a Cangjie constant")
+                    }
                 case VarType.VarString(vv) =>
                     let emitByteArray = {=>
                         // Intentionally includes null terminator for C string FFI compatibility
@@ -497,16 +679,17 @@ extend Var <: CodeGenerator<Item, Unit> {
                     )
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
-                        let floatStr = "${vv}".replace("+", "")
-                        result
-                            .items
-                            .add(
-                                optionalComment(
-                                    ctx,
-                                    commentToken,
-                                    tokenStreamFromTemplate("public const ${canonicalIdent} : ${ty} = ${floatStr}")
-                                )
-                            )
+                        if (let Some(tokens) <- scalarConstantDeclaration(
+                            ctx,
+                            canonicalIdent,
+                            varTy,
+                            expr,
+                            expectFloat: true
+                        )) {
+                            result.items.add(optionalComment(ctx, commentToken, tokens))
+                        } else {
+                            eprintln("Warning: skipping float constant '${canonicalName}' because its typed carrier cannot be represented as a Cangjie constant")
+                        }
                     } else {
                         eprintln("Warning: skipping float constant '${canonicalName}' (NaN/Infinity/subnormal cannot be represented)")
                     }
@@ -526,8 +709,9 @@ extend Type <: CodeGenerator<Item, Unit> {
     ): Unit {
         match (this.kind) {
             case TypeKind.TypeKindVoid | TypeKind.TypeKindNullPtr | TypeKind.TypeKindInt(_) | TypeKind.TypeKindFloat(_) | TypeKind
-                    .TypeKindComplex(_) | TypeKind.TypeKindArray(_, _) | TypeKind.TypeKindVector(_, _) | TypeKind
-                    .TypeKindPointer(_) | TypeKind.TypeKindReference(_) | TypeKind.TypeKindFunction(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
+                    .TypeKindComplex(_) | TypeKind.TypeKindFunction(_) | TypeKind
+                    .TypeKindArray(_, _) | TypeKind.TypeKindVector(_, _) | TypeKind
+                    .TypeKindPointer(_) | TypeKind.TypeKindReference(_) | TypeKind.ResolvedTypeRef(_) | TypeKind
                     .TypeKindTypeParam | TypeKind.TypeKindTemplateInstantiation(_) | TypeKind
                     .TypeKindOpaque => ()
             case TypeKind.TypeKindObjCInterface(iface) => iface.codegen(ctx, result, item)
@@ -670,11 +854,19 @@ func codegenTypeAlias(
         let joined = joinStreams(parameterNames, ", ")
         tokenStreamFromTemplate("<${joined}>")
     }
-    result.items.add(optionalComment(
+    let ident = ctx.cjIdent(name)
+    let aliasStyle = effectiveAliasStyle(
         ctx,
-        commentToken,
-        tokenStreamFromTemplate("public type ${ctx.cjIdent(name)}${genericParameters} = ${innerCjType}")
-    ))
+        item,
+        throughTypeAliases,
+        !parameterNames.isEmpty()
+    )
+    let declaration = if (aliasStyle == DefaultAliasStyle.TypeAlias) {
+        tokenStreamFromTemplate("public type ${ident}${genericParameters} = ${innerCjType}")
+    } else {
+        newTypeAliasDeclaration(ident, innerCjType, aliasStyle)
+    }
+    result.items.add(optionalComment(ctx, commentToken, declaration))
 }
 
 func renderGenericAliasType(
@@ -812,13 +1004,9 @@ func renderGenericAliasType(
             )
             match (innerResult) {
                 case Ok(innerType) =>
-                    if (length == 0) {
-                        Ok<TokenStream, Error>(tokenStreamFromTemplate("CPointer<${innerType}>"))
-                    } else {
-                        Ok<TokenStream, Error>(tokenStreamFromTemplate(
-                            "VArray<${innerType}, \$${Int64(length)}>"
-                        ))
-                    }
+                    Ok<TokenStream, Error>(tokenStreamFromTemplate(
+                        "VArray<${innerType}, \$${Int64(length)}>"
+                    ))
                 case Err(error) =>
                     if (length == 0) {
                         degraded.value = true
@@ -1049,9 +1237,16 @@ func renderConcreteTemplateAlias(
             ctypeSubstitutions.add(parameter)
             ctypeSubstitutions.add(resolvedParameter.id)
         }
-        let argumentHasRepresentableValueAbi = outerValueAbiSubstitutions.contains(argument) ||
-            outerValueAbiSubstitutions.contains(resolvedArgument.id) ||
-            (argumentIsConcrete && !typeHasOpaqueValueAbiForCodegen(argument, ctx))
+        // A C/C++ typedef selected as a Cangjie newtype has the same object
+        // layout, but its single-field @C struct does not have the typedef's
+        // scalar call ABI. Generic callback aliases cannot insert a wrapper at
+        // the callback boundary, so do not claim that such a substitution is
+        // directly representable by value. Pointer uses remain valid.
+        let argumentNeedsValueConversion = valueBoundaryNeedsConversion(ctx, argument)
+        let argumentHasRepresentableValueAbi = !argumentNeedsValueConversion &&
+            (outerValueAbiSubstitutions.contains(argument) ||
+                outerValueAbiSubstitutions.contains(resolvedArgument.id) ||
+                (argumentIsConcrete && !typeHasOpaqueValueAbiForCodegen(argument, ctx)))
         if (argumentHasRepresentableValueAbi) {
             valueAbiSubstitutions.add(parameter)
             valueAbiSubstitutions.add(resolvedParameter.id)
@@ -1082,11 +1277,6 @@ func renderGenericAliasFunction(
     if (!signature.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
         return Err(Error.UnsupportedAbi(signature.abi.diagnosticName()))
     }
-    if (signature.getIsVariadic()) {
-        return Err(Error.Unsupported(
-            "variadic function pointers cannot be represented by the current Cangjie FFI"
-        ))
-    }
     if (signature.valueAbiUnsupported || hasOpaqueValueAbiWithRepresentedTypeParams(
         signature,
         ctx,
@@ -1098,6 +1288,7 @@ func renderGenericAliasFunction(
     }
 
     let arguments = ArrayList<TokenStream>()
+    let argumentTypes = ArrayList<TokenStream>()
     var unnamedArgument = 0
     for ((argumentName, argumentTypeId) in signature.argumentTypes) {
         let argumentItem = ctx.resolveItem(argumentTypeId)
@@ -1117,9 +1308,19 @@ func renderGenericAliasFunction(
                 case Err(error) => return Err(error)
             }
         } else {
+            // Named newtypes are object-layout compatible with their source
+            // typedef, but not necessarily call-ABI compatible with the
+            // underlying scalar. A callback has nowhere to insert the public
+            // wrap/unwrap shim used for ordinary foreign functions, so spell
+            // its direct value boundary with the source ABI type instead.
+            let abiArgumentType = if (valueBoundaryNeedsConversion(ctx, argumentTypeId)) {
+                valueBoundaryAbiTarget(ctx, argumentTypeId)
+            } else {
+                argumentTypeId
+            }
             match (renderGenericAliasType(
                 ctx,
-                argumentTypeId,
+                abiArgumentType,
                 substitutions,
                 visiting,
                 ctypeSubstitutions: ctypeSubstitutions,
@@ -1137,6 +1338,7 @@ func renderGenericAliasFunction(
                 unnamedArgument += 1
                 "arg${unnamedArgument}"
         }
+        argumentTypes.add(renderedArgument)
         arguments.add(tokenStreamFromTemplate("${name}: ${renderedArgument}"))
     }
 
@@ -1144,9 +1346,14 @@ func renderGenericAliasFunction(
     let returnType = if (let TypeKind.TypeKindVoid <- returnItem.kind.expectType().canonicalType(ctx).kind) {
         tokenStreamFromTemplate("Unit")
     } else {
+        let abiReturnType = if (valueBoundaryNeedsConversion(ctx, signature.returnType)) {
+            valueBoundaryAbiTarget(ctx, signature.returnType)
+        } else {
+            signature.returnType
+        }
         match (renderGenericAliasType(
             ctx,
-            signature.returnType,
+            abiReturnType,
             substitutions,
             visiting,
             ctypeSubstitutions: ctypeSubstitutions,
@@ -1157,6 +1364,15 @@ func renderGenericAliasFunction(
             case Ok(value) => value
             case Err(error) => return Err(error)
         }
+    }
+    if (signature.rawIsVariadic()) {
+        ctx.codegenVariadicFunctionArities.add(signature.argumentTypes.size)
+        let typeArguments = ArrayList<TokenStream>()
+        typeArguments.add(returnType)
+        typeArguments.add(all: argumentTypes)
+        let joinedTypeArguments = joinStreams(typeArguments, ", ")
+        let typeName = Helpers.variadicFunctionTypeName(signature.argumentTypes.size)
+        return Ok(tokenStreamFromTemplate("${typeName}<${joinedTypeArguments}>") )
     }
     let joinedArguments = joinStreams(arguments, ", ")
     return Ok(tokenStreamFromTemplate("CFunc<(${joinedArguments}) -> ${returnType}>") )
@@ -1205,6 +1421,212 @@ func reportUnsupportedVirtualMethodAbis(
             )
         }
     }
+}
+
+func directZeroLengthArrayElement(
+    ctx: CjbindContext,
+    typeId: TypeId,
+    visiting: ItemSet
+): ?TypeId {
+    if (!visiting.add(typeId)) {
+        return None
+    }
+    let ty = ctx.resolveType(typeId)
+    return match (ty.kind) {
+        case TypeKind.ResolvedTypeRef(inner) =>
+            directZeroLengthArrayElement(ctx, inner, visiting)
+        case TypeKind.TypeKindAlias(inner) =>
+            directZeroLengthArrayElement(ctx, inner, visiting)
+        case TypeKind.TypeKindTemplateAlias(inner, _) =>
+            directZeroLengthArrayElement(ctx, inner, visiting)
+        case TypeKind.TypeKindArray(inner, length) =>
+            if (length == 0) { Some(inner) } else { None }
+        // Following another template instantiation here would cross a new
+        // template-parameter scope. Without composing both substitutions we
+        // cannot prove the concrete element type, so let the caller skip the
+        // accessor instead of leaking an unbound type parameter.
+        case _ => None
+    }
+}
+
+func zeroLengthArrayElementType(
+    ctx: CjbindContext,
+    typeId: TypeId,
+    visiting: ItemSet
+): ?TokenStream {
+    if (!visiting.add(typeId)) {
+        return None
+    }
+
+    if (let Some(replacement) <- ctx.codegenTemplateReplacement(typeId)) {
+        if (replacement != typeId) {
+            if (let Some(rendered) <- zeroLengthArrayElementType(ctx, replacement, visiting)) {
+                return Some(rendered)
+            }
+        }
+    }
+
+    let item = ctx.resolveItem(typeId)
+    let ty = item.kind.expectType()
+    return match (ty.kind) {
+        case TypeKind.ResolvedTypeRef(inner) =>
+            zeroLengthArrayElementType(ctx, inner, visiting)
+        case TypeKind.TypeKindAlias(inner) =>
+            zeroLengthArrayElementType(ctx, inner, visiting)
+        case TypeKind.TypeKindTemplateAlias(inner, _) =>
+            zeroLengthArrayElementType(ctx, inner, visiting)
+        case TypeKind.TypeKindArray(inner, length) =>
+            if (length != 0 || ctx.usesAnyTemplateParameters(inner)) {
+                None
+            } else {
+                match (inner.tryToCjTyOrOpaque(ctx, ())) {
+                    case Ok(rendered) => Some(rendered)
+                    case Err(_) => None
+                }
+            }
+        case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
+            let definition = instantiation.definition
+                .intoResolver()
+                .throughTypeRefs()
+                .resolve(ctx)
+            match (definition.kind.expectType().kind) {
+                case TypeKind.TypeKindTemplateAlias(inner, _) =>
+                    let parameters = selfTemplateParams(definition.id, ctx)
+                    if (!instantiation.nonTypeArguments.isEmpty() ||
+                        parameters.size != instantiation.arguments.size) {
+                        return None
+                    }
+                    let element = match (directZeroLengthArrayElement(
+                        ctx,
+                        inner,
+                        ItemSet()
+                    )) {
+                        case Some(value) => value
+                        case None => return None
+                    }
+                    let degraded = Box(false)
+                    let rendered = renderConcreteTemplateAlias(
+                        ctx,
+                        element,
+                        parameters,
+                        instantiation.arguments,
+                        HashMap<ItemId, String>(),
+                        ItemSet(),
+                        requiresCType: true,
+                        outerDegraded: degraded
+                    )
+                    if (degraded.value) {
+                        return None
+                    }
+                    match (rendered) {
+                        case Ok(value) => Some(value)
+                        case Err(_) => None
+                    }
+                case _ => None
+            }
+        case _ => None
+    }
+}
+
+/// Only expose direct field assignment when the source type is known to have
+/// value-like assignment semantics. Arrays and references are not assignable
+/// in C/C++, and C++ record assignment may invoke unavailable special members.
+func fieldHasValueLikeAccess(ctx: CjbindContext, typeId: TypeId): Bool {
+    let canonical = match (ctx.resolveType(typeId).safeCanonicalType(ctx)) {
+        case Some(value) => value
+        case None => return false
+    }
+    return match (canonical.kind) {
+        case TypeKind.TypeKindNullPtr |
+            TypeKind.TypeKindInt(_) |
+            TypeKind.TypeKindFloat(_) |
+            TypeKind.TypeKindComplex(_) |
+            TypeKind.TypeKindVector(_, _) |
+            TypeKind.TypeKindEnum(_) |
+            TypeKind.TypeKindPointer(_) |
+            TypeKind.TypeKindObjCId |
+            TypeKind.TypeKindObjCSel |
+            TypeKind.TypeKindObjCBlockPointer(_) => true
+        case _ => false
+    }
+}
+
+func typeUseIsConst(ctx: CjbindContext, typeId: TypeId): Bool {
+    let useType = ctx.resolveType(typeId)
+    if (useType.isConst) {
+        return true
+    }
+    return useType.safeCanonicalType(ctx).map({value => value.isConst}).getOrDefault({=> false})
+}
+
+func fieldStorageKeyword(ctx: CjbindContext, typeId: TypeId): String {
+    if (typeUseIsConst(ctx, typeId) || !fieldHasValueLikeAccess(ctx, typeId)) {
+        return "let"
+    }
+    return "var"
+}
+
+func zeroLengthArrayAccessor(
+    ctx: CjbindContext,
+    result: CodegenResult,
+    ownerName: String,
+    ownerIdent: String,
+    data: FieldData,
+    element: TypeId
+): ?TokenStream {
+    let rawFieldName = match (data.name) {
+        case Some(value) => value
+        case None => return None
+    }
+    let bitOffset = match (data.offset) {
+        case Some(value) => value
+        case None => return None
+    }
+    if (bitOffset % 8 != 0) {
+        eprintln("Warning: cannot generate an array pointer accessor for '${ownerName}.${rawFieldName}' because its offset is not byte aligned")
+        return None
+    }
+
+    let elementTy = match (zeroLengthArrayElementType(ctx, data.ty, ItemSet())) {
+        case Some(value) => value
+        case None =>
+            eprintln(
+                "Warning: cannot generate an array pointer accessor for '${ownerName}.${rawFieldName}' because its concrete element type could not be represented safely"
+            )
+            return None
+    }
+    let fieldName = ctx.cjMangle(rawFieldName)
+    // Cangjie treats extension member names as package-wide even when the
+    // specialized CPointer receiver types differ, so include the owner.
+    let viewName = ctx.cjIdent(result.uniqueFunctionName("${ownerName}_${fieldName}_view"))
+    let byteOffset = Int64(bitOffset / 8)
+    let visibility = if (ctx.options.respectCxxAccessSpecs && !data.isPublic) {
+        "private "
+    } else {
+        "public "
+    }
+
+    result.sawIncompleteArray = true
+    let elementIsConst = typeUseIsConst(ctx, element) || typeUseIsConst(ctx, data.ty)
+    if (elementIsConst) {
+        return Some(@tmpl(
+            ${visibility}unsafe func ${viewName}(value: CPointer<${ownerIdent}>, count!: Int64): __CjbindConstArrayView<${elementTy}> {
+                let pointer = CPointer<${elementTy}>(CPointer<UInt8>(value) + ${byteOffset})
+                return __CjbindConstArrayView<${elementTy}>(pointer: pointer, size: count)
+            }
+        ))
+    }
+
+    let accessorName = ctx.cjIdent(result.uniqueFunctionName("${ownerName}_${fieldName}_ptr"))
+    return Some(@tmpl(
+        ${visibility}unsafe func ${accessorName}(value: CPointer<${ownerIdent}>): CPointer<${elementTy}> {
+            return CPointer<${elementTy}>(CPointer<UInt8>(value) + ${byteOffset})
+        }
+
+        ${visibility}unsafe func ${viewName}(value: CPointer<${ownerIdent}>, count!: Int64): __CjbindArrayView<${elementTy}> {
+            return __CjbindArrayView<${elementTy}>(pointer: ${accessorName}(value), size: count)
+        }
+    ))
 }
 
 extend CompInfo <: CodeGenerator<Item, Unit> {
@@ -1263,6 +1685,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
         let fields = ArrayList<TokenStream>()
+        let zeroLengthArrayAccessors = ArrayList<TokenStream>()
 
         let sigs = TokenStream()
         let inits = ArrayList<TokenStream>()
@@ -1350,7 +1773,8 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 case Some(l) =>
                     let blobTy = Helpers.blob(ctx, l)
                     fields.add(tokenStreamFromTemplate("var _storage: ${blobTy} = unsafe { zeroValue<${blobTy}>() }"))
-                    fields.add(tokenStreamFromTemplate("public init() {}"))
+                    let unionInitVisibility = if (this.isCxxRecord) { "private " } else { "public " }
+                    fields.add(tokenStreamFromTemplate("${unionInitVisibility}init() {}"))
 
                     let fieldDecls = this.getFields()
                     for (field in fieldDecls) {
@@ -1361,6 +1785,27 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                     case None => continue
                                 }
                                 let fieldIdent = ctx.cjIdent(fieldName)
+                                let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
+                                let fieldType = fieldItem.kind.expectType()
+                                if (let Some(element) <- fieldType.isInCompleteArray(ctx)) {
+                                    if (let Some(accessor) <- zeroLengthArrayAccessor(
+                                        ctx,
+                                        result,
+                                        canonicalName,
+                                        canonicalIdent,
+                                        data,
+                                        element
+                                    )) {
+                                        zeroLengthArrayAccessors.add(accessor)
+                                    }
+                                    continue
+                                }
+                                if (!fieldHasValueLikeAccess(ctx, data.ty)) {
+                                    eprintln(
+                                        "Warning: not generating a union property for '${canonicalName}.${fieldName}' because its value semantics cannot be represented safely"
+                                    )
+                                    continue
+                                }
                                 let fieldTy = data.ty.toCjTyOrOpaque(ctx, ())
                                 let fieldTypeName = Helpers.unionHelperSuffix(ctx, fieldTy)
                                 let storageTypeName = Helpers.unionHelperSuffix(ctx, blobTy)
@@ -1385,27 +1830,44 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                     "public "
                                 }
 
-                                if (ctx.options.useUnionAccessorWorkaround) {
+                                if (typeUseIsConst(ctx, data.ty) && ctx.options.useUnionAccessorWorkaround) {
                                     fields.add(@tmpl(
-                                        ${visibility}func ${fieldIdent}(): ${fieldTy} {
-                                            return ${readFuncName}(this._storage)
+                                        ${visibility}prop ${fieldIdent}: ${fieldTy} {
+                                            get() {
+                                                return ${readFuncName}(this._storage)
+                                            }
                                         }
                                     ))
+                                } else if (typeUseIsConst(ctx, data.ty)) {
                                     fields.add(@tmpl(
-                                        ${visibility}mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
-                                            this._storage = ${writeFuncName}(this._storage, val)
+                                        ${visibility}prop ${fieldIdent}: ${fieldTy} {
+                                            get() {
+                                                var s = this._storage
+                                                return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
+                                            }
+                                        }
+                                    ))
+                                } else if (ctx.options.useUnionAccessorWorkaround) {
+                                    fields.add(@tmpl(
+                                        ${visibility}mut prop ${fieldIdent}: ${fieldTy} {
+                                            get() {
+                                                return ${readFuncName}(this._storage)
+                                            }
+                                            set(value) {
+                                                this._storage = ${writeFuncName}(this._storage, value)
+                                            }
                                         }
                                     ))
                                 } else {
                                     fields.add(@tmpl(
-                                        ${visibility}func ${fieldIdent}(): ${fieldTy} {
-                                            var s = this._storage
-                                            return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
-                                        }
-                                    ))
-                                    fields.add(@tmpl(
-                                        ${visibility}mut func ${fieldIdent}(val!: ${fieldTy}): Unit {
-                                            unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), val) }
+                                        ${visibility}mut prop ${fieldIdent}: ${fieldTy} {
+                                            get() {
+                                                var s = this._storage
+                                                return unsafe { ${readFuncName}(CPointer<UInt8>(inout s)) }
+                                            }
+                                            set(value) {
+                                                unsafe { ${writeFuncName}(CPointer<UInt8>(inout this._storage), value) }
+                                            }
                                         }
                                     ))
                                 }
@@ -1419,9 +1881,26 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             let fieldDecls = this.getFields()
 
             if (hasBitfields) {
+                let occupiedFieldNames = HashSet<String>()
                 for (field in fieldDecls) {
                     match (field) {
                         case Field.DataMember(data) =>
+                            if (let Some(name) <- data.name) {
+                                occupiedFieldNames.add(ctx.cjMangle(name))
+                            }
+                        case Field.Bitfields(unit) =>
+                            for (bitfield in unit.bitfields) {
+                                if (let Some(name) <- bitfield.data.name) {
+                                    occupiedFieldNames.add(ctx.cjMangle(name))
+                                }
+                            }
+                    }
+                }
+                for (field in fieldDecls) {
+                    match (field) {
+                        case Field.DataMember(data) =>
+                            let fieldItem = data.ty.intoResolver().throughTypeRefs().resolve(ctx)
+                            let fieldTy = fieldItem.kind.expectType()
                             let ty = data.ty.toCjTyOrOpaque(ctx, ())
 
                             let fcomment: ?TokenStream = if (let Some(c) <- data.comment) {
@@ -1441,21 +1920,43 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 "public "
                             }
 
+                            if (let Some(element) <- fieldTy.isInCompleteArray(ctx)) {
+                                let fieldStorage = fieldStorageKeyword(ctx, data.ty)
+                                let fieldToken = optionalComment(
+                                    ctx,
+                                    fcomment,
+                                    tokenStreamFromTemplate("${visibility}${fieldStorage} ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
+                                )
+                                fields.add(fieldToken)
+                                if (let Some(accessor) <- zeroLengthArrayAccessor(
+                                    ctx,
+                                    result,
+                                    canonicalName,
+                                    canonicalIdent,
+                                    data,
+                                    element
+                                )) {
+                                    zeroLengthArrayAccessors.add(accessor)
+                                }
+                                continue
+                            }
+
+                            let fieldStorage = fieldStorageKeyword(ctx, data.ty)
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                tokenStreamFromTemplate("${visibility}var ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
+                                tokenStreamFromTemplate("${visibility}${fieldStorage} ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
                             )
                             fields.add(fieldToken)
 
                         case Field.Bitfields(unit) =>
-                            let unitSize = Int64(unit.layout.size)
                             let unitNth = Int64(unit.nth)
-                            let storageName = "_bitfield_${unitNth}"
+                            let storageName = uniqueName(occupiedFieldNames, "_bitfield_${unitNth}")
                             let storageIdent = ctx.cjIdent(storageName)
+                            let storageTy = Helpers.blob(ctx, unit.layout)
 
                             fields.add(
-                                tokenStreamFromTemplate("var ${storageIdent} : VArray<UInt8, \$${unitSize}> = VArray<UInt8, \$${unitSize}>(repeat: 0)")
+                                tokenStreamFromTemplate("var ${storageIdent} : ${storageTy} = unsafe { zeroValue<${storageTy}>() }")
                             )
 
                             for (bf in unit.bitfields) {
@@ -1473,36 +1974,99 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                     "public "
                                 }
 
-                                let bfFieldItem = bf.data.ty.intoResolver().throughTypeRefs().resolve(ctx)
-                                let bfFieldTy = bfFieldItem.kind.expectType()
-                                let isSigned = match (bfFieldTy.canonicalType(ctx).kind) {
+                                let baseItem = bf.data.ty
+                                    .intoResolver()
+                                    .throughTypeRefs()
+                                    .throughTypeAliases()
+                                    .resolve(ctx)
+                                let baseType = baseItem.kind.expectType()
+                                let reprId = match (baseType.kind) {
+                                    case TypeKind.TypeKindEnum(en) => match (en.repr) {
+                                        case Some(value) => value
+                                        case None => throw Exception("bitfield enum has no integer representation")
+                                    }
+                                    case _ => baseItem.id
+                                }
+                                let reprItem = reprId
+                                    .intoResolver()
+                                    .throughTypeRefs()
+                                    .throughTypeAliases()
+                                    .resolve(ctx)
+                                let reprType = reprItem.kind.expectType().canonicalType(ctx)
+                                let reprTy = reprItem.id.toCjTyOrOpaque(ctx, ())
+                                let isBool = reprType.isBool()
+                                let isSigned = match (reprType.kind) {
                                     case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
-                                    case TypeKind.TypeKindEnum(en) =>
-                                        match (en.repr) {
-                                            case Some(reprId) =>
-                                                let reprTy = ctx.resolveType(reprId)
-                                                match (reprTy.canonicalType(ctx).kind) {
-                                                    case TypeKind.TypeKindInt(ik) => ik.isSigned().getOrDefault({=> false})
-                                                    case _ => false
-                                                }
-                                            case None => false
-                                        }
                                     case _ => false
                                 }
                                 let readFunc = if (isSigned) { "__cjbind_bitfield_read_signed" } else { "__cjbind_bitfield_read" }
+                                let rawRead = tokenStreamFromTemplate(
+                                    "unsafe { ${readFunc}(CPointer<UInt8>(inout s), ${bitOffset}, ${bitWidth}) }"
+                                )
+                                let reprValue = if (isBool) {
+                                    tokenStreamFromTemplate("(${rawRead}) != 0")
+                                } else {
+                                    tokenStreamFromTemplate("${reprTy}(${rawRead})")
+                                }
+                                let baseValue = match (baseType.kind) {
+                                    case TypeKind.TypeKindEnum(_) =>
+                                        if (ctx.options.defaultEnumStyle == DefaultEnumStyle.NewType) {
+                                            let enumIdent = ctx.cjIdent(baseItem.canonicalName(ctx))
+                                            tokenStreamFromTemplate("${enumIdent}(rawValue: ${reprValue})")
+                                        } else {
+                                            reprValue
+                                        }
+                                    case _ => reprValue
+                                }
+                                let readValue = wrapAliasValue(ctx, bf.data.ty, baseValue)
+                                let unwrappedValue = unwrapAliasValue(
+                                    ctx,
+                                    bf.data.ty,
+                                    tokenStreamFromTemplate("value")
+                                )
+                                let baseWriteValue = match (baseType.kind) {
+                                    case TypeKind.TypeKindEnum(_) =>
+                                        if (ctx.options.defaultEnumStyle == DefaultEnumStyle.NewType) {
+                                            tokenStreamFromTemplate("${unwrappedValue}.rawValue")
+                                        } else {
+                                            unwrappedValue
+                                        }
+                                    case _ => unwrappedValue
+                                }
+                                let writeValue = if (isBool) {
+                                    tokenStreamFromTemplate(
+                                        "if (${baseWriteValue}) { UInt64(1) } else { UInt64(0) }"
+                                    )
+                                } else if (isSigned) {
+                                    tokenStreamFromTemplate(
+                                        "__cjbind_bitfield_int64_to_uint64(Int64(${baseWriteValue}))"
+                                    )
+                                } else {
+                                    tokenStreamFromTemplate("UInt64(${baseWriteValue})")
+                                }
 
-                                fields.add(@tmpl(
-                                    ${visibility}func ${bfIdent}(): ${bfTy} {
-                                        var s = this.${storageIdent}
-                                        return ${bfTy}(unsafe { ${readFunc}(inout s, ${bitOffset}, ${bitWidth}) })
-                                    }
-                                ))
-
-                                fields.add(@tmpl(
-                                    ${visibility}mut func ${bfIdent}(val!: ${bfTy}): Unit {
-                                        unsafe { __cjbind_bitfield_write(inout this.${storageIdent}, ${bitOffset}, ${bitWidth}, UInt64(val)) }
-                                    }
-                                ))
+                                if (typeUseIsConst(ctx, bf.data.ty)) {
+                                    fields.add(@tmpl(
+                                        ${visibility}prop ${bfIdent}: ${bfTy} {
+                                            get() {
+                                                var s = this.${storageIdent}
+                                                return ${readValue}
+                                            }
+                                        }
+                                    ))
+                                } else {
+                                    fields.add(@tmpl(
+                                        ${visibility}mut prop ${bfIdent}: ${bfTy} {
+                                            get() {
+                                                var s = this.${storageIdent}
+                                                return ${readValue}
+                                            }
+                                            set(value) {
+                                                unsafe { __cjbind_bitfield_write(CPointer<UInt8>(inout this.${storageIdent}), ${bitOffset}, ${bitWidth}, ${writeValue}) }
+                                            }
+                                        }
+                                    ))
+                                }
                             }
 
                             if (!result.sawBitfieldUnit) {
@@ -1510,11 +2074,26 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                 result.helpers.add(Helpers.bitfieldReadHelper())
                                 result.helpers.add(Helpers.bitfieldWriteHelper())
                                 result.helpers.add(Helpers.bitfieldReadSignedHelper())
+                                result.helpers.add(Helpers.bitfieldSignedConversionHelpers())
                             }
                     }
                 }
 
-                fields.add(tokenStreamFromTemplate("public init() {}"))
+                if (let Some(recordLayout) <- layout) {
+                    if (recordLayout.align > 1) {
+                        let alignmentTy = Layout.knownCjTypeForSize(recordLayout.align).getOrThrow()
+                        let markerTy = tokenStreamFromTemplate("VArray<${alignmentTy}, \$0>")
+                        let markerIdent = ctx.cjIdent(uniqueName(
+                            occupiedFieldNames,
+                            "_cjbind_bitfield_alignment_marker"
+                        ))
+                        fields.add(tokenStreamFromTemplate(
+                            "let ${markerIdent} : ${markerTy} = unsafe { zeroValue<${markerTy}>() }"
+                        ))
+                    }
+                }
+                let bitfieldInitVisibility = if (this.isCxxRecord) { "private " } else { "public " }
+                fields.add(tokenStreamFromTemplate("${bitfieldInitVisibility}init() {}"))
             } else {
                 for (field in fieldDecls) {
                     match (field) {
@@ -1540,10 +2119,31 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             } else {
                                 "public "
                             }
+                            if (let Some(element) <- fieldTy.isInCompleteArray(ctx)) {
+                                let fieldStorage = fieldStorageKeyword(ctx, data.ty)
+                                let fieldToken = optionalComment(
+                                    ctx,
+                                    fcomment,
+                                    tokenStreamFromTemplate("${visibility}${fieldStorage} ${fieldIdent} : ${ty} = unsafe { zeroValue<${ty}>() }")
+                                )
+                                fields.add(fieldToken)
+                                if (let Some(accessor) <- zeroLengthArrayAccessor(
+                                    ctx,
+                                    result,
+                                    canonicalName,
+                                    canonicalIdent,
+                                    data,
+                                    element
+                                )) {
+                                    zeroLengthArrayAccessors.add(accessor)
+                                }
+                                continue
+                            }
+                            let fieldStorage = fieldStorageKeyword(ctx, data.ty)
                             let fieldToken = optionalComment(
                                 ctx,
                                 fcomment,
-                                tokenStreamFromTemplate("${visibility}let ${fieldIdent} : ${ty}")
+                                tokenStreamFromTemplate("${visibility}${fieldStorage} ${fieldIdent} : ${ty}")
                             )
                             fields.add(fieldToken)
 
@@ -1607,7 +2207,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         let initToken = TokenStream()
         let initVisibility = if (this.isForwardDeclaration) {
             ""
-        } else if (!hasRepresentableAlignment ||
+        } else if (this.isCxxRecord || !hasRepresentableAlignment ||
             (ctx.options.respectCxxAccessSpecs && this.hasNonPublicMembers())) {
             "private "
         } else {
@@ -1637,6 +2237,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
         )
 
         result.items.add(ret)
+        result.items.add(all: zeroLengthArrayAccessors)
 
         if (!ctx.options.noLayoutTests && !this.isForwardDeclaration && hasRepresentableAlignment) {
             if (let Some(l) <- layout) {

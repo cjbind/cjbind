@@ -555,7 +555,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         layout: ?Layout
     ): Unit {
         let packed = this.isPacked(ctx, layout)
-        this.fields = this.fields.computeBitfieldUnits(ctx, packed)
+        this.fields = this.fields.computeBitfieldUnits(ctx, packed, layout)
     }
 
     public func assignFieldNames(ctx: CjbindContext, canonicalTypeName: String): Unit {
@@ -928,13 +928,13 @@ public enum CompFields <: Trace<Tracer, Unit> {
         }
     }
 
-    func computeBitfieldUnits(ctx: CjbindContext, packed: Bool): CompFields {
+    func computeBitfieldUnits(ctx: CjbindContext, packed: Bool, layout: ?Layout): CompFields {
         let raws = match (this) {
             case CompFields.CompFieldsBefore(v) => v
             case _ => throw Exception("fields computed")
         }
 
-        let result = rawFieldsToFieldsAndBitfieldUnits(ctx, raws, packed)
+        let result = rawFieldsToFieldsAndBitfieldUnits(ctx, raws, packed, layout)
 
         match (result) {
             case Ok((fields, hasBitfieldUnits)) => return CompFields.CompFieldsAfter(
@@ -1017,7 +1017,8 @@ public enum CompFields <: Trace<Tracer, Unit> {
 func rawFieldsToFieldsAndBitfieldUnits(
     ctx: CjbindContext,
     rawFields: ArrayList<RawField>,
-    packed: Bool
+    packed: Bool,
+    recordLayout: ?Layout
 ): Result<(ArrayList<Field>, Bool), Unit> {
     let fields = ArrayList<Field>()
     let bitfieldUnitCount = Box(0)
@@ -1051,18 +1052,25 @@ func rawFieldsToFieldsAndBitfieldUnits(
             break
         }
 
+        let previousField: ?RawField = if (idx > 0) { Some(rawFields[idx - 1]) } else { None }
         let bitfields = takeFields(true)
         if (bitfields.isEmpty()) {
             break
         }
 
-        bitfieldsToAllocationUnits(
+        match (bitfieldsToAllocationUnits(
             ctx,
             bitfieldUnitCount,
             fields,
             bitfields,
-            packed
-        )
+            packed,
+            recordLayout,
+            previousField,
+            if (idx < rawFields.size) { rawFields[idx].offset } else { None }
+        )) {
+            case Result.Ok(_) => ()
+            case Result.Err(_) => return Result.Err(())
+        }
     }
 
     if (idx != rawFields.size) {
@@ -1118,69 +1126,111 @@ func bitfieldsToAllocationUnits(
     bitfieldUnitCount: Box<Int64>,
     fields: ArrayList<Field>,
     rawBitFields: ArrayList<RawField>,
-    packed: Bool
+    packed: Bool,
+    recordLayout: ?Layout,
+    previousField: ?RawField,
+    nextFieldOffset: ?UIntNative
 ): Result<Unit, Unit> {
-    func fillAllocationUnit(
-        fields2: ArrayList<Field>,
-        bitfieldUnitCount: Box<Int64>,
-        unitSizeInBits: UInt32,
-        unitAlignInBits: UInt32,
-        bitfields: ArrayList<Bitfield>
-    ) {
-        bitfieldUnitCount.value += 1
-        let align = alignTo(unitAlignInBits, 8) / 8
-        let size = alignTo(unitSizeInBits, 8) / 8
-        let layout = Layout(Int32(size), Int32(align))
-        let tf = Field.Bitfields(
-            BitfieldUnit(
-                UIntNative(bitfieldUnitCount.value),
-                layout,
-                bitfields.toArray()
-            )
-        )
-        fields2.add(tf)
-    }
-
-    var unitSizeInBits = 0u32
-    var unitAlign = 0u32
+    var firstBitOffset: ?UIntNative = None
+    var occupiedEndBit = UIntNative(0)
+    var maximumNamedAlignment = 1i32
     let bitfieldsInUnit = ArrayList<Bitfield>()
 
     for (bitfield in rawBitFields) {
         let bitfieldWidth = bitfield.bitfieldWidth.getOrThrow()
+        let absoluteOffset = match (bitfield.offset) {
+            case Some(value) => value
+            case None => return Result.Err(())
+        }
         let bitfieldLayout = match (ctx.resolveType(bitfield.ty).getLayout(ctx)) {
             case Some(v) => v
             case None => return Result.Err(())
         }
-        let bitfieldSize = UInt32(bitfieldLayout.size)
-        let bitfieldAlign = UInt32(bitfieldLayout.align)
-
-        var offset = unitSizeInBits
-        if (!packed) {
-            let cond = (offset != 0) && ((bitfieldWidth == 0) || (((offset % (bitfieldAlign * 8)) + bitfieldWidth) > (bitfieldSize *
-                8)))
-            if (cond) {
-                offset = alignTo(offset, bitfieldAlign * 8)
-            }
+        firstBitOffset = match (firstBitOffset) {
+            case Some(value) => Some(min(value, absoluteOffset))
+            case None => Some(absoluteOffset)
         }
-
+        occupiedEndBit = max(occupiedEndBit, absoluteOffset + UIntNative(bitfieldWidth))
         if (bitfield.name.isSome()) {
-            unitAlign = max(unitAlign, bitfieldAlign)
+            maximumNamedAlignment = max(maximumNamedAlignment, bitfieldLayout.align)
         }
-
-        bitfieldsInUnit.add(Bitfield(UIntNative(offset), bitfield))
-        unitSizeInBits = offset + bitfieldWidth
-
     }
 
-    if (unitSizeInBits != 0) {
-        fillAllocationUnit(
-            fields,
-            bitfieldUnitCount,
-            unitSizeInBits,
-            unitAlign,
-            bitfieldsInUnit
-        )
+    let first = match (firstBitOffset) {
+        case Some(value) => value
+        case None => return Result.Ok(())
     }
+    let storageStartByte = match (previousField) {
+        case Some(field) =>
+            let fieldOffset = match (field.offset) {
+                case Some(value) => value
+                case None => return Result.Err(())
+            }
+            if (fieldOffset % 8 != 0) {
+                return Result.Err(())
+            }
+            let fieldLayout = match (ctx.resolveType(field.ty).getLayout(ctx)) {
+                case Some(value) => value
+                case None => return Result.Err(())
+            }
+            fieldOffset / 8 + UIntNative(fieldLayout.size)
+        case None => UIntNative(0)
+    }
+    if (storageStartByte > first / 8) {
+        return Result.Err(())
+    }
+    let occupiedEndByte = (occupiedEndBit + 7) / 8
+    let storageEndByte = match (nextFieldOffset) {
+        case Some(value) =>
+            if (value % 8 != 0) {
+                return Result.Err(())
+            }
+            value / 8
+        case None => match (recordLayout) {
+            case Some(value) => UIntNative(value.size)
+            case None => occupiedEndByte
+        }
+    }
+    if (storageEndByte < occupiedEndByte || storageEndByte < storageStartByte) {
+        return Result.Err(())
+    }
+
+    let storageSize = storageEndByte - storageStartByte
+    let recordAlignment = match (recordLayout) {
+        case Some(value) => value.align
+        case None => maximumNamedAlignment
+    }
+    let maximumAlignment = min(maximumNamedAlignment, recordAlignment)
+    func canUseAlignment(candidate: Int32): Bool {
+        let value = UIntNative(candidate)
+        return candidate <= maximumAlignment &&
+            Layout.knownCjTypeForSize(candidate).isSome() &&
+            storageStartByte % value == 0 && storageSize % value == 0
+    }
+    let storageAlignment = if (packed) {
+        1i32
+    } else if (canUseAlignment(8)) {
+        8i32
+    } else if (canUseAlignment(4)) {
+        4i32
+    } else if (canUseAlignment(2)) {
+        2i32
+    } else {
+        1i32
+    }
+
+    let storageStartBit = storageStartByte * 8
+    for (bitfield in rawBitFields) {
+        let absoluteOffset = bitfield.offset.getOrThrow()
+        bitfieldsInUnit.add(Bitfield(absoluteOffset - storageStartBit, bitfield))
+    }
+
+    bitfieldUnitCount.value += 1
+    fields.add(Field.Bitfields(BitfieldUnit(
+        UIntNative(bitfieldUnitCount.value),
+        Layout(Int32(storageSize), storageAlignment),
+        bitfieldsInUnit.toArray()
+    )))
 
     return Result.Ok(())
 }

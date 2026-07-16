@@ -119,11 +119,17 @@ public class PartialType <: Equatable<PartialType> {
 
 class CodegenTemplateMaterialization {
     let arguments: Array<TypeId>
+    let nonTypeArguments: Array<NonTypeTemplateArgument>
     let wrapper: TypeId
     var failed: Bool = false
 
-    init(arguments: Array<TypeId>, wrapper: TypeId) {
+    init(
+        arguments: Array<TypeId>,
+        nonTypeArguments: Array<NonTypeTemplateArgument>,
+        wrapper: TypeId
+    ) {
         this.arguments = arguments
+        this.nonTypeArguments = nonTypeArguments
         this.wrapper = wrapper
     }
 }
@@ -186,12 +192,20 @@ public class CjbindContext <: Resource {
     let codegenTemplateMaterializations: HashMap<ItemId, ArrayList<CodegenTemplateMaterialization>> = HashMap()
     let codegenAnalysisOrigins: HashMap<ItemId, ItemId> = HashMap()
     let codegenAliasUses: HashMap<ItemId, CodegenAliasUse> = HashMap()
+    let concreteTemplateParsing: HashSet<String> = HashSet()
 
     var analysisQueries: ?AnalysisQueries = None
 
     public var needBitfieldAllocation: ArrayList<ItemId> = ArrayList()
 
     public var enumTypedefCombos: ?HashSet<ItemId> = None
+
+    /// Support declarations referenced while rendering the final bindings.
+    /// These are recorded by type conversion instead of IR reachability so
+    /// non-recursive allowlists and materialized template fields remain valid.
+    public var codegenSawFloat16: Bool = false
+    public var codegenSawComplex: Bool = false
+    public let codegenVariadicFunctionArities: HashSet<Int64> = HashSet()
 
     public init(options: CjbindOptions) {
         this.options = options
@@ -646,7 +660,7 @@ public class CjbindContext <: Resource {
     ): ?(clang.Cursor, TypeId, Int64) {
         if (let Some(declaration) <- instantiation.curType().canonicalDeclaration(Some(instantiation))) {
             if (let Some(templateId) <- this.getResolvedType(declaration)) {
-                let parameterCount = selfTemplateParams(templateId, this).size
+                let parameterCount = selfTemplateParameterCount(templateId, this)
                 if (parameterCount > 0) {
                     return Some((declaration.cursor, templateId, parameterCount))
                 }
@@ -668,18 +682,247 @@ public class CjbindContext <: Resource {
         return None
     }
 
+    func concreteFieldTypeContainsNestedTemplateAlias(ty: clang.Type): Bool {
+        let kind = ty.kind()
+        if (kind == clang.CXTypeKind_CXType_Typedef) {
+            var parent = ty.declaration().fallibleSemanticParent()
+            while (let Some(cursor) <- parent) {
+                if (cursor.isTemplateLike() || cursor.isTemplateSpecialization()) {
+                    return true
+                }
+                parent = cursor.fallibleSemanticParent()
+            }
+            return false
+        }
+
+        let nested: ?clang.Type = if (kind == clang.CXTypeKind_CXType_ConstantArray ||
+            kind == clang.CXTypeKind_CXType_IncompleteArray ||
+            kind == clang.CXTypeKind_CXType_VariableArray ||
+            kind == clang.CXTypeKind_CXType_DependentSizedArray ||
+            kind == clang.CXTypeKind_CXType_Vector ||
+            kind == clang.CXTypeKind_CXType_ExtVector) {
+            ty.elemType()
+        } else if (kind == clang.CXTypeKind_CXType_Pointer ||
+            kind == clang.CXTypeKind_CXType_MemberPointer ||
+            kind == clang.CXTypeKind_CXType_LValueReference ||
+            kind == clang.CXTypeKind_CXType_RValueReference) {
+            ty.pointeeType()
+        } else if (kind == clang.CXTypeKind_CXType_Elaborated) {
+            Some(ty.named())
+        } else if (kind == clang.CXTypeKind_CXType_Atomic) {
+            Some(ty.atomicValueType())
+        } else {
+            None
+        }
+        return nested
+            .map({inner => this.concreteFieldTypeContainsNestedTemplateAlias(inner)})
+            .getOrDefault({=> false})
+    }
+
+    func populateConcreteTemplateFields(
+        withId: ItemId,
+        ty: clang.Type,
+        comp: CompInfo
+    ): Unit {
+        if (comp.hasFields()) {
+            return
+        }
+        ty.visitFields {
+            field =>
+            let bitWidth: ?UInt32 = if (field.isBitField()) {
+                match (field.bitWidth()) {
+                    case Some(width) => Some(width)
+                    case None =>
+                        comp.hasUnevaluableBitFieldWidth = true
+                        return clang.CXVisitorResult_CXVisit_Break
+                }
+            } else {
+                None
+            }
+            let rawFieldType = field.curType()
+            // A field from a concrete specialization may retain the spelling
+            // of an alias declared inside the primary template (for example,
+            // `using Element = T`). Such an alias belongs to one template
+            // instance and cannot be emitted as an unqualified root-level
+            // type without colliding with other instantiations. The canonical
+            // field type already contains Clang's concrete substitution.
+            let concreteFieldType = if (this.concreteFieldTypeContainsNestedTemplateAlias(
+                rawFieldType
+            )) {
+                rawFieldType.canonicalType()
+            } else {
+                rawFieldType
+            }
+            let fieldType = Item.fromTyOrRef(
+                concreteFieldType,
+                field,
+                Some(withId),
+                this
+            )
+            let spelling = field.spelling()
+            comp.fields.appendRawField(RawField(
+                if (spelling.isEmpty()) { None } else { Some(spelling) },
+                fieldType,
+                field.rawComment(),
+                bitWidth,
+                field.offsetOfField().ok(),
+                isPublic: field.isPublic()
+            ))
+            field.visit {
+                child =>
+                if (child.kind() == clang.CXCursorKind_CXCursor_UnexposedAttr) {
+                    comp.foundUnknownAttr = true
+                }
+                clang.CXChildVisitResult_CXChildVisit_Continue
+            }
+            clang.CXVisitorResult_CXVisit_Continue
+        }
+    }
+
+    func concreteTemplateComp(withId: ItemId, ty: clang.Type): ?CompInfo {
+        let declaration = ty.declaration()
+        if (!declaration.isValid() || declaration.specialized().isNone()) {
+            return None
+        }
+        let spelling = ty.spelling()
+        if (spelling.isEmpty() || !this.concreteTemplateParsing.add(spelling)) {
+            return None
+        }
+        try {
+            let comp = match (CompInfo.fromTy(withId, ty, Some(declaration), this)) {
+                case Ok(value) => value
+                case Err(_) => return None
+            }
+            this.populateConcreteTemplateFields(withId, ty, comp)
+            return Some(comp)
+        } finally {
+            this.concreteTemplateParsing.remove(spelling)
+        }
+    }
+
+    func addTemplateInstantiation(
+        withId: ItemId,
+        template: TypeId,
+        ty: clang.Type,
+        location: clang.Cursor,
+        arguments: Array<TypeId>,
+        nonTypeArguments: Array<NonTypeTemplateArgument>,
+        argumentsComplete!: Bool = true
+    ): TypeId {
+        let instantiation = TemplateInstantiation(
+            template,
+            arguments,
+            nonTypeArguments: nonTypeArguments,
+            concrete: this.concreteTemplateComp(withId, ty),
+            argumentsComplete: argumentsComplete
+        )
+        let name = ty.spelling()
+        let item = Item(
+            withId,
+            None,
+            this.currentModule,
+            ItemKind.KindType(Type(
+                if (name.isEmpty()) { None } else { Some(name) },
+                ty.fallibleLayout(this).ok(),
+                TypeKind.TypeKindTemplateInstantiation(instantiation),
+                ty.isConst()
+            )),
+            Some(location.location())
+        )
+        this.addItem(item, None, Some(location))
+        return withId
+    }
+
     func instantiateTemplate(
         withId: ItemId,
         template: TypeId,
         ty: clang.Type,
-        location: clang.Cursor
+        location: clang.Cursor,
+        definitionCursor: clang.Cursor
     ): ?TypeId {
-        let expectedArgumentCount = selfTemplateParams(template, this).size
+        let expectedTypeArgumentCount = selfTemplateParams(template, this).size
+        let expectedArgumentCount = selfTemplateParameterCount(template, this)
+        if (let TypeKind.TypeKindTemplateAlias(_, _) <- this.resolveType(template).kind) {
+            if (!templateDefinitionHasExactlyFixedTypeParameters(
+                definitionCursor,
+                expectedTypeArgumentCount
+            )) {
+                eprintln(
+                    "Warning: preserving an alias-template use with unsupported parameters as an opaque ABI type"
+                )
+                return Some(this.addTemplateInstantiation(
+                    withId,
+                    template,
+                    ty,
+                    location,
+                    Array<TypeId>(),
+                    Array<NonTypeTemplateArgument>(),
+                    argumentsComplete: false
+                ))
+            }
+        }
         if (expectedArgumentCount == 0) {
             eprintln(
-                "Warning: unable to inspect a C++ template instantiation because its template parameters are unknown"
+                "Warning: preserving a C++ template instantiation with unknown parameters as an opaque ABI type"
             )
-            return None
+            return Some(this.addTemplateInstantiation(
+                withId,
+                template,
+                ty,
+                location,
+                Array<TypeId>(),
+                Array<NonTypeTemplateArgument>(),
+                argumentsComplete: false
+            ))
+        }
+
+        if (hasUnsupportedConcreteTemplateArgument(ty)) {
+            eprintln(
+                "Warning: preserving a C++ template instantiation with unsupported arguments as an opaque ABI type"
+            )
+            return Some(this.addTemplateInstantiation(
+                withId,
+                template,
+                ty,
+                location,
+                Array<TypeId>(),
+                Array<NonTypeTemplateArgument>(),
+                argumentsComplete: false
+            ))
+        }
+
+        if (let Some((directArguments, nonTypeArguments)) <-
+            concreteTemplateArgumentsFromTy(ty, Some(template), this)) {
+            if (directArguments.size == expectedTypeArgumentCount &&
+                directArguments.size + nonTypeArguments.size == expectedArgumentCount) {
+                return Some(this.addTemplateInstantiation(
+                    withId,
+                    template,
+                    ty,
+                    location,
+                    directArguments,
+                    nonTypeArguments
+                ))
+            }
+        }
+
+        // The legacy child-cursor fallback can reconstruct type arguments
+        // only.  If any non-type parameter remains after direct inspection
+        // failed, absence of an expression child is not evidence that the
+        // argument is complete.
+        if (expectedArgumentCount != expectedTypeArgumentCount) {
+            eprintln(
+                "Warning: preserving a C++ template instantiation with uninspectable non-type arguments as an opaque ABI type"
+            )
+            return Some(this.addTemplateInstantiation(
+                withId,
+                template,
+                ty,
+                location,
+                Array<TypeId>(),
+                Array<NonTypeTemplateArgument>(),
+                argumentsComplete: false
+            ))
         }
 
         var children = location.collectChildren()
@@ -733,7 +976,19 @@ public class CjbindContext <: Resource {
             } else if (childKind == clang.CXCursorKind_CXCursor_TemplateRef) {
                 let declarationInfo = match (this.declarationInfoForTemplateInstantiation(child)) {
                     case Some(value) => value
-                    case None => return None
+                    case None =>
+                        eprintln(
+                            "Warning: preserving a nested C++ template instantiation with incomplete arguments as an opaque ABI type"
+                        )
+                        return Some(this.addTemplateInstantiation(
+                            withId,
+                            template,
+                            ty,
+                            location,
+                            Array<TypeId>(),
+                            Array<NonTypeTemplateArgument>(),
+                            argumentsComplete: false
+                        ))
                 }
                 let (templateCursor, templateId, nestedArgumentCount) = declarationInfo
                 let nestedChildren = child.collectChildren()
@@ -747,9 +1002,17 @@ public class CjbindContext <: Resource {
                 } else {
                     if (arguments.size < nestedArgumentCount) {
                         eprintln(
-                            "Warning: found a C++ template instantiation without enough type arguments"
+                            "Warning: preserving a C++ template instantiation without enough type arguments as an opaque ABI type"
                         )
-                        return None
+                        return Some(this.addTemplateInstantiation(
+                            withId,
+                            template,
+                            ty,
+                            location,
+                            Array<TypeId>(),
+                            Array<NonTypeTemplateArgument>(),
+                            argumentsComplete: false
+                        ))
                     }
                     let nestedArguments = ArrayList<TypeId>()
                     let start = arguments.size - nestedArgumentCount
@@ -792,33 +1055,43 @@ public class CjbindContext <: Resource {
         }
 
         if (foundNonTypeArgument) {
-            eprintln("Warning: C++ templates with non-type arguments are not supported")
-            return None
-        }
-        if (arguments.size != expectedArgumentCount) {
             eprintln(
-                "Warning: found a C++ template instantiation with an unexpected number of type arguments"
+                "Warning: preserving a C++ template instantiation with uninspectable arguments as an opaque ABI type"
             )
-            return None
+            return Some(this.addTemplateInstantiation(
+                withId,
+                template,
+                ty,
+                location,
+                Array<TypeId>(),
+                Array<NonTypeTemplateArgument>(),
+                argumentsComplete: false
+            ))
+        }
+        if (arguments.size != expectedTypeArgumentCount) {
+            eprintln(
+                "Warning: preserving a C++ template instantiation with incomplete arguments as an opaque ABI type"
+            )
+            return Some(this.addTemplateInstantiation(
+                withId,
+                template,
+                ty,
+                location,
+                Array<TypeId>(),
+                Array<NonTypeTemplateArgument>(),
+                argumentsComplete: false
+            ))
         }
 
         arguments.reverse()
-        let instantiation = TemplateInstantiation(template, arguments.toArray())
-        let name = ty.spelling()
-        let item = Item(
+        return Some(this.addTemplateInstantiation(
             withId,
-            None,
-            this.currentModule,
-            ItemKind.KindType(Type(
-                if (name.isEmpty()) { None } else { Some(name) },
-                ty.fallibleLayout(this).ok(),
-                TypeKind.TypeKindTemplateInstantiation(instantiation),
-                ty.isConst()
-            )),
-            Some(location.location())
-        )
-        this.addItem(item, None, Some(location))
-        return Some(withId)
+            template,
+            ty,
+            location,
+            arguments.toArray(),
+            Array<NonTypeTemplateArgument>()
+        ))
     }
 
     public func builtinOrResolvedTy(
@@ -848,7 +1121,8 @@ public class CjbindContext <: Resource {
                         withId,
                         tid,
                         ty,
-                        instantiationCursor
+                        instantiationCursor,
+                        decl.cursor
                     )) {
                         case Some(value) => Some(value)
                         case None => Some(tid)
@@ -924,13 +1198,33 @@ public class CjbindContext <: Resource {
         return true
     }
 
+    func sameNonTypeTemplateArguments(
+        left: Array<NonTypeTemplateArgument>,
+        right: Array<NonTypeTemplateArgument>
+    ): Bool {
+        if (left.size != right.size) {
+            return false
+        }
+        for (index in 0..left.size) {
+            if (!left[index].sameIdentity(right[index])) {
+                return false
+            }
+        }
+        return true
+    }
+
     func findCodegenTemplateMaterialization(
         definition: ItemId,
-        arguments: Array<TypeId>
+        arguments: Array<TypeId>,
+        nonTypeArguments: Array<NonTypeTemplateArgument>
     ): ?CodegenTemplateMaterialization {
         if (let Some(entries) <- this.codegenTemplateMaterializations.get(definition)) {
             for (entry in entries) {
-                if (this.sameTemplateArguments(entry.arguments, arguments)) {
+                if (this.sameTemplateArguments(entry.arguments, arguments) &&
+                    this.sameNonTypeTemplateArguments(
+                        entry.nonTypeArguments,
+                        nonTypeArguments
+                    )) {
                     return Some(entry)
                 }
             }
@@ -1109,7 +1403,13 @@ public class CjbindContext <: Resource {
                 return this.lowerTemplateInstantiationType(
                     sourceItem,
                     source,
-                    TemplateInstantiation(instantiation.definition, arguments.toArray()),
+                    TemplateInstantiation(
+                        instantiation.definition,
+                        arguments.toArray(),
+                        nonTypeArguments: instantiation.nonTypeArguments,
+                        concrete: instantiation.concrete,
+                        argumentsComplete: instantiation.argumentsComplete
+                    ),
                     ownerId,
                     failed
                 )
@@ -1297,7 +1597,13 @@ public class CjbindContext <: Resource {
                 ownerId
             )
         }
-        if (parameters.isEmpty()) {
+        if (!instantiation.argumentsComplete) {
+            // The source item still carries the exact layout queried from its
+            // concrete Clang type.  Do not enter the materialization cache:
+            // incomplete argument identities must never alias each other.
+            return sourceItem.id
+        }
+        if (parameters.isEmpty() && instantiation.nonTypeArguments.isEmpty()) {
             return sourceItem.id
         }
         if (sourceItem.isSemanticallyOpaque(this)) {
@@ -1308,19 +1614,16 @@ public class CjbindContext <: Resource {
             case Some(value) => value
             case None => return sourceItem.id
         }
-        if (this.usedTemplateParams(definitionItem.id).isEmpty()) {
-            return definitionItem.id
-        }
-
-        let codegenArguments = this.codegenTemplateArguments(
-            definitionItem.id,
-            parameters,
-            instantiation.arguments
-        )
+        // Every concrete class-template instance has its own C++ type
+        // identity, even when the primary-template dependency analysis sees
+        // no used parameters.  Keep all arguments so distinct instances are
+        // neither collapsed to the primary definition nor deduplicated.
+        let codegenArguments = instantiation.arguments
 
         if (let Some(existing) <- this.findCodegenTemplateMaterialization(
             definitionItem.id,
-            codegenArguments
+            codegenArguments,
+            instantiation.nonTypeArguments
         )) {
             if (existing.failed) {
                 failed.value = true
@@ -1333,14 +1636,21 @@ public class CjbindContext <: Resource {
             source,
             TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
                 instantiation.definition,
-                codegenArguments
+                codegenArguments,
+                nonTypeArguments: instantiation.nonTypeArguments,
+                concrete: instantiation.concrete,
+                argumentsComplete: instantiation.argumentsComplete
             )),
             this.rootModule
         )
         let concreteItem = this.resolveItem(concreteId)
         let wrapperName = concreteItem.fullDisambiguatedName(this)
 
-        let materialization = CodegenTemplateMaterialization(codegenArguments, concreteId)
+        let materialization = CodegenTemplateMaterialization(
+            codegenArguments,
+            instantiation.nonTypeArguments,
+            concreteId
+        )
         this.addCodegenTemplateMaterialization(definitionItem.id, materialization)
         let substitutions = HashMap<TypeId, TypeId>()
         substitutions.add(instantiation.definition, concreteId)
@@ -1353,7 +1663,13 @@ public class CjbindContext <: Resource {
             substitutions.add(parameter, argument)
             substitutions.add(canonicalItemId(this, parameter), argument)
         }
-        let concrete = this.lowerTemplateComp(definition, concreteId, substitutions, failed)
+        let concreteDefinition = instantiation.concrete.getOrDefault({=> definition})
+        let concrete = this.lowerTemplateComp(
+            concreteDefinition,
+            concreteId,
+            substitutions,
+            failed
+        )
         if (failed.value) {
             materialization.failed = true
             return concreteId
@@ -1415,7 +1731,13 @@ public class CjbindContext <: Resource {
             let lowered = this.lowerTemplateInstantiationType(
                 item,
                 source,
-                TemplateInstantiation(instantiation.definition, arguments.toArray()),
+                TemplateInstantiation(
+                    instantiation.definition,
+                    arguments.toArray(),
+                    nonTypeArguments: instantiation.nonTypeArguments,
+                    concrete: instantiation.concrete,
+                    argumentsComplete: instantiation.argumentsComplete
+                ),
                 this.rootModule,
                 failed
             )
@@ -1564,6 +1886,20 @@ public class CjbindContext <: Resource {
                 ty.asComp().getOrThrow().computeBitfieldUnits(ctx, layout)
             }
         }
+
+        for ((_, item) in this.getItems()) {
+            let ty = match (item.kind.asType()) {
+                case Some(value) => value
+                case None => continue
+            }
+            let instantiation = match (ty.kind) {
+                case TypeKind.TypeKindTemplateInstantiation(value) => value
+                case _ => continue
+            }
+            if (let Some(concrete) <- instantiation.concrete) {
+                concrete.computeBitfieldUnits(this, ty.getLayout(this))
+            }
+        }
     }
 
     public func assignFieldNames(): Unit {
@@ -1591,6 +1927,16 @@ public class CjbindContext <: Resource {
             let canonicalTypeName = this.resolveItem(id).canonicalName(this)
             this.withLoanedItem(id) {
                 ctx, item => item.kind.asType().getOrThrow().asComp().getOrThrow().assignFieldNames(ctx, canonicalTypeName)
+            }
+        }
+
+        for ((_, item) in this.getItems()) {
+            let instantiation = match (item.kind.asType().map({ty => ty.kind})) {
+                case Some(TypeKind.TypeKindTemplateInstantiation(value)) => value
+                case _ => continue
+            }
+            if (let Some(concrete) <- instantiation.concrete) {
+                concrete.assignFieldNames(this, item.fullDisambiguatedName(this))
             }
         }
     }
@@ -1650,10 +1996,19 @@ public class CjbindContext <: Resource {
             case None => return false
         }
         let definitionName = this.itemPolicyName(this.resolveItem(instantiation.definition))
-        let argumentNames = Array<String>(instantiation.arguments.size) {
-            index => this.itemPolicyName(this.resolveItem(instantiation.arguments[index]))
+        let argumentNames = ArrayList<String>()
+        var typeArgumentIndex = 0
+        for (position in 0..instantiation.argumentCount()) {
+            if (let Some(argument) <- instantiation.nonTypeArgumentAt(UInt32(position))) {
+                argumentNames.add(argument.displayValue())
+            } else {
+                argumentNames.add(this.itemPolicyName(
+                    this.resolveItem(instantiation.arguments[typeArgumentIndex])
+                ))
+                typeArgumentIndex += 1
+            }
         }
-        let instantiatedName = "${definitionName}<${String.join(argumentNames, delimiter: ", ")}>"
+        let instantiatedName = "${definitionName}<${String.join(argumentNames.toArray(), delimiter: ", ")}>"
         return this.options.opaqueTypes.matches(instantiatedName)
     }
 

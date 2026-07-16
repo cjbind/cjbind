@@ -339,12 +339,18 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         output.append(target.realCanonicalName(ctx))
         if (let Some(instantiation) <- ctx.templateInstantiationFor(this.id)) {
             output.append("_open${level}_")
-            for (argument in instantiation.arguments) {
-                let argumentItem = argument
-                    .intoResolver()
-                    .throughTypeRefs()
-                    .resolve(ctx)
-                argumentItem.pushDisambiguatedName(ctx, output, level + 1)
+            var typeArgumentIndex = 0
+            for (position in 0..instantiation.argumentCount()) {
+                if (let Some(argument) <- instantiation.nonTypeArgumentAt(UInt32(position))) {
+                    output.append(argument.disambiguatedName())
+                } else {
+                    let argumentItem = instantiation.arguments[typeArgumentIndex]
+                        .intoResolver()
+                        .throughTypeRefs()
+                        .resolve(ctx)
+                    argumentItem.pushDisambiguatedName(ctx, output, level + 1)
+                    typeArgumentIndex += 1
+                }
                 output.append("_")
             }
             output.append("close${level}")

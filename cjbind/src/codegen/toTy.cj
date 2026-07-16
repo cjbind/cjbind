@@ -14,6 +14,9 @@ func templateInstantiationUsesOpaqueBlob(ctx: CjbindContext, item: Item): Bool {
         case TypeKind.TypeKindTemplateInstantiation(value) => value
         case _ => return false
     }
+    if (!instantiation.argumentsComplete) {
+        return true
+    }
     let definition = instantiation.definition
         .intoResolver()
         .throughTypeRefs()
@@ -21,12 +24,23 @@ func templateInstantiationUsesOpaqueBlob(ctx: CjbindContext, item: Item): Bool {
     if (ctx.isBlocklistedItem(definition.id)) {
         return true
     }
-    let definitionIsComp = match (definition.kind.expectType().kind) {
+    let definitionKind = definition.kind.expectType().kind
+    // Class-template partial specializations are deliberately represented as
+    // opaque definitions in the IR.  Their unqualified spelling may collide
+    // with an emitted primary template, but that primary has a different C++
+    // layout.  Keep the concrete specialization as a layout-sized blob until
+    // it can be materialized safely instead of referring to that basename.
+    if (let TypeKind.TypeKindOpaque <- definitionKind) {
+        return true
+    }
+    let definitionIsComp = match (definitionKind) {
         case TypeKind.TypeKindComp(_) => true
         case _ => false
     }
-    return ctx.codegenTemplateReplacement(item.id).isNone() && definitionIsComp &&
-        !ctx.usedTemplateParams(definition.id).isEmpty()
+    // An unmaterialized class-template specialization must never be rendered
+    // as the primary-template basename.  Its own layout is the only safe ABI
+    // representation, regardless of usedTemplateParams analysis.
+    return ctx.codegenTemplateReplacement(item.id).isNone() && definitionIsComp
 }
 
 // 实现时应该添加对于 ToOpaque 的实现
@@ -208,9 +222,18 @@ extend Type <: TryToCjTy<Item> {
                 if (requiresOpaque) {
                     return this.tryToOpaque(ctx, item)
                 }
+                if (let TypeKindFloatKind.FloatKindFloat16 <- fk) {
+                    ctx.codegenSawFloat16 = true
+                }
                 let ret = AstTy.floatKindCjType(ctx, fk, this.getLayout(ctx))
                 return Ok(ret)
-            case TypeKind.TypeKindComplex(_) => return Err(Error.Unsupported("complex not supported yet"))
+            case TypeKind.TypeKindComplex(fk) =>
+                match (AstTy.complexKindCjType(ctx, fk, this.getLayout(ctx))) {
+                    case Some(value) =>
+                        ctx.codegenSawComplex = true
+                        return Ok(value)
+                    case None => return this.tryToOpaque(ctx, item)
+                }
             case TypeKind.TypeKindFunction(signature) =>
                 let ty = match (signature.tryToCjTy(ctx, item)) {
                     case Ok(v) => v
@@ -223,7 +246,7 @@ extend Type <: TryToCjTy<Item> {
                     case Err(e) => return Err(e)
                 }
                 let lenOk = Int64(len)
-                let token = if (lenOk == 0) { tokenStreamFromTemplate("CPointer<${ty}>") } else { tokenStreamFromTemplate("VArray<${ty}, \$${lenOk}>") }
+                let token = tokenStreamFromTemplate("VArray<${ty}, \$${lenOk}>")
                 return Ok(token)
             case TypeKind.TypeKindVector(item, len) =>
                 let ty = match (item.tryToCjTy(ctx, ())) {
@@ -328,8 +351,12 @@ extend Type <: TryToCjTy<Item> {
                     case Some(innerTy) =>
                         match (innerTy.canonicalType(ctx).kind) {
                             case TypeKind.TypeKindFunction(blockSig) =>
-                                let blockRet = Utils.fnsigReturnTy(ctx, blockSig)
-                                let blockArgs = Utils.fnsigArguments(ctx, blockSig)
+                                // Keep alias newtypes out of the raw callback
+                                // ABI here as well; a block invocation cannot
+                                // use the public foreign-function wrap/unwrap
+                                // shim generated for ordinary declarations.
+                                let blockRet = newTypeAbiReturnType(ctx, blockSig)
+                                let blockArgs = newTypeAbiArguments(ctx, blockSig)
                                 let joinedBlockArgs = joinStreams(blockArgs, ", ")
                                 return Ok(tokenStreamFromTemplate("CFunc<(${joinedBlockArgs}) -> ${blockRet}>"))
                             case _ => return Ok(tokenStreamFromTemplate("CPointer<Unit>"))
@@ -411,19 +438,25 @@ extend FunctionSig <: TryToCjTy<Item> {
         if (!this.abi.isCFuncCompatibleForTarget(ctx.targetInfo)) {
             return Err(Error.UnsupportedAbi(this.abi.diagnosticName()))
         }
-        if (this.getIsVariadic()) {
-            return Err(Error.Unsupported(
-                "variadic function pointers cannot be represented by the current Cangjie FFI"
-            ))
-        }
         if (this.valueAbiUnsupported || hasOpaqueValueAbi(this, ctx)) {
             return Err(Error.Unsupported(
                 "the function pointer value ABI cannot be represented safely by the current Cangjie FFI"
             ))
         }
 
-        let ret = Utils.fnsigReturnTy(ctx, this)
-        let arguments = Utils.fnsigArguments(ctx, this)
+        let ret = newTypeAbiReturnType(ctx, this)
+        if (this.rawIsVariadic()) {
+            ctx.codegenVariadicFunctionArities.add(this.argumentTypes.size)
+            let typeArguments = ArrayList<TokenStream>()
+            typeArguments.add(ret)
+            for ((_, argumentType) in this.argumentTypes) {
+                typeArguments.add(newTypeAbiArgumentType(ctx, argumentType))
+            }
+            let joinedTypeArguments = joinStreams(typeArguments, ", ")
+            let typeName = Helpers.variadicFunctionTypeName(this.argumentTypes.size)
+            return Ok(tokenStreamFromTemplate("${typeName}<${joinedTypeArguments}>") )
+        }
+        let arguments = newTypeAbiArguments(ctx, this)
 
         let joined = joinStreams(arguments, ", ")
 

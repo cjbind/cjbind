@@ -6,6 +6,9 @@ import std.collection.ArrayList
 
 public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     public let name: ?String
+    /// The spelling used by the source language before any Cangjie-only
+    /// collision avoidance (for example `foo` becoming `foo_ptr`).
+    public let sourceName: ?String
     let layout: ?Layout
     public var kind: TypeKind
     public let isConst: Bool
@@ -14,9 +17,14 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         name: ?String,
         layout: ?Layout,
         kind: TypeKind,
-        isConst: Bool
+        isConst: Bool,
+        sourceName!: ?String = None
     ) {
         this.name = name
+        this.sourceName = match (sourceName) {
+            case Some(value) => Some(value)
+            case None => name
+        }
         this.layout = layout
         this.kind = kind
         this.isConst = isConst
@@ -152,6 +160,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
         }
 
         let tyKind = ty.kind()
+        let originalTypedefName: ?String = if (tyKind == clang.CXTypeKind_CXType_Typedef) {
+            name
+        } else {
+            None
+        }
 
         if (location.kind() == clang.CXCursorKind_CXCursor_ClassTemplatePartialSpecialization) {
             let opaque = Type(name, layout, TypeKind.TypeKindOpaque, ty.isConst())
@@ -193,7 +206,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
 
         if (location.kind() == clang.CXCursorKind_CXCursor_TemplateRef ||
             (ty.templateArgs().isSome() && tyKind != clang.CXTypeKind_CXType_Typedef)) {
-            let templateKind = match (TemplateInstantiation.fromTy(ty, ctx)) {
+            let templateKind = match (TemplateInstantiation.fromTy(ty, potentialId, ctx)) {
                 case Some(instantiation) => TypeKind.TypeKindTemplateInstantiation(instantiation)
                 case None => TypeKind.TypeKindOpaque
             }
@@ -472,7 +485,13 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             }
             .getOrDefault {=> false}))
 
-        let tty = Type(name, layout, tkind, isConst2)
+        let tty = Type(
+            name,
+            layout,
+            tkind,
+            isConst2,
+            sourceName: originalTypedefName
+        )
 
         return Result.Ok(ParseResult.New(tty, Some(cursor.canonical())))
     }
@@ -566,7 +585,10 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             case TypeKind.TypeKindComp(comp) => comp.isOpaque(ctx, this.layout)
             case TypeKind.ResolvedTypeRef(to) => to.isOpaque(ctx, ())
             case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-                instantiation.definition.isOpaque(ctx, ())
+                match (instantiation.concrete) {
+                    case Some(concrete) => concrete.isOpaque(ctx, this.layout)
+                    case None => instantiation.definition.isOpaque(ctx, ())
+                }
             case _ => false
         }
     }
@@ -577,7 +599,10 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             case TypeKind.TypeKindComp(comp) => comp.isSemanticallyOpaque(ctx)
             case TypeKind.ResolvedTypeRef(to) => ctx.resolveItem(to).isSemanticallyOpaque(ctx)
             case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
-                ctx.resolveItem(instantiation.definition).isSemanticallyOpaque(ctx)
+                match (instantiation.concrete) {
+                    case Some(concrete) => concrete.isSemanticallyOpaque(ctx)
+                    case None => ctx.resolveItem(instantiation.definition).isSemanticallyOpaque(ctx)
+                }
             case _ => false
         }
     }
@@ -585,15 +610,17 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
     public func isInCompleteArray(
         ctx: CjbindContext
     ): ?ItemId {
-        match (this.kind) {
+        let canonical = match (this.safeCanonicalType(ctx)) {
+            case Some(value) => value
+            case None => return None
+        }
+        match (canonical.kind) {
             case TypeKind.TypeKindArray(item, len) =>
                 if (len == 0) {
                     return Some(item)
                 } else {
                     return None
                 }
-            case TypeKind.ResolvedTypeRef(inner) =>
-                return ctx.resolveType(inner).isInCompleteArray(ctx)
             case _ => return None
         }
     }
@@ -624,6 +651,7 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                 }
             case TypeKind.TypeKindTemplateInstantiation(instantiation) =>
                 instantiation.trace(context, tracer, ())
+                instantiation.traceConcreteLayout(context, tracer, item)
             case TypeKind.ResolvedTypeRef(inner) =>
                 tracer.visitKind(inner, EdgeKind.TypeReferenceEdge)
             case TypeKind.TypeKindComp(ci) =>

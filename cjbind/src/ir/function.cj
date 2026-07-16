@@ -47,6 +47,9 @@ public enum FunctionLinkage {
 
 public class Function <: ClangSubItemParser<Function> {
     public let name: String
+    /// Original C/C++ spelling before Cangjie identifier sanitization (for
+    /// example `operator+` versus the public binding name `operator_add`).
+    public let sourceName: String
     public let signature: TypeId
     public let kind: FunctionKind
     public let linkage: FunctionLinkage
@@ -59,9 +62,11 @@ public class Function <: ClangSubItemParser<Function> {
         kind: FunctionKind,
         linkage: FunctionLinkage,
         mangledName!: ?String = None,
-        constructorCanReturnByValue!: Bool = false
+        constructorCanReturnByValue!: Bool = false,
+        sourceName!: ?String = None
     ) {
         this.name = name
+        this.sourceName = sourceName.getOrDefault({=> name})
         this.signature = signature
         this.kind = kind
         this.linkage = linkage
@@ -110,14 +115,40 @@ public class Function <: ClangSubItemParser<Function> {
             case _ => return Result.Err(ParseError.Continue)
         }
 
-        if (!context.options.generateInlineFunctions &&
-            isCxx &&
-            (cursor.isInlinedFunction() || cursor
+        let isInline = cursor.isInlinedFunction() || cursor
             .definition()
             .map({
                 d => d.isInlinedFunction()
             })
-            .getOrDefault({=> false}))) {
+            .getOrDefault({=> false})
+        if (isInline) {
+            // Keep the existing C behavior: `generateInlineFunctions` controls
+            // C++ inline declarations only. The static-wrapper option adds a
+            // separate path for internal-linkage C/C++ definitions.
+            if (isCxx && !context.options.generateInlineFunctions &&
+                !context.options.wrapStaticFns) {
+                return Result.Err(ParseError.Continue)
+            }
+            // `--wrap-static-fns` is only meaningful for inline functions
+            // whose implementation has internal linkage. External inline
+            // functions have no stable out-of-line symbol to bind here.
+            let hasExternalLinkage = match (_linkage) {
+                case FunctionLinkage.LinkageExternal => true
+                case FunctionLinkage.LinkageInternal => false
+            }
+            if (context.options.wrapStaticFns && hasExternalLinkage) {
+                return Result.Err(ParseError.Continue)
+            }
+        }
+
+        let isInternalWrapper = context.options.wrapStaticFns && match (_linkage) {
+            case FunctionLinkage.LinkageInternal => true
+            case FunctionLinkage.LinkageExternal => false
+        }
+        if (isInternalWrapper && hasUnserializableNestedCallingConvention(cursor.curType())) {
+            eprintln(
+                "Warning: skipping static wrapper for '${cursor.displayName()}' because a nested function pointer calling convention cannot be serialized safely"
+            )
             return Result.Err(ParseError.Continue)
         }
 
@@ -166,6 +197,7 @@ public class Function <: ClangSubItemParser<Function> {
             _kind,
             _linkage,
             mangledName: cursorMangling(cursor, isCxx, context.targetInfo),
+            sourceName: Some(originalName),
             constructorCanReturnByValue: cursorKind == clang.CXCursorKind_CXCursor_Constructor &&
                 cursor.semanticParent().curType().canonicalType().isPod() &&
                 cursor.semanticParent().curType().canonicalType().align(UIntNative(context.pointerWidth())) <=
@@ -549,11 +581,78 @@ func hasUnsupportedValueAbi(functionType: clang.Type, pointerWidth: UIntNative, 
     return false
 }
 
+/// The bridge can normalize the calling convention of the wrapped function
+/// itself, but every nested function pointer declarator must retain its own
+/// convention. Named typedefs are safe because the generated bridge includes
+/// the source header and reuses the typedef verbatim. Direct function pointer
+/// types need a convention which `c_serialize` knows how to spell.
+func hasUnserializableNestedCallingConvention(functionType: clang.Type): Bool {
+    if (let Some(returnType) <- functionType.retType()) {
+        if (typeHasUnserializableCallingConvention(returnType)) {
+            return true
+        }
+    }
+    if (let Some(arguments) <- functionType.args()) {
+        for (argument in arguments) {
+            if (typeHasUnserializableCallingConvention(argument)) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+func typeHasUnserializableCallingConvention(ty: clang.Type): Bool {
+    let kind = ty.kind()
+
+    // The source typedef declaration carries the exact spelling, including
+    // calling-convention attributes which libclang may not model exhaustively.
+    if (kind == clang.CXTypeKind_CXType_Typedef) {
+        return false
+    }
+
+    if (kind == clang.CXTypeKind_CXType_MemberPointer) {
+        // TypeKind currently has no class-member-pointer declarator, so writing
+        // this as an ordinary `*` would silently change the C++ type.
+        return true
+    }
+
+    if (kind == clang.CXTypeKind_CXType_Pointer ||
+        kind == clang.CXTypeKind_CXType_LValueReference ||
+        kind == clang.CXTypeKind_CXType_RValueReference) {
+        if (let Some(pointee) <- ty.pointeeType()) {
+            return typeHasUnserializableCallingConvention(pointee)
+        }
+        return true
+    }
+
+    if (kind == clang.CXTypeKind_CXType_ConstantArray ||
+        kind == clang.CXTypeKind_CXType_IncompleteArray ||
+        kind == clang.CXTypeKind_CXType_VariableArray ||
+        kind == clang.CXTypeKind_CXType_DependentSizedArray) {
+        if (let Some(element) <- ty.elemType()) {
+            return typeHasUnserializableCallingConvention(element)
+        }
+        return true
+    }
+
+    if (kind == clang.CXTypeKind_CXType_FunctionProto ||
+        kind == clang.CXTypeKind_CXType_FunctionNoProto) {
+        if (let ClangAbi.Unknown(_) <- getAbi(ty.callConv())) {
+            return true
+        }
+        return hasUnserializableNestedCallingConvention(ty)
+    }
+
+    return false
+}
+
 func isUnsupportedValueType(ty: clang.Type, pointerWidth: UIntNative, cxx: Bool): Bool {
     let canonical = ty.canonicalType()
     let kind = canonical.kind()
     if (kind == clang.CXTypeKind_CXType_Record) {
         return canonical.align(pointerWidth) > pointerWidth ||
+            recordHasUnsupportedValueField(canonical, pointerWidth) ||
             (cxx && (!canonical.isPod() || recordHasUnsupportedValueLayout(canonical)))
     }
     if (kind == clang.CXTypeKind_CXType_Pointer) {
@@ -565,10 +664,57 @@ func isUnsupportedValueType(ty: clang.Type, pointerWidth: UIntNative, cxx: Bool)
             }
         }
     }
-    return kind == clang.CXTypeKind_CXType_Int128 ||
+    return kind == clang.CXTypeKind_CXType_Half ||
+        kind == clang.CXTypeKind_CXType_Float16 ||
+        kind == clang.CXTypeKind_CXType_BFloat16 ||
+        kind == clang.CXTypeKind_CXType_Int128 ||
         kind == clang.CXTypeKind_CXType_UInt128 ||
         kind == clang.CXTypeKind_CXType_Float128 ||
         kind == clang.CXTypeKind_CXType_Complex ||
+        kind == clang.CXTypeKind_CXType_Vector ||
+        kind == clang.CXTypeKind_CXType_ExtVector ||
+        (kind == clang.CXTypeKind_CXType_LongDouble && canonical.size(pointerWidth) > 8)
+}
+
+/// A record passed by value uses the platform aggregate classification rules,
+/// not merely the byte layout exposed as a Cangjie `@C` struct. Scalars for
+/// which Cangjie has no matching C value ABI therefore make the containing
+/// record unsafe by value as well. Pointers to such records remain valid.
+func recordHasUnsupportedValueField(ty: clang.Type, pointerWidth: UIntNative): Bool {
+    let unsupported = Box(false)
+    ty.visitFields {
+        field =>
+        if (fieldTypeHasUnsupportedValueAbi(field.curType(), pointerWidth)) {
+            unsupported.value = true
+            return clang.CXVisitorResult_CXVisit_Break
+        }
+        clang.CXVisitorResult_CXVisit_Continue
+    }
+    return unsupported.value
+}
+
+func fieldTypeHasUnsupportedValueAbi(ty: clang.Type, pointerWidth: UIntNative): Bool {
+    let canonical = ty.canonicalType()
+    let kind = canonical.kind()
+    if (kind == clang.CXTypeKind_CXType_Record) {
+        return recordHasUnsupportedValueField(canonical, pointerWidth)
+    }
+    if (kind == clang.CXTypeKind_CXType_ConstantArray ||
+        kind == clang.CXTypeKind_CXType_IncompleteArray ||
+        kind == clang.CXTypeKind_CXType_VariableArray ||
+        kind == clang.CXTypeKind_CXType_DependentSizedArray) {
+        if (let Some(element) <- canonical.elemType()) {
+            return fieldTypeHasUnsupportedValueAbi(element, pointerWidth)
+        }
+        return true
+    }
+    return kind == clang.CXTypeKind_CXType_Half ||
+        kind == clang.CXTypeKind_CXType_Float16 ||
+        kind == clang.CXTypeKind_CXType_BFloat16 ||
+        kind == clang.CXTypeKind_CXType_Complex ||
+        kind == clang.CXTypeKind_CXType_Int128 ||
+        kind == clang.CXTypeKind_CXType_UInt128 ||
+        kind == clang.CXTypeKind_CXType_Float128 ||
         kind == clang.CXTypeKind_CXType_Vector ||
         kind == clang.CXTypeKind_CXType_ExtVector ||
         (kind == clang.CXTypeKind_CXType_LongDouble && canonical.size(pointerWidth) > 8)
@@ -927,10 +1073,15 @@ public class FunctionSig <: Trace<Tracer, Unit> {
     // cjlint-ignore -end
 
     public func getIsVariadic(): Bool {
+        // Clang also marks old-style C declarations such as `foo()` as
+        // variadic.  Cangjie cannot put `...` first, so retain the historical
+        // no-argument foreign declaration for that surface.
         return this.isVariadic && !this.argumentTypes.isEmpty()
     }
 
-    func rawIsVariadic(): Bool {
+    /// Whether Clang classified the function type as variadic, including
+    /// zero-fixed-argument function pointer types represented as raw pointers.
+    public func rawIsVariadic(): Bool {
         return this.isVariadic
     }
 }

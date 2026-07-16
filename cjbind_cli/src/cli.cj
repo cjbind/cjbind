@@ -5,7 +5,7 @@ import std.env
 import cjbind_cli.arg.{StringFlag, StringListFlag, BoolFlag, ArgsParser}
 import cjbind.build
 import cjbind.clang.getClangVersion
-import cjbind.options.{CjbindOptions, ObjcCodegenMode, DefaultEnumStyle}
+import cjbind.options.{CjbindOptions, ObjcCodegenMode, DefaultEnumStyle, DefaultAliasStyle}
 import cjbind.utils.sprintAlign
 
 public func processArgs(): (CjbindOptions, (String) -> Unit) {
@@ -18,6 +18,12 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let builtins = BoolFlag(None, "builtins", "builtins", "生成内置定义的 bindings，如 __builtin_va_list")
     let makeFuncWrapperFlag = BoolFlag(None, "make-func-wrapper", "make-func-wrapper", "生成 foreign 函数包装器以允许包外调用")
     let funcWrapperSuffixFlag = StringFlag(None, "func-wrapper-suffix", "func-wrapper-suffix", "生成函数包装器时使用的后缀，默认为 _cjbindwrapper", "SUFFIX", "_cjbindwrapper")
+    let wrapStaticFnsFlag = BoolFlag(None, "wrap-static-fns", "wrap-static-fns",
+        "为 static/static inline 函数生成可编译的 C/C++ 外部桥接函数")
+    let wrapStaticFnsSuffixFlag = StringFlag(None, "wrap-static-fns-suffix", "wrap-static-fns-suffix",
+        "static 函数桥接符号的后缀，默认为 __extern", "SUFFIX", "__extern")
+    let wrapStaticFnsPathFlag = StringFlag(None, "wrap-static-fns-path", "wrap-static-fns-path",
+        "static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）", "PATH", None)
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
     let arrayPointersInArgs = BoolFlag(None, "array-pointers-in-args", "array-pointers-in-args", "把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>")
     let makeCjString = BoolFlag(None, "make-cjstring", "make-cjstring", "把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致")
@@ -26,6 +32,14 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let objcGenerateDefinitions = BoolFlag(None, "objc-generate-definitions", "objc-generate-definitions", "在 compiler 模式下生成带默认返回值的方法桩体")
     let defaultEnumStyleFlag = StringFlag(None, "default-enum-style", "default-enum-style",
         "默认枚举生成风格: consts (默认) 或 newtype", "STYLE", "consts")
+    let defaultAliasStyleFlag = StringFlag(None, "default-alias-style", "default-alias-style",
+        "默认别名生成风格: type_alias (默认)、new_type 或 new_type_deref", "STYLE", "type_alias")
+    let typeAliasFlag = StringListFlag(None, "type-alias", "type-alias",
+        "把名称匹配正则表达式的 typedef 生成为普通 type alias", "REGEX")
+    let newTypeAliasFlag = StringListFlag(None, "new-type-alias", "new-type-alias",
+        "把名称匹配正则表达式的 typedef 生成为强类型包装", "REGEX")
+    let newTypeAliasDerefFlag = StringListFlag(None, "new-type-alias-deref", "new-type-alias-deref",
+        "把名称匹配正则表达式的 typedef 生成为带 wrap/unwrap 的强类型包装", "REGEX")
     let fitMacroConstantsFlag = BoolFlag(None, "fit-macro-constants", "fit-macro-constants",
         "根据值范围选择最小适配整数类型")
     let noUnionAccessorWorkaroundFlag = BoolFlag(None, "no-union-accessor-workaround",
@@ -98,6 +112,9 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         builtins,
         makeFuncWrapperFlag,
         funcWrapperSuffixFlag,
+        wrapStaticFnsFlag,
+        wrapStaticFnsSuffixFlag,
+        wrapStaticFnsPathFlag,
         autoCString,
         arrayPointersInArgs,
         makeCjString,
@@ -105,6 +122,10 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         objcCodegenModeFlag,
         objcGenerateDefinitions,
         defaultEnumStyleFlag,
+        defaultAliasStyleFlag,
+        typeAliasFlag,
+        newTypeAliasFlag,
+        newTypeAliasDerefFlag,
         fitMacroConstantsFlag,
         noUnionAccessorWorkaroundFlag,
         enableCxxNamespacesFlag,
@@ -160,6 +181,9 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.autoCString = autoCString.value
     opt.makeFuncWrapper = makeFuncWrapperFlag.value
     opt.funcWrapperSuffix = funcWrapperSuffixFlag.value.getOrThrow()
+    opt.wrapStaticFns = wrapStaticFnsFlag.value
+    opt.wrapStaticFnsSuffix = wrapStaticFnsSuffixFlag.value.getOrThrow()
+    opt.wrapStaticFnsPath = wrapStaticFnsPathFlag.value
     opt.arrayPointersInArgs = arrayPointersInArgs.value
     opt.makeCjString = makeCjString.value
     opt.objc = objcFlag.value
@@ -178,6 +202,19 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
             eprintln("Error: --default-enum-style must be 'consts' or 'newtype', got: ${v}")
             env.exit(1)
     }
+    opt.defaultAliasStyle = match (defaultAliasStyleFlag.value.getOrThrow()) {
+        case "type_alias" => DefaultAliasStyle.TypeAlias
+        case "new_type" => DefaultAliasStyle.NewType
+        case "new_type_deref" => DefaultAliasStyle.NewTypeDeref
+        case v =>
+            eprintln(
+                "Error: --default-alias-style must be 'type_alias', 'new_type', or 'new_type_deref', got: ${v}"
+            )
+            env.exit(1)
+    }
+    opt.typeAliases.add(typeAliasFlag.values)
+    opt.newTypeAliases.add(newTypeAliasFlag.values)
+    opt.newTypeDerefAliases.add(newTypeAliasDerefFlag.values)
     opt.fitMacroConstants = fitMacroConstantsFlag.value
     opt.useUnionAccessorWorkaround = !noUnionAccessorWorkaroundFlag.value
     opt.enableCxxNamespaces = enableCxxNamespacesFlag.value

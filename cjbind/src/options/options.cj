@@ -94,6 +94,24 @@ public enum DefaultEnumStyle <: Equatable<DefaultEnumStyle> {
     }
 }
 
+/// Controls how C/C++ typedefs and type aliases are represented in Cangjie.
+public enum DefaultAliasStyle <: Equatable<DefaultAliasStyle> {
+    /// Preserve the source alias as a Cangjie `type` alias.
+    | TypeAlias
+    /// Generate a distinct, single-field `@C struct`.
+    | NewType
+    /// Generate a newtype plus explicit `wrap` and `unwrap` helpers.
+    | NewTypeDeref
+
+    public operator func ==(rhs: DefaultAliasStyle): Bool {
+        match ((this, rhs)) {
+            case (TypeAlias, TypeAlias) | (NewType, NewType) |
+                (NewTypeDeref, NewTypeDeref) => true
+            case _ => false
+        }
+    }
+}
+
 /// Information passed to `fieldNameCallback` when a named struct or union
 /// field is about to be emitted.
 public class FieldInfo {
@@ -120,6 +138,14 @@ public class CjbindOptions {
     public var noComment: Bool = false
     public var makeFuncWrapper: Bool = false
     public var funcWrapperSuffix: String = "_cjbindwrapper"
+    /// Generate externally visible C/C++ bridge functions for functions with
+    /// internal linkage (`static` and `static inline`).
+    public var wrapStaticFns: Bool = false
+    /// Suffix appended to the exported bridge symbol.
+    public var wrapStaticFnsSuffix: String = "__extern"
+    /// Base output path for the bridge source. cjbind replaces any extension
+    /// with `.c` or `.cpp` according to the parsed language.
+    public var wrapStaticFnsPath: ?String = None
     public var autoCString: Bool = false
     public var arrayPointersInArgs: Bool = false
     public var makeCjString: Bool = false
@@ -127,6 +153,7 @@ public class CjbindOptions {
     public var objcCodegenMode: ObjcCodegenMode = ObjcCodegenMode.Runtime
     public var objcGenerateDefinitions: Bool = false
     public var defaultEnumStyle: DefaultEnumStyle = DefaultEnumStyle.Consts
+    public var defaultAliasStyle: DefaultAliasStyle = DefaultAliasStyle.TypeAlias
     public var fitMacroConstants: Bool = false
     public var useUnionAccessorWorkaround: Bool = true
     public var enableCxxNamespaces: Bool = false
@@ -160,6 +187,13 @@ public class CjbindOptions {
     public let allowlistedItems: NamePatternSet = NamePatternSet()
     public let allowlistedVars: NamePatternSet = NamePatternSet()
     public let allowlistedFiles: NamePatternSet = NamePatternSet()
+    /// Alias names matching these patterns always use ordinary Cangjie aliases.
+    public let typeAliases: NamePatternSet = NamePatternSet()
+    /// Alias names matching these patterns are generated as strong newtypes.
+    public let newTypeAliases: NamePatternSet = NamePatternSet()
+    /// Alias names matching these patterns are generated as newtypes with
+    /// explicit wrapping and unwrapping helpers.
+    public let newTypeDerefAliases: NamePatternSet = NamePatternSet()
     /// Allows library users to rename named struct, union, and bitfield fields.
     /// Returning `None` keeps the original C field name.
     public var fieldNameCallback: ?((FieldInfo) -> ?String) = None
@@ -169,5 +203,20 @@ public class CjbindOptions {
     public init(headers: Collection<String>, clang_args: Collection<String>) {
         this.headers.add(all: headers)
         this.clangArgs.add(all: clang_args)
+    }
+
+    /// Resolve an alias style using the same first-match precedence as
+    /// rust-bindgen: ordinary alias, newtype, newtype-with-accessors, default.
+    public func aliasStyle(name: String): DefaultAliasStyle {
+        if (this.typeAliases.matches(name)) {
+            return DefaultAliasStyle.TypeAlias
+        }
+        if (this.newTypeAliases.matches(name)) {
+            return DefaultAliasStyle.NewType
+        }
+        if (this.newTypeDerefAliases.matches(name)) {
+            return DefaultAliasStyle.NewTypeDeref
+        }
+        return this.defaultAliasStyle
     }
 }
