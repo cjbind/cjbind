@@ -2,7 +2,8 @@ package cjbind.codegen
 
 import cjbind.ir.*
 import cjbind.ir.analysis.AnalysisResults
-import cjbind.options.CjbindOptions
+import cjbind.options.{CjbindOptions, DefaultAliasStyle}
+import cjbind_token.tokenStreamFromTemplate
 import std.collection.HashMap
 import std.unittest.*
 import std.unittest.testmacro.*
@@ -19,7 +20,8 @@ func addGenericAliasTestType(
     ctx: CjbindContext,
     name: String,
     kind: TypeKind,
-    parentId!: ?ItemId = None
+    parentId!: ?ItemId = None,
+    layout!: ?Layout = None
 ): TypeId {
     let id = ctx.nextItemId()
     ctx.addItem(
@@ -27,7 +29,7 @@ func addGenericAliasTestType(
             id,
             None,
             parentId.getOrDefault({=> ctx.rootModule}),
-            ItemKind.KindType(Type(Some(name), None, kind, false)),
+            ItemKind.KindType(Type(Some(name), layout, kind, false)),
             None
         ),
         None,
@@ -46,6 +48,22 @@ func markGenericAliasUsage(
 
 @Test
 public class GenericAliasRenderingTest {
+    @TestCase
+    func newTypeDerefUsesAnExplicitCangjieValueProperty(): Unit {
+        let rendered = newTypeAliasDeclaration(
+            "StrongId",
+            tokenStreamFromTemplate("UInt32"),
+            DefaultAliasStyle.NewTypeDeref
+        ).toString()
+
+        @Expect(rendered.contains("public var rawValue: UInt32"), true)
+        @Expect(rendered.contains("public mut prop value: UInt32"), true)
+        @Expect(rendered.contains("return this.rawValue"), true)
+        @Expect(rendered.contains("this.rawValue = value"), true)
+        @Expect(rendered.contains("public static func wrap"), true)
+        @Expect(rendered.contains("public func unwrap"), true)
+    }
+
     @TestCase
     func preservesAliasPaths(): Unit {
         let ctx = genericAliasTestContext()
@@ -357,6 +375,132 @@ public class GenericAliasRenderingTest {
     }
 
     @TestCase
+    func lowersNamedNewtypesAtGenericCallbackValueBoundaries(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            ctx.options.newTypeAliases.add("FloatAlias")
+            let floatType = addGenericAliasTestType(
+                ctx,
+                "float",
+                TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindFloat),
+                layout: Some(Layout(4, 4))
+            )
+            let floatAlias = addGenericAliasTestType(
+                ctx,
+                "FloatAlias",
+                TypeKind.TypeKindAlias(floatType)
+            )
+            let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let parameterPointer = addGenericAliasTestType(
+                ctx,
+                "Pointer",
+                TypeKind.TypeKindPointer(parameter)
+            )
+            let function = addGenericAliasTestType(
+                ctx,
+                "Function",
+                TypeKind.TypeKindFunction(FunctionSig(
+                    "callback",
+                    floatAlias,
+                    [(Some("value"), floatAlias), (Some("data"), parameterPointer)],
+                    false,
+                    ClangAbi.Known(Abi.C)
+                ))
+            )
+            let functionPointer = addGenericAliasTestType(
+                ctx,
+                "FunctionPointer",
+                TypeKind.TypeKindPointer(function)
+            )
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, floatType, Array<TypeId>())
+            markGenericAliasUsage(usage, floatAlias, Array<TypeId>())
+            markGenericAliasUsage(usage, parameter, [parameter])
+            markGenericAliasUsage(usage, parameterPointer, [parameter])
+            markGenericAliasUsage(usage, function, [parameter])
+            markGenericAliasUsage(usage, functionPointer, [parameter])
+            ctx.installAnalysisResults(AnalysisResults(usage))
+
+            let substitutions = HashMap<ItemId, String>()
+            substitutions.add(parameter, "T")
+            match (renderGenericAliasType(ctx, functionPointer, substitutions, ItemSet())) {
+                case Ok(tokens) => @Expect(
+                    tokens.toString().replace(" ", ""),
+                    "CFunc<(value:Float32,data:CPointer<T>)->Float32>"
+                )
+                case Err(_) => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
+    func degradesNewtypeTemplateSubstitutionAtCallbackValueBoundary(): Unit {
+        let ctx = genericAliasTestContext()
+        try {
+            ctx.options.newTypeAliases.add("FloatAlias")
+            let floatType = addGenericAliasTestType(
+                ctx,
+                "float",
+                TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindFloat),
+                layout: Some(Layout(4, 4))
+            )
+            let floatAlias = addGenericAliasTestType(
+                ctx,
+                "FloatAlias",
+                TypeKind.TypeKindAlias(floatType)
+            )
+            let parameter = addGenericAliasTestType(ctx, "T", TypeKind.TypeKindTypeParam)
+            let function = addGenericAliasTestType(
+                ctx,
+                "Function",
+                TypeKind.TypeKindFunction(FunctionSig(
+                    "callback",
+                    parameter,
+                    [(None, parameter)],
+                    false,
+                    ClangAbi.Known(Abi.C)
+                ))
+            )
+            let functionPointer = addGenericAliasTestType(
+                ctx,
+                "FunctionPointer",
+                TypeKind.TypeKindPointer(function)
+            )
+            let definition = addGenericAliasTestType(
+                ctx,
+                "Callback",
+                TypeKind.TypeKindTemplateAlias(functionPointer, [parameter])
+            )
+            let instance = addGenericAliasTestType(
+                ctx,
+                "FloatCallback",
+                TypeKind.TypeKindTemplateInstantiation(TemplateInstantiation(
+                    definition,
+                    [floatAlias]
+                ))
+            )
+            let usage = HashMap<ItemId, ItemSet>()
+            markGenericAliasUsage(usage, floatType, Array<TypeId>())
+            markGenericAliasUsage(usage, floatAlias, Array<TypeId>())
+            markGenericAliasUsage(usage, parameter, [parameter])
+            markGenericAliasUsage(usage, function, [parameter])
+            markGenericAliasUsage(usage, functionPointer, [parameter])
+            markGenericAliasUsage(usage, definition, [parameter])
+            markGenericAliasUsage(usage, instance, Array<TypeId>())
+            ctx.installAnalysisResults(AnalysisResults(usage))
+
+            match (instance.tryToCjTy(ctx, ())) {
+                case Ok(tokens) => @Expect(tokens.toString(), "CPointer<Unit>")
+                case Err(_) => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
+    @TestCase
     func reportsUnsupportedCallingConventionsAsErrors(): Unit {
         let ctx = genericAliasTestContext()
         try {
@@ -365,6 +509,7 @@ public class GenericAliasRenderingTest {
             let visiting = ItemSet()
             let ctypeSubstitutions = ItemSet()
             let valueAbiSubstitutions = ItemSet()
+            ctx.installAnalysisResults(AnalysisResults(HashMap<ItemId, ItemSet>()))
 
             let unsupported = renderGenericAliasFunction(
                 ctx,
@@ -387,15 +532,18 @@ public class GenericAliasRenderingTest {
                 case Ok(_) => @Assert(false)
             }
 
+            let zeroFixedVariadic = FunctionSig(
+                "variadicCallback",
+                unit,
+                Array<(Option<String>, TypeId)>(),
+                true,
+                ClangAbi.Known(Abi.C)
+            )
+            @Expect(zeroFixedVariadic.rawIsVariadic(), true)
+            @Expect(zeroFixedVariadic.getIsVariadic(), false)
             let ordinary = renderGenericAliasFunction(
                 ctx,
-                FunctionSig(
-                    "variadicCallback",
-                    unit,
-                    [(None, unit)],
-                    true,
-                    ClangAbi.Known(Abi.C)
-                ),
+                zeroFixedVariadic,
                 substitutions,
                 visiting,
                 ctypeSubstitutions,
@@ -403,8 +551,13 @@ public class GenericAliasRenderingTest {
                 Box(false)
             )
             match (ordinary) {
-                case Err(error) => @Expect(genericAliasDiagnosticLevel(error), "Warning")
-                case Ok(_) => @Assert(false)
+                case Ok(tokens) =>
+                    @Expect(
+                        tokens.toString().replace(" ", ""),
+                        "__CjbindVariadicFunction0<Unit>"
+                    )
+                    @Expect(ctx.codegenVariadicFunctionArities.contains(0), true)
+                case Err(_) => @Assert(false)
             }
         } finally {
             ctx.close()

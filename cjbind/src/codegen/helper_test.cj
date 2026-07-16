@@ -70,6 +70,47 @@ public class TokenStreamToPtrTest {
     }
 }
 
+@Test
+public class FriendlyCarrierHelperTest {
+    @TestCase
+    func float16ExposesAValuePropertyWithoutChangingItsRawStorage(): Unit {
+        let rendered = Helpers.float16Type().toString()
+        @Expect(rendered.contains("public var bits: UInt16"), true)
+        @Expect(rendered.contains("public init(value: Float16)"), true)
+        @Expect(rendered.contains("public mut prop value: Float16"), true)
+        @Expect(rendered.contains("Float16.fromBits(this.bits)"), true)
+        @Expect(rendered.contains("value.toBits()"), true)
+        @Expect(rendered.contains("CPointer<Float16>"), false)
+    }
+
+    @TestCase
+    func complexCarriersExposeTypedComponentProperties(): Unit {
+        let rendered = Helpers.complexTypes().toString()
+        @Expect(rendered.contains("public mut prop real: Float16"), true)
+        @Expect(rendered.contains("public mut prop imaginary: Float16"), true)
+        @Expect(rendered.contains("public mut prop real: Float32"), true)
+        @Expect(rendered.contains("public mut prop imaginary: Float64"), true)
+        @Expect(rendered.contains("Float16.fromBits(this.reBits)"), true)
+        @Expect(rendered.contains("this.imBits = value.toBits()"), true)
+        @Expect(rendered.contains("operator func"), false)
+    }
+
+    @TestCase
+    func incompleteArrayViewKeepsDereferenceOperationsUnsafe(): Unit {
+        let rendered = Helpers.incompleteArrayViewType().toString()
+        @Expect(rendered.contains("where T <: CType"), true)
+        @Expect(rendered.contains("public prop pointer: CPointer<T>"), true)
+        @Expect(rendered.contains("public prop size: Int64"), true)
+        @Expect(rendered.contains("public prop isEmpty: Bool"), true)
+        @Expect(rendered.contains("public unsafe operator func [](index: Int64): T"), true)
+        @Expect(rendered.contains("public unsafe operator func [](index: Int64, value!: T): Unit"), true)
+        @Expect(rendered.contains("public struct __CjbindConstArrayView<T> where T <: CType"), true)
+        @Expect(rendered.contains("throw Exception(\"array view size cannot be negative\")"), true)
+        @Expect(rendered.contains("throw Exception(\"array view index out of bounds\")"), true)
+        @Expect(rendered.contains("unsafe prop"), false)
+    }
+}
+
 // === Helpers.blob ===
 
 @Test
@@ -273,6 +314,18 @@ public class BitfieldHelperTest {
         @Expect(result.contains("unsafe { __cjbind_bitfield_read(ptr, bitOffset, bitWidth) }"), true)
         // Sign extension check
         @Expect(result.contains("bitWidth - 1"), true)
+        @Expect(result.contains("__cjbind_bitfield_uint64_to_int64"), true)
+        @Expect(result.contains("Int64(raw |"), false)
+    }
+
+    @TestCase
+    func signedConversionHelpersPreserveTwosComplementBits(): Unit {
+        let ts = Helpers.bitfieldSignedConversionHelpers()
+        let result = ts.toString()
+        @Expect(result.contains("func __cjbind_bitfield_int64_to_uint64"), true)
+        @Expect(result.contains("func __cjbind_bitfield_uint64_to_int64"), true)
+        @Expect(result.contains("CPointer<UInt64>(CPointer<Int64>(inout copy)).read()"), true)
+        @Expect(result.contains("CPointer<Int64>(CPointer<UInt64>(inout copy)).read()"), true)
     }
 }
 
@@ -406,7 +459,10 @@ public class AstTyFloatKindTest {
     @TestCase
     func float16(): Unit {
         let ctx = unsafe { zeroValue<CjbindContext>() }
-        @Expect(AstTy.floatKindCjType(ctx, TypeKindFloatKind.FloatKindFloat16, None).toString(), "Float16")
+        @Expect(
+            AstTy.floatKindCjType(ctx, TypeKindFloatKind.FloatKindFloat16, Layout(2, 2)).toString(),
+            "__CjbindFloat16"
+        )
     }
 
     @TestCase
@@ -441,6 +497,39 @@ public class AstTyFloatKindTest {
         let result = AstTy.floatKindCjType(ctx, TypeKindFloatKind.FloatKindFloat128, None).toString()
         @Expect(result.contains("VArray"), true)
         @Expect(result.contains("UInt64"), true)
+    }
+
+    @TestCase
+    func complexKindsUseNamedCLayouts(): Unit {
+        let ctx = unsafe { zeroValue<CjbindContext>() }
+        @Expect(
+            AstTy.complexKindCjType(ctx, TypeKindFloatKind.FloatKindFloat, Layout(8, 4))
+                .getOrThrow()
+                .toString(),
+            "__CjbindComplexFloat32"
+        )
+        @Expect(
+            AstTy.complexKindCjType(ctx, TypeKindFloatKind.FloatKindDouble, Layout(16, 8))
+                .getOrThrow()
+                .toString(),
+            "__CjbindComplexFloat64"
+        )
+        @Expect(
+            AstTy.complexKindCjType(ctx, TypeKindFloatKind.FloatKindLongDouble, Layout(32, 16)).isNone(),
+            true
+        )
+    }
+}
+
+@Test
+public class VariadicFunctionHelperTest {
+    @TestCase
+    func encodesFixedSignatureArityWithoutChangingPointerLayout(): Unit {
+        let alias = Helpers.variadicFunctionAlias(2).toString().replace(" ", "")
+        @Expect(alias.contains("__CjbindVariadicFunction2"), true)
+        @Expect(alias.contains("<R,A0,A1>"), true)
+        @Expect(alias.contains("CPointer<Unit>"), true)
+        @Expect(alias.contains("notcallablefromCangjie"), true)
     }
 }
 

@@ -134,6 +134,33 @@ func templateInstantiation(ctx: CjbindContext, id: TypeId): TemplateInstantiatio
     }
 }
 
+func concreteTemplateFieldType(
+    instantiation: TemplateInstantiation,
+    name: String
+): TypeId {
+    let concrete = instantiation.concrete.getOrThrow({=>
+        Exception("template instantiation has no concrete record")
+    })
+    match (concrete.fields) {
+        case CompFields.CompFieldsBefore(rawFields) =>
+            for (field in rawFields) {
+                if (field.name == Some(name)) {
+                    return field.ty
+                }
+            }
+        case CompFields.CompFieldsAfter(value) =>
+            for (field in value.fields) {
+                if (let Field.DataMember(data) <- field) {
+                    if (data.name == Some(name)) {
+                        return data.ty
+                    }
+                }
+            }
+        case CompFields.CompFieldsError => ()
+    }
+    throw Exception("missing concrete template field ${name}")
+}
+
 func functionSignature(ctx: CjbindContext, name: String): FunctionSig {
     for ((_, item) in ctx.getItems()) {
         if (let ItemKind.KindFunction(function) <- item.kind) {
@@ -214,6 +241,44 @@ public class ParsedReferenceIrTest {
 
 @Test
 public class ParsedTemplateAliasIrTest {
+    @TestCase
+    func integralArgumentsKeepIdentityAndConcreteSpecializationFields(): Unit {
+        let ctx = parsedAnalysisTestContext(testHeader("cxx-template"))
+        try {
+            let holder = namedType(ctx, "Holder")
+            let fixed = templateInstantiation(ctx, fieldType(ctx, holder, "fixed"))
+            @Expect(fixed.arguments.size, 0)
+            @Expect(fixed.nonTypeArguments.size, 1)
+            @Expect(fixed.nonTypeArguments[0].signedValue, 4)
+            match (ctx.resolveType(concreteTemplateFieldType(fixed, "values")).kind) {
+                case TypeKind.TypeKindArray(_, length) => @Expect(length, 4)
+                case _ => @Assert(false)
+            }
+
+            let larger = templateInstantiation(ctx, fieldType(ctx, holder, "largerFixed"))
+            @Expect(larger.nonTypeArguments[0].signedValue, 8)
+            @Expect(
+                fixed.nonTypeArguments[0].sameIdentity(larger.nonTypeArguments[0]),
+                false
+            )
+
+            let negative = templateInstantiation(ctx, fieldType(ctx, holder, "negative"))
+            @Expect(negative.nonTypeArguments[0].signedValue, -1)
+            @Expect(negative.nonTypeArguments[0].disambiguatedName(), "minus_1")
+
+            let escaped = templateInstantiation(ctx, fieldType(ctx, holder, "escaped"))
+            @Expect(escaped.nonTypeArguments[0].signedValue, 10)
+
+            let specialized = templateInstantiation(ctx, fieldType(ctx, holder, "specialized"))
+            match (ctx.resolveType(concreteTemplateFieldType(specialized, "specialized")).kind) {
+                case TypeKind.TypeKindFloat(TypeKindFloatKind.FloatKindDouble) => ()
+                case _ => @Assert(false)
+            }
+        } finally {
+            ctx.close()
+        }
+    }
+
     @TestCase
     func functionPointerTypedefKeepsItsTemplateArgumentChain(): Unit {
         let ctx = parsedAnalysisTestContext(testHeader("support/ir/struct_with_typedef_template_arg"))

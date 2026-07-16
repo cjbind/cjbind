@@ -14,6 +14,18 @@ public class DefaultEnumStyleTest {
 }
 
 @Test
+public class DefaultAliasStyleTest {
+    @TestCase
+    func equality(): Unit {
+        @Expect(DefaultAliasStyle.TypeAlias == DefaultAliasStyle.TypeAlias, true)
+        @Expect(DefaultAliasStyle.NewType == DefaultAliasStyle.NewType, true)
+        @Expect(DefaultAliasStyle.NewTypeDeref == DefaultAliasStyle.NewTypeDeref, true)
+        @Expect(DefaultAliasStyle.TypeAlias == DefaultAliasStyle.NewType, false)
+        @Expect(DefaultAliasStyle.NewType == DefaultAliasStyle.NewTypeDeref, false)
+    }
+}
+
+@Test
 public class ObjcCodegenModeTest {
     @TestCase
     func equality(): Unit {
@@ -36,6 +48,9 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.noComment, false)
         @Expect(opts.makeFuncWrapper, false)
         @Expect(opts.funcWrapperSuffix, "_cjbindwrapper")
+        @Expect(opts.wrapStaticFns, false)
+        @Expect(opts.wrapStaticFnsSuffix, "__extern")
+        @Expect(opts.wrapStaticFnsPath.isNone(), true)
         @Expect(opts.autoCString, false)
         @Expect(opts.arrayPointersInArgs, false)
         @Expect(opts.makeCjString, false)
@@ -43,6 +58,7 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.objcCodegenMode == ObjcCodegenMode.Runtime, true)
         @Expect(opts.objcGenerateDefinitions, false)
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.Consts, true)
+        @Expect(opts.defaultAliasStyle == DefaultAliasStyle.TypeAlias, true)
         @Expect(opts.fitMacroConstants, false)
         @Expect(opts.useUnionAccessorWorkaround, true)
         @Expect(opts.enableCxxNamespaces, false)
@@ -76,6 +92,9 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.allowlistedItems.size, 0)
         @Expect(opts.allowlistedVars.size, 0)
         @Expect(opts.allowlistedFiles.size, 0)
+        @Expect(opts.typeAliases.size, 0)
+        @Expect(opts.newTypeAliases.size, 0)
+        @Expect(opts.newTypeDerefAliases.size, 0)
         @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
@@ -103,7 +122,11 @@ public class CjbindOptionsDefaultsTest {
         opts.noEnumPrefix = true
         opts.makeFuncWrapper = true
         opts.funcWrapperSuffix = "_wrap"
+        opts.wrapStaticFns = true
+        opts.wrapStaticFnsSuffix = "__bridge"
+        opts.wrapStaticFnsPath = Some("generated/wrappers")
         opts.defaultEnumStyle = DefaultEnumStyle.NewType
+        opts.defaultAliasStyle = DefaultAliasStyle.NewTypeDeref
         opts.objcCodegenMode = ObjcCodegenMode.Compiler
         opts.useUnionAccessorWorkaround = false
         opts.enableCxxNamespaces = true
@@ -128,7 +151,11 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.noEnumPrefix, true)
         @Expect(opts.makeFuncWrapper, true)
         @Expect(opts.funcWrapperSuffix, "_wrap")
+        @Expect(opts.wrapStaticFns, true)
+        @Expect(opts.wrapStaticFnsSuffix, "__bridge")
+        @Expect(opts.wrapStaticFnsPath, Some("generated/wrappers"))
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.NewType, true)
+        @Expect(opts.defaultAliasStyle == DefaultAliasStyle.NewTypeDeref, true)
         @Expect(opts.objcCodegenMode == ObjcCodegenMode.Compiler, true)
         @Expect(opts.useUnionAccessorWorkaround, false)
         @Expect(opts.enableCxxNamespaces, true)
@@ -200,6 +227,30 @@ public class CjbindOptionsDefaultsTest {
         patterns.add("[")
         @Expect(patterns.matches("Visible"), false)
         @Expect(patterns.unmatchedPatterns(), ["Visible", "["])
+    }
+
+    @TestCase
+    func aliasStyleUsesExplicitPatternsBeforeTheDefault(): Unit {
+        let opts = CjbindOptions()
+        opts.defaultAliasStyle = DefaultAliasStyle.NewType
+        opts.typeAliases.add("Plain")
+        opts.newTypeAliases.add("Strong")
+        opts.newTypeDerefAliases.add("Accessible")
+
+        @Expect(opts.aliasStyle("Plain") == DefaultAliasStyle.TypeAlias, true)
+        @Expect(opts.aliasStyle("Strong") == DefaultAliasStyle.NewType, true)
+        @Expect(opts.aliasStyle("Accessible") == DefaultAliasStyle.NewTypeDeref, true)
+        @Expect(opts.aliasStyle("Defaulted") == DefaultAliasStyle.NewType, true)
+    }
+
+    @TestCase
+    func ordinaryAliasPatternWinsWhenPatternsOverlap(): Unit {
+        let opts = CjbindOptions()
+        opts.typeAliases.add("Overlap")
+        opts.newTypeAliases.add("Overlap")
+        opts.newTypeDerefAliases.add("Overlap")
+
+        @Expect(opts.aliasStyle("Overlap") == DefaultAliasStyle.TypeAlias, true)
     }
 
 }
