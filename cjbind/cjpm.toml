@@ -12,7 +12,7 @@
   override-compile-option = ""
   src-dir = ""
   target-dir = ""
-  version = "0.3.1"
+  version = "0.3.4"
 
 [profile.customized-option]
   cfg_dynamic_libclang = "--cfg=libclang_linkage=dynamic"
