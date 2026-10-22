@@ -3807,6 +3807,10 @@ public const CXTypeKind_CXType_HLSLResource: CXTypeKind = 179
 // E.g., struct S, or via a qualified name, e.g., N::M::type, or both.
 public const CXTypeKind_CXType_HLSLAttributedResource: CXTypeKind = 180
 
+// LLVM 23 clang-c/Index.h: sugar for predefined types used by compiler builtins,
+// including size_t and ptrdiff_t. Older libclang versions never return this kind.
+public const CXTypeKind_CXType_PredefinedSugar: CXTypeKind = 182
+
 // Describes the kind of type
 public type CXTypeKind = UInt32
 

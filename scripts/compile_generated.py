@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = [
     ROOT / "cjbind_test/testdata/headers/parameter-name-collisions.h",
+    ROOT / "cjbind_test/testdata/headers/support/ir/predefined-sugar.h",
     ROOT / "cjbind_test/testdata/headers/support/ir/aligned-generated-layout.h",
     ROOT / "cjbind_test/testdata/headers/support/ir/cxx-explicit-object.hpp",
     ROOT / "cjbind_test/testdata/headers/bitfield-full-word-width.h",

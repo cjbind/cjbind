@@ -290,6 +290,20 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
                     }
                 }
             }
+        } else if (tyKind == clang.CXTypeKind_CXType_PredefinedSugar) {
+            // LLVM 23 exposes builtin size/ptrdiff types through this sugar.
+            // The canonical type retains qualifiers and gives us the target's
+            // actual integer kind. Refuse malformed/non-progressing results.
+            if (!canonicalTy.isValid() || canonicalTy.kind() == clang.CXTypeKind_CXType_PredefinedSugar) {
+                return Err(ParseError.Continue)
+            }
+            return Type.fromClangTy(
+                potentialId,
+                canonicalTy,
+                location,
+                parentId,
+                ctx
+            )
         } else if (tyKind == clang.CXTypeKind_CXType_Auto) {
             if (canonicalTy == ty) {
                 return Err(ParseError.Continue)
