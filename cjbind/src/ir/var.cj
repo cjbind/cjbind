@@ -53,7 +53,18 @@ public class Var <: ClangSubItemParser<Var> {
                 return Err(ParseError.Continue)
             }
 
+            var macroLayout: ?Layout = None
             let (typeKind, val) = match (value) {
+                case MacroEvalResult.EvalTypedInt(it, kind, layout) =>
+                    macroLayout = Some(layout)
+                    let constant = match (kind) {
+                        case IntKindBool => VarType.VarBool(!it.isZero())
+                        case _ => VarType.VarInt(it)
+                    }
+                    (TypeKind.TypeKindInt(kind), constant)
+                case MacroEvalResult.EvalTypedFloat(it, kind, layout) =>
+                    macroLayout = Some(layout)
+                    (TypeKind.TypeKindFloat(kind), VarType.VarTypedFloat(it))
                 case MacroEvalResult.EvalResultInt(it) => match (it) {
                     case Ints.Int(v) =>
                         let ik = if (ctx.options.fitMacroConstants) {
@@ -82,7 +93,17 @@ public class Var <: ClangSubItemParser<Var> {
                 case _ => return Err(ParseError.Continue)
             }
 
-            let ty = Item.builtinType(typeKind, true, ctx)
+            let ty = if (let Some(layout) <- macroLayout) {
+                let id = ctx.nextItemId()
+                ctx.addItem(
+                    Item(id, None, ctx.rootModule, KindType(Type(None, layout, typeKind, true)), None),
+                    None,
+                    None
+                )
+                id
+            } else {
+                Item.builtinType(typeKind, true, ctx)
+            }
 
             return Ok(
                 ParseResult.New(
@@ -192,17 +213,38 @@ func parseMacroClangFallback(
 
         if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
             match (evalutated.asInt()) {
-                case Some(v) => match (v) {
-                    case clang.EvalResultInt.Int(v) => return Some(
-                        (cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.Int(v))))
-                    case clang.EvalResultInt.UInt(v) => return Some(
-                        (cursor.spelling(), MacroEvalResult.EvalResultInt(Ints.UInt(v))))
-                }
+                case Some(v) =>
+                    let value = v.toInts()
+                    if (ctx.options.macroConstUseCTypes) {
+                        let valueType = evalutated.valueType()
+                        let layout = valueType.fallibleLayout(ctx).ok()
+                        if (let Some(l) <- layout) {
+                            if (let Some(ik) <- macroIntegerKind(valueType, value, l)) {
+                                return Some((cursor.spelling(), MacroEvalResult.EvalTypedInt(value, ik, l)))
+                            }
+                        }
+                        eprintln(
+                            "Warning: skipping macro '${cursor.spelling()}' with unsupported C integer type '${valueType.spelling()}'")
+                        return None
+                    }
+                    return Some((cursor.spelling(), MacroEvalResult.EvalResultInt(value)))
                 case None => return None
             }
         } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_Float) {
             match (evalutated.asDouble()) {
-                case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
+                case Some(v) =>
+                    if (ctx.options.macroConstUseCTypes) {
+                        let valueType = evalutated.valueType()
+                        let kind = macroFloatKind(valueType)
+                        let layout = valueType.fallibleLayout(ctx).ok()
+                        if (let Some(fk) <- kind && let Some(l) <- layout) {
+                            return Some((cursor.spelling(), MacroEvalResult.EvalTypedFloat(v, fk, l)))
+                        }
+                        eprintln(
+                            "Warning: skipping macro '${cursor.spelling()}' with unsupported C floating-point type '${valueType.spelling()}'")
+                        return None
+                    }
+                    return Some((cursor.spelling(), MacroEvalResult.EvalFloat(v)))
                 case None => return None
             }
         } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
@@ -218,6 +260,95 @@ func parseMacroClangFallback(
     }
 }
 // cjlint-ignore -end
+
+func macroIntegerKind(ty: clang.Type, value: Ints, layout: Layout): ?TypeKindIntKind {
+    let kind = ty.kind()
+    if (kind == clang.CXTypeKind_CXType_Bool) {
+        return IntKindBool
+    }
+    if (kind == clang.CXTypeKind_CXType_Char_S || kind == clang.CXTypeKind_CXType_SChar) {
+        return IntKindSChar
+    }
+    if (kind == clang.CXTypeKind_CXType_Char_U || kind == clang.CXTypeKind_CXType_UChar) {
+        return IntKindUChar
+    }
+    if (kind == clang.CXTypeKind_CXType_Char16) {
+        return IntKindChar16
+    }
+    if (kind == clang.CXTypeKind_CXType_Char32) {
+        return IntKindU32
+    }
+    if (kind == clang.CXTypeKind_CXType_WChar) {
+        let signed = match (value) {
+            case Ints.Int(_) => true
+            case Ints.UInt(_) => false
+        }
+        // The generic wchar carrier uses unsigned storage. Macro constants
+        // need the expression's signed value type, including negative wchar_t.
+        return match (layout.size) {
+            case 2 =>
+                if (signed) {
+                    IntKindI16
+                } else {
+                    IntKindU16
+                }
+            case 4 =>
+                if (signed) {
+                    IntKindI32
+                } else {
+                    IntKindU32
+                }
+            case _ => None
+        }
+    }
+    if (kind == clang.CXTypeKind_CXType_Short) {
+        return IntKindShort
+    }
+    if (kind == clang.CXTypeKind_CXType_UShort) {
+        return IntKindUShort
+    }
+    if (kind == clang.CXTypeKind_CXType_Int) {
+        return IntKindInt
+    }
+    if (kind == clang.CXTypeKind_CXType_UInt) {
+        return IntKindUInt
+    }
+    if (kind == clang.CXTypeKind_CXType_Long) {
+        return IntKindLong
+    }
+    if (kind == clang.CXTypeKind_CXType_ULong) {
+        return IntKindULong
+    }
+    if (kind == clang.CXTypeKind_CXType_LongLong) {
+        return IntKindLongLong
+    }
+    if (kind == clang.CXTypeKind_CXType_ULongLong) {
+        return IntKindULongLong
+    }
+    // Libclang's evaluator only exposes 64 bits, so do not truncate __int128.
+    return None
+}
+
+func macroFloatKind(ty: clang.Type): ?TypeKindFloatKind {
+    let kind = ty.kind()
+    if (kind == clang.CXTypeKind_CXType_Float16 || kind == clang.CXTypeKind_CXType_Half) {
+        return FloatKindFloat16
+    }
+    if (kind == clang.CXTypeKind_CXType_Float) {
+        return FloatKindFloat
+    }
+    if (kind == clang.CXTypeKind_CXType_Double) {
+        return FloatKindDouble
+    }
+    if (kind == clang.CXTypeKind_CXType_LongDouble) {
+        return FloatKindLongDouble
+    }
+    if (kind == clang.CXTypeKind_CXType_Float128) {
+        return FloatKindFloat128
+    }
+    // __bf16 has a different format from Cangjie Float16's IEEE half precision.
+    return None
+}
 
 func fitSignedIntKind(v: Int64): TypeKindIntKind {
     if (v >= -128 && v <= 127) {
@@ -288,5 +419,6 @@ public enum VarType {
     VarBool(Bool)
     | VarInt(Ints)
     | VarFloat(Float64)
+    | VarTypedFloat(Float64)
     | VarString(Array<UInt8>)
 }

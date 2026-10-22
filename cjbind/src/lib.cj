@@ -221,6 +221,7 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.defaultEnumStyle = opts.defaultEnumStyle
     ctxOpts.defaultAliasStyle = opts.defaultAliasStyle
     ctxOpts.fitMacroConstants = opts.fitMacroConstants
+    ctxOpts.macroConstUseCTypes = opts.macroConstUseCTypes
     ctxOpts.useUnionAccessorWorkaround = opts.useUnionAccessorWorkaround
     ctxOpts.enableCxxNamespaces = opts.enableCxxNamespaces
     ctxOpts.conservativeInlineNamespaces = opts.conservativeInlineNamespaces

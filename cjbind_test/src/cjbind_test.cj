@@ -121,6 +121,9 @@ func applyTestOptionLine(opt: CjbindOptions, optsStr: String, testcase: String):
         } else if (part == "--fit-macro-constants") {
             opt.fitMacroConstants = true
             i += 1
+        } else if (part == "--macro-const-use-ctypes") {
+            opt.macroConstUseCTypes = true
+            i += 1
         } else if (part == "--no-union-accessor-workaround") {
             opt.useUnionAccessorWorkaround = false
             i += 1

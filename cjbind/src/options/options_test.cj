@@ -60,6 +60,7 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.defaultEnumStyle == DefaultEnumStyle.Consts, true)
         @Expect(opts.defaultAliasStyle == DefaultAliasStyle.TypeAlias, true)
         @Expect(opts.fitMacroConstants, false)
+        @Expect(opts.macroConstUseCTypes, false)
         @Expect(opts.useUnionAccessorWorkaround, true)
         @Expect(opts.enableCxxNamespaces, false)
         @Expect(opts.conservativeInlineNamespaces, false)

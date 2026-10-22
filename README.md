@@ -77,12 +77,26 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
         --new-type-alias <REGEX>         把匹配的 typedef 生成为强类型包装
         --new-type-alias-deref <REGEX>   把匹配的 typedef 生成为带 wrap/unwrap 的强类型包装
         --fit-macro-constants            根据值范围选择最小适配整数类型
+        --macro-const-use-ctypes         使用宏表达式的 C 类型和目标平台宽度，优先于整数收窄
         --no-union-accessor-workaround   禁用 union accessor 的编译器 verifier workaround
     -o, --output <FILE>                  把生成的绑定输出到文件
     -p, --package <PACKAGE>              生成的绑定中的包名
     -v, --version                        显示版本号并退出
     -h, --help                           显示帮助信息
 ```
+
+### 宏常量类型
+
+默认情况下，整数宏生成 `Int64` 或 `UInt64`，`--fit-macro-constants` 按值范围选择更小的整数类型。
+启用 `--macro-const-use-ctypes` 后，cjbind 使用 Clang 求值所得的 C 表达式类型，包括整数提升、
+`--target` 指定的平台宽度和 `char` 的符号性。例如，`0UL` 在 LP64 目标上生成 `UInt64`，
+在 Windows LLP64 目标上生成 `UInt32`；`0.f` 生成 `Float32`。库调用可设置
+`CjbindOptions.macroConstUseCTypes = true`。同时启用两个选项时，C 类型优先。
+
+此选项通过十六进制浮点字面量保留有限 `float`、`double` 的值和正负零，半精度常量使用
+`__CjbindFloat16` 存储类型。对于 Clang 求值接口或当前仓颉表示无法完整保留的类型和值，
+包括枚举类型的表达式、128 位整数、宽于 `double` 的 `long double`、128 位浮点数及非有限浮点值，
+cjbind 会报告警告并跳过对应宏。
 
 ### 库调用：重命名字段
 

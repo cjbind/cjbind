@@ -49,6 +49,8 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "把名称匹配正则表达式的 typedef 生成为带 wrap/unwrap 的强类型包装", "REGEX")
     let fitMacroConstantsFlag = BoolFlag(None, "fit-macro-constants", "fit-macro-constants",
         "根据值范围选择最小适配整数类型")
+    let macroConstUseCTypesFlag = BoolFlag(None, "macro-const-use-ctypes", "macro-const-use-ctypes",
+        "使用宏表达式的 C 类型和目标平台位宽，优先于 --fit-macro-constants")
     let noUnionAccessorWorkaroundFlag = BoolFlag(None, "no-union-accessor-workaround", "no-union-accessor-workaround",
         "禁用 union accessor 的编译器 verifier workaround")
     let enableCxxNamespacesFlag = BoolFlag(None, "enable-cxx-namespaces", "enable-cxx-namespaces",
@@ -132,6 +134,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         newTypeAliasFlag,
         newTypeAliasDerefFlag,
         fitMacroConstantsFlag,
+        macroConstUseCTypesFlag,
         noUnionAccessorWorkaroundFlag,
         enableCxxNamespacesFlag,
         conservativeInlineNamespacesFlag,
@@ -219,6 +222,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     opt.newTypeAliases.add(newTypeAliasFlag.values)
     opt.newTypeDerefAliases.add(newTypeAliasDerefFlag.values)
     opt.fitMacroConstants = fitMacroConstantsFlag.value
+    opt.macroConstUseCTypes = macroConstUseCTypesFlag.value
     opt.useUnionAccessorWorkaround = !noUnionAccessorWorkaroundFlag.value
     opt.enableCxxNamespaces = enableCxxNamespacesFlag.value
     opt.conservativeInlineNamespaces = conservativeInlineNamespacesFlag.value

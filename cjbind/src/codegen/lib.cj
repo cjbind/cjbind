@@ -592,6 +592,57 @@ func scalarConstantDeclaration(
     return Some(tokenStreamFromTemplate("public ${declaration} ${ident} : ${ty} = ${value}"))
 }
 
+// Avoid Float64.toString's fixed decimal precision when preserving C macro values.
+// A hexadecimal literal retains every IEEE significand bit, including subnormals
+// and signed zero, and Cangjie rounds it to the declared Float32/Float64 type.
+func preciseMacroFloatLiteral(value: Float64): ?String {
+    let bits = value.toBits()
+    let exponent = Int64((bits >> 52) & 0x7FFu64)
+    if (exponent == 0x7FF) {
+        return None
+    }
+    let digits = "0123456789abcdef".toArray()
+    let fraction = String.fromUtf8(Array<UInt8>(13, {
+        i => digits[Int64((bits >> UInt64((12 - i) * 4)) & 0xFu64)]
+    }))
+    let sign = if ((bits >> 63) == 0) {
+        ""
+    } else {
+        "-"
+    }
+    if (exponent == 0) {
+        return "${sign}0x0.${fraction}p-1022"
+    }
+    return "${sign}0x1.${fraction}p${exponent - 1023}"
+}
+
+func typedMacroFloatDeclaration(
+    ctx: CjbindContext,
+    ident: String,
+    typeId: TypeId,
+    value: Float64
+): ?TokenStream {
+    let canonical = ctx.resolveType(typeId).canonicalType(ctx)
+    let kind = match (canonical.kind) {
+        case TypeKind.TypeKindFloat(kind) => kind
+        case _ => return None
+    }
+    match (kind) {
+        case FloatKindFloat128 => return None
+        case FloatKindLongDouble =>
+            if (canonical.getLayout(ctx).map({layout => layout.size > 8}).getOrDefault({=> true})) {
+                return None
+            }
+        case _ => ()
+    }
+    let literal = preciseMacroFloatLiteral(value) ?? return None
+    if (let FloatKindFloat16 <- kind) {
+        let ty = typeId.toCjTyOrOpaque(ctx, ())
+        return Some(tokenStreamFromTemplate("public let ${ident} : ${ty} = __CjbindFloat16(Float16(${literal}))"))
+    }
+    return scalarConstantDeclaration(ctx, ident, typeId, tokenStreamFromTemplate(literal), expectFloat: true)
+}
+
 extend Var <: CodeGenerator<Item, Unit> {
     // cjlint-ignore -start !G.FUN.01
     public func codegen(
@@ -679,6 +730,13 @@ extend Var <: CodeGenerator<Item, Unit> {
                     }
 
                     result.items.add(optionalComment(ctx, commentToken, tokens))
+                case VarType.VarTypedFloat(vv) =>
+                    if (let Some(tokens) <- typedMacroFloatDeclaration(ctx, canonicalIdent, varTy, vv)) {
+                        result.items.add(optionalComment(ctx, commentToken, tokens))
+                    } else {
+                        eprintln(
+                            "Warning: skipping float macro '${canonicalName}' because its C type or non-finite value cannot be represented precisely")
+                    }
                 case VarType.VarFloat(vv) =>
                     if (let Ok(expr) <- AstTy.floatExpr(ctx, vv)) {
                         if (let Some(tokens) <- scalarConstantDeclaration(

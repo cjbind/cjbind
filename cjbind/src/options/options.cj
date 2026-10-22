@@ -159,6 +159,9 @@ public class CjbindOptions {
     public var defaultEnumStyle: DefaultEnumStyle = DefaultEnumStyle.Consts
     public var defaultAliasStyle: DefaultAliasStyle = DefaultAliasStyle.TypeAlias
     public var fitMacroConstants: Bool = false
+    /// Preserve the C type and target layout of numeric macro constants.
+    /// This takes precedence over fitMacroConstants. Macro evaluation uses Clang.
+    public var macroConstUseCTypes: Bool = false
     public var useUnionAccessorWorkaround: Bool = true
     public var enableCxxNamespaces: Bool = false
     public var conservativeInlineNamespaces: Bool = false

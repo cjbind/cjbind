@@ -2054,6 +2054,11 @@ public class EvalResult <: Resource {
         }
     }
 
+    /// The canonical C type of the evaluated expression.
+    public func valueType(): Type {
+        return this.ty
+    }
+
     public func asInt(): ?EvalResultInt {
         if (this.kind() != CXEvalResultKind_CXEval_Int) {
             return None
