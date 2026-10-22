@@ -15,6 +15,7 @@ public enum MethodKind {
     | Destructor
     | VirtualDestructor(Bool)
     | Static
+    | ExplicitObject
     | Normal
     | Virtual(Bool)
 
@@ -391,6 +392,8 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                             MethodKind.Static
                         } else if (isVirtual) {
                             MethodKind.Virtual(cur.methodIsPureVirtual())
+                        } else if (cur.methodIsExplicitObject()) {
+                            MethodKind.ExplicitObject
                         } else {
                             MethodKind.Normal
                         }

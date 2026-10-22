@@ -29,6 +29,9 @@ public enum FunctionKind {
             if (cursor.methodIsStatic()) {
                 return Some(FunctionKind.KindMethod(MethodKind.Static))
             }
+            if (cursor.methodIsExplicitObject()) {
+                return Some(FunctionKind.KindMethod(MethodKind.ExplicitObject))
+            }
             return Some(FunctionKind.KindMethod(MethodKind.Normal))
         }
         return None
@@ -959,9 +962,9 @@ public class FunctionSig <: Trace<Tracer, Unit> {
         let isMethod = kind == clang.CXCursorKind_CXCursor_CXXMethod
         let isConstructor = kind == clang.CXCursorKind_CXCursor_Constructor
         let isDestructor = kind == clang.CXCursorKind_CXCursor_Destructor
-        let isStatic = isMethod && cursor.methodIsStatic()
+        let hasImplicitObject = isMethod && !cursor.methodIsStatic() && !cursor.methodIsExplicitObject()
         let isVirtual = (isMethod || isDestructor) && cursor.methodIsVirtual()
-        let args = if ((isMethod || isConstructor || isDestructor) && !isStatic) {
+        let args = if (hasImplicitObject || isConstructor || isDestructor) {
             let receiverInner = if (isMethod && isVirtual && !ctx.options.useSpecificVirtualFunctionReceiver) {
                 Item.builtinType(TypeKind.TypeKindVoid, false, ctx)
             } else {

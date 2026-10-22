@@ -671,6 +671,30 @@ public class Cursor <: ToString & Hashable & Equatable<Cursor> {
         }
     }
 
+    /// libclang does not expose a dedicated explicit-object method query.
+    public func methodIsExplicitObject(): Bool {
+        if (this.kind() != CXCursorKind_CXCursor_CXXMethod) {
+            return false
+        }
+        let arguments = match (this.args()) {
+            case Some(value) => value
+            case None => return false
+        }
+        if (arguments.isEmpty()) {
+            return false
+        }
+        // A parameter's extent begins with `this` even when attributes precede it.
+        let tokens = RawTokens(arguments[0])
+        try {
+            return match (tokens.iterator().next()) {
+                case Some(token) => token.kind == CXTokenKind_CXToken_Keyword && token.spelling() == "this"
+                case None => false
+            }
+        } finally {
+            tokens.close()
+        }
+    }
+
     public func methodIsConst(): Bool {
         unsafe {
             return clang_CXXMethod_isConst(x) != 0

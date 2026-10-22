@@ -203,6 +203,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
                         }
                         found
                     case FunctionKind.KindMethod(MethodKind.Normal) | FunctionKind.KindMethod(MethodKind.Static)
+                        | FunctionKind.KindMethod(MethodKind.ExplicitObject)
                         | FunctionKind.KindMethod(MethodKind.Virtual(_)) =>
                         var matchingIndex = 0
                         var found: ?Int64 = None
