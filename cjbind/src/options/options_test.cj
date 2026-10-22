@@ -221,6 +221,21 @@ public class CjbindOptionsDefaultsTest {
     }
 
     @TestCase
+    func repeatedMatchingAndAddedPatternsKeepIndependentResults(): Unit {
+        let patterns = NamePatternSet()
+        patterns.add("Visible.*")
+        @Expect(patterns.matches("VisibleFirst"), true)
+        @Expect(patterns.matches("HiddenType"), false)
+        @Expect(patterns.matches("VisibleSecond"), true)
+
+        patterns.add("Hidden.*")
+        @Expect(patterns.unmatchedPatterns(), ["Hidden.*"])
+        @Expect(patterns.matches("HiddenType"), true)
+        @Expect(patterns.matches("UnrelatedType"), false)
+        @Expect(patterns.unmatchedPatterns().isEmpty(), true)
+    }
+
+    @TestCase
     func invalidRegexDisablesTheWholePatternSet(): Unit {
         let patterns = NamePatternSet()
         patterns.add("Visible")

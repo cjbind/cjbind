@@ -5,6 +5,7 @@ import std.regex.{Regex, RegexException}
 
 public class NamePatternSet {
     let patterns: ArrayList<String> = ArrayList()
+    let compiledPatterns: ArrayList<Regex> = ArrayList()
     let matchedPatterns: HashSet<String> = HashSet()
     var valid: Bool = true
 
@@ -16,7 +17,7 @@ public class NamePatternSet {
             return
         }
         try {
-            let _ = Regex(this.fullMatchPattern(pattern))
+            this.compiledPatterns.add(Regex(this.fullMatchPattern(pattern)))
         } catch (_: RegexException) {
             this.valid = false
             eprintln("Warning: invalid regular expression '${pattern}'; this pattern set will not match any item")
@@ -34,9 +35,9 @@ public class NamePatternSet {
             return false
         }
         var found = false
-        for (pattern in this.patterns) {
-            if (Regex(this.fullMatchPattern(pattern)).matches(name)) {
-                this.matchedPatterns.add(pattern)
+        for (i in 0..this.compiledPatterns.size) {
+            if (this.compiledPatterns[i].matches(name)) {
+                this.matchedPatterns.add(this.patterns[i])
                 found = true
             }
         }
