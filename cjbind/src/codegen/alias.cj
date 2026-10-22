@@ -428,28 +428,16 @@ func newTypeFunctionNeedsWrapper(ctx: CjbindContext, signature: FunctionSig): Bo
     return false
 }
 
-func functionArgumentName(
-    ctx: CjbindContext,
-    name: ?String,
-    unnamedArguments: Box<Int64>
-): String {
-    let rawName = match (name) {
-        case Some(value) => value
-        case None =>
-            unnamedArguments.value += 1
-            "arg${unnamedArguments.value}"
-    }
-    return ctx.cjIdent(ctx.cjMangle(rawName))
-}
-
 func newTypeAbiArguments(
     ctx: CjbindContext,
-    signature: FunctionSig
+    signature: FunctionSig,
+    reservedNames!: Array<String> = []
 ): ArrayList<TokenStream> {
     let arguments = ArrayList<TokenStream>()
-    let unnamedArguments = Box<Int64>(0)
-    for ((name, typeId) in signature.argumentTypes) {
-        let ident = functionArgumentName(ctx, name, unnamedArguments)
+    let names = Utils.fnsigArgumentIdentifiers(ctx, signature, reservedNames: reservedNames)
+    for (index in 0..signature.argumentTypes.size) {
+        let typeId = signature.argumentTypes[index][1]
+        let ident = names[index]
         let abiType = newTypeAbiArgumentType(ctx, typeId)
         arguments.add(tokenStreamFromTemplate("${ident}: ${abiType}"))
     }
@@ -483,12 +471,14 @@ func newTypeAbiReturnType(
 
 func newTypeAbiCallArguments(
     ctx: CjbindContext,
-    signature: FunctionSig
+    signature: FunctionSig,
+    reservedNames!: Array<String> = []
 ): ArrayList<TokenStream> {
     let arguments = ArrayList<TokenStream>()
-    let unnamedArguments = Box<Int64>(0)
-    for ((name, typeId) in signature.argumentTypes) {
-        let ident = functionArgumentName(ctx, name, unnamedArguments)
+    let names = Utils.fnsigArgumentIdentifiers(ctx, signature, reservedNames: reservedNames)
+    for (index in 0..signature.argumentTypes.size) {
+        let typeId = signature.argumentTypes[index][1]
+        let ident = names[index]
         let expression = tokenStreamFromTemplate(ident)
         arguments.add(if (valueBoundaryNeedsConversion(ctx, typeId)) {
             unwrapValueBoundary(ctx, typeId, expression)

@@ -256,14 +256,10 @@ func serializeFunctionType(
         "(" + callingConvention + " " + innerDeclarator + ")"
     }
     let arguments = ArrayList<String>()
-    var unnamed = 0
-    for ((name, typeId) in signature.argumentTypes) {
-        let argumentName = match (name) {
-            case Some(value) where !value.isEmpty() => value
-            case _ =>
-                unnamed += 1
-                "arg_${unnamed}"
-        }
+    let argumentNames = uniqueFunctionArgumentNames(signature, {name => name}, "arg_")
+    for (argumentIndex in 0..signature.argumentTypes.size) {
+        let typeId = signature.argumentTypes[argumentIndex][1]
+        let argumentName = argumentNames[argumentIndex]
         arguments.add(
             serializeSourceType(
                 ctx,
@@ -449,14 +445,15 @@ func serializeStaticWrapper(
 
     let declarations = ArrayList<String>()
     let callArguments = ArrayList<String>()
-    var unnamed = 0
-    for ((name, typeId) in signature.argumentTypes) {
-        let argumentName = match (name) {
-            case Some(value) where !value.isEmpty() => value
-            case _ =>
-                unnamed += 1
-                "arg_${unnamed}"
-        }
+    let argumentNames = uniqueFunctionArgumentNames(
+        signature,
+        {name => name},
+        "arg_",
+        reservedNames: [function.sourceName]
+    )
+    for (argumentIndex in 0..signature.argumentTypes.size) {
+        let typeId = signature.argumentTypes[argumentIndex][1]
+        let argumentName = argumentNames[argumentIndex]
         declarations.add(
             serializeSourceType(
                 ctx,

@@ -701,17 +701,16 @@ func genRuntimeDecls(): TokenStream {
     )
 }
 
-func fnsigArgumentsWithNullability(ctx: CjbindContext, sig: FunctionSig, nullableParams: ArrayList<Bool>): ArrayList<TokenStream> {
+func fnsigArgumentsWithNullability(
+    ctx: CjbindContext,
+    sig: FunctionSig,
+    nullableParams: ArrayList<Bool>,
+    reservedNames!: Array<String> = []
+): ArrayList<TokenStream> {
     let args = ArrayList<TokenStream>()
-    let unnamedArgs = Box(0)
+    let names = Utils.fnsigArgumentIdentifiers(ctx, sig, reservedNames: reservedNames)
     for ((i, arg) in sig.argumentTypes.iterator().enumerate()) {
-        let argName = if (let Some(n) <- arg[0]) {
-            ctx.cjMangle(n)
-        } else {
-            unnamedArgs.value += 1
-            "arg${unnamedArgs.value}"
-        }
-        let argIdent = ctx.cjIdent(argName)
+        let argIdent = names[i]
         var argTy = Utils.fnsigArgumentType(ctx, arg[1])
         if (i < nullableParams.size && nullableParams[i]) {
             argTy = wrapNullable(argTy, true)
@@ -735,7 +734,12 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     let mname = ctx.cjIdent(m.name)
     let sel = m.selector
 
-    let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams)
+    let reservedNames = if (isStatic) {
+        ["cls", "sel", "f"]
+    } else {
+        ["sel", "f"]
+    }
+    let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams, reservedNames: reservedNames)
     let joinedArgs = joinStreams(arguments, ", ")
 
     let paramTypes = ArrayList<TokenStream>()
@@ -747,7 +751,7 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     }
     let joinedParamTypes = joinStreams(paramTypes, ", ")
 
-    let argNames = Utils.fnsigArgumentNames(ctx, sig)
+    let argNames = Utils.fnsigArgumentNames(ctx, sig, reservedNames: reservedNames)
     let joinedArgNames = joinStreams(argNames, ", ")
     let callTail = if (argNames.isEmpty()) {
         tokenStreamFromTemplate("")

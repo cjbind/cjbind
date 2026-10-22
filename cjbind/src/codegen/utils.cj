@@ -1,63 +1,87 @@
 package cjbind.codegen
 
 import cjbind_token.*
-import std.collection.{ArrayList, collectArrayList}
+import std.collection.{ArrayList, HashSet}
 import cjbind.ir.*
 
+// Allocate names for the whole signature before emitting either declarations
+// or calls. Reserve explicit names first so an unnamed argument cannot steal
+// a name from a later parameter, including after Cangjie keyword mangling.
+func uniqueFunctionArgumentNames(
+    sig: FunctionSig,
+    mangle: (String) -> String,
+    unnamedPrefix: String,
+    reservedNames!: Array<String> = []
+): Array<String> {
+    let reserved = HashSet<String>()
+    for ((name, _) in sig.argumentTypes) {
+        if (let Some(value) <- name && !value.isEmpty()) {
+            reserved.add(mangle(value))
+        }
+    }
+
+    let used = HashSet<String>(reservedNames)
+    let names = ArrayList<String>()
+    var unnamed = 0
+    for ((name, _) in sig.argumentTypes) {
+        var candidate = if (let Some(value) <- name && !value.isEmpty()) {
+            mangle(value)
+        } else {
+            unnamed += 1
+            var generated = "${unnamedPrefix}${unnamed}"
+            while (reserved.contains(generated) || used.contains(generated)) {
+                unnamed += 1
+                generated = "${unnamedPrefix}${unnamed}"
+            }
+            generated
+        }
+        if (used.contains(candidate)) {
+            let base = candidate
+            var suffix = 1
+            candidate = "${base}_${suffix}"
+            while (reserved.contains(candidate) || used.contains(candidate)) {
+                suffix += 1
+                candidate = "${base}_${suffix}"
+            }
+        }
+        used.add(candidate)
+        names.add(candidate)
+    }
+    return names.toArray()
+}
+
 public class Utils {
+    public static func fnsigArgumentIdentifiers(
+        ctx: CjbindContext,
+        sig: FunctionSig,
+        reservedNames!: Array<String> = []
+    ): Array<String> {
+        return uniqueFunctionArgumentNames(sig, {name => ctx.cjIdent(name)}, "arg", reservedNames: reservedNames)
+    }
+
     public static func fnsigArguments(
         ctx: CjbindContext,
-        sig: FunctionSig
+        sig: FunctionSig,
+        reservedNames!: Array<String> = []
     ): ArrayList<TokenStream> {
-        let unnamedArguments = Box(0)
-
-        let argsIter = sig.argumentTypes.iterator()
-
-        let args = argsIter.map {
-            v =>
-                let name = v[0]
-                let ty = v[1]
-
-                let argTy = fnsigArgumentType(ctx, ty)
-
-                let argName = if (let Some(n) <- name) {
-                    ctx.cjMangle(n)
-                } else {
-                    unnamedArguments.value += 1
-                    "arg${unnamedArguments.value}"
-                }
-
-                let argIdent = ctx.cjIdent(argName)
-
-                return tokenStreamFromTemplate("${argIdent}: ${argTy}")
-        } |> collectArrayList
-
+        let names = fnsigArgumentIdentifiers(ctx, sig, reservedNames: reservedNames)
+        let args = ArrayList<TokenStream>()
+        for (index in 0..sig.argumentTypes.size) {
+            let argTy = fnsigArgumentType(ctx, sig.argumentTypes[index][1])
+            args.add(tokenStreamFromTemplate("${names[index]}: ${argTy}"))
+        }
         return args
     }
 
     public static func fnsigArgumentNames(
         ctx: CjbindContext,
-        sig: FunctionSig
+        sig: FunctionSig,
+        reservedNames!: Array<String> = []
     ): ArrayList<TokenStream> {
-        let unnamedArguments = Box(0)
-
-        let argsIter = sig.argumentTypes.iterator()
-
-        let args = argsIter.map {
-            v =>
-                let name = v[0]
-                let argName = if (let Some(n) <- name) {
-                    ctx.cjMangle(n)
-                } else {
-                    unnamedArguments.value += 1
-                    "arg${unnamedArguments.value}"
-                }
-
-                let argIdent = ctx.cjIdent(argName)
-
-                return tokenStreamFromTemplate(argIdent)
-        } |> collectArrayList
-
+        let args = ArrayList<TokenStream>()
+        for (name in fnsigArgumentIdentifiers(ctx, sig, reservedNames: reservedNames)) {
+            args.add(tokenStreamFromTemplate(name))
+        }
         return args
     }
 

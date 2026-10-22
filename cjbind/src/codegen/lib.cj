@@ -396,11 +396,18 @@ extend Function <: CodeGenerator<Item, Unit> {
             None
         }
 
-        let typedArgs = Utils.fnsigArguments(ctx, signature)
+        let ident = if (!isInternal && this.mangledName.isSome()) {
+            ctx.cjIdentRaw(foreignSymbolName)
+        } else {
+            ctx.cjIdent(foreignSymbolName)
+        }
+        // Parameters must not shadow the foreign symbol used by wrapper calls.
+        let reservedArgumentNames = [ident]
+        let typedArgs = Utils.fnsigArguments(ctx, signature, reservedNames: reservedArgumentNames)
         let typedRet = Utils.fnsigReturnTy(ctx, signature)
         let hasNewTypeValueAbi = newTypeFunctionNeedsWrapper(ctx, signature)
         let abiArgs = if (hasNewTypeValueAbi) {
-            newTypeAbiArguments(ctx, signature)
+            newTypeAbiArguments(ctx, signature, reservedNames: reservedArgumentNames)
         } else {
             ArrayList<TokenStream>(typedArgs)
         }
@@ -408,12 +415,6 @@ extend Function <: CodeGenerator<Item, Unit> {
             newTypeAbiReturnType(ctx, signature)
         } else {
             typedRet
-        }
-
-        let ident = if (!isInternal && this.mangledName.isSome()) {
-            ctx.cjIdentRaw(foreignSymbolName)
-        } else {
-            ctx.cjIdent(foreignSymbolName)
         }
 
         if (signature.getIsVariadic()) {
@@ -461,9 +462,9 @@ extend Function <: CodeGenerator<Item, Unit> {
                 ctx.cjIdent(result.uniqueFunctionName(wrapperBase))
             }
             let wrapperArgsName = if (hasNewTypeValueAbi) {
-                newTypeAbiCallArguments(ctx, signature)
+                newTypeAbiCallArguments(ctx, signature, reservedNames: reservedArgumentNames)
             } else {
-                Utils.fnsigArgumentNames(ctx, signature)
+                Utils.fnsigArgumentNames(ctx, signature, reservedNames: reservedArgumentNames)
             }
             let wrapperArgsNameToken = joinStreams(wrapperArgsName, ", ")
             let typedArgsToken = joinStreams(typedArgs, ", ")
@@ -1246,8 +1247,9 @@ func renderGenericAliasFunction(
 
     let arguments = ArrayList<TokenStream>()
     let argumentTypes = ArrayList<TokenStream>()
-    var unnamedArgument = 0
-    for ((argumentName, argumentTypeId) in signature.argumentTypes) {
+    let argumentNames = Utils.fnsigArgumentIdentifiers(ctx, signature)
+    for (argumentIndex in 0..signature.argumentTypes.size) {
+        let argumentTypeId = signature.argumentTypes[argumentIndex][1]
         let argumentItem = ctx.resolveItem(argumentTypeId)
         let argumentType = argumentItem.kind.expectType()
         let renderedArgument = if (!ctx.options.arrayPointersInArgs && let TypeKind.TypeKindArray(element, _) <- argumentType
@@ -1290,12 +1292,7 @@ func renderGenericAliasFunction(
                 case Err(error) => return Err(error)
             }
         }
-        let name = match (argumentName) {
-            case Some(value) => ctx.cjIdent(value)
-            case None =>
-                unnamedArgument += 1
-                "arg${unnamedArgument}"
-        }
+        let name = argumentNames[argumentIndex]
         argumentTypes.add(renderedArgument)
         arguments.add(tokenStreamFromTemplate("${name}: ${renderedArgument}"))
     }

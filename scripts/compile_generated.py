@@ -19,6 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = [
+    ROOT / "cjbind_test/testdata/headers/parameter-name-collisions.h",
     ROOT / "cjbind_test/testdata/headers/bitfield-full-word-width.h",
     ROOT / "cjbind_test/testdata/headers/struct_with_anon_union_of_array_members.h",
     ROOT / "cjbind_test/testdata/headers/union_with_nesting.h",
@@ -68,7 +69,9 @@ HEADERS = [
     ROOT / "cjbind_test/testdata/headers/variadic_template_function.hpp",
 ]
 
-HEADER_OPTIONS: dict[str, list[str]] = {}
+HEADER_OPTIONS: dict[str, list[str]] = {
+    "parameter-name-collisions.h": ["--make-func-wrapper", "--default-alias-style", "new_type"],
+}
 
 HEADER_CLANG_ARGS: dict[str, list[str]] = {}
 
