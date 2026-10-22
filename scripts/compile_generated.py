@@ -20,6 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = [
     ROOT / "cjbind_test/testdata/headers/parameter-name-collisions.h",
+    ROOT / "cjbind_test/testdata/headers/support/ir/aligned-generated-layout.h",
+    ROOT / "cjbind_test/testdata/headers/support/ir/cxx-explicit-object.hpp",
     ROOT / "cjbind_test/testdata/headers/bitfield-full-word-width.h",
     ROOT / "cjbind_test/testdata/headers/struct_with_anon_union_of_array_members.h",
     ROOT / "cjbind_test/testdata/headers/union_with_nesting.h",
@@ -73,7 +75,9 @@ HEADER_OPTIONS: dict[str, list[str]] = {
     "parameter-name-collisions.h": ["--make-func-wrapper", "--default-alias-style", "new_type"],
 }
 
-HEADER_CLANG_ARGS: dict[str, list[str]] = {}
+HEADER_CLANG_ARGS: dict[str, list[str]] = {
+    "cxx-explicit-object.hpp": ["-std=c++23", "--target=x86_64-unknown-linux-gnu"],
+}
 
 EXPECTED_GENERATED: dict[str, Path] = {}
 
@@ -105,7 +109,7 @@ def build_cli() -> Path:
 def write_smoke_project(project: Path, generated: str, support: str | None = None) -> None:
     (project / "src").mkdir(parents=True)
     (project / "cangjie-sdk.toml").write_text(
-        '[toolchain]\nchannel = "nightly"\n',
+        '[toolchain]\nchannel = "sts-1.1.3"\n',
         encoding="utf-8",
     )
     (project / "cjpm.toml").write_text(

@@ -121,6 +121,22 @@ jobs:
         if: matrix.os.sys == 'linux'
         run: uv run python scripts/test_cli_diagnostics.py
 
+      - name: Test string constant compilation and values (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: uv run python scripts/test_string_codegen.py
+
+      - name: Test string constant compilation and values (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: uv run python scripts/test_string_codegen.py
+
+      - name: Test bitfield helper values
+        run: uv run python scripts/test_bitfield_runtime.py
+
+      - name: Test concurrent macro fallback isolation
+        run: uv run python scripts/test_macro_fallback_concurrency.py
+
       - name: Run C++ lifecycle integration
         if: matrix.os.sys == 'linux'
         run: uv run python scripts/test_cxx_runtime.py
