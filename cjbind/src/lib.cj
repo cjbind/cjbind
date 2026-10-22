@@ -74,15 +74,33 @@ func parse(context: CjbindContext) {
     }
 }
 
-func detectIncludePaths(options: CjbindOptions) {
+func splitClangArguments(args: Collection<String>): (ArrayList<String>, ArrayList<String>) {
+    let flags = ArrayList<String>()
+    let inputs = ArrayList<String>()
+    var afterSeparator = false
+    for (arg in args) {
+        if (arg == "--") {
+            afterSeparator = true
+        }
+        if (afterSeparator) {
+            inputs.add(arg)
+        } else {
+            flags.add(arg)
+        }
+    }
+    return (flags, inputs)
+}
+
+func detectIncludePaths(options: CjbindOptions): Array<String> {
     if (options.noDetectIncludePath) {
-        return
+        return []
     }
 
+    let (compilerFlags, _) = splitClangArguments(options.clangArgs)
     let clangArgsForClang = {
         =>
             let lastWasIncludePrefix = Box(false)
-            options.clangArgs.iterator().filter {
+            compilerFlags.iterator().filter {
                 arg =>
                     if (lastWasIncludePrefix.value) {
                         lastWasIncludePrefix.value = false
@@ -109,13 +127,15 @@ func detectIncludePaths(options: CjbindOptions) {
     }
 
     let searchPaths = clang.getSearchPaths(detectionArgs.toArray())
+    let includeArgs = ArrayList<String>()
 
     if (let Some(ps) <- searchPaths) {
         for (p in ps) {
-            options.clangArgs.add("-isystem")
-            options.clangArgs.add(p)
+            includeArgs.add("-isystem")
+            includeArgs.add(p)
         }
     }
+    return includeArgs.toArray()
 }
 
 func hasExplicitLanguage(args: Collection<String>): Bool {
@@ -152,10 +172,9 @@ public func generate(opts: CjbindOptions): String {
 
     clang.ensureSupportedClangVersion()
 
-    detectIncludePaths(opts)
-
     // Clone clangArgs so we do not mutate the caller's options object
-    let localArgs = ArrayList<String>(opts.clangArgs)
+    let (localArgs, trailingInputs) = splitClangArguments(opts.clangArgs)
+    localArgs.add(all: detectIncludePaths(opts))
     if (!localArgs.any({arg => arg == "-fparse-all-comments"})) {
         localArgs.add("-fparse-all-comments")
     }
@@ -173,10 +192,12 @@ public func generate(opts: CjbindOptions): String {
     for ((i, h) in opts.headers.iterator().enumerate()) {
         if (i != opts.headers.size - 1) {
             headerOpts.add("-include")
+            headerOpts.add(h)
         }
-        headerOpts.add(h)
     }
     localArgs.add(all: headerOpts)
+    localArgs.add(all: trailingInputs)
+    localArgs.add(opts.headers[opts.headers.size - 1])
 
     // Build a context options view with the local (non-mutated) clang args
     let ctxOpts = CjbindOptions(opts.headers, localArgs)

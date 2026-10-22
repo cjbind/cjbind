@@ -118,13 +118,13 @@ public class ArgsParser {
         let clangArgs = ArrayList<String>()
 
         for (i in it) {
-            if (i == "--") {
-                collectingClangArgs = true
+            if (collectingClangArgs) {
+                clangArgs.add(i)
                 continue
             }
 
-            if (collectingClangArgs) {
-                clangArgs.add(i)
+            if (i == "--") {
+                collectingClangArgs = true
                 continue
             }
 
