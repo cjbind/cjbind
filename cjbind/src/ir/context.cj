@@ -1158,6 +1158,13 @@ public class CjbindContext <: Resource {
     ): ?TypeId {
         if (let Some(decl) <- ty.canonicalDeclaration(location)) {
             if (let Some(tid) <- this.getResolvedType(decl)) {
+                // A same-name typedef is hidden during code generation. Keep
+                // its documentation on the target without replacing existing
+                // declaration comments or copying docs from visible aliases.
+                if (let Some(source) <- location && source.kind() == clang.CXCursorKind_CXCursor_TypedefDecl &&
+                    source.spelling() == decl.cursor.spelling() && let Some(comment) <- source.rawComment()) {
+                    this.resolveItem(tid).setCommentIfNone(comment)
+                }
                 if (let Some(instantiationCursor) <- location && decl.cursor.isTemplateLike() && ty !=
                     decl.cursor.curType()) {
                     var containsTypeRef = false

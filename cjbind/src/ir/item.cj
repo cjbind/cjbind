@@ -60,7 +60,12 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
     var localId: ?ItemId
     var nextChildLocalId: ItemId
     var canonicalNameCache: ?String
-    public let comment: ?String
+    private var rawComment: ?String
+    public prop comment: ?String {
+        get() {
+            this.rawComment
+        }
+    }
     let annotations: Annotations
     public let parentId: ItemId
     public var kind: ItemKind
@@ -82,7 +87,7 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.nextChildLocalId = 1
         this.canonicalNameCache = None
         this.parentId = parentId
-        this.comment = comment
+        this.rawComment = comment
         this.annotations = Annotations()
         this.kind = kind
         this.location = location
@@ -105,10 +110,16 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         this.nextChildLocalId = 1
         this.canonicalNameCache = None
         this.parentId = parentId
-        this.comment = comment
+        this.rawComment = comment
         this.annotations = annotations
         this.kind = kind
         this.location = location
+    }
+
+    func setCommentIfNone(comment: String): Unit {
+        if (this.rawComment.isNone()) {
+            this.rawComment = Some(comment)
+        }
     }
 
     public static func builtinType(nkd: TypeKind, isConst: Bool, ctx: CjbindContext): TypeId {
