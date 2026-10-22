@@ -601,7 +601,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             return true
         }
 
-        if (this.isCxxRecord && !this.isUnion()) {
+        if (!this.isUnion()) {
             let hasBitfields = this.getFields().iterator().any {
                 field => match (field) {
                     case Field.Bitfields(_) => true
@@ -619,11 +619,9 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             if (hasBitfields && complexLayout) {
                 return true
             }
-            if (!hasBitfields) {
-                if (let Some(expected) <- layout) {
-                    if (!this.generatedRecordLayoutMatches(ctx, expected, itemId: itemId)) {
-                        return true
-                    }
+            if (let Some(expected) <- layout) {
+                if (!this.generatedRecordLayoutMatches(ctx, expected, itemId: itemId)) {
+                    return true
                 }
             }
         }
@@ -637,14 +635,15 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         itemId!: ?ItemId = None
     ): Bool {
         return this
-            .generatedRecordLayout(ctx, itemId: itemId)
+            .generatedRecordLayout(ctx, itemId: itemId, bitfieldAlignment: expected.align)
             .map({layout => layout.size == expected.size && layout.align == expected.align})
             .getOrDefault({=> false})
     }
 
     func generatedRecordLayout(
         ctx: CjbindContext,
-        itemId!: ?ItemId = None
+        itemId!: ?ItemId = None,
+        bitfieldAlignment!: Int32 = 1
     ): ?Layout {
         if (let clang.ABIKind.Microsoft <- ctx.targetInfo.abi) {
             if (!this.baseMembers.isEmpty() || this.hasVtableInner(ctx, HashSet<ItemId>())) {
@@ -675,6 +674,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
 
         var size = 0i32
         var alignment = 1i32
+        var hasBitfieldStorage = false
 
         func appendLayout(fieldLayout: Layout): Unit {
             size = alignBytes(size, fieldLayout.align)
@@ -698,7 +698,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
             if (!base.requiresStorage(ctx)) {
                 continue
             }
-            let baseLayout = match (ctx.resolveType(base.ty).getLayout(ctx)) {
+            let baseLayout = match (ctx.resolveType(base.ty).generatedLayout(ctx)) {
                 case Some(value) => value
                 case None => return None
             }
@@ -711,7 +711,7 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         for (field in this.getFields()) {
             match (field) {
                 case Field.DataMember(data) =>
-                    let fieldLayout = match (ctx.resolveType(data.ty).getLayout(ctx)) {
+                    let fieldLayout = match (ctx.resolveType(data.ty).generatedLayout(ctx)) {
                         case Some(value) => value
                         case None => return None
                     }
@@ -726,11 +726,21 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
                     }
                     size = fieldOffset + fieldLayout.size
                     alignment = max(alignment, fieldLayout.align)
-                case Field.Bitfields(_) => return None
+                case Field.Bitfields(unit) =>
+                    appendLayout(unit.layout)
+                    hasBitfieldStorage = true
             }
         }
 
-        if (size == 0) {
+        // Bitfield records end with a zero-length primitive alignment marker.
+        if (hasBitfieldStorage) {
+            if (bitfieldAlignment > ctx.pointerWidth() || Layout.knownCjTypeForSize(bitfieldAlignment).isNone()) {
+                return None
+            }
+            alignment = max(alignment, bitfieldAlignment)
+        }
+
+        if (size == 0 && this.isCxxRecord) {
             size = 1
         }
         size = alignBytes(size, alignment)
