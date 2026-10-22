@@ -131,6 +131,16 @@ jobs:
         shell: msys2 {0}
         run: uv run python scripts/test_string_codegen.py
 
+      - name: Test precise macro types and values (Unix)
+        if: matrix.os.sys != 'windows'
+        shell: bash
+        run: uv run python scripts/test_macro_const_types.py
+
+      - name: Test precise macro types and values (Windows)
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: uv run python scripts/test_macro_const_types.py
+
       - name: Test bitfield helper values
         run: uv run python scripts/test_bitfield_runtime.py
 
