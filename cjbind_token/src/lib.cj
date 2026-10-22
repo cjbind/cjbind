@@ -331,8 +331,43 @@ public func joinStreams(items: Iterable<TokenStream>, sep: String): TokenStream 
 
 // --- @tmpl macro bridge ---
 
-public func tokenStreamFromTemplate(s: String): TokenStream {
+// String-interior interpolation emits values rather than source fragments.
+// Escape both quote styles so this also works inside single-quoted literals.
+func escapeTemplateStringValue(value: String): String {
+    let escaped = StringBuilder()
+    let hex = "0123456789abcdef"
+    for (ch in value.toRuneArray()) {
+        match (ch) {
+            case r'\\' => escaped.append("\\\\")
+            case r'"' => escaped.append("\\\"")
+            case r'\'' => escaped.append("\\u{27}")
+            case r'$' => escaped.append("\\\$")
+            case r'\n' => escaped.append("\\n")
+            case r'\r' => escaped.append("\\r")
+            case r'\t' => escaped.append("\\t")
+            case _ =>
+                let code = UInt32(ch)
+                if (code < 0x20 || code == 0x7f) {
+                    escaped.append("\\u{")
+                    escaped.append(Rune(hex[Int64(code / 16)]))
+                    escaped.append(Rune(hex[Int64(code % 16)]))
+                    escaped.append("}")
+                } else {
+                    escaped.append(ch)
+                }
+        }
+    }
+    return escaped.toString()
+}
+
+// Keep macro expansion dependent on the same bridge symbol, including for
+// callers that import tokenStreamFromTemplate without importing the package.
+public func tokenStreamFromTemplate(s: String, escapeStringLiteral!: Bool = false): TokenStream {
     let ts = TokenStream()
-    ts.appendLiteral(s)
+    ts.appendLiteral(if (escapeStringLiteral) {
+        escapeTemplateStringValue(s)
+    } else {
+        s
+    })
     return ts
 }

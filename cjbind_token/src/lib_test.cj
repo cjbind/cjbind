@@ -669,3 +669,75 @@ public class TmplRepetitionTest {
         @Expect(s.contains("public func myFunc(): Int32 {}"), true)
     }
 }
+
+@Test
+public class TmplStringLiteralTest {
+    @TestCase
+    func preservesStringLiteralQuotes(): Unit {
+        let result = @tmpl(cachedSel("alloc"))
+        @Expect(result.toString(), "cachedSel(\"alloc\")")
+    }
+
+    @TestCase
+    func preservesStringLiteralEscapes(): Unit {
+        let result = @tmpl(let text = "quote\" slash\\ newline\n")
+        @Expect(result.toString(), #"let text = "quote\" slash\\ newline\n""#)
+    }
+
+    @TestCase
+    func expandsTemplateInterpolationInsideStringLiterals(): Unit {
+        let name = "NameProbe"
+        let result = @tmpl(cachedClass("${name}"))
+        @Expect(result.toString(), "cachedClass(\"NameProbe\")")
+    }
+
+    @TestCase
+    func keepsEscapedInterpolationLiteral(): Unit {
+        let result = @tmpl(let text = "\${notInScope}")
+        @Expect(result.toString(), #"let text = "\${notInScope}""#)
+    }
+
+    @TestCase
+    func keepsRawStringContentsLiteral(): Unit {
+        let result = @tmpl(let text = #"${notInScope} \n"#)
+        @Expect(result.toString(), ##"let text = #"${notInScope} \n"#"##)
+    }
+
+    @TestCase
+    func preservesStringsInsideInterpolationExpressions(): Unit {
+        let name = "value"
+        let result = @tmpl(let ${name + "_suffix"} = 1)
+        @Expect(result.toString(), "let value_suffix = 1")
+    }
+
+    @TestCase
+    func preservesQuotedExpressionsInsideStringLiterals(): Unit {
+        let name = "NameProbe"
+        let result = @tmpl(cachedClass("${name + "_suffix"}"))
+        @Expect(result.toString(), "cachedClass(\"NameProbe_suffix\")")
+    }
+
+    @TestCase
+    func escapesInterpolatedStringValues(): Unit {
+        let value = "quote\" slash\\ newline\n\${notInScope}"
+        let result = @tmpl(let text = "${value}")
+        @Expect(result.toString(), #"let text = "quote\" slash\\ newline\n\${notInScope}""#)
+    }
+
+    @TestCase
+    func convertsInterpolatedValuesWithoutChangingOutsideTokenInsertion(): Unit {
+        let fragment = tokenStreamFromTemplate("quote\"\n\${value}")
+        let number = 42
+        let inside = @tmpl(let text = "${fragment} ${number}")
+        let outside = @tmpl(${fragment})
+        @Expect(inside.toString(), #"let text = "quote\"\n\${value} 42""#)
+        @Expect(outside.toString(), "quote\"\n\${value}")
+    }
+
+    @TestCase
+    func escapesValuesInsideSingleQuotedStrings(): Unit {
+        let value = "quote' slash\\ newline\n\${notInScope}"
+        let result = @tmpl(let text = '${value}')
+        @Expect(result.toString(), #"let text = 'quote\u{27} slash\\ newline\n\${notInScope}'"#)
+    }
+}

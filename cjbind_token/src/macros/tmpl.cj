@@ -89,6 +89,78 @@ func addGap(parts: ArrayList<String>, curLine: Int64, curCol: Int64, tkLine: Int
     }
 }
 
+func isStringToken(tk: Token): Bool {
+    return tk.kind == TokenKind.STRING_LITERAL || tk.kind == TokenKind.SINGLE_QUOTED_STRING_LITERAL || tk.kind == TokenKind
+        .JSTRING_LITERAL || tk.kind == TokenKind.MULTILINE_STRING || tk.kind == TokenKind.MULTILINE_RAW_STRING
+}
+
+func tokenSource(tk: Token): String {
+    return if (isStringToken(tk)) {
+        Tokens([tk]).toString()
+    } else {
+        tk.value
+    }
+}
+
+// A string token's value omits its quotes and still contains source escapes.
+// Preserve the complete spelling through the enclosing template string while
+// retaining intentional ${expr} interpolation in non-raw string literals.
+// Those expression results are string values, so escape them for the emitted
+// source literal. Interpolation outside a string still inserts source tokens.
+func templateStringToken(tk: Token, source: String): String {
+    let parts = ArrayList<String>()
+    let runes = source.toRuneArray()
+    var escaped = false
+    var expressionDepth = 0
+    var expressionQuote: ?Rune = None
+    var expressionEscaped = false
+    var index = 0
+    while (index < runes.size) {
+        let ch = runes[index]
+        index += 1
+        if (expressionDepth > 0) {
+            if (ch == r'}' && expressionDepth == 1 && expressionQuote.isNone()) {
+                parts.add(").toString(), escapeStringLiteral: true)}")
+                expressionDepth = 0
+                continue
+            }
+            parts.add(ch.toString())
+            if (let Some(delimiter) <- expressionQuote) {
+                if (!expressionEscaped && ch == delimiter) {
+                    expressionQuote = None
+                }
+                expressionEscaped = !expressionEscaped && ch == r'\\'
+            } else if (ch == r'"' || ch == r'\'') {
+                expressionQuote = Some(ch)
+                expressionEscaped = false
+            } else if (ch == r'{') {
+                expressionDepth += 1
+            } else if (ch == r'}') {
+                expressionDepth -= 1
+            }
+            continue
+        }
+        if (ch == r'$' && !escaped && tk.kind != TokenKind.MULTILINE_RAW_STRING && index < runes.size && runes[index] ==
+            r'{') {
+            parts.add("\${tokenStreamFromTemplate((")
+            index += 1
+            expressionDepth = 1
+            continue
+        }
+        match (ch) {
+            case r'\\' =>
+                parts.add("\\\\")
+                escaped = !escaped
+                continue
+            case r'"' => parts.add("\\\"")
+            case r'$' where escaped || tk.kind == TokenKind.MULTILINE_RAW_STRING => parts.add("\\\$")
+            case _ => parts.add(ch.toString())
+        }
+        escaped = false
+    }
+    return String.join(parts.toArray(), delimiter: "")
+}
+
 func extractExpr(input: Tokens, start: Int64, end: Int64): String {
     var exprParts = ArrayList<String>()
     var k = start
@@ -116,8 +188,9 @@ func extractExpr(input: Tokens, start: Int64, end: Int64): String {
                 if (eGap2 > 0) {
                     exprParts.add(repeat(" ", eGap2))
                 }
-                exprParts.add(input[k].value)
-                eCurCol2 = eCol2 + Int64(input[k].value.size)
+                let source = tokenSource(input[k])
+                exprParts.add(source)
+                eCurCol2 = eCol2 + Int64(source.size)
                 k++
             }
             k++
@@ -226,8 +299,9 @@ func reconstruct(input: Tokens): String {
                 if (eGap > 0) {
                     exprParts.add(repeat(" ", eGap))
                 }
-                exprParts.add(input[i].value)
-                eCurCol = eCol + Int64(input[i].value.size)
+                let source = tokenSource(input[i])
+                exprParts.add(source)
+                eCurCol = eCol + Int64(source.size)
                 i++
             }
             parts.add("\${${String.join(exprParts.toArray(), delimiter: "")}}")
@@ -241,9 +315,14 @@ func reconstruct(input: Tokens): String {
         }
 
         addGap(parts, curLine, curCol, tkLine, tkCol)
-        parts.add(tk.value)
+        let source = tokenSource(tk)
+        parts.add(if (isStringToken(tk)) {
+            templateStringToken(tk, source)
+        } else {
+            source
+        })
         curLine = tkLine
-        curCol = tkCol + Int64(tk.value.size)
+        curCol = tkCol + Int64(source.size)
         i++
     }
 
