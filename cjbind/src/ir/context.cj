@@ -2,7 +2,7 @@ package cjbind.ir
 
 import cjbind_token.*
 import std.collection.*
-import std.fs.Path
+import std.fs.{Directory, Path, remove}
 import std.env.getTempDirectory
 import cjbind.result.Result
 import cjbind.clang
@@ -222,6 +222,7 @@ public class CjbindContext <: Resource {
     public let index: clang.Index
     public let translationUnit: clang.TranslationUnit
     public var fallbackTu: Option<clang.FallbackTranslationUnit> = None
+    var fallbackDirectory: ?Path = None
     public let targetInfo: clang.TargetInfo
 
     public var allowlistedItems: Option<ItemSet> = None
@@ -282,97 +283,94 @@ public class CjbindContext <: Resource {
             if (let Some(ftu) <- this.fallbackTu) {
                 ftu.close()
             }
+            this.removeFallbackDirectory()
             this.translationUnit.close()
             this.index.close()
         }
     }
 
+    func removeFallbackDirectory(): Unit {
+        if (let Some(directory) <- this.fallbackDirectory) {
+            this.fallbackDirectory = None
+            // Only remove files owned by this context, then the empty directory.
+            // The fallback TU normally removes them; initialization may fail earlier.
+            for (name in [".macro_eval.c", ".macro_eval.cpp", "precompile.pch"]) {
+                try {
+                    remove(directory.join(name))
+                } catch (_: Exception) {}
+            }
+            try {
+                remove(directory)
+            } catch (_: Exception) {}
+        }
+    }
+
     // cjlint-ignore -start !G.FUN.01
     public func tryEnsureFallbackTranslationUnit(): Option<clang.FallbackTranslationUnit> {
+        if (this._released) {
+            return None
+        }
         if (this.fallbackTu.isSome()) {
             return this.fallbackTu
         }
 
-        let tmpDir = getTempDirectory().toString()
-        let cxxMode = usesCxxLanguage(this.options)
-        let file = if (cxxMode) {
-            "${tmpDir}/.macro_eval.cpp"
-        } else {
-            "${tmpDir}/.macro_eval.c"
-        }
-
-        let index = clang.Index(false, false)
-
-        let headerNamesToCompile = ArrayList<String>()
-        let headerIncludes = ArrayList<String>()
         let singleHeader = if (let Some(h) <- this.options.headers.last) {
             h
         } else {
             return None
         }
 
-        let headerCnt = this.options.headers.size
-        for (i in 0..(headerCnt - 1)) {
-            let header = this.options.headers[i]
-            let path = Path(header)
-            let headerName = path.fileName
-            headerIncludes.add(header)
-            let compileName = if (let Some(v) <- headerName.split(".h", removeEmpty: true).first) {
-                v
-            } else {
-                return None
+        let cxxMode = usesCxxLanguage(this.options)
+        let tmpDir = Directory.createTemp(getTempDirectory())
+        this.fallbackDirectory = Some(tmpDir)
+        let file = tmpDir.join(if (cxxMode) {
+            ".macro_eval.cpp"
+        } else {
+            ".macro_eval.c"
+        }).toString()
+        let pch = tmpDir.join("precompile.pch").toString()
+
+        try {
+            var cArgs = ArrayList<String>()
+            let targetArg = "--target=${this.targetInfo.triple}"
+            cArgs.add(targetArg)
+            cArgs.add("-x")
+            cArgs.add(if (cxxMode) { "c++-header" } else { "c-header" })
+            for (i in 0..(this.options.headers.size - 1)) {
+                cArgs.add("-include")
+                cArgs.add(this.options.headers[i])
+            }
+            try (index = clang.Index(false, false)) {
+                try (tu = clang.TranslationUnit(
+                    index,
+                    singleHeader,
+                    fallbackClangArguments(this.options, cArgs.toArray()),
+                    clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
+                )) {
+                    if (let None <- tu.save(pch).ok()) {
+                        return None
+                    }
+                }
             }
 
-            headerNamesToCompile.add(compileName)
-        }
-        let pchSuffix = if (cxxMode) {
-            "-precompile.hpp.pch"
-        } else {
-            "-precompile.h.pch"
-        }
-        let pchName = String.join(headerNamesToCompile.toArray(), delimiter: "-") + pchSuffix
-        let pch = "${tmpDir}/${pchName}"
+            cArgs = ArrayList<String>()
+            cArgs.add(targetArg)
+            cArgs.add("-include-pch")
+            cArgs.add(pch)
 
-        var cArgs = ArrayList<String>()
-        let targetArg = "--target=${this.targetInfo.triple}"
-        cArgs.add(targetArg)
-        cArgs.add("-x")
-        cArgs.add(if (cxxMode) {
-            "c++-header"
-        } else {
-            "c-header"
-        })
-        for (h in headerIncludes) {
-            cArgs.add("-include")
-            cArgs.add(h)
-        }
-        let tu = clang.TranslationUnit(
-            index,
-            singleHeader,
-            fallbackClangArguments(this.options, cArgs.toArray()),
-            clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
-        )
-        let saveResult = tu.save(pch)
-        tu.close()
-        index.close()
-        if (let None <- saveResult.ok()) {
-            return None
-        }
-
-        cArgs = ArrayList<String>()
-        cArgs.add(targetArg)
-        cArgs.add("-include-pch")
-        cArgs.add(pch)
-
-        this.fallbackTu = Some(
-            clang.FallbackTranslationUnit(
-                file,
-                pch,
-                fallbackClangArguments(this.options, cArgs.toArray())
+            this.fallbackTu = Some(
+                clang.FallbackTranslationUnit(
+                    file,
+                    pch,
+                    fallbackClangArguments(this.options, cArgs.toArray())
+                )
             )
-        )
-
-        return this.fallbackTu
+            return this.fallbackTu
+        } finally {
+            if (this.fallbackTu.isNone()) {
+                this.removeFallbackDirectory()
+            }
+        }
     }
     // cjlint-ignore -end
 
