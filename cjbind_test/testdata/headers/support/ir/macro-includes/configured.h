@@ -1,0 +1,1 @@
+#define CJBIND_INCLUDED_VALUE 12

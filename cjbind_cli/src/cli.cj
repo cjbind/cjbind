@@ -26,11 +26,12 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
         "static 函数桥接符号的后缀，默认为 __extern", "SUFFIX", "__extern")
     let wrapStaticFnsPathFlag = StringFlag(None, "wrap-static-fns-path", "wrap-static-fns-path",
         "static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）", "PATH", None)
-    let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring", "把 char* 转换为 CString 而不是 CPointer<UInt8>")
+    let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring",
+        "把 char* 类型映射为 CString 而不是 CPointer<UInt8>")
     let arrayPointersInArgs = BoolFlag(None, "array-pointers-in-args", "array-pointers-in-args",
         "把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>")
     let makeCjString = BoolFlag(None, "make-cjstring", "make-cjstring",
-        "把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致")
+        "把字符串常量生成为 String；非法 UTF-8 保留为 VArray<UInt8>")
     let objcFlag = BoolFlag(None, "objc", "objc", "启用 Objective-C 绑定生成模式")
     let objcCodegenModeFlag = StringFlag(None, "objc-codegen-mode", "objc-codegen-mode",
         "ObjC 代码生成模式: runtime (默认) 或 compiler", "MODE", "runtime")

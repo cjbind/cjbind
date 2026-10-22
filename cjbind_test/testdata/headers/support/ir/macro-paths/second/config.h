@@ -1,0 +1,1 @@
+#define SECOND_CONFIG_VALUE 25

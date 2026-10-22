@@ -1,0 +1,1 @@
+enum { CJBIND_PREFIX_VALUE = 10 };

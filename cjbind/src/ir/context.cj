@@ -52,6 +52,38 @@ public func usesCxxLanguage(options: CjbindOptions): Bool {
     return false
 }
 
+// Keep the preprocessing and language configuration used by the main parse.
+// generate() appends its input headers before/after the optional Clang `--`;
+// those inputs are already represented by the fallback precompiled header.
+func fallbackClangArguments(options: CjbindOptions, extra: Array<String>): Array<String> {
+    let args = options.clangArgs.toArray()
+    var end = args.size
+    if (end > 0 && options.headers.last == Some(args[end - 1])) {
+        end -= 1
+    }
+    var inputBoundary = end
+    for (i in 0..end) {
+        if (args[i] == "--") {
+            inputBoundary = i
+            break
+        }
+    }
+    var headerStart = inputBoundary
+    var headerIndex = options.headers.size - 2
+    while (headerIndex >= 0 && headerStart >= 2) {
+        if (args[headerStart - 2] != "-include" || args[headerStart - 1] != options.headers[headerIndex]) {
+            break
+        }
+        headerStart -= 2
+        headerIndex -= 1
+    }
+    let result = ArrayList<String>()
+    result.add(all: args[0..headerStart])
+    result.add(all: extra)
+    result.add(all: args[inputBoundary..end])
+    return result.toArray()
+}
+
 extend ItemId <: IsOpaque<Unit> & Trace<Tracer, Unit> {
     public func isOpaque(ctx: CjbindContext, _: Unit): Bool {
         return ctx.resolveItem(this).isOpaque(ctx, ())
@@ -272,7 +304,6 @@ public class CjbindContext <: Resource {
         let index = clang.Index(false, false)
 
         let headerNamesToCompile = ArrayList<String>()
-        let headerPaths = ArrayList<String>()
         let headerIncludes = ArrayList<String>()
         let singleHeader = if (let Some(h) <- this.options.headers.last) {
             h
@@ -284,13 +315,8 @@ public class CjbindContext <: Resource {
         for (i in 0..(headerCnt - 1)) {
             let header = this.options.headers[i]
             let path = Path(header)
-            if (path.parent.isEmpty()) {
-                headerPaths.add(".")
-            } else {
-                headerPaths.add(path.parent.toString())
-            }
             let headerName = path.fileName
-            headerIncludes.add(headerName)
+            headerIncludes.add(header)
             let compileName = if (let Some(v) <- headerName.split(".h", removeEmpty: true).first) {
                 v
             } else {
@@ -316,9 +342,6 @@ public class CjbindContext <: Resource {
         } else {
             "c-header"
         })
-        for (h in headerPaths) {
-            cArgs.add("-I${h}")
-        }
         for (h in headerIncludes) {
             cArgs.add("-include")
             cArgs.add(h)
@@ -326,7 +349,7 @@ public class CjbindContext <: Resource {
         let tu = clang.TranslationUnit(
             index,
             singleHeader,
-            cArgs.toArray(),
+            fallbackClangArguments(this.options, cArgs.toArray()),
             clang.CXTranslationUnit_Flags_CXTranslationUnit_ForSerialization
         )
         let saveResult = tu.save(pch)
@@ -345,7 +368,7 @@ public class CjbindContext <: Resource {
             clang.FallbackTranslationUnit(
                 file,
                 pch,
-                cArgs.toArray()
+                fallbackClangArguments(this.options, cArgs.toArray())
             )
         )
 

@@ -648,13 +648,8 @@ extend Var <: CodeGenerator<Item, Unit> {
                     let emitByteArray = {
                         =>
                             // Intentionally includes null terminator for C string FFI compatibility
-                            let data = ArrayList<UInt8>()
-                            let ptr = vv.getChars()
-                            let size = vv.size()
-                            for (i in 0..=size) {
-                                let d = unsafe { (ptr + i).read() }
-                                data.add(d)
-                            }
+                            let data = ArrayList<UInt8>(vv)
+                            data.add(0u8)
                             let dataSize = data.size
                             let dataTokens = data.toArray()
                             tokenStreamFromTemplate(
@@ -663,7 +658,7 @@ extend Var <: CodeGenerator<Item, Unit> {
 
                     let tokens = if (!ctx.options.makeCjString) {
                         let origStr = try {
-                            "// String value: ${vv}"
+                            "// String value: ${escapeStringContents(String.fromUtf8(vv))}"
                         } catch (_: Exception) {
                             "// String value: <non-UTF-8>"
                         }
@@ -676,7 +671,8 @@ extend Var <: CodeGenerator<Item, Unit> {
                         emitByteArray()
                     } else {
                         try {
-                            tokenStreamFromTemplate("public const ${canonicalIdent} : String = ${vv.toString()}")
+                            tokenStreamFromTemplate(
+                                "public const ${canonicalIdent} : String = ${stringLiteral(String.fromUtf8(vv))}")
                         } catch (_: Exception) {
                             emitByteArray()
                         }

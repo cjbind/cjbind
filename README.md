@@ -65,9 +65,9 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
         --wrap-static-fns-suffix <SUFFIX>
                                          static 函数桥接符号的后缀，默认为 __extern
         --wrap-static-fns-path <PATH>    static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）
-        --auto-cstring                   把 char* 转换为 CString 而不是 CPointer<UInt8>
+        --auto-cstring                   把 char* 类型映射为 CString 而不是 CPointer<UInt8>
         --array-pointers-in-args         把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>
-        --make-cjstring                  把 C 字符串转换为仓颉的 String 而不是 VArray<UInt8>，这可能会导致二进制表示不一致
+        --make-cjstring                  把字符串常量生成为 String；非法 UTF-8 保留为 VArray<UInt8>
         --objc                           启用 Objective-C 绑定生成模式
         --objc-codegen-mode <MODE>       ObjC 代码生成模式: runtime (默认) 或 compiler
         --objc-generate-definitions      在 compiler 模式下生成带默认返回值的方法桩体

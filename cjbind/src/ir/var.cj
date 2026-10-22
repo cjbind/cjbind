@@ -115,29 +115,32 @@ public class Var <: ClangSubItemParser<Var> {
                 t => t.isFloat()
             }.getOrDefault {=> false}
 
-            let value: ?VarType = if (isInteger) {
-                let kind = match (canonicalTy.getOrThrow().kind) {
-                    case TypeKind.TypeKindInt(k) => k
-                    case _ => throw Exception("Should be int type")
-                }
-
-                let iv = cursor.evalutate().asInt()
-                if (iv.isNone() || !kind.signednessMatches(iv.getOrThrow().toInts().isNonNegative())) {
-                    None
-                } else {
-                    let kv = iv.getOrThrow().toInts()
-                    match (kind) {
-                        case IntKindBool => VarType.VarBool(!kv.isZero())
-                        case _ => VarType.VarInt(kv)
+            var value: ?VarType = None
+            try (evaluated = cursor.evalutate()) {
+                value = if (isInteger) {
+                    let kind = match (canonicalTy.getOrThrow().kind) {
+                        case TypeKind.TypeKindInt(k) => k
+                        case _ => throw Exception("Should be int type")
                     }
-                }
-            } else if (isFloat) {
-                cursor.evalutate().asDouble().flatMap {
-                    fv => VarType.VarFloat(fv)
-                }
-            } else {
-                cursor.evalutate().asLiteralString().flatMap {
-                    sv => VarType.VarString(sv)
+
+                    let iv = evaluated.asInt()
+                    if (iv.isNone() || !kind.signednessMatches(iv.getOrThrow().toInts().isNonNegative())) {
+                        None
+                    } else {
+                        let kv = iv.getOrThrow().toInts()
+                        match (kind) {
+                            case IntKindBool => VarType.VarBool(!kv.isZero())
+                            case _ => VarType.VarInt(kv)
+                        }
+                    }
+                } else if (isFloat) {
+                    evaluated.asDouble().flatMap {
+                        fv => VarType.VarFloat(fv)
+                    }
+                } else {
+                    evaluated.asLiteralBytes().flatMap {
+                        sv => VarType.VarString(sv)
+                    }
                 }
             }
 
@@ -160,7 +163,7 @@ func parseMacroClangFallback(
         case None => return None
     }
 
-    let contents = "int main() {{ ${cursor.spelling()}; }}"
+    let contents = "int main() { ${cursor.spelling()}; }"
     match (ftu.reparse(contents)) {
         case Err(_) => return None
         case Ok(_) => ()
@@ -203,8 +206,7 @@ func parseMacroClangFallback(
                 case None => return None
             }
         } else if (evalutatedKind == clang.CXEvalResultKind_CXEval_StrLiteral) {
-            match (evalutated.asLiteralString()) {
-                // asLiteralString() already returns a malloc'd copy, safe to use directly
+            match (evalutated.asLiteralBytes()) {
                 case Some(v) => return Some((cursor.spelling(), MacroEvalResult.EvalStr(v)))
                 case None => return None
             }
@@ -286,5 +288,5 @@ public enum VarType {
     VarBool(Bool)
     | VarInt(Ints)
     | VarFloat(Float64)
-    | VarString(CString)
+    | VarString(Array<UInt8>)
 }

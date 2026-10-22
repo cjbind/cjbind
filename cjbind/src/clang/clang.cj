@@ -1992,12 +1992,14 @@ public enum EvalResultInt {
 public class EvalResult <: Resource {
     let x: CXEvalResult
     let ty: Type
+    let cursor: Cursor
     var _released: Bool = false
 
     public init(cursor: Cursor) {
         unsafe {
             this.x = clang_Cursor_Evaluate(cursor.x)
             this.ty = cursor.curType().canonicalType()
+            this.cursor = cursor
         }
     }
 
@@ -2045,11 +2047,8 @@ public class EvalResult <: Resource {
         }
     }
 
-    public func asLiteralString(): ?CString {
-        if (this.kind() != CXEvalResultKind_CXEval_StrLiteral) {
-            return None
-        }
-
+    /// Return owned literal bytes, excluding the implicit C string terminator.
+    public func asLiteralBytes(): ?Array<UInt8> {
         var charTyO = this.ty.pointeeType()
         if (charTyO.isNone()) {
             charTyO = this.ty.elemType()
@@ -2061,22 +2060,45 @@ public class EvalResult <: Resource {
         let k = charTy.kind()
         if (k == CXTypeKind_CXType_Char_S || k == CXTypeKind_CXType_SChar || k == CXTypeKind_CXType_Char_U || k ==
             CXTypeKind_CXType_UChar) {
+            if (let Some(literal) <- evaluatedStringLiteral(this.cursor)) {
+                // libclang copies evaluated strings with strncpy, losing bytes
+                // after an embedded NUL. The literal's canonical spelling keeps
+                // every byte, including concatenated and macro-expanded text.
+                // Direct pointer initializers can also fail evaluation entirely.
+                return decodeClangStringLiteral(literal.spelling())
+            }
+            if (this.kind() != CXEvalResultKind_CXEval_StrLiteral) {
+                return None
+            }
             unsafe {
                 let ret = clang_EvalResult_getAsStr(x)
-                // Copy the string to prevent use-after-free when EvalResult is disposed.
-                // Cannot use LibC.mallocCString(ret.toString()) because the string may contain invalid UTF-8.
-                let len = ret.size()
-                let buf = LibC.malloc<UInt8>(count: Int64(len) + 1)
-                for (i in 0..len) {
-                    (buf + i).write((ret.getChars() + i).read())
+                if (ret.getChars().isNull()) {
+                    return None
                 }
-                (buf + len).write(0u8)
-                let copied = CString(buf)
-                return Some(copied)
+                // Preserve the evaluator's result for expressions that are not
+                // direct literals; never substitute an arbitrary child literal.
+                return Some(Array<UInt8>(ret.size(), {i => (ret.getChars() + i).read()}))
             }
         }
 
         return None
+    }
+
+    /// Compatibility wrapper. The caller owns and must free the returned buffer.
+    /// Use asLiteralBytes() when the value can contain embedded NUL bytes.
+    public func asLiteralString(): ?CString {
+        let bytes = match (this.asLiteralBytes()) {
+            case Some(value) => value
+            case None => return None
+        }
+        unsafe {
+            let buffer = LibC.malloc<UInt8>(count: bytes.size + 1)
+            for (i in 0..bytes.size) {
+                (buffer + i).write(bytes[i])
+            }
+            (buffer + bytes.size).write(0u8)
+            return Some(CString(buffer))
+        }
     }
 }
 
