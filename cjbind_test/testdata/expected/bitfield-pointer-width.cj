@@ -7,11 +7,14 @@ func __cjbind_bitfield_read(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: In
     let bytesNeeded = (bitWidth + bitShift + 7) / 8
     var val: UInt64 = 0
     var i: Int64 = 0
-    while (i < bytesNeeded) {
+    while (i < bytesNeeded && i < 8) {
         val = val | (UInt64(unsafe { ptr.read(startByte + i) }) << UInt64(i * 8))
         i++
     }
     val = val >> UInt64(bitShift)
+    if (bytesNeeded == 9) {
+        val = val | (UInt64(unsafe { ptr.read(startByte + 8) }) << UInt64(64 - bitShift))
+    }
     if (bitWidth < 64) {
         val = val & ((UInt64(1) << UInt64(bitWidth)) - 1)
     }
@@ -35,8 +38,16 @@ func __cjbind_bitfield_write(ptr: CPointer<UInt8>, bitOffset: Int64, bitWidth: I
     }
     var i: Int64 = 0
     while (i < bytesNeeded) {
-        let byteVal = UInt8((maskVal >> UInt64(i * 8)) & 0xFF)
-        let byteMask = UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)
+        let byteVal = if (i < 8) {
+            UInt8((maskVal >> UInt64(i * 8)) & 0xFF)
+        } else {
+            UInt8((val >> UInt64(64 - bitShift)) & 0xFF)
+        }
+        let byteMask = if (i < 8) {
+            UInt8((fieldMask >> UInt64(i * 8)) & 0xFF)
+        } else {
+            UInt8((UInt64(1) << UInt64(bitWidth + bitShift - 64)) - 1)
+        }
         let old = unsafe { ptr.read(startByte + i) }
         unsafe { ptr.write(startByte + i, (old & !byteMask) | (byteVal & byteMask)) }
         i++
