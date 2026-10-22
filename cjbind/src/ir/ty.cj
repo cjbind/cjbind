@@ -474,18 +474,11 @@ public class Type <: IsOpaque<Item> & Trace<Tracer, Item> {
             n => !n.isEmpty()
         }
 
-        let isConst2 = ty.isConst() || (ty.kind() == clang.CXTypeKind_CXType_ConstantArray && (ty
-            .elemType()
-            .flatMap {
-                ele => ele.isConst()
-            }
-            .getOrDefault {=> false}))
-
         let tty = Type(
             name,
             layout,
             tkind,
-            isConst2,
+            ty.isConst(),
             sourceName: originalTypedefName
         )
 

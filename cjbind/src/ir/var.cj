@@ -97,11 +97,7 @@ public class Var <: ClangSubItemParser<Var> {
             }
 
             let ty = cursor.curType()
-            let isConst = ty.isConst() || ([clang.CXTypeKind_CXType_ConstantArray,
-                clang.CXTypeKind_CXType_IncompleteArray].contains(ty.kind()) &&
-                ty.elemType().flatMap({
-                et => et.isConst()
-            }).getOrDefault {=> false})
+            let isConst = ty.isConst()
 
             let tyId = match (Item.fromTy(ty, cursor, None, ctx)) {
                 case Ok(v) => v

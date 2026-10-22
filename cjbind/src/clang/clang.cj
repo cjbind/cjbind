@@ -1105,8 +1105,15 @@ public class Type <: Equatable<Type> {
     }
 
     public func isConst(): Bool {
+        var ty = this
+        while (ty.kind() == CXTypeKind_CXType_ConstantArray || ty.kind() == CXTypeKind_CXType_IncompleteArray) {
+            ty = match (ty.elemType()) {
+                case Some(element) => element
+                case None => return false
+            }
+        }
         unsafe {
-            return clang_isConstQualifiedType(x) != 0
+            return clang_isConstQualifiedType(ty.x) != 0
         }
     }
 
