@@ -94,11 +94,9 @@ let _ = {
 
 @C
 public struct redundant_pragma_packed {
-    public var a: UInt8
-    public var b: UInt16
-    public init(a: UInt8, b: UInt16) {
-        this.a = a
-        this.b = b
+    let _cjbind_opaque_blob: UInt32
+    public init() {
+        this._cjbind_opaque_blob = unsafe { zeroValue<UInt32>() }
     }
 }
 
