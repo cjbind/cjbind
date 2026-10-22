@@ -741,6 +741,14 @@ public class Item <: Trace<Tracer, Unit> & IsOpaque<Unit> {
         if (tyKind == clang.CXTypeKind_CXType_Elaborated) {
             let namedType = ty.named()
             if (namedType != ty) {
+                if (namedType.isConst() != ty.isConst()) {
+                    // The named type can omit qualifiers carried by the
+                    // elaborated use. Keep them on a reference to the alias
+                    // or declaration instead of replacing it with its canonical type.
+                    return Item.fromTy(namedType, location, parentId, ctx).map {
+                        inner => ctx.buildTyWrapper(id, inner, parentId, ty)
+                    }
+                }
                 return Item.fromTyWithId(id, namedType, location, parentId, ctx)
             }
             return Err(ParseError.Continue)
