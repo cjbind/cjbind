@@ -128,14 +128,36 @@ class LibClangInstaller:
         raise FileNotFoundError("libclang directory not found in the archive")
 
     def _install_files(self) -> None:
-        """移动文件到目标目录"""
+        """Stage on the destination volume, then replace with rollback."""
         libclang_src = self._find_libclang_dir()
         libclang_dest = self.target_dir / "libclang"
-
-        if libclang_dest.exists():
-            shutil.rmtree(libclang_dest)
-
-        shutil.move(str(libclang_src), str(libclang_dest))
+        stage_root = Path(mkdtemp(prefix=".libclang-stage-", dir=self.target_dir))
+        staged = stage_root / "new"
+        backup = stage_root / "previous"
+        installed = False
+        try:
+            # Moving from the system temp directory may copy across volumes.
+            # Complete that operation before touching the working installation.
+            shutil.move(str(libclang_src), str(staged))
+            if libclang_dest.exists():
+                libclang_dest.rename(backup)
+            try:
+                staged.rename(libclang_dest)
+            except BaseException:
+                if backup.exists():
+                    try:
+                        backup.rename(libclang_dest)
+                    except OSError as error:
+                        raise RuntimeError(
+                            f"Replacement and rollback failed; previous libclang is preserved at {backup}"
+                        ) from error
+                raise
+            installed = True
+        finally:
+            # An interruption during replacement must never delete the only
+            # remaining copy of the previous installation.
+            if installed or not backup.exists():
+                shutil.rmtree(stage_root, ignore_errors=True)
         print(f"Successfully installed to: {libclang_dest}")
 
     def _cleanup(self) -> None:
@@ -145,18 +167,10 @@ class LibClangInstaller:
         if self.extract_dir and self.extract_dir.exists():
             shutil.rmtree(self.extract_dir, ignore_errors=True)
 
-    def _remove_old_libclang(self) -> None:
-        """清除旧的 libclang 目录，确保不会残留不兼容的文件"""
-        libclang_dest = self.target_dir / "libclang"
-        if libclang_dest.exists():
-            print(f"Removing old libclang: {libclang_dest}")
-            shutil.rmtree(libclang_dest)
-
     def run(self) -> None:
         """执行安装流程"""
         try:
             self.target_dir.mkdir(parents=True, exist_ok=True)
-            self._remove_old_libclang()
             self._download_file()
             self._extract_archive()
             self._install_files()

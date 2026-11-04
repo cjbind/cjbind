@@ -103,20 +103,27 @@ def find_libclang() -> tuple[Path, str, bool] | None:
     The is_dev_symlink flag indicates if the file is a proper .so/.dylib/.dll file
     that can be linked with -l flag, vs a versioned runtime library that needs -l: syntax.
     """
-    # Collect search directories
-    dirs = []
+    # An explicit search path selects the toolchain. Search entries in order
+    # before considering system installations, regardless of filename versions.
     if libclang_path := os.environ.get("LIBCLANG_PATH"):
         for p in libclang_path.split(os.pathsep):
             path = Path(p)
             if path.is_dir():
-                dirs.append(path)
+                if found := find_libclang_in_dirs([path]):
+                    return found
 
+    dirs = []
     for pattern in LIBCLANG_SEARCH_DIRS.get(sys.platform, []):
         for match in glob.glob(pattern):
             path = Path(match)
             if path.is_dir():
                 dirs.append(path)
 
+    return find_libclang_in_dirs(dirs)
+
+
+def find_libclang_in_dirs(dirs: list[Path]) -> tuple[Path, str, bool] | None:
+    """Choose a library within one search tier."""
     # Search for libclang files
     dev_results = []  # Development symlinks (.so files)
     versioned_results = []  # Versioned runtime libraries (.so.X files)
@@ -133,7 +140,7 @@ def find_libclang() -> tuple[Path, str, bool] | None:
                         versioned_results.append((directory, path.name, version))
 
     # Prefer development symlinks (they can be linked with -l flag)
-    # Use max without reversed to prefer earlier-found entries (LIBCLANG_PATH first)
+    # Ties preserve directory order within this search tier.
     if dev_results:
         best = max(dev_results, key=lambda x: x[2])
         return (best[0], best[1], True)
