@@ -137,7 +137,7 @@ public type VoidAlias = Unit
 public const PLAIN_ALIAS_CONST: PlainAlias = -3
 public let STRONG_ALIAS_CONST: StrongAlias = StrongAlias(rawValue: 5)
 public let ACCESSIBLE_ALIAS_CONST: AccessibleAlias = AccessibleAlias(rawValue: -7)
-public let FLOAT_ALIAS_CONST: FloatAlias = FloatAlias(rawValue: 1.500000)
+public let FLOAT_ALIAS_CONST: FloatAlias = FloatAlias(rawValue: 0x1.8000000000000p0)
 
 public type AliasCallback = CFunc<(strong: UInt32, accessible: Int64, pointer: CPointer<StrongAlias>) -> Int64>
 

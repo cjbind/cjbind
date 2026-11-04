@@ -553,14 +553,21 @@ public class AstTyFloatExprTest {
         let result = AstTy.floatExpr(ctx, 3.14)
         @Expect(result.isOk(), true)
         let s = result.unwrap().toString()
-        @Expect(s.contains("3.14"), true)
+        @Expect(s, "0x1.91eb851eb851fp1")
     }
 
     @TestCase
-    func zeroIsNotNormal(): Unit {
+    func preservesZeroSignAndSubnormalValues(): Unit {
         let ctx = unsafe { zeroValue<CjbindContext>() }
-        let result = AstTy.floatExpr(ctx, 0.0)
-        @Expect(result.isErr(), true)
+        for ((value, expected) in [
+            (0.0, "0x0.0000000000000p-1022"),
+            (-0.0, "-0x0.0000000000000p-1022"),
+            (0x1p-1074, "0x0.0000000000001p-1022")
+        ]) {
+            let result = AstTy.floatExpr(ctx, value)
+            @Expect(result.isOk(), true)
+            @Expect(result.unwrap().toString(), expected)
+        }
     }
 
     @TestCase

@@ -570,10 +570,9 @@ public class AstTy {
         _: CjbindContext,
         f: Float64
     ): Result<TokenStream, Unit> {
-        if (f.isNormal()) {
-            return Ok(tokenStreamFromTemplate("${f}".replace("+", "")))
+        return match (preciseMacroFloatLiteral(f)) {
+            case Some(literal) => Ok(tokenStreamFromTemplate(literal))
+            case None => Err(())
         }
-
-        return Err(())
     }
 }

@@ -592,7 +592,7 @@ func scalarConstantDeclaration(
     return Some(tokenStreamFromTemplate("public ${declaration} ${ident} : ${ty} = ${value}"))
 }
 
-// Avoid Float64.toString's fixed decimal precision when preserving C macro values.
+// Avoid Float64.toString's fixed decimal precision when preserving C constants.
 // A hexadecimal literal retains every IEEE significand bit, including subnormals
 // and signed zero, and Cangjie rounds it to the declared Float32/Float64 type.
 func preciseMacroFloatLiteral(value: Float64): ?String {
@@ -753,7 +753,7 @@ extend Var <: CodeGenerator<Item, Unit> {
                         }
                     } else {
                         eprintln(
-                            "Warning: skipping float constant '${canonicalName}' (NaN/Infinity/subnormal cannot be represented)")
+                            "Warning: skipping float constant '${canonicalName}' (NaN/Infinity cannot be represented)")
                     }
             }
         } else {

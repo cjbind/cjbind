@@ -165,6 +165,12 @@ public class Var <: ClangSubItemParser<Var> {
                 }
             }
 
+            if (value.isSome() && (!isConst || ty.isVolatile())) {
+                eprintln(
+                    "Warning: skipping variable '${name}' because mutable or volatile storage cannot be represented as a Cangjie constant")
+                value = None
+            }
+
             let varr = Var(name, tyId, value, isConst)
             return Ok(ParseResult.New(varr, Some(cursor)))
         } else {
@@ -212,13 +218,21 @@ func parseMacroClangFallback(
         let evalutatedKind = evalutated.kind()
 
         if (evalutatedKind == clang.CXEvalResultKind_CXEval_Int) {
+            // The evaluator exposes at most 64 bits even when the original
+            // expression is wider. Check this before choosing a macro type,
+            // including the default and value-fitting modes.
+            let valueType = evalutated.valueType()
+            let valueLayout = valueType.fallibleLayout(ctx).ok()
+            if (valueLayout.map({layout => layout.size > 8}).getOrDefault({=> true})) {
+                eprintln(
+                    "Warning: skipping macro '${cursor.spelling()}' with unsupported C integer type '${valueType.spelling()}'")
+                return None
+            }
             match (evalutated.asInt()) {
                 case Some(v) =>
                     let value = v.toInts()
                     if (ctx.options.macroConstUseCTypes) {
-                        let valueType = evalutated.valueType()
-                        let layout = valueType.fallibleLayout(ctx).ok()
-                        if (let Some(l) <- layout) {
+                        if (let Some(l) <- valueLayout) {
                             if (let Some(ik) <- macroIntegerKind(valueType, value, l)) {
                                 return Some((cursor.spelling(), MacroEvalResult.EvalTypedInt(value, ik, l)))
                             }

@@ -1129,16 +1129,39 @@ public class Type <: Equatable<Type> {
     }
 
     public func isConst(): Bool {
-        var ty = this
-        while (ty.kind() == CXTypeKind_CXType_ConstantArray || ty.kind() == CXTypeKind_CXType_IncompleteArray) {
+        var ty = this.canonicalType()
+        while (true) {
+            if (unsafe { clang_isConstQualifiedType(ty.x) != 0 }) {
+                return true
+            }
+            if (ty.kind() != CXTypeKind_CXType_ConstantArray && ty.kind() != CXTypeKind_CXType_IncompleteArray) {
+                return false
+            }
             ty = match (ty.elemType()) {
                 case Some(element) => element
                 case None => return false
             }
         }
-        unsafe {
-            return clang_isConstQualifiedType(ty.x) != 0
+        return false
+    }
+
+    public func isVolatile(): Bool {
+        var ty = this.canonicalType()
+        while (true) {
+            // Clang can move array element qualifiers onto the canonical
+            // array itself, so inspect each level before peeling it.
+            if (unsafe { clang_isVolatileQualifiedType(ty.x) != 0 }) {
+                return true
+            }
+            if (ty.kind() != CXTypeKind_CXType_ConstantArray && ty.kind() != CXTypeKind_CXType_IncompleteArray) {
+                return false
+            }
+            ty = match (ty.elemType()) {
+                case Some(element) => element
+                case None => return false
+            }
         }
+        return false
     }
 
     public func isPod(): Bool {
