@@ -110,12 +110,12 @@ def build_cli() -> Path:
 def write_smoke_project(project: Path, generated: str, support: str | None = None) -> None:
     (project / "src").mkdir(parents=True)
     (project / "cangjie-sdk.toml").write_text(
-        '[toolchain]\nchannel = "sts-1.1.3"\n',
+        '[toolchain]\nchannel = "sts-1.2.0"\n',
         encoding="utf-8",
     )
     (project / "cjpm.toml").write_text(
         """[package]
-  cjc-version = "1.1.3"
+  cjc-version = "1.2.0"
   compile-option = "-Woff unused"
   name = "cjbind_ffi"
   output-type = "static"

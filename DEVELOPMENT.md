@@ -2,29 +2,13 @@
 
 ## 依赖版本
 
-- 仓颉版本：`STS 1.1.3`
+- 仓颉版本：`STS 1.2.0`，由 `cangjie-sdk.toml` 固定
 - uv：CI 使用最新版本；Python 版本：`3.14`，用于运行 `scripts` 下的脚本并自动配置依赖
-- Go：`1.26`，用于构建 opt 补丁
-
-## 修补编译器
-
-仓颉 STS 1.1.3 仍需为 `opt` 生成补丁。原版优化器在编译 `cjbind.clang` 时会由 `CJBarrierOpt` 报出 `Need write barrier` 并终止；CI 也会执行此步骤。
-
-确保当前环境中安装了 `Go`。使用 `cjv` 时，在 `cjbind` 根目录运行以下命令，让补丁脚本获得 STS 1.1.3 的 `CANGJIE_HOME`：
-
-```
-cjv run sts-1.1.3 uv run scripts/patch_opt.py
-```
-
-CI 中 `setup-cangjie` 已设置 `CANGJIE_HOME`，因此 workflow 直接运行 `uv run scripts/patch_opt.py`。
-
-这会构建 `scripts/opt.go` 并替换原有的 `opt`，原有的 `opt` 会被重命名为 `opt.old(.exe)`。
-
-脚本会根据当前 SDK 原版 `opt` 的 SHA-256 重新生成 pass 缓存，切换 SDK 版本时不会复用旧工具链的 pipeline。
 
 ## 更新版本
 
-- 更新 `cjpm.toml`
+- 同步更新 `cjbind`、`cjbind_cli`、`cjbind_test` 和 `cjbind_token` 中 `cjpm.toml` 的版本号。
+- 推送对应的 `vX.Y.Z` 标签，触发构建、发布和 GitCode 同步。
 
 ## 发布与 GitCode 同步
 

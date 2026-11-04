@@ -414,9 +414,6 @@ def preprocess_environment(env, cjpm_args: list[str], use_static: bool):
             env_key = f"CJBIND_OPT_PASSES_{level}"
             env[env_key] = passes
             print(f"Set {env_key}: {passes[:60]}...", flush=True)
-    else:
-        print("Warning: .passes_cache not found, opt wrapper may fail", flush=True)
-
     # Strip flag (release mode only, not on darwin)
     if not debug and sys.platform != "darwin":
         builder.add("--strip-all")

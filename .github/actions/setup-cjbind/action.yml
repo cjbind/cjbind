@@ -42,21 +42,11 @@ runs:
         path: lib/libclang
         key: ${{ steps.libclang-cache.outputs.cache-primary-key }}
 
-    - name: Setup Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-      with:
-        go-version: "1.26"
-        cache: false
-
     - name: Setup Cangjie
       uses: Zxilly/setup-cangjie@91463316b1c359f216c2ac49e35900f9341c1571 # v3.2.0
       with:
         channel: "sts"
-        version: "1.1.3"
-
-    - name: Patch Cangjie optimizer
-      shell: bash
-      run: uv run scripts/patch_opt.py
+        version: "1.2.0"
 
     - name: Install LLVM 17 libclang
       if: runner.os == 'Linux' && inputs.static-libclang != 'true'
