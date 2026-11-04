@@ -85,36 +85,6 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
     -h, --help                           显示帮助信息
 ```
 
-### 宏常量类型
-
-默认情况下，整数宏生成 `Int64` 或 `UInt64`，`--fit-macro-constants` 按值范围选择更小的整数类型。
-启用 `--macro-const-use-ctypes` 后，cjbind 使用 Clang 求值所得的 C 表达式类型，包括整数提升、
-`--target` 指定的平台宽度和 `char` 的符号性。例如，`0UL` 在 LP64 目标上生成 `UInt64`，
-在 Windows LLP64 目标上生成 `UInt32`；`0.f` 生成 `Float32`。库调用可设置
-`CjbindOptions.macroConstUseCTypes = true`。同时启用两个选项时，C 类型优先。
-
-此选项通过十六进制浮点字面量保留有限 `float`、`double` 的值和正负零，半精度常量使用
-`__CjbindFloat16` 存储类型。对于 Clang 求值接口或当前仓颉表示无法完整保留的类型和值，
-包括枚举类型的表达式、128 位整数、宽于 `double` 的 `long double`、128 位浮点数及非有限浮点值，
-cjbind 会报告警告并跳过对应宏。
-
-### 库调用：重命名字段
-
-通过 `CjbindOptions.fieldNameCallback` 可以在生成前重命名具名的 struct、union 和 bitfield 字段；返回 `None` 会保留原 C 字段名：
-
-```cangjie
-import cjbind.options.{CjbindOptions, FieldInfo}
-
-let options = CjbindOptions(["input.h"], [])
-options.fieldNameCallback = {
-    info: FieldInfo =>
-    match (info.fieldName) {
-        case "type" => Some("type_")
-        case _ => None
-    }
-}
-```
-
 ## 开发
 
 查看 [开发文档](./DEVELOPMENT.md) 以获取更多信息。
