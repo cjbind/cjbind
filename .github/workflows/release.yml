@@ -24,6 +24,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ inputs.tag || github.ref_name }}
 
   package:
     name: "${{ matrix.os.friendly }} / ${{ matrix.linking }}"
