@@ -21,7 +21,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Api is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Ignores {
@@ -50,7 +50,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Base is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Cycle {
@@ -71,7 +71,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Cycle is not 1 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z5entryv(): Api
 

@@ -165,7 +165,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_atomic16_t is not 2 but ${align} bytes")
         }
-}
+}()
 
 // 16-bit Reference counter.
 // It should only be accessed using the following functions:
@@ -198,7 +198,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_2__cjbind_ty_1 {
@@ -281,7 +281,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_2__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // The packet type, which is the combination of outer/inner L2, L3, L4
 // and tunnel types. The packet_type is about data really present in the
@@ -313,7 +313,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_2 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 {
@@ -338,7 +338,7 @@ let _ = {
             throw Exception(
                 "Alignment of rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 {
@@ -365,7 +365,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_3__cjbind_ty_1__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_1 {
@@ -390,7 +390,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_3__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_3__cjbind_ty_2 {
@@ -413,7 +413,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_3__cjbind_ty_2 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_3 {
@@ -448,7 +448,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_3 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_4 {
@@ -483,7 +483,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_4 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_mbuf__cjbind_ty_5__cjbind_ty_1 {
@@ -557,7 +557,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_5__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // fields to support TX offloads
 @C
@@ -585,7 +585,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_mbuf__cjbind_ty_5 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // The generic rte_mbuf, containing a packet mbuf.
 @C

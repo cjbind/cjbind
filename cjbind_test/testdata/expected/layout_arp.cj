@@ -37,7 +37,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of ether_addr is not 1 but ${align} bytes")
         }
-}
+}()
 
 // ARP header IPv4 payload.
 @C
@@ -59,7 +59,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of arp_ipv4 is not 1 but ${align} bytes")
         }
-}
+}()
 
 // ARP header.
 @C
@@ -81,4 +81,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of arp_hdr is not 1 but ${align} bytes")
         }
-}
+}()

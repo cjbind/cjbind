@@ -92,7 +92,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array__cjbind_ty_1__cjbind_ty_1__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_1 {
@@ -123,7 +123,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array__cjbind_ty_1__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1 {}
@@ -139,7 +139,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array__cjbind_ty_1__cjbind_ty_2__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bpf_array__cjbind_ty_1__cjbind_ty_2 {
@@ -170,7 +170,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array__cjbind_ty_1__cjbind_ty_2 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bpf_array__cjbind_ty_1 {
@@ -189,7 +189,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bpf_array {
@@ -210,4 +210,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bpf_array is not 1 but ${align} bytes")
         }
-}
+}()

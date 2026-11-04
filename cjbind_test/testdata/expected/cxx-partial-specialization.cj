@@ -21,7 +21,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of PartialHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -43,4 +43,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Storage_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

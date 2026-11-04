@@ -19,7 +19,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of zoidberg_Foo is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct zoidberg_Bar {
@@ -40,7 +40,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of zoidberg_Bar is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct zoidberg_ContainsInstantiation {
@@ -61,7 +61,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of zoidberg_ContainsInstantiation is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct zoidberg_ContainsOpaqueInstantiation {
@@ -85,7 +85,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of zoidberg_ContainsOpaqueInstantiation is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct zoidberg_Template_open0_zoidberg_Foo_close0 {
@@ -106,4 +106,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of zoidberg_Template_open0_zoidberg_Foo_close0 is not 1 but ${align} bytes")
         }
-}
+}()

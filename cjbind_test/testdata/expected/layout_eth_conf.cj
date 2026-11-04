@@ -243,7 +243,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_rxmode is not 4 but ${align} bytes")
         }
-}
+}()
 
 // It is in neither DCB nor VT mode.
 public const rte_eth_tx_mq_mode_ETH_MQ_TX_NONE: rte_eth_tx_mq_mode = 0
@@ -311,7 +311,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_txmode is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to configure the Receive Side Scaling (RSS) feature
 // of an Ethernet port.
@@ -354,7 +354,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_rss_conf is not 8 but ${align} bytes")
         }
-}
+}()
 
 // 4 TCs with DCB.
 public const rte_eth_nb_tcs_ETH_4_TCS: rte_eth_nb_tcs = 4
@@ -405,7 +405,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_vmdq_dcb_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to configure the VMDQ+DCB feature
 // of an Ethernet port.
@@ -452,7 +452,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_vmdq_dcb_conf is not 8 but ${align} bytes")
         }
-}
+}()
 
 // This structure may be extended in future.
 @C
@@ -478,7 +478,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_dcb_rx_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_vmdq_dcb_tx_conf {
@@ -503,7 +503,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_vmdq_dcb_tx_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_dcb_tx_conf {
@@ -528,7 +528,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_dcb_tx_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_vmdq_tx_conf {
@@ -550,7 +550,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_vmdq_tx_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_vmdq_rx_conf__cjbind_ty_1 {
@@ -575,7 +575,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_vmdq_rx_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_vmdq_rx_conf {
@@ -617,7 +617,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_vmdq_rx_conf is not 8 but ${align} bytes")
         }
-}
+}()
 
 // Disable FDIR support.
 public const rte_fdir_mode_RTE_FDIR_MODE_NONE: rte_fdir_mode = 0
@@ -695,7 +695,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_ipv4_flow is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to define the input for IPV6 flow
 @C
@@ -730,7 +730,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_ipv6_flow is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to configure FDIR masks that are used by the device
 // to match the various fields of RX packet headers.
@@ -779,7 +779,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_fdir_masks is not 4 but ${align} bytes")
         }
-}
+}()
 
 public const rte_eth_payload_type_RTE_ETH_PAYLOAD_UNKNOWN: rte_eth_payload_type = 0
 public const rte_eth_payload_type_RTE_ETH_RAW_PAYLOAD: rte_eth_payload_type = 1
@@ -819,7 +819,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_flex_payload_cfg is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to define FDIR masks for flexible payload
 // for each flow type
@@ -845,7 +845,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_eth_fdir_flex_mask is not 2 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to define all flexible payload related setting
 // include flex payload and flex mask
@@ -879,7 +879,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_fdir_flex_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to configure the Flow Director (FDIR) feature
 // of an Ethernet port.
@@ -920,7 +920,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_fdir_conf is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to enable/disable specific device interrupts.
 @C
@@ -946,7 +946,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_intr_conf is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_conf__cjbind_ty_1 {
@@ -978,7 +978,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_conf__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_conf__cjbind_ty_2 {
@@ -997,7 +997,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_eth_conf__cjbind_ty_2 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // A structure used to configure an Ethernet port.
 // Depending upon the RX multi-queue mode, extra advanced
@@ -1059,4 +1059,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_conf is not 8 but ${align} bytes")
         }
-}
+}()

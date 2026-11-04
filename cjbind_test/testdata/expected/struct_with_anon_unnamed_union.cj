@@ -55,7 +55,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct foo {
@@ -76,4 +76,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
-}
+}()

@@ -193,7 +193,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_kni_fifo is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_eth_link {
@@ -242,4 +242,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_eth_link is not 8 but ${align} bytes")
         }
-}
+}()

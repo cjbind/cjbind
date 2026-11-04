@@ -32,4 +32,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Selection is not 4 but ${align} bytes")
         }
-}
+}()

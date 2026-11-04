@@ -31,7 +31,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TrivialValue is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN13OwnDestructorD1Ev(this_: CPointer<OwnDestructor>): Unit
 
@@ -58,7 +58,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of OwnDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DeletedDestructor {
@@ -79,7 +79,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DeletedDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsDestructor {
@@ -100,7 +100,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ContainsDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct InheritsDestructor {
@@ -123,7 +123,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of InheritsDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DeepDestructor {
@@ -144,7 +144,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DeepDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PointerOnlyDestructor {
@@ -165,7 +165,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of PointerOnlyDestructor is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN18UnionOwnDestructorD1Ev(this_: CPointer<UnionOwnDestructor>): Unit
 
@@ -198,7 +198,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of UnionOwnDestructor is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DestructorTemplateHolder {
@@ -224,7 +224,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DestructorTemplateHolder is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct IntegerOnly {
@@ -245,7 +245,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of IntegerOnly is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DirectFloat {
@@ -266,7 +266,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DirectFloat is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FloatArray {
@@ -287,7 +287,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of FloatArray is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsFloat {
@@ -308,7 +308,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ContainsFloat is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct InheritsFloat {
@@ -331,7 +331,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of InheritsFloat is not 4 but ${align} bytes")
         }
-}
+}()
 
 public type FloatAlias = Float32
 
@@ -354,7 +354,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of AliasedFloat is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FloatPointerOnly {
@@ -375,7 +375,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of FloatPointerOnly is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FloatAnalysisHolder {
@@ -418,7 +418,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of FloatAnalysisHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateDefinitionFloat_open0_int_close0 {
@@ -441,7 +441,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateDefinitionFloat_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateArgumentFloat_open0_int_close0 {
@@ -462,7 +462,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateArgumentFloat_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateArgumentFloat_open0_float_close0 {
@@ -483,7 +483,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateArgumentFloat_open0_float_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateField_open0_TrivialValue_close0 {
@@ -504,7 +504,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateField_open0_TrivialValue_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateField_open0_OwnDestructor_close0 {
@@ -525,7 +525,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateField_open0_OwnDestructor_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateOwnDestructor_open0_int_close0 {
@@ -546,4 +546,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateOwnDestructor_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

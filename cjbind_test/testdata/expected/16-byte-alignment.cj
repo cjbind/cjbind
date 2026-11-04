@@ -32,7 +32,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_ipv4_tuple__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ipv4_tuple__cjbind_ty_1 {
@@ -59,7 +59,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ipv4_tuple__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ipv4_tuple {
@@ -84,7 +84,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ipv4_tuple is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 {
@@ -107,7 +107,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of rte_ipv6_tuple__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ipv6_tuple__cjbind_ty_1 {
@@ -134,7 +134,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ipv6_tuple__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ipv6_tuple {
@@ -159,7 +159,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ipv6_tuple is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_thash_tuple {

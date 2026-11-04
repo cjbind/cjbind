@@ -112,7 +112,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TestDouble is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TestDoublePtr {
@@ -133,7 +133,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TestDoublePtr is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TestFloat {
@@ -154,7 +154,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TestFloat is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TestFloatPtr {
@@ -175,4 +175,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TestFloatPtr is not 8 but ${align} bytes")
         }
-}
+}()

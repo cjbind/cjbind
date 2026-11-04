@@ -103,4 +103,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of U is not 1 but ${align} bytes")
         }
-}
+}()

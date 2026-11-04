@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of api_Outer_Inner is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN3api5Outer1fEv(this_: CPointer<api_Outer>): Int32
 
@@ -46,4 +46,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of api_Outer is not 1 but ${align} bytes")
         }
-}
+}()

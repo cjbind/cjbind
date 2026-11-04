@@ -186,7 +186,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of A is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct B {
@@ -224,7 +224,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of B is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct C {
@@ -264,7 +264,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of C is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Date1 {
@@ -320,7 +320,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Date1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Date2 {
@@ -385,7 +385,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Date2 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Date3 {
@@ -442,4 +442,4 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Date3 is not 2 but ${align} bytes")
         }
-}
+}()

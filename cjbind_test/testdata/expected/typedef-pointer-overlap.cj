@@ -30,7 +30,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of foo is not 1 but ${align} bytes")
         }
-}
+}()
 
 public type foo_ptr = CPointer<foo>
 
@@ -53,7 +53,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of bar is not 1 but ${align} bytes")
         }
-}
+}()
 
 public type bar_ptr = CPointer<bar>
 
@@ -91,7 +91,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of cat is not 4 but ${align} bytes")
         }
-}
+}()
 
 public type cat_ptr = CPointer<cat>
 

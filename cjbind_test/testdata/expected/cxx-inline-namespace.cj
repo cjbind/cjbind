@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of api_Item is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN3api2v14pingENS0_4ItemE(input: api_Item): Int32
 

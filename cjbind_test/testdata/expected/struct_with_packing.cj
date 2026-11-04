@@ -19,4 +19,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of a is not 1 but ${align} bytes")
         }
-}
+}()

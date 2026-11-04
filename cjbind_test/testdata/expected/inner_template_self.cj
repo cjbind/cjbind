@@ -29,7 +29,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of InstantiateIt is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct LinkedList_open0_int_close0 {
@@ -52,4 +52,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of LinkedList_open0_int_close0 is not 8 but ${align} bytes")
         }
-}
+}()

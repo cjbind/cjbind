@@ -114,7 +114,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ConstPacket is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct MultiZero {
@@ -162,7 +162,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of MultiZero is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FirstItems {
@@ -192,7 +192,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of FirstItems is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct SecondItems {
@@ -222,4 +222,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of SecondItems is not 4 but ${align} bytes")
         }
-}
+}()

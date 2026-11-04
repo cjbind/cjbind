@@ -27,7 +27,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Access_Visible is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Access {
@@ -52,7 +52,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Access is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Packed {
@@ -73,4 +73,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Packed is not 1 but ${align} bytes")
         }
-}
+}()

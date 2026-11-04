@@ -44,7 +44,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of OverloadedCtor is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN8lifetime9OutOfLineC1Ev(this_: CPointer<lifetime_OutOfLine>): Unit
 
@@ -77,4 +77,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of lifetime_OutOfLine is not 4 but ${align} bytes")
         }
-}
+}()

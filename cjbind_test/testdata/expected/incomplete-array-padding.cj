@@ -191,4 +191,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of foo is not 8 but ${align} bytes")
         }
-}
+}()

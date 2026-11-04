@@ -26,7 +26,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
-}
+}()
 
 public const Foo_Bar: Foo = 0
 public const Foo_Qux: Foo = 1

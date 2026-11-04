@@ -20,7 +20,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of SelectedDependency is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z12selected_api18SelectedDependency(value: SelectedDependency): SelectedDependency
 

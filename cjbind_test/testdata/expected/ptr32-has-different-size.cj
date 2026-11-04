@@ -20,7 +20,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TEST_STRUCT is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -fms-extensions
 public type TEST = TEST_STRUCT

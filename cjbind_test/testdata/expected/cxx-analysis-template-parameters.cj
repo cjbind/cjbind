@@ -162,7 +162,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TemplateParameterAnalysisHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateParameterAnalysisHolder_NestedUse_Inner {
@@ -183,7 +183,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of TemplateParameterAnalysisHolder_NestedUse_Inner is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Inner {
@@ -221,7 +221,7 @@ let _ = {
             throw Exception(
                 "Alignment of TemplateParameterAnalysisHolder_DoublyIndirectUse_Inner is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DependentLeaf_open0_unsigned_long_long_close0 {
@@ -242,7 +242,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DependentLeaf_open0_unsigned_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DependentMiddle_open0_unsigned_long_long_close0 {
@@ -263,7 +263,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DependentMiddle_open0_unsigned_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DependentOuter_open0_unsigned_long_long_close0 {
@@ -284,7 +284,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DependentOuter_open0_unsigned_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CrtpIndirectUse_open0_double_close0 {
@@ -305,7 +305,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of CrtpIndirectUse_open0_double_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CrtpIgnoreWithIgnoringBase_open0_float_close0 {
@@ -326,7 +326,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of CrtpIgnoreWithIgnoringBase_open0_float_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CrtpUseWithIgnoringBase_open0_unsigned_short_close0 {
@@ -348,7 +348,7 @@ let _ = {
             throw Exception(
                 "Alignment of CrtpUseWithIgnoringBase_open0_unsigned_short_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CrtpDirectUse_open0_short_close0 {
@@ -369,7 +369,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of CrtpDirectUse_open0_short_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct StaticOnlyUse_open0_double_close0 {
@@ -390,7 +390,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of StaticOnlyUse_open0_double_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DoublyIndirectUse_open0_long_float_bool_close0 {
@@ -411,7 +411,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DoublyIndirectUse_open0_long_float_bool_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NestedAliasOnly_open0_long_float_close0 {
@@ -432,7 +432,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of NestedAliasOnly_open0_long_float_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TypedefAndAliasUse_open0_unsigned_int_double_close0 {
@@ -456,7 +456,7 @@ let _ = {
             throw Exception(
                 "Alignment of TypedefAndAliasUse_open0_unsigned_int_double_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct SkipMiddleParameter_open0_int_bool_char_close0 {
@@ -479,7 +479,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of SkipMiddleParameter_open0_int_bool_char_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AliasOnly_open0_float_close0 {
@@ -500,7 +500,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of AliasOnly_open0_float_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AliasUse_open0_long_long_close0 {
@@ -521,7 +521,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of AliasUse_open0_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Inner_open0_long_close0 {
@@ -542,7 +542,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Inner_open0_long_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NestedTemplateIgnore_open0_unsigned_short_close0 {
@@ -563,7 +563,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of NestedTemplateIgnore_open0_unsigned_short_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NestedTemplateUse_open0_unsigned_char_close0 {
@@ -584,7 +584,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of NestedTemplateUse_open0_unsigned_char_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NestedUse_open0_short_close0 {
@@ -605,7 +605,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of NestedUse_open0_short_close0 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct UnusedParameter_open0_double_close0 {
@@ -626,7 +626,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of UnusedParameter_open0_double_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -648,4 +648,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DirectUse_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

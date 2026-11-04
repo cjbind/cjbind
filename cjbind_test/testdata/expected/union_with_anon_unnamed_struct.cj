@@ -36,7 +36,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of pixel__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct pixel {
@@ -63,4 +63,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of pixel is not 4 but ${align} bytes")
         }
-}
+}()

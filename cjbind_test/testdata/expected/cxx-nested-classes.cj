@@ -25,7 +25,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Outer_Inner is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -47,7 +47,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Outer is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Outer_Deferred {
@@ -68,7 +68,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Outer_Deferred is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NestedHolder {
@@ -93,7 +93,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of NestedHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z10pass_innerN5Outer5InnerE(value: Outer_Inner): Outer_Inner
 
@@ -120,4 +120,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Outer_Box_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

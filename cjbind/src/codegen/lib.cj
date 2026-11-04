@@ -396,10 +396,13 @@ extend Function <: CodeGenerator<Item, Unit> {
             None
         }
 
-        let ident = if (!isInternal && this.mangledName.isSome()) {
-            ctx.cjIdentRaw(foreignSymbolName)
+        // Foreign identifiers name linker symbols. Escape keywords without
+        // changing the symbol; appending '_' here would import a different C
+        // function. Public wrapper names may still use ordinary mangling.
+        let ident = if (ctx.cjMangle(foreignSymbolName) != foreignSymbolName) {
+            "`${foreignSymbolName}`"
         } else {
-            ctx.cjIdent(foreignSymbolName)
+            ctx.cjIdentRaw(foreignSymbolName)
         }
         // Parameters must not shadow the foreign symbol used by wrapper calls.
         let reservedArgumentNames = [ident]
@@ -1564,6 +1567,7 @@ func zeroLengthArrayAccessor(
     result: CodegenResult,
     ownerName: String,
     ownerIdent: String,
+    fieldName: String,
     data: FieldData,
     element: TypeId
 ): ?TokenStream {
@@ -1588,7 +1592,6 @@ func zeroLengthArrayAccessor(
                 "Warning: cannot generate an array pointer accessor for '${ownerName}.${rawFieldName}' because its concrete element type could not be represented safely")
             return None
     }
-    let fieldName = ctx.cjMangle(rawFieldName)
     // Cangjie treats extension member names as package-wide even when the
     // specialized CPointer receiver types differ, so include the owner.
     let viewName = ctx.cjIdent(result.uniqueFunctionName("${ownerName}_${fieldName}_view"))
@@ -1622,6 +1625,59 @@ func zeroLengthArrayAccessor(
             return __CjbindArrayView<${elementTy}>(pointer: ${accessorName}(value), size: count)
         }
     ))
+}
+
+// Reserve every source spelling before allocating names. A mangled keyword
+// must not steal a later field's spelling, and generated storage must avoid
+// both source fields and names already assigned to other generated members.
+class RecordMemberNames {
+    let ctx: CjbindContext
+    let reserved = HashSet<String>()
+    let used = HashSet<String>()
+
+    init(ctx: CjbindContext, fields: Array<Field>) {
+        this.ctx = ctx
+        for (field in fields) {
+            match (field) {
+                case Field.DataMember(data) => reserveSource(data)
+                case Field.Bitfields(unit) => for (bitfield in unit.bitfields) {
+                    reserveSource(bitfield.data)
+                }
+            }
+        }
+    }
+
+    func reserveSource(data: FieldData): Unit {
+        if (let Some(name) <- data.name) {
+            reserved.add(ctx.cjMangle(name))
+        }
+    }
+
+    func reserveGenerated(name: String): Unit {
+        reserved.add(name)
+        used.add(name)
+    }
+
+    func source(name: String): String {
+        let base = ctx.cjMangle(name)
+        if (used.add(base)) {
+            return base
+        }
+        var suffix = 1
+        var candidate = "${base}_${suffix}"
+        while (reserved.contains(candidate) || used.contains(candidate)) {
+            suffix += 1
+            candidate = "${base}_${suffix}"
+        }
+        reserveGenerated(candidate)
+        return candidate
+    }
+
+    func synthetic(name: String): String {
+        let candidate = uniqueName(reserved, ctx.cjMangle(name))
+        used.add(candidate)
+        return candidate
+    }
 }
 
 extend CompInfo <: CodeGenerator<Item, Unit> {
@@ -1677,6 +1733,11 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         let canonicalIdent = ctx.cjIdent(canonicalName)
 
+        let memberNames = RecordMemberNames(ctx, if (isOpaque) { Array<Field>() } else { this.getFields() })
+        if (this.isUnion()) {
+            memberNames.reserveGenerated("_storage")
+        }
+
         let fields = ArrayList<TokenStream>()
         let zeroLengthArrayAccessors = ArrayList<TokenStream>()
 
@@ -1685,7 +1746,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
         if (!this.isUnion() && !isOpaque) {
             if (ctx.hasVtablePointer(item.id)) {
-                let vtableName = ctx.cjIdent("vtable_")
+                let vtableName = memberNames.synthetic("vtable_")
                 let vtableTy = if (ctx.options.vtableGeneration && this.canGenerateTypedVtable(ctx)) {
                     let generatedVtableName = "${canonicalName}__cjbind_vtable"
                     let generatedVtableIdent = ctx.cjIdent(generatedVtableName)
@@ -1748,7 +1809,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                 if (!base.requiresStorage(ctx)) {
                     continue
                 }
-                let baseName = ctx.cjIdent(base.fieldName)
+                let baseName = memberNames.synthetic(base.fieldName)
                 let baseTy = base.ty.toCjTyOrOpaque(ctx, ())
                 let visibility = if (ctx.options.respectCxxAccessSpecs && !base.isPublic) {
                     "private "
@@ -1781,7 +1842,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                         match (field) {
                             case Field.DataMember(data) =>
                                 let fieldName = match (data.name) {
-                                    case Some(n) => ctx.cjMangle(n)
+                                    case Some(n) => memberNames.source(n)
                                     case None => continue
                                 }
                                 let fieldIdent = ctx.cjIdent(fieldName)
@@ -1793,6 +1854,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                         result,
                                         canonicalName,
                                         canonicalIdent,
+                                        fieldName,
                                         data,
                                         element
                                     )) {
@@ -1884,20 +1946,6 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
             let fieldDecls = this.getFields()
 
             if (hasBitfields) {
-                let occupiedFieldNames = HashSet<String>()
-                for (field in fieldDecls) {
-                    match (field) {
-                        case Field.DataMember(data) =>
-                            if (let Some(name) <- data.name) {
-                                occupiedFieldNames.add(ctx.cjMangle(name))
-                            }
-                        case Field.Bitfields(unit) => for (bitfield in unit.bitfields) {
-                            if (let Some(name) <- bitfield.data.name) {
-                                occupiedFieldNames.add(ctx.cjMangle(name))
-                            }
-                        }
-                    }
-                }
                 for (field in fieldDecls) {
                     match (field) {
                         case Field.DataMember(data) =>
@@ -1913,7 +1961,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             }
 
                             let fieldName = data.name.map {
-                                d => ctx.cjMangle(d)
+                                d => memberNames.source(d)
                             }.getOrThrow()
                             let fieldIdent = ctx.cjIdent(fieldName)
                             let visibility = if (ctx.options.respectCxxAccessSpecs && !data.isPublic) {
@@ -1936,6 +1984,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                     result,
                                     canonicalName,
                                     canonicalIdent,
+                                    fieldName,
                                     data,
                                     element
                                 )) {
@@ -1955,7 +2004,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                         case Field.Bitfields(unit) =>
                             let unitNth = Int64(unit.nth)
-                            let storageName = uniqueName(occupiedFieldNames, "_bitfield_${unitNth}")
+                            let storageName = memberNames.synthetic("_bitfield_${unitNth}")
                             let storageIdent = ctx.cjIdent(storageName)
                             let storageTy = Helpers.blob(ctx, unit.layout)
 
@@ -1965,7 +2014,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
 
                             for (bf in unit.bitfields) {
                                 let bfName = match (bf.data.name) {
-                                    case Some(n) => ctx.cjMangle(n)
+                                    case Some(n) => memberNames.source(n)
                                     case None => continue
                                 }
                                 let bfIdent = ctx.cjIdent(bfName)
@@ -2091,12 +2140,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                     if (recordLayout.align > 1) {
                         let alignmentTy = Layout.knownCjTypeForSize(recordLayout.align).getOrThrow()
                         let markerTy = tokenStreamFromTemplate("VArray<${alignmentTy}, \$0>")
-                        let markerIdent = ctx.cjIdent(
-                            uniqueName(
-                                occupiedFieldNames,
-                                "_cjbind_bitfield_alignment_marker"
-                            )
-                        )
+                        let markerIdent = memberNames.synthetic("_cjbind_bitfield_alignment_marker")
                         fields.add(
                             tokenStreamFromTemplate(
                                 "let ${markerIdent} : ${markerTy} = unsafe { zeroValue<${markerTy}>() }"))
@@ -2124,7 +2168,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                             }
 
                             let fieldName = data.name.map {
-                                d => ctx.cjMangle(d)
+                                d => memberNames.source(d)
                             }.getOrThrow()
                             let fieldIdent = ctx.cjIdent(fieldName)
 
@@ -2147,6 +2191,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                                     result,
                                     canonicalName,
                                     canonicalIdent,
+                                    fieldName,
                                     data,
                                     element
                                 )) {
@@ -2277,7 +2322,7 @@ extend CompInfo <: CodeGenerator<Item, Unit> {
                         if (align != ${align}) {
                             throw Exception(${alignErr})
                         }
-                    }
+                    }()
                 )
 
                 result.items.add(testToken)

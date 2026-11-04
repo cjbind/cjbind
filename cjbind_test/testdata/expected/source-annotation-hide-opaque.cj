@@ -25,7 +25,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of SourceAnnotationOpaqueRecord is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct SourceAnnotationOpaqueReference {
@@ -46,4 +46,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of SourceAnnotationOpaqueReference is not 8 but ${align} bytes")
         }
-}
+}()

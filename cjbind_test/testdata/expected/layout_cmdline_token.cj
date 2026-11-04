@@ -23,7 +23,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of cmdline_token_hdr is not 8 but ${align} bytes")
         }
-}
+}()
 
 // Stores a pointer to the ops struct, and the offset: the place to
 // write the parsed result in the destination structure.
@@ -82,7 +82,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of cmdline_token_ops is not 8 but ${align} bytes")
         }
-}
+}()
 
 public const cmdline_numtype_UINT8: cmdline_numtype = 0
 public const cmdline_numtype_UINT16: cmdline_numtype = 1
@@ -114,7 +114,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of cmdline_token_num_data is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct cmdline_token_num {
@@ -137,6 +137,6 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of cmdline_token_num is not 8 but ${align} bytes")
         }
-}
+}()
 
 public type cmdline_parse_token_num_t = cmdline_token_num

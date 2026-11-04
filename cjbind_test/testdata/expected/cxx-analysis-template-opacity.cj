@@ -29,7 +29,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateOpacityHolder is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct SelectiveOpaque_open0_float_close0 {
@@ -50,7 +50,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of SelectiveOpaque_open0_float_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NonTypeTemplate_open0_short_5_close0 {
@@ -71,7 +71,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of NonTypeTemplate_open0_short_5_close0 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DependentBitfield_open0_unsigned_int_7_close0 {
@@ -92,7 +92,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DependentBitfield_open0_unsigned_int_7_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: --opaque-type ^SelectiveOpaque<int>$ -- -x c++ -std=c++14
 @C
@@ -114,4 +114,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of PackedTemplate_open0_int_close0 is not 1 but ${align} bytes")
         }
-}
+}()

@@ -17,4 +17,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of EmptyUnion is not 1 but ${align} bytes")
         }
-}
+}()

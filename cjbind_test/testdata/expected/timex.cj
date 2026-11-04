@@ -95,7 +95,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of timex is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct timex_named {
@@ -226,4 +226,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of timex_named is not 4 but ${align} bytes")
         }
-}
+}()

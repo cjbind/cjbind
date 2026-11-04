@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct bar {
@@ -40,7 +40,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of bar is not 4 but ${align} bytes")
         }
-}
+}()
 
 public type bar_t = bar
 
@@ -63,4 +63,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of baz is not 4 but ${align} bytes")
         }
-}
+}()

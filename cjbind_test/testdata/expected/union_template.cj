@@ -88,7 +88,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of NastyStruct__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NastyStruct__cjbind_ty_2 {
@@ -123,7 +123,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of NastyStruct__cjbind_ty_2 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NastyStruct {
@@ -170,4 +170,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Whatever is not 8 but ${align} bytes")
         }
-}
+}()

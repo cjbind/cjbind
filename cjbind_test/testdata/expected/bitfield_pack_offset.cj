@@ -165,4 +165,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of A is not 8 but ${align} bytes")
         }
-}
+}()

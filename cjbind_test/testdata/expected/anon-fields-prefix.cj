@@ -23,7 +23,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of color__cjbind_ty_1 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct color__cjbind_ty_2 {
@@ -48,7 +48,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of color__cjbind_ty_2 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct color {
@@ -67,4 +67,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of color is not 1 but ${align} bytes")
         }
-}
+}()

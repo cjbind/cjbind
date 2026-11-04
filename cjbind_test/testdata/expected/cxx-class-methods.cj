@@ -56,7 +56,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Widget is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z10overloadedi(input: Int32): Int32
 
@@ -95,7 +95,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of C_E is not 1 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN1D1ED1Ev(this_: CPointer<D_E>): Unit
 
@@ -122,7 +122,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of D_E is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ManglingArgument {
@@ -143,4 +143,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of ManglingArgument is not 1 but ${align} bytes")
         }
-}
+}()

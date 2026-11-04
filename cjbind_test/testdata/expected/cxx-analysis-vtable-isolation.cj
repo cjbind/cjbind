@@ -34,7 +34,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of VirtualArgument is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PlainTemplate {
@@ -65,7 +65,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateArgumentMustNotAddVtable is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FieldMustNotAddVtable {
@@ -88,7 +88,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of FieldMustNotAddVtable is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN27OuterMustNotUseNestedVtable13NestedVirtual3runEv(this_: CPointer<Unit>): Unit
 
@@ -123,7 +123,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of OuterMustNotUseNestedVtable_NestedVirtual is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct OuterMustNotUseNestedVtable {
@@ -144,7 +144,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of OuterMustNotUseNestedVtable is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AnalysisVtableIsolationHolder {
@@ -170,7 +170,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of AnalysisVtableIsolationHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PlainTemplate_open0_VirtualArgument_close0 {
@@ -191,4 +191,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PlainTemplate_open0_VirtualArgument_close0 is not 4 but ${align} bytes")
         }
-}
+}()

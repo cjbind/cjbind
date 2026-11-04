@@ -19,7 +19,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of redundant_packed is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct redundant_packed_bitfield {
@@ -40,7 +40,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of redundant_packed_bitfield is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct redundant_packed_union {
@@ -69,7 +69,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of inner is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct outer_redundant_packed {
@@ -90,7 +90,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of outer_redundant_packed is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct redundant_pragma_packed {
@@ -111,4 +111,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of redundant_pragma_packed is not 4 but ${align} bytes")
         }
-}
+}()

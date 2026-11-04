@@ -52,7 +52,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of simple_union is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: --no-union-accessor-workaround
 public type simple_union_t = simple_union

@@ -43,7 +43,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RecursiveBase is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN16RecursiveDerived9asDerivedEv(this_: CPointer<RecursiveDerived>): CPointer<RecursiveDerived>
 
@@ -83,7 +83,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RecursiveDerived is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN9Secondary9secondaryEv(this_: CPointer<Secondary>): Int32
 
@@ -118,7 +118,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Secondary is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN17MultipleInterface9secondaryEv(this_: CPointer<MultipleInterface>): Int32
 
@@ -147,4 +147,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of MultipleInterface is not 8 but ${align} bytes")
         }
-}
+}()

@@ -19,7 +19,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Packed is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PackedLongWithChars {
@@ -40,4 +40,4 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of PackedLongWithChars is not 2 but ${align} bytes")
         }
-}
+}()

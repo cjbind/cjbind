@@ -49,7 +49,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of LifecycleProbe is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func lifecycle_live_count(): Int32
 
@@ -86,7 +86,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RuntimeLeft is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN12RuntimeRightC1Ev(this_: CPointer<RuntimeRight>): Unit
 
@@ -119,7 +119,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RuntimeRight is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN13MultipleProbeC1Ei(this_: CPointer<MultipleProbe>, value: Int32): Unit
 
@@ -168,4 +168,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of MultipleProbe is not 8 but ${align} bytes")
         }
-}
+}()

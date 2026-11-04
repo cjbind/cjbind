@@ -97,7 +97,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ring_prod is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ring_cons {
@@ -118,7 +118,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_ring_cons is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_ring {
@@ -152,7 +152,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_ring is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_memzone {

@@ -14,6 +14,6 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of foo is not 1 but ${align} bytes")
         }
-}
+}()
 
 public type bar = foo

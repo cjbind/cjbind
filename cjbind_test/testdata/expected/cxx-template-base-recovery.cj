@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of TemplateBaseRecoveryHolder is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct RecoveredDerived_open0_int_close0 {
@@ -40,4 +40,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of RecoveredDerived_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

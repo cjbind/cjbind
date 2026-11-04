@@ -238,7 +238,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of AliasBits is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func alias_round_trip(plain: PlainAlias, strong: UInt32, accessible: Int64): Int32
 

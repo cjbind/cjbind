@@ -30,7 +30,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ContainsOpaqueTemplate is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct InheritsOpaqueTemplate {
@@ -53,4 +53,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of InheritsOpaqueTemplate is not 8 but ${align} bytes")
         }
-}
+}()

@@ -32,7 +32,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_1 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct foo__cjbind_ty_1__cjbind_ty_2 {
@@ -59,7 +59,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of foo__cjbind_ty_1__cjbind_ty_2 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct foo__cjbind_ty_1 {
@@ -86,7 +86,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct foo {
@@ -109,4 +109,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of foo is not 4 but ${align} bytes")
         }
-}
+}()

@@ -21,7 +21,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of AlignedToOne is not 1 but ${align} bytes")
         }
-}
+}()
 
 // The opaque storage must preserve the explicit two-byte alignment.
 @C
@@ -43,7 +43,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of AlignedToTwo is not 2 but ${align} bytes")
         }
-}
+}()
 
 // The translation unit reports the effective one-byte alignment even though
 // the packing directive is not attached to the record cursor.
@@ -66,7 +66,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of PackedToOne is not 1 but ${align} bytes")
         }
-}
+}()
 
 // The opaque storage must preserve the two-byte alignment introduced by the
 // packing directive.
@@ -89,4 +89,4 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of PackedToTwo is not 2 but ${align} bytes")
         }
-}
+}()

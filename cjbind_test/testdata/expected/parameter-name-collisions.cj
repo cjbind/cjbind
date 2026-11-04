@@ -58,4 +58,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Callbacks is not 8 but ${align} bytes")
         }
-}
+}()

@@ -42,7 +42,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Test__Float16 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Test__Float16Ref {
@@ -63,4 +63,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Test__Float16Ref is not 8 but ${align} bytes")
         }
-}
+}()

@@ -44,7 +44,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ip_frag is not 8 but ${align} bytes")
         }
-}
+}()
 
 // @internal <src addr, dst_addr, id> to uniquely indetify fragmented datagram.
 @C
@@ -73,7 +73,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ip_frag_key is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ip_frag_pkt__cjbind_ty_1 {
@@ -96,7 +96,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ip_frag_pkt__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // @internal Fragmented packet to reassemble.
 // First two entries in the frags[] array are for the last and first fragments.
@@ -129,7 +129,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ip_pkt_list is not 8 but ${align} bytes")
         }
-}
+}()
 
 // fragmentation table statistics
 @C

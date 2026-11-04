@@ -34,7 +34,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Base is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Extra {
@@ -55,7 +55,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Extra is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN7Derived3runEi(this_: CPointer<Derived>, input: Int32): Int32
 
@@ -86,7 +86,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Derived is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN9Interface5applyEi(this_: CPointer<Interface>, input: Int32): Int32
 
@@ -121,7 +121,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Interface is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN8TailBase3tagEv(this_: CPointer<TailBase>): Int32
 
@@ -160,7 +160,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TailBase is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN11TailDerived3tagEv(this_: CPointer<TailDerived>): Int32
 
@@ -187,7 +187,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TailDerived is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Plain {
@@ -208,7 +208,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Plain is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN4Poly3actEv(this_: CPointer<Poly>): Int32
 
@@ -245,7 +245,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Poly is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Reordered {
@@ -266,7 +266,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Reordered is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct VirtualBase {
@@ -287,7 +287,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of VirtualBase is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct VirtualDerived {
@@ -308,4 +308,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of VirtualDerived is not 8 but ${align} bytes")
         }
-}
+}()

@@ -21,7 +21,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Struct is not 4 but ${align} bytes")
         }
-}
+}()
 
 // This is AliasToStruct
 public type AliasToStruct = Struct

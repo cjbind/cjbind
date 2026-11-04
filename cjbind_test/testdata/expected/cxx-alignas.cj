@@ -34,7 +34,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Empty is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct NoUniqueAddress {
@@ -55,7 +55,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of NoUniqueAddress is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z26passthroughNoUniqueAddressP15NoUniqueAddress(value: CPointer<NoUniqueAddress>): CPointer<NoUniqueAddress>
 
@@ -90,7 +90,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of PackedValue is not 1 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z22passthroughPackedValueP11PackedValue(value: CPointer<PackedValue>): CPointer<PackedValue>
 
@@ -117,7 +117,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of PackedContainer is not 1 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z26passthroughPackedContainerP15PackedContainer(value: CPointer<PackedContainer>): CPointer<PackedContainer>
 
@@ -144,7 +144,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DeletedMoves is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z23passthroughDeletedMovesP12DeletedMoves(value: CPointer<DeletedMoves>): CPointer<DeletedMoves>
 
@@ -171,7 +171,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DeletedMoveContainer is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z31passthroughDeletedMoveContainerP20DeletedMoveContainer(value: CPointer<DeletedMoveContainer>): CPointer<DeletedMoveContainer>
 
@@ -198,7 +198,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PrivateCopy is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PrivateCopyContainer {
@@ -219,7 +219,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PrivateCopyContainer is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z31passthroughPrivateCopyContainerP20PrivateCopyContainer(value: CPointer<PrivateCopyContainer>): CPointer<PrivateCopyContainer>
 

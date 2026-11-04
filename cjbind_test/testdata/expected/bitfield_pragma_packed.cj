@@ -138,7 +138,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Struct is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Inner {
@@ -176,7 +176,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of Inner is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Outer {
@@ -197,4 +197,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Outer is not 1 but ${align} bytes")
         }
-}
+}()

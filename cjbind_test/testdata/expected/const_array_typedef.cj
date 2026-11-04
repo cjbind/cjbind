@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of strct is not 4 but ${align} bytes")
         }
-}
+}()
 
 public type typ = VArray<strct, $1>
 

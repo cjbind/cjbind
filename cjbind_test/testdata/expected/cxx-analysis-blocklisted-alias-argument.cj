@@ -23,4 +23,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of BlocklistedAliasArgumentHolder is not 1 but ${align} bytes")
         }
-}
+}()

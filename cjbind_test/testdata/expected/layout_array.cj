@@ -64,7 +64,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of rte_spinlock_t is not 4 but ${align} bytes")
         }
-}
+}()
 
 // Structure storing the table of registered ops structs, each of which contain
 // the function pointers for the mempool ops functions.
@@ -100,7 +100,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of malloc_heap__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // Structure to hold malloc heap
 @C

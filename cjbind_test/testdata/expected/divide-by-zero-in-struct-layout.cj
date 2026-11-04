@@ -100,7 +100,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of WithBitfield is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct WithBitfieldAndAttrPacked {
@@ -121,7 +121,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of WithBitfieldAndAttrPacked is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct WithBitfieldAndPacked {
@@ -142,4 +142,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of WithBitfieldAndPacked is not 1 but ${align} bytes")
         }
-}
+}()

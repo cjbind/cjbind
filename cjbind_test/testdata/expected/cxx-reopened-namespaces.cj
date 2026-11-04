@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of alpha_Forward is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN5alpha6nested8evaluateEPNS_7ForwardE(value: CPointer<alpha_Forward>): Int32
 
@@ -52,4 +52,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of beta_Holder is not 8 but ${align} bytes")
         }
-}
+}()

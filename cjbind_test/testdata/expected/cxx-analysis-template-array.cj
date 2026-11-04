@@ -95,7 +95,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of TemplateArrayAnalysisHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ScalarParameter_open0_float_close0 {
@@ -116,7 +116,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ScalarParameter_open0_float_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PointerToParameter_open0_double_close0 {
@@ -137,7 +137,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of PointerToParameter_open0_double_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FixedIntegerArray_open0_float_5_close0 {
@@ -158,7 +158,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of FixedIntegerArray_open0_float_5_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -180,7 +180,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ArrayOfParameter_open0_unsigned_int_6_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ParameterArrayWrapper_open0_unsigned_int_6_close0 {
@@ -202,7 +202,7 @@ let _ = {
             throw Exception(
                 "Alignment of ParameterArrayWrapper_open0_unsigned_int_6_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -224,7 +224,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of ArrayOfParameter_open0_short_3_close0 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct SecondParameterArrayOwner_open0_short_close0 {
@@ -245,7 +245,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of SecondParameterArrayOwner_open0_short_close0 is not 2 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -267,7 +267,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ArrayOfParameter_open0_int_3_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct FirstParameterArrayOwner_open0_int_close0 {
@@ -288,7 +288,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of FirstParameterArrayOwner_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -310,7 +310,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ArrayOfParameter_open0_long_long_3_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsParameterArray_open0_long_long_close0 {
@@ -331,7 +331,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ContainsParameterArray_open0_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DeepParameterArray_open0_long_long_close0 {
@@ -352,7 +352,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DeepParameterArray_open0_long_long_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct InheritsParameterArray_open0_unsigned_char_close0 {
@@ -374,7 +374,7 @@ let _ = {
             throw Exception(
                 "Alignment of InheritsParameterArray_open0_unsigned_char_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsParameterArray_open0_short_close0 {
@@ -395,7 +395,7 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of ContainsParameterArray_open0_short_close0 is not 2 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AliasArrayOfParameter_open0_float_2_close0 {
@@ -416,7 +416,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of AliasArrayOfParameter_open0_float_2_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AliasArrayOfParameter_open0_double_2_close0 {
@@ -437,7 +437,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of AliasArrayOfParameter_open0_double_2_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -459,4 +459,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of ArrayOfParameter_open0_int_4_close0 is not 4 but ${align} bytes")
         }
-}
+}()

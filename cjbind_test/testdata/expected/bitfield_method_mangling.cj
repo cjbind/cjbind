@@ -112,4 +112,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of mach_msg_type_descriptor_t is not 4 but ${align} bytes")
         }
-}
+}()

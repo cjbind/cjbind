@@ -32,7 +32,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of toml_datum_t__cjbind_ty_1__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct toml_datum_t__cjbind_ty_1__cjbind_ty_2 {
@@ -55,7 +55,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of toml_datum_t__cjbind_ty_1__cjbind_ty_2 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct toml_datum_t__cjbind_ty_1__cjbind_ty_3 {
@@ -82,7 +82,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of toml_datum_t__cjbind_ty_1__cjbind_ty_3 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct toml_datum_t__cjbind_ty_1 {
@@ -109,7 +109,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of toml_datum_t__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct toml_datum_t {
@@ -132,4 +132,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of toml_datum_t is not 8 but ${align} bytes")
         }
-}
+}()

@@ -19,7 +19,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DerivedWithoutNewVirtual is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN18DerivedWithVirtual5extraEv(this_: CPointer<Unit>): Int32
 
@@ -46,7 +46,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DerivedWithVirtual is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PlainDerived {
@@ -69,7 +69,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PlainDerived is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PlainBase_open0_int_close0 {
@@ -90,7 +90,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PlainBase_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: --vtable-generation -- -x c++ -std=c++14
 @C
@@ -112,4 +112,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of BaseWithVtable_open0_ptr_char_close0 is not 8 but ${align} bytes")
         }
-}
+}()

@@ -46,7 +46,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Holder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct AliasHolder {
@@ -71,7 +71,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of AliasHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _Z7consume3BoxIiE(value: Box_open0_int_close0): Unit
 
@@ -101,7 +101,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Box_open0_int_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CallbackWrap_open0_int_close0 {
@@ -124,7 +124,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of CallbackWrap_open0_int_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DefaultBox_open0_int_close0 {
@@ -145,7 +145,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DefaultBox_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct CharTag_open0_10_close0 {
@@ -166,7 +166,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of CharTag_open0_10_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Tag_open0_minus_1_close0 {
@@ -187,7 +187,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Tag_open0_minus_1_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Fixed_open0_8_close0 {
@@ -208,7 +208,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Fixed_open0_8_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Fixed_open0_4_close0 {
@@ -229,7 +229,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Fixed_open0_4_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Wrap_open0_int_close0 {
@@ -250,7 +250,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Wrap_open0_int_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Box_open0_char_close0 {
@@ -271,7 +271,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Box_open0_char_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -295,4 +295,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of Box_open0_double_close0 is not 8 but ${align} bytes")
         }
-}
+}()

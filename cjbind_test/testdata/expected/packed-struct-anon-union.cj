@@ -55,7 +55,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of rte_memseg__cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct rte_memseg {
@@ -76,4 +76,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of rte_memseg is not 1 but ${align} bytes")
         }
-}
+}()

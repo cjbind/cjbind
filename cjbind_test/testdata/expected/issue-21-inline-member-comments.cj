@@ -73,4 +73,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of issue_21_fields is not 4 but ${align} bytes")
         }
-}
+}()

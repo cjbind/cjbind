@@ -27,7 +27,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Point is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct Angle {
@@ -50,7 +50,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Angle is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func baz(point: Point): Int32
 

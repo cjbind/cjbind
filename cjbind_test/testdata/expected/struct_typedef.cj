@@ -19,7 +19,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of typedef_named_struct is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct _cjbind_ty_1 {
@@ -40,7 +40,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of _cjbind_ty_1 is not 8 but ${align} bytes")
         }
-}
+}()
 
 public type struct_ptr_t = CPointer<_cjbind_ty_1>
 

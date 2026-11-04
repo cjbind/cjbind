@@ -20,7 +20,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of Empty is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct EmptyDerived {
@@ -41,7 +41,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of EmptyDerived is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct InheritsEmpty {
@@ -62,7 +62,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of InheritsEmpty is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsEmpty {
@@ -85,7 +85,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of ContainsEmpty is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ContainsEmptyArray {
@@ -106,7 +106,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of ContainsEmptyArray is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct EmptyTemplate {
@@ -135,7 +135,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of TemplateEmptyBase is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct TemplateEmptyMember {
@@ -158,7 +158,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of TemplateEmptyMember is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DeepEmptyBase {
@@ -179,7 +179,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of DeepEmptyBase is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DerivedFromVtable {
@@ -200,7 +200,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DerivedFromVtable is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN18DerivedAddsVirtual5extraEv(this_: CPointer<Unit>): Int32
 
@@ -227,7 +227,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DerivedAddsVirtual is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN23DerivedIntroducesVtable3runEv(this_: CPointer<Unit>): Unit
 
@@ -256,7 +256,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of DerivedIntroducesVtable is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DerivedWithoutVtable {
@@ -277,7 +277,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DerivedWithoutVtable is not 4 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN11VirtualRoot4rootEv(this_: CPointer<Unit>): CPointer<VirtualRoot>
 
@@ -312,7 +312,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of VirtualRoot is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct VirtualMiddle {
@@ -333,7 +333,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of VirtualMiddle is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct VirtualLeaf {
@@ -354,7 +354,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of VirtualLeaf is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN13RecursiveBase7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived>
 
@@ -389,7 +389,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RecursiveBase is not 8 but ${align} bytes")
         }
-}
+}()
 
 foreign func _ZN16RecursiveDerived7derivedEv(this_: CPointer<Unit>): CPointer<RecursiveDerived>
 
@@ -416,7 +416,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of RecursiveDerived is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct LayoutAnalysisHolder {
@@ -468,7 +468,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of LayoutAnalysisHolder is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct DependentSize_open0_int_close0 {
@@ -489,7 +489,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of DependentSize_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct BaseWithoutVtable_open0_int_close0 {
@@ -510,7 +510,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of BaseWithoutVtable_open0_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct BaseWithVtable_open0_ptr_char_close0 {
@@ -531,7 +531,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of BaseWithVtable_open0_ptr_char_close0 is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct EmptyTemplate_open0_double_close0 {
@@ -552,7 +552,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of EmptyTemplate_open0_double_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct EmptyTemplate_open0_int_close0 {
@@ -573,4 +573,4 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of EmptyTemplate_open0_int_close0 is not 1 but ${align} bytes")
         }
-}
+}()

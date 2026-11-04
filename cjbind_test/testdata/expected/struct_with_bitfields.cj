@@ -150,7 +150,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of bitfield is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct MixedPtrBoolBitfield {
@@ -181,7 +181,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of MixedPtrBoolBitfield is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct OnlyUnnamedBitfield {
@@ -200,7 +200,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of OnlyUnnamedBitfield is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct MixedSignedUnnamedBitfield {
@@ -219,7 +219,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of MixedSignedUnnamedBitfield is not 1 but ${align} bytes")
         }
-}
+}()
 
 public type U8 = UInt8
 
@@ -337,4 +337,4 @@ let _ = {
         if (align != 2) {
             throw Exception("Alignment of V56AMDY is not 2 but ${align} bytes")
         }
-}
+}()

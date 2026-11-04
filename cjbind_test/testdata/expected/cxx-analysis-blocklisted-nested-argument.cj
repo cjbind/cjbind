@@ -19,7 +19,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of BlocklistedNestedArgumentHolder is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct BlocklistedPointerHolder {
@@ -40,4 +40,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of BlocklistedPointerHolder is not 8 but ${align} bytes")
         }
-}
+}()

@@ -56,4 +56,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of parse_all_fields is not 4 but ${align} bytes")
         }
-}
+}()

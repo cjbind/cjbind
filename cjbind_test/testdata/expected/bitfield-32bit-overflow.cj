@@ -423,7 +423,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of MuchBitfield is not 1 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct capabilities {
@@ -812,4 +812,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of capabilities is not 4 but ${align} bytes")
         }
-}
+}()

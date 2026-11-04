@@ -103,7 +103,7 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of FullWordWidth is not 8 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct ShiftedWordWidth {
@@ -141,4 +141,4 @@ let _ = {
         if (align != 8) {
             throw Exception("Alignment of ShiftedWordWidth is not 8 but ${align} bytes")
         }
-}
+}()

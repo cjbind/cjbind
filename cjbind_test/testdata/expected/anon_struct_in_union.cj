@@ -19,7 +19,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of s__cjbind_ty_1_inner is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct s__cjbind_ty_1 {
@@ -38,7 +38,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of s__cjbind_ty_1 is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct s {
@@ -59,4 +59,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of s is not 4 but ${align} bytes")
         }
-}
+}()

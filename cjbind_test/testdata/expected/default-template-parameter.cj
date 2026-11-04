@@ -21,4 +21,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of Foo_open0_bool_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()

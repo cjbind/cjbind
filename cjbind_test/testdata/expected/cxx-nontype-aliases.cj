@@ -29,7 +29,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of AliasHolder is not 4 but ${align} bytes")
         }
-}
+}()
 
 @C
 public struct PairWithDefault_open0_bool_int_close0 {
@@ -52,7 +52,7 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of PairWithDefault_open0_bool_int_close0 is not 4 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -74,7 +74,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of FixedArray_open0_bool_8_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -96,7 +96,7 @@ let _ = {
         if (align != 1) {
             throw Exception("Alignment of FixedArray_open0_char_16_close0 is not 1 but ${align} bytes")
         }
-}
+}()
 
 // cjbind-options: -- -x c++ -std=c++14
 @C
@@ -118,4 +118,4 @@ let _ = {
         if (align != 4) {
             throw Exception("Alignment of FixedArray_open0_int_4_close0 is not 4 but ${align} bytes")
         }
-}
+}()
