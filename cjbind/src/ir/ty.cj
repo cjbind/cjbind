@@ -674,9 +674,10 @@ func resolveObjCInterfaceByName(ctx: CjbindContext, name: String): TypeKind {
             let ifaceItem = ctx.resolveItem(ifaceId)
             match (ifaceItem.kind) {
                 case ItemKind.KindType(ifaceTy) => match (ifaceTy.kind) {
-                    case TypeKind.TypeKindObjCInterface(iface) =>
-                        // Note: iface is a shared reference (class type). Mutations to iface will be visible to all TypeKindObjCInterface instances wrapping it.
-                        return TypeKind.TypeKindObjCInterface(iface)
+                    case TypeKind.TypeKindObjCInterface(_) =>
+                        // A use of an object type refers to its declaration;
+                        // copying the definition kind emits another class.
+                        return TypeKind.ResolvedTypeRef(ifaceId)
                     case _ => ()
                 }
                 case _ => ()

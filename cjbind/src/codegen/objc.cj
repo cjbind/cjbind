@@ -727,6 +727,69 @@ func wrapNullable(ty: TokenStream, isNullable: Bool): TokenStream {
     return ty
 }
 
+// Runtime calls exchange Objective-C object pointers, while the public API
+// uses Cangjie wrapper classes. Never pass those managed wrappers to msgSend.
+func runtimeObjectClass(ctx: CjbindContext, ty: TypeId): ?String {
+    let canonical = ctx.resolveType(ty).canonicalType(ctx)
+    return match (canonical.kind) {
+        case TypeKind.TypeKindObjCInterface(iface) => Some(ctx.cjIdentRaw(iface.name))
+        case _ => None
+    }
+}
+
+func runtimeAbiType(ctx: CjbindContext, ty: TypeId): TokenStream {
+    if (runtimeObjectClass(ctx, ty).isSome()) {
+        return tokenStreamFromTemplate("CPointer<Unit>")
+    }
+    return ty.toCjTyOrOpaque(ctx, ())
+}
+
+func runtimeArgument(ctx: CjbindContext, ty: TypeId, name: String, nullable: Bool): TokenStream {
+    if (runtimeObjectClass(ctx, ty).isSome()) {
+        if (nullable) {
+            return tokenStreamFromTemplate(
+                "${name}.map({obj => obj.id}).getOrDefault({=> CPointer<Unit>()})")
+        }
+        return tokenStreamFromTemplate("${name}.id")
+    }
+    if (nullable) {
+        let rawTy = runtimeAbiType(ctx, ty)
+        // CString and CFunc have no zero-argument constructor, but all raw
+        // pointer carriers are CTypes with a zero (null) representation.
+        return tokenStreamFromTemplate("${name}.getOrDefault({=> unsafe { zeroValue<${rawTy}>() }})")
+    }
+    return tokenStreamFromTemplate(name)
+}
+
+func runtimeReturn(ctx: CjbindContext, ty: TypeId, nullable: Bool, call: String): TokenStream {
+    let objectClass = runtimeObjectClass(ctx, ty)
+    if (nullable) {
+        let wrapped = match (objectClass) {
+            case Some(name) => "${name}(_cjbindResult)"
+            case None => "_cjbindResult"
+        }
+        let canonical = ctx.resolveType(ty).canonicalType(ctx)
+        let isCallback = match (canonical.kind) {
+            case TypeKind.TypeKindFunction(_) | TypeKind.TypeKindObjCBlockPointer(_) => true
+            case TypeKind.TypeKindPointer(inner) => ctx.resolveType(inner).canonicalType(ctx).isFunction()
+            case _ => false
+        }
+        // CFunc itself has no isNull(); its raw pointer carries nullness.
+        let nullCheck = if (isCallback) {
+            "CPointer<Unit>(_cjbindResult).isNull()"
+        } else {
+            "_cjbindResult.isNull()"
+        }
+        return tokenStreamFromTemplate(
+            "let _cjbindResult = unsafe { ${call} }\n" +
+            "if (${nullCheck}) { return None }\nreturn Some(${wrapped})")
+    }
+    return match (objectClass) {
+        case Some(name) => tokenStreamFromTemplate("return ${name}(unsafe { ${call} })")
+        case None => tokenStreamFromTemplate("return unsafe { ${call} }")
+    }
+}
+
 func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isStatic: Bool): TokenStream { // cjlint-ignore !G.FUN.02
     let sig = m.signature
     var ret = Utils.fnsigReturnTy(ctx, sig)
@@ -735,9 +798,9 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     let sel = m.selector
 
     let reservedNames = if (isStatic) {
-        ["cls", "sel", "f"]
+        ["cls", "sel", "f", "_cjbindResult"]
     } else {
-        ["sel", "f"]
+        ["sel", "f", "_cjbindResult"]
     }
     let arguments = fnsigArgumentsWithNullability(ctx, sig, m.nullableParams, reservedNames: reservedNames)
     let joinedArgs = joinStreams(arguments, ", ")
@@ -746,34 +809,42 @@ func genRuntimeMethod(ctx: CjbindContext, m: ObjCMethod, className: String, isSt
     paramTypes.add(tokenStreamFromTemplate("CPointer<Unit>")) // self/class pointer
     paramTypes.add(tokenStreamFromTemplate("CPointer<Unit>")) // _cmd (selector)
     for (arg in sig.argumentTypes) {
-        let ty = arg[1].toCjTyOrOpaque(ctx, ())
+        let ty = runtimeAbiType(ctx, arg[1])
         paramTypes.add(ty)
     }
     let joinedParamTypes = joinStreams(paramTypes, ", ")
 
-    let argNames = Utils.fnsigArgumentNames(ctx, sig, reservedNames: reservedNames)
-    let joinedArgNames = joinStreams(argNames, ", ")
+    let argNames = Utils.fnsigArgumentIdentifiers(ctx, sig, reservedNames: reservedNames)
+    let callArguments = ArrayList<TokenStream>()
+    for (i in 0..argNames.size) {
+        let nullable = i < m.nullableParams.size && m.nullableParams[i]
+        callArguments.add(runtimeArgument(ctx, sig.argumentTypes[i][1], argNames[i], nullable))
+    }
+    let joinedArgNames = joinStreams(callArguments, ", ")
     let callTail = if (argNames.isEmpty()) {
         tokenStreamFromTemplate("")
     } else {
         tokenStreamFromTemplate(", ${joinedArgNames}")
     }
+    let rawRet = runtimeAbiType(ctx, sig.returnType)
+    let receiver = if (isStatic) { "CPointer<Unit>(cls)" } else { "this.id" }
+    let returnBody = runtimeReturn(ctx, sig.returnType, m.returnsNullable, "f(${receiver}, sel${callTail})")
 
     if (isStatic) {
         return @tmpl(
             public static func ${mname}(${joinedArgs}): ${ret} {
                 let cls = cachedClass("${className}")
                 let sel = cachedSel("${sel}")
-                let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                return unsafe { f(CPointer<Unit>(cls), sel${callTail}) }
+                let f = CFunc<(${joinedParamTypes}) -> ${rawRet}>(CPointer<Unit>(objc_msgSend))
+                ${returnBody}
             }
         )
     } else {
         return @tmpl(
             public func ${mname}(${joinedArgs}): ${ret} {
                 let sel = cachedSel("${sel}")
-                let f = CFunc<(${joinedParamTypes}) -> ${ret}>(CPointer<Unit>(objc_msgSend))
-                return unsafe { f(this.id, sel${callTail}) }
+                let f = CFunc<(${joinedParamTypes}) -> ${rawRet}>(CPointer<Unit>(objc_msgSend))
+                ${returnBody}
             }
         )
     }
@@ -784,6 +855,10 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
     var ty = p.ty.toCjTyOrOpaque(ctx, ())
     ty = wrapNullable(ty, p.isNullable)
     let getterSel = p.getterName
+    let rawTy = runtimeAbiType(ctx, p.ty)
+    let receiver = if (p.isClassProperty) { "CPointer<Unit>(cls)" } else { "this.id" }
+    let getterBody = runtimeReturn(ctx, p.ty, p.isNullable, "f(${receiver}, sel)")
+    let setterValue = runtimeArgument(ctx, p.ty, "value", p.isNullable)
 
     if (p.isClassProperty) {
         // Static property -- use class pointer instead of this.id
@@ -793,14 +868,14 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
                     get() {
                         let cls = cachedClass("${className}")
                         let sel = cachedSel("${getterSel}")
-                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
-                        return unsafe { f(CPointer<Unit>(cls), sel) }
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${rawTy}>(CPointer<Unit>(objc_msgSend))
+                        ${getterBody}
                     }
                     set(value) {
                         let cls = cachedClass("${className}")
                         let sel = cachedSel("${setterSel}")
-                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))
-                        unsafe { f(CPointer<Unit>(cls), sel, value) }
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${rawTy}) -> Unit>(CPointer<Unit>(objc_msgSend))
+                        unsafe { f(CPointer<Unit>(cls), sel, ${setterValue}) }
                     }
                 }
             )
@@ -810,8 +885,8 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
                     get() {
                         let cls = cachedClass("${className}")
                         let sel = cachedSel("${getterSel}")
-                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
-                        return unsafe { f(CPointer<Unit>(cls), sel) }
+                        let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${rawTy}>(CPointer<Unit>(objc_msgSend))
+                        ${getterBody}
                     }
                 }
             )
@@ -823,13 +898,13 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
             public mut prop ${propName}: ${ty} {
                 get() {
                     let sel = cachedSel("${getterSel}")
-                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(this.id, sel) }
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${rawTy}>(CPointer<Unit>(objc_msgSend))
+                    ${getterBody}
                 }
                 set(value) {
                     let sel = cachedSel("${setterSel}")
-                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${ty}) -> Unit>(CPointer<Unit>(objc_msgSend))
-                    unsafe { f(this.id, sel, value) }
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>, ${rawTy}) -> Unit>(CPointer<Unit>(objc_msgSend))
+                    unsafe { f(this.id, sel, ${setterValue}) }
                 }
             }
         )
@@ -838,8 +913,8 @@ func genRuntimeProperty(ctx: CjbindContext, p: ObjCProperty, className: String):
             public prop ${propName}: ${ty} {
                 get() {
                     let sel = cachedSel("${getterSel}")
-                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${ty}>(CPointer<Unit>(objc_msgSend))
-                    return unsafe { f(this.id, sel) }
+                    let f = CFunc<(CPointer<Unit>, CPointer<Unit>) -> ${rawTy}>(CPointer<Unit>(objc_msgSend))
+                    ${getterBody}
                 }
             }
         )
