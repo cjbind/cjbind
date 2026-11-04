@@ -1989,7 +1989,8 @@ public class CjbindContext <: Resource {
         } |> collectArrayList
 
         for (id in compItemIds) {
-            let canonicalTypeName = this.resolveItem(id).canonicalName(this)
+            // Reserve anonymous type names in the same order as before code generation.
+            this.resolveItem(id).canonicalName(this)
             this.withLoanedItem(id) {
                 ctx, item => item
                     .kind
@@ -1997,7 +1998,7 @@ public class CjbindContext <: Resource {
                     .getOrThrow()
                     .asComp()
                     .getOrThrow()
-                    .assignFieldNames(ctx, canonicalTypeName)
+                    .assignFieldNames()
             }
         }
 
@@ -2007,7 +2008,8 @@ public class CjbindContext <: Resource {
                 case _ => continue
             }
             if (let Some(concrete) <- instantiation.concrete) {
-                concrete.assignFieldNames(this, item.fullDisambiguatedName(this))
+                item.fullDisambiguatedName(this)
+                concrete.assignFieldNames()
             }
         }
     }

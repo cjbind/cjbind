@@ -2,7 +2,6 @@ package cjbind.ir
 
 import std.collection.{ArrayList, HashSet, collectArrayList}
 import cjbind.clang
-import cjbind.options.FieldInfo
 import cjbind.result.Result
 
 public enum CompKind {
@@ -558,8 +557,8 @@ public class CompInfo <: IsOpaque<Option<Layout>> & Trace<Tracer, Item> {
         this.fields = this.fields.computeBitfieldUnits(ctx, packed, layout)
     }
 
-    public func assignFieldNames(ctx: CjbindContext, canonicalTypeName: String): Unit {
-        this.fields.assignFieldNames(ctx, canonicalTypeName)
+    public func assignFieldNames(): Unit {
+        this.fields.assignFieldNames()
     }
 
     public func isOpaque(ctx: CjbindContext, layout: Option<Layout>): Bool {
@@ -957,41 +956,11 @@ public enum CompFields <: Trace<Tracer, Unit> {
         }
     }
 
-    func assignFieldNames(ctx: CjbindContext, canonicalTypeName: String) {
+    func assignFieldNames() {
         let fields = match (this) {
             case CompFields.CompFieldsAfter(v) => v.fields
             case CompFields.CompFieldsError => return
             case CompFields.CompFieldsBefore(_) => throw Exception("fields not computed")
-        }
-
-        if (let Some(renameField) <- ctx.options.fieldNameCallback) {
-            for (field in fields) {
-                match (field) {
-                    case Field.DataMember(data) =>
-                        if (let Some(originalName) <- data.name) {
-                            let info = FieldInfo(
-                                canonicalTypeName,
-                                originalName,
-                                ctx.resolveType(data.ty).name
-                            )
-                            if (let Some(newName) <- renameField(info)) {
-                                data.name = Some(newName)
-                            }
-                        }
-                    case Field.Bitfields(unit) => for (bitfield in unit.bitfields) {
-                        if (let Some(originalName) <- bitfield.data.name) {
-                            let info = FieldInfo(
-                                canonicalTypeName,
-                                originalName,
-                                ctx.resolveType(bitfield.data.ty).name
-                            )
-                            if (let Some(newName) <- renameField(info)) {
-                                bitfield.data.name = Some(newName)
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         var anonFieldCounter = 0

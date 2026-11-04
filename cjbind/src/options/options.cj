@@ -116,20 +116,6 @@ public enum DefaultAliasStyle <: Equatable<DefaultAliasStyle> {
     }
 }
 
-/// Information passed to `fieldNameCallback` when a named struct or union
-/// field is about to be emitted.
-public class FieldInfo {
-    public let typeName: String
-    public let fieldName: String
-    public let fieldTypeName: ?String
-
-    public init(typeName: String, fieldName: String, fieldTypeName: ?String) {
-        this.typeName = typeName
-        this.fieldName = fieldName
-        this.fieldTypeName = fieldTypeName
-    }
-}
-
 public class CjbindOptions {
     public let headers: ArrayList<String> = ArrayList()
     public let clangArgs: ArrayList<String> = ArrayList()
@@ -201,9 +187,6 @@ public class CjbindOptions {
     /// Alias names matching these patterns are generated as newtypes with
     /// explicit wrapping and unwrapping helpers.
     public let newTypeDerefAliases: NamePatternSet = NamePatternSet()
-    /// Allows library users to rename named struct, union, and bitfield fields.
-    /// Returning `None` keeps the original C field name.
-    public var fieldNameCallback: ?((FieldInfo) -> ?String) = None
 
     public init() {}
 

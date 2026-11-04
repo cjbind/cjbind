@@ -96,7 +96,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.typeAliases.size, 0)
         @Expect(opts.newTypeAliases.size, 0)
         @Expect(opts.newTypeDerefAliases.size, 0)
-        @Expect(opts.fieldNameCallback.isNone(), true)
     }
 
     @TestCase
@@ -146,7 +145,6 @@ public class CjbindOptionsDefaultsTest {
         opts.generatePureVirtualFunctions = true
         opts.generatePrivateFunctions = true
         opts.vtableGeneration = true
-        opts.fieldNameCallback = {info: FieldInfo => Some("renamed_${info.fieldName}")}
 
         @Expect(opts.packageName, "my_package")
         @Expect(opts.noEnumPrefix, true)
@@ -175,7 +173,6 @@ public class CjbindOptionsDefaultsTest {
         @Expect(opts.generatePureVirtualFunctions, true)
         @Expect(opts.generatePrivateFunctions, true)
         @Expect(opts.vtableGeneration, true)
-        @Expect(opts.fieldNameCallback.isSome(), true)
     }
 
     @TestCase

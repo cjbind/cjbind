@@ -6,7 +6,7 @@ import std.unittest.*
 import std.unittest.testmacro.{TestBuilder, Assert}
 import glob
 import cjbind.{generate}
-import cjbind.options.{CjbindOptions, DefaultEnumStyle, DefaultAliasStyle, FieldInfo}
+import cjbind.options.{CjbindOptions, DefaultEnumStyle, DefaultAliasStyle}
 import cjbind.utils.formatString
 import std.env.{getCommandLine, getVariable}
 
@@ -41,32 +41,6 @@ func testOptionValue(
         throw Exception("${testcase}: missing value for test option '${option}'")
     }
     return parts[valueIndex].trimAscii()
-}
-
-func configureStructFieldRenameCallback(opt: CjbindOptions): Unit {
-    opt.fieldNameCallback = {
-        info: FieldInfo =>
-            if (info.typeName != "RenameMe") {
-                return None
-            }
-            if (info.fieldTypeName == Some("char")) {
-                return Some("char_${info.fieldName}")
-            }
-            return match (info.fieldName) {
-                case "renamed_member" => Some("rust_friendly")
-                case "bitfield_uGlyName" => Some("bitfield_less_ugly_name")
-                case "bitfieldWorse_name" => Some("bitfield_better_name")
-                case _ => None
-            }
-    }
-}
-
-func applyTestParseCallback(opt: CjbindOptions, callback: String, testcase: String): Unit {
-    match (callback) {
-        case "struct-field-rename" => configureStructFieldRenameCallback(opt)
-        case "" => throw Exception("${testcase}: missing cjbind parse callback name")
-        case _ => throw Exception("${testcase}: unknown cjbind parse callback '${callback}'")
-    }
 }
 
 func applyTestOptionLine(opt: CjbindOptions, optsStr: String, testcase: String): Unit {
@@ -241,10 +215,7 @@ func applyTestOptions(opt: CjbindOptions, testcase: String): Unit {
         if (trimmed.startsWith("// cjbind-options:")) {
             let optsStr = trimmed["// cjbind-options:".size..].trimAscii()
             applyTestOptionLine(opt, optsStr, testcase)
-        } else if (trimmed.startsWith("// cjbind-parse-callbacks:")) {
-            let callback = trimmed["// cjbind-parse-callbacks:".size..].trimAscii()
-            applyTestParseCallback(opt, callback, testcase)
-        } else if (trimmed.startsWith("// cjbind-options") || trimmed.startsWith("// cjbind-parse-callbacks")) {
+        } else if (trimmed.startsWith("// cjbind-options")) {
             throw Exception("${testcase}: malformed cjbind test directive '${trimmed}'")
         }
     }

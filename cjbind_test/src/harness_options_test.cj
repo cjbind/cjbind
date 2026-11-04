@@ -2,7 +2,7 @@ package cjbind_test
 
 import std.unittest.*
 import std.unittest.testmacro.*
-import cjbind.options.{CjbindOptions, FieldInfo}
+import cjbind.options.CjbindOptions
 
 func testDirectiveFails(action: () -> Unit): Bool {
     try {
@@ -49,39 +49,5 @@ public class HarnessOptionsTest {
         @Expect(testDirectiveFails {=>
             applyTestOptionLine(CjbindOptions(), "--", "inline")
         }, true)
-    }
-
-    @TestCase
-    func rejectsUnknownAndMissingParseCallbacks(): Unit {
-        @Expect(testDirectiveFails {=>
-            applyTestParseCallback(CjbindOptions(), "", "inline")
-        }, true)
-        @Expect(testDirectiveFails {=>
-            applyTestParseCallback(CjbindOptions(), "unknown", "inline")
-        }, true)
-    }
-
-    @TestCase
-    func matchesStructFieldRenameCallback(): Unit {
-        let opt = CjbindOptions()
-        applyTestParseCallback(opt, "struct-field-rename", "inline")
-        let callback = opt.fieldNameCallback.getOrThrow()
-
-        @Expect(
-            callback(FieldInfo("RenameMe", "renamed_member", Some("int"))).getOrDefault({=> ""}),
-            "rust_friendly"
-        )
-        @Expect(
-            callback(FieldInfo("RenameMe", "a", Some("char"))).getOrDefault({=> ""}),
-            "char_a"
-        )
-        @Expect(
-            callback(FieldInfo("RenameMe", "bitfield_uGlyName", Some("int"))).getOrDefault({=> ""}),
-            "bitfield_less_ugly_name"
-        )
-        @Expect(
-            callback(FieldInfo("Other", "renamed_member", Some("int"))).isNone(),
-            true
-        )
     }
 }

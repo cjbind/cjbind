@@ -257,7 +257,6 @@ public func generate(opts: CjbindOptions): String {
     ctxOpts.typeAliases.add(opts.typeAliases.toArray())
     ctxOpts.newTypeAliases.add(opts.newTypeAliases.toArray())
     ctxOpts.newTypeDerefAliases.add(opts.newTypeDerefAliases.toArray())
-    ctxOpts.fieldNameCallback = opts.fieldNameCallback
 
     let ctx = CjbindContext(ctxOpts)
 
