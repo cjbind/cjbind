@@ -1,0 +1,33 @@
+name: Sync GitCode
+
+on:
+  push:
+    branches: [master]
+    tags: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitcode-mirror
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync master and tags
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Push master and tags to GitCode
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+        run: |
+          test -n "${GITCODE_TOKEN}"
+          git remote add gitcode "https://Zxilly:${GITCODE_TOKEN}@gitcode.com/Cangjie-TPC/cjbind.git"
+          git push gitcode "HEAD:refs/heads/master" --tags
