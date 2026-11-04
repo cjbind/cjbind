@@ -179,3 +179,14 @@ jobs:
           if [ "$is_draft" = "true" ]; then
             gh release edit "$RELEASE_TAG" --draft=false
           fi
+
+  gitcode:
+    name: Sync GitCode Release
+    needs: publish
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sync-releases.yml
+    with:
+      version: ${{ inputs.tag || github.ref_name }}
+    secrets:
+      GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}

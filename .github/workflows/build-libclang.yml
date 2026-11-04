@@ -16,6 +16,8 @@ jobs:
   build-libclang:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
 
     steps:
       - name: Checkout repository
@@ -134,10 +136,12 @@ jobs:
           path: ${{ env.ASSET_NAME }}
 
       - name: Create release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="libclang-v${LLVM_VERSION}-msvcrt"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
           # Create release (or update if exists)
           gh release create "$TAG" \
@@ -158,3 +162,14 @@ jobs:
 
           # Upload asset (overwrite if exists)
           gh release upload "$TAG" "${ASSET_NAME}" --clobber
+
+  gitcode:
+    name: Sync GitCode Release
+    needs: build-libclang
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sync-releases.yml
+    with:
+      version: ${{ needs.build-libclang.outputs.tag }}
+    secrets:
+      GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}

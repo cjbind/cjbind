@@ -26,6 +26,17 @@ CI 中 `setup-cangjie` 已设置 `CANGJIE_HOME`，因此 workflow 直接运行 `
 
 - 更新 `cjpm.toml`
 
+## 发布与 GitCode 同步
+
+在 GitHub 仓库的 Actions secrets 中配置 `GITCODE_TOKEN`，该令牌需要具有
+`Cangjie-TPC/cjbind` 仓库的代码推送及 Release 写入权限。
+
+- `.github/workflows/mirror.yml` 在推送 `master` 或标签时，将 `master` 和全部标签同步到 GitCode；也可以手动运行。同步不会强制覆盖远端分支或标签。
+- `.github/workflows/release.yml` 和 `build-libclang.yml` 在 GitHub Release 及其附件发布成功后，自动调用 `sync-releases.yml` 同步对应标签、发布标题、说明和全部附件。通过 GitHub 页面手动发布 Release 时，也会触发同步。
+- 如果附件同步失败，可以手动运行 **Sync Releases**，填写版本标签重试；留空或填写 `latest` 会选择 GitHub 最新正式版。指定标签也支持已发布的预发布版本。
+
+附件列表从 GitHub Release 动态读取，各附件分别上传，最多同时处理两个；上传后从 GitCode 公开下载地址重新下载并逐字节比较，确认镜像内容与 GitHub 一致。同步前会先推送发布标签及其提交，确保 GitCode 能找到对应版本。
+
 ## 生成 libclang 绑定
 
 假设 `libclang` 的头文件在 `T:\cjbind-bootstrap\include\clang-c\Index.h`，可以使用以下命令生成 `libclang.cj`：

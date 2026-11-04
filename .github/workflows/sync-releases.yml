@@ -1,34 +1,118 @@
 name: Sync Releases
 
 on:
+  release:
+    types: [published]
+  workflow_call:
+    inputs:
+      version:
+        description: Release tag to synchronize; latest if omitted
+        required: false
+        default: latest
+        type: string
+    secrets:
+      GITCODE_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (optional, uses latest if not specified)'
+        description: Release tag to synchronize; latest if omitted
         required: false
+        default: latest
         type: string
 
 permissions:
-  contents: "write"
+  contents: read
+
+concurrency:
+  group: gitcode-release-${{ inputs.version || github.event.release.tag_name || 'latest' }}
+  cancel-in-progress: false
 
 jobs:
-  sync:
+  prepare:
+    name: Validate release and sync tag
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      release: ${{ steps.release.outputs.release }}
+      tag: ${{ steps.release.outputs.tag }}
+      assets: ${{ steps.release.outputs.assets }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
-          python-version: "3.14"
-          cache-dependency-glob: "**/*.py.lock"
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - name: Resolve published GitHub release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name || 'latest' }}
+        run: |
+          release_args=()
+          if [[ "${RELEASE_VERSION}" != latest ]]; then
+            release_args+=("${RELEASE_VERSION}")
+          fi
+          gh release view "${release_args[@]}" --json tagName,isDraft,name,body,assets > "${RUNNER_TEMP}/release.json"
+          jq -e '
+            .isDraft == false and
+            (.tagName | test("^[A-Za-z0-9][A-Za-z0-9._+-]*$")) and
+            (.assets | length > 0 and length <= 256) and
+            all(.assets[]; .name | test("^[A-Za-z0-9][A-Za-z0-9._+-]*$"))
+          ' "${RUNNER_TEMP}/release.json" > /dev/null
+          {
+            echo "release=$(jq -c '{name, body}' "${RUNNER_TEMP}/release.json")"
+            echo "tag=$(jq -r '.tagName' "${RUNNER_TEMP}/release.json")"
+            echo "assets=$(jq -c '[.assets[].name]' "${RUNNER_TEMP}/release.json")"
+          } >> "${GITHUB_OUTPUT}"
+      - name: Push release tag and commit to GitCode
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          test -n "${GITCODE_TOKEN}"
+          git remote add gitcode "https://Zxilly:${GITCODE_TOKEN}@gitcode.com/Cangjie-TPC/cjbind.git"
+          git push gitcode "refs/tags/${RELEASE_TAG}"
 
+  sync:
+    name: Sync ${{ matrix.asset }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        asset: ${{ fromJSON(needs.prepare.outputs.assets) }}
+    steps:
       - name: Enable TCP BBR
         uses: Zxilly/actions-bbr@c3a8ea7012db3c0f4d5fcf6dd257c28f4cba9ead # v1.0.1
-
-      - name: Download and sync releases
-        run: uv run scripts/sync.py ${{ inputs.version || 'latest' }}
+      - name: Download release asset from GitHub
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ASSET: ${{ matrix.asset }}
+        run: |
+          mkdir dist
+          gh release download "${RELEASE_TAG}" --dir dist --pattern "${RELEASE_ASSET}"
+      - name: Upload release asset to GitCode
+        uses: Zxilly/upload-gitcode-release@4ecd2bfd44008dd4f2b2487eda7a2e7bbbf12a1b # v1.0.0
+        with:
+          gitcode-token: ${{ secrets.GITCODE_TOKEN }}
+          target-repo: Cangjie-TPC/cjbind
+          tag: ${{ needs.prepare.outputs.tag }}
+          target-commitish: ${{ needs.prepare.outputs.tag }}
+          name: ${{ fromJSON(needs.prepare.outputs.release).name }}
+          body: ${{ fromJSON(needs.prepare.outputs.release).body }}
+          files: dist/${{ matrix.asset }}
+      - name: Verify published GitCode asset
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ASSET: ${{ matrix.asset }}
+        run: |
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 30 --max-time 120 \
+            "https://gitcode.com/Cangjie-TPC/cjbind/releases/download/${RELEASE_TAG}/${RELEASE_ASSET}" \
+            --output "${RUNNER_TEMP}/${RELEASE_ASSET}"
+          cmp "dist/${RELEASE_ASSET}" "${RUNNER_TEMP}/${RELEASE_ASSET}"
