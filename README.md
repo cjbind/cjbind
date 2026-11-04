@@ -64,7 +64,8 @@ irm https://cjbind.zxilly.dev/install.ps1 | iex
         --wrap-static-fns                为 static/static inline 函数生成可编译的 C/C++ 外部桥接函数
         --wrap-static-fns-suffix <SUFFIX>
                                          static 函数桥接符号的后缀，默认为 __extern
-        --wrap-static-fns-path <PATH>    static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）
+        --wrap-static-fns-path <PATH>    static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）；
+                                         默认在 --output 文件名后添加 .c 或 .cpp，输出到 stdout 时必须指定
         --auto-cstring                   把 char* 类型映射为 CString 而不是 CPointer<UInt8>
         --array-pointers-in-args         把数组 T arr[size] 转换为 VArray<T, $size> 而不是 CPointer<T>
         --make-cjstring                  把字符串常量生成为 String；非法 UTF-8 保留为 VArray<UInt8>

@@ -135,6 +135,8 @@ public class CjbindOptions {
     public var wrapStaticFnsSuffix: String = "__extern"
     /// Base output path for the bridge source. cjbind replaces any extension
     /// with `.c` or `.cpp` according to the parsed language.
+    /// Library callers must set this when emitting static wrappers. The CLI
+    /// derives a separate bridge path from its binding output filename.
     public var wrapStaticFnsPath: ?String = None
     public var autoCString: Bool = false
     public var arrayPointersInArgs: Bool = false

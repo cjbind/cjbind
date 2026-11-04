@@ -1,7 +1,6 @@
 package cjbind.codegen
 
 import std.collection.ArrayList
-import std.env.getTempDirectory
 import std.fs.{Directory, File, Path, canonicalize, exists}
 import cjbind.ir.*
 import cjbind.result.Result
@@ -502,10 +501,7 @@ func serializeStaticWrapper(
 }
 
 func wrapperSourcePath(ctx: CjbindContext, isCxx: Bool): Path {
-    let base = match (ctx.options.wrapStaticFnsPath) {
-        case Some(value) => Path(value)
-        case None => getTempDirectory().join("cjbind").join("extern")
-    }
+    let base = Path(ctx.options.wrapStaticFnsPath.getOrThrow())
     let stem = if (base.extensionName.isEmpty()) {
         base.fileName
     } else {
@@ -541,6 +537,10 @@ public func serializeStaticWrappers(
 ): Result<Unit, CodegenError> {
     if (wrappers.isEmpty()) {
         return Ok<Unit, CodegenError>(())
+    }
+    if (ctx.options.wrapStaticFnsPath.isNone()) {
+        return Err<Unit, CodegenError>(CodegenError.Io(
+            "wrapStaticFnsPath must be set when generating static function wrappers"))
     }
 
     let isCxx = usesCxxLanguage(ctx.options)

@@ -19,6 +19,28 @@ func staticWrapperOptions(header: String, output: String): CjbindOptions {
 @Test
 public class StaticFunctionWrapperTest {
     @TestCase
+    func requiresAnExplicitBridgePathForLibraryCallers(): Unit {
+        let directory = Directory.createTemp(getTempDirectory())
+        try {
+            let header = directory.join("static_functions.h")
+            File.writeTo(header, "static int value(void) { return 42; }".toArray())
+            let options = CjbindOptions()
+            options.headers.add(header.toString())
+            options.noDetectIncludePath = true
+            options.wrapStaticFns = true
+            var message = ""
+            try {
+                generate(options)
+            } catch (error: Exception) {
+                message = error.message
+            }
+            @Expect(message.contains("wrapStaticFnsPath must be set"), true)
+        } finally {
+            remove(directory, recursive: true)
+        }
+    }
+
+    @TestCase
     func emitsAndCompilesCBridgeSource(): Unit {
         let directory = Directory.createTemp(getTempDirectory())
         try {

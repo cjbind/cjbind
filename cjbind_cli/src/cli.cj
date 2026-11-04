@@ -25,7 +25,7 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     let wrapStaticFnsSuffixFlag = StringFlag(None, "wrap-static-fns-suffix", "wrap-static-fns-suffix",
         "static 函数桥接符号的后缀，默认为 __extern", "SUFFIX", "__extern")
     let wrapStaticFnsPathFlag = StringFlag(None, "wrap-static-fns-path", "wrap-static-fns-path",
-        "static 函数桥接源文件的基础路径（自动使用 .c 或 .cpp 扩展名）", "PATH", None)
+        "static 函数桥接源文件的基础路径；默认在 --output 文件名后添加 .c 或 .cpp，输出到 stdout 时必须指定", "PATH", None)
     let autoCString = BoolFlag(None, "auto-cstring", "auto-cstring",
         "把 char* 类型映射为 CString 而不是 CPointer<UInt8>")
     let arrayPointersInArgs = BoolFlag(None, "array-pointers-in-args", "array-pointers-in-args",
@@ -275,6 +275,16 @@ public func processArgs(): (CjbindOptions, (String) -> Unit) {
     }
 
     let output: ?String = outputFlag.value
+    if (opt.wrapStaticFns && opt.wrapStaticFnsPath.isNone()) {
+        match (output) {
+            // The serializer replaces the final extension. Keep the complete
+            // binding filename so distinct outputs never share a bridge.
+            case Some(path) => opt.wrapStaticFnsPath = Some(path + ".extern")
+            case None =>
+                eprintln("Error: --wrap-static-fns requires --output or --wrap-static-fns-path")
+                env.exit(1)
+        }
+    }
 
     let writer: (String) -> Unit = match (output) {
         case Some(v) => {gen => File.writeTo(v, gen.toArray())}
