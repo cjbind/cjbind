@@ -7,4 +7,4 @@
   link-option = "${LDFLAGS}"
   name = "cjbind_test"
   output-type = "executable"
-  version = "0.3.6"
+  version = "0.4.0"
