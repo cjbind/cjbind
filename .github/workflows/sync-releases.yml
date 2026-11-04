@@ -54,7 +54,7 @@ jobs:
           if [[ "${RELEASE_VERSION}" != latest ]]; then
             release_args+=("${RELEASE_VERSION}")
           fi
-          gh release view "${release_args[@]}" --json tagName,isDraft,name,body,assets > "${RUNNER_TEMP}/release.json"
+          gh release view "${release_args[@]}" --json tagName,isDraft,isPrerelease,name,body,assets > "${RUNNER_TEMP}/release.json"
           jq -e '
             .isDraft == false and
             (.tagName | test("^[A-Za-z0-9][A-Za-z0-9._+-]*$")) and
@@ -62,7 +62,7 @@ jobs:
             all(.assets[]; .name | test("^[A-Za-z0-9][A-Za-z0-9._+-]*$"))
           ' "${RUNNER_TEMP}/release.json" > /dev/null
           {
-            echo "release=$(jq -c '{name, body}' "${RUNNER_TEMP}/release.json")"
+            echo "release=$(jq -c '{name, body, isPrerelease}' "${RUNNER_TEMP}/release.json")"
             echo "tag=$(jq -r '.tagName' "${RUNNER_TEMP}/release.json")"
             echo "assets=$(jq -c '[.assets[].name]' "${RUNNER_TEMP}/release.json")"
           } >> "${GITHUB_OUTPUT}"
@@ -116,3 +116,38 @@ jobs:
             "https://gitcode.com/Cangjie-TPC/cjbind/releases/download/${RELEASE_TAG}/${RELEASE_ASSET}" \
             --output "${RUNNER_TEMP}/${RELEASE_ASSET}"
           cmp "dist/${RELEASE_ASSET}" "${RUNNER_TEMP}/${RELEASE_ASSET}"
+
+  metadata:
+    name: Sync release metadata and status
+    needs: [prepare, sync]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Update GitCode release metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_METADATA: ${{ needs.prepare.outputs.release }}
+        run: |
+          latest_tag=$(gh release view --json tagName --jq '.tagName')
+          jq --arg tag "${RELEASE_TAG}" --arg latest "${latest_tag}" '
+            {
+              name: (if .name == null or .name == "" then $tag else .name end),
+              body: (.body // ""),
+              release_status: (if .isPrerelease then "pre" elif $tag == $latest then "latest" else "none" end)
+            }
+          ' <<< "${RELEASE_METADATA}" > "${RUNNER_TEMP}/gitcode-metadata.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors --retry-delay 20 \
+            --connect-timeout 30 --max-time 60 --request PATCH \
+            --header "Authorization: Bearer ${GITCODE_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            --data-binary "@${RUNNER_TEMP}/gitcode-metadata.json" \
+            "https://api.gitcode.com/api/v5/repos/Cangjie-TPC/cjbind/releases/${RELEASE_TAG}" \
+            > "${RUNNER_TEMP}/gitcode-release.json"
+          jq -e --slurpfile expected "${RUNNER_TEMP}/gitcode-metadata.json" '
+            .name == $expected[0].name and
+            ((.body | gsub("\r\n"; "\n")) == ($expected[0].body | gsub("\r\n"; "\n"))) and
+            .release_status == $expected[0].release_status
+          ' "${RUNNER_TEMP}/gitcode-release.json" > /dev/null

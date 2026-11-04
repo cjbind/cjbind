@@ -37,6 +37,8 @@ CI 中 `setup-cangjie` 已设置 `CANGJIE_HOME`，因此 workflow 直接运行 `
 
 附件列表从 GitHub Release 动态读取，各附件分别上传，最多同时处理两个；上传后从 GitCode 公开下载地址重新下载并逐字节比较，确认镜像内容与 GitHub 一致。同步前会先推送发布标签及其提交，确保 GitCode 能找到对应版本。
 
+全部附件校验通过后，会对齐发布标题、说明和发布状态；只有 GitHub 当前最新正式版会被标为 GitCode 最新版，历史版本的补传不会将旧版标为最新。预发布版本保留预发布标记。
+
 ## 生成 libclang 绑定
 
 假设 `libclang` 的头文件在 `T:\cjbind-bootstrap\include\clang-c\Index.h`，可以使用以下命令生成 `libclang.cj`：
